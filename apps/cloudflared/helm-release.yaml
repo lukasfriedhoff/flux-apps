@@ -17,5 +17,14 @@ spec:
   valuesFrom:
     - kind: Secret
       name: cloudflare-tunnel-credentials
-      valuesKey: token
-      targetPath: cloudflare.token
+      valuesKey: secret
+      targetPath: cloudflare.secret
+  values:
+    cloudflare:
+      account: "3f096f839bec83bbf757d3725d97f533"
+      tunnelId: "d5e46417-eae1-47fa-9aaa-39a9e84b5733"
+      tunnelName: "homelab-k8s"
+      ingress:
+        - hostname: "*.lab.h4xx.io"
+          service: http://traefik.traefik.svc.cluster.local:80
+        - service: http_status:404
