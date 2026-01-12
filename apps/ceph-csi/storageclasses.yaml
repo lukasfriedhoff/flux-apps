@@ -1,0 +1,62 @@
+---
+# ssd-rbd-1r: 1 replica (no redundancy) - ephemeral/disposable data
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ssd-rbd-1r
+provisioner: rbd.csi.ceph.com
+parameters:
+  clusterID: "${ceph_cluster_id}"
+  pool: k8s-ssd-1r
+  imageFeatures: layering
+  csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
+  csi.storage.k8s.io/controller-expand-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: ${ceph_csi_namespace}
+  csi.storage.k8s.io/node-stage-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: ${ceph_csi_namespace}
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+---
+# ssd-rbd-2r: 2 replicas - StatefulSet default
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ssd-rbd-2r
+provisioner: rbd.csi.ceph.com
+parameters:
+  clusterID: "${ceph_cluster_id}"
+  pool: k8s-ssd-2r
+  imageFeatures: layering
+  csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
+  csi.storage.k8s.io/controller-expand-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: ${ceph_csi_namespace}
+  csi.storage.k8s.io/node-stage-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: ${ceph_csi_namespace}
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+---
+# ssd-rbd-3r: 3 replicas - DEFAULT storage class (most durable)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ssd-rbd-3r
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: rbd.csi.ceph.com
+parameters:
+  clusterID: "${ceph_cluster_id}"
+  pool: k8s-ssd-3r
+  imageFeatures: layering
+  csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
+  csi.storage.k8s.io/controller-expand-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: ${ceph_csi_namespace}
+  csi.storage.k8s.io/node-stage-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: ${ceph_csi_namespace}
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
