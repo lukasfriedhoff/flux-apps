@@ -25,7 +25,7 @@ spec:
     policy: upsert-only
     txtOwnerId: srv1-k3s
     extraArgs:
-      cloudflare-proxied: "true"
+      - --cloudflare-proxied
     env:
       - name: CF_API_TOKEN
         valueFrom:
