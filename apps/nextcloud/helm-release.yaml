@@ -29,6 +29,13 @@ spec:
             - nextcloud.h4xx.io
     nextcloud:
       host: nextcloud.h4xx.io
+      extraEnv:
+        - name: OVERWRITEHOST
+          value: nextcloud.h4xx.io
+        - name: OVERWRITEPROTOCOL
+          value: https
+        - name: TRUSTED_PROXIES
+          value: 10.42.0.0/16
       existingSecret:
         enabled: true
         secretName: nextcloud-admin
