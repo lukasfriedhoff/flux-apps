@@ -15,11 +15,7 @@ spec:
         namespace: traefik
       interval: 10m0s
   values:
-    # Redirect all HTTP traffic to HTTPS.
-    additionalArguments:
-      - "--entrypoints.web.http.redirections.entrypoint.to=:443"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+    # Leave HTTP/HTTPS both available; Cloudflare terminates TLS.
     ports:
       websecure:
         tls:
