@@ -18,6 +18,7 @@ spec:
   values:
     provider: cloudflare
     domainFilters:
+      - h4xx.io
       - lab.h4xx.io
     sources:
       - ingress
