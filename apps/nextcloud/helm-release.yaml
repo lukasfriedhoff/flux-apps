@@ -23,9 +23,9 @@ spec:
       tls:
         - secretName: nextcloud-tls
           hosts:
-            - nextcloud.h4xx.io
+            - nextcloud.lab.h4xx.io
     nextcloud:
-      host: nextcloud.h4xx.io
+      host: nextcloud.lab.h4xx.io
       existingSecret:
         enabled: true
         secretName: nextcloud-admin
