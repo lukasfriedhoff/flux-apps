@@ -16,9 +16,11 @@ spec:
       interval: 10m0s
   values:
     # Redirect all HTTP traffic to HTTPS.
+    additionalArguments:
+      - "--entrypoints.web.http.redirections.entrypoint.to=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
     ports:
-      web:
-        redirectTo: websecure
       websecure:
         tls:
           enabled: true
