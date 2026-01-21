@@ -14,8 +14,6 @@ data:
     theme: dark
     default_redirection_url: https://nextcloud.h4xx.io
 
-    jwt_secret: 'file:/secrets/jwt_secret'
-
     authentication_backend:
       file:
         path: /config/users_database.yml
@@ -31,13 +29,11 @@ data:
     session:
       name: authelia_session
       same_site: lax
-      secret: 'file:/secrets/session_secret'
       expiration: 1h
       inactivity: 15m
       domain: h4xx.io
 
     storage:
-      encryption_key: 'file:/secrets/storage_encryption_key'
       local:
         path: /config/db.sqlite3
 

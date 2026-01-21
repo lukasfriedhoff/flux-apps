@@ -38,13 +38,14 @@ spec:
         cookies:
           - domain: h4xx.io
             same_site: lax
-    secret:
-      additionalSecrets:
-        authelia-secrets:
-          items:
-            - key: jwt_secret
-            - key: session_secret
-            - key: storage_encryption_key
+    extraVolumes:
+      - name: authelia-configmap
+        configMap:
+          name: authelia-config
+    extraVolumeMounts:
+      - name: authelia-configmap
+        mountPath: /app/users_database.yml
+        subPath: users_database.yml
     persistence:
       enabled: true
       storageClass: ssd-rbd-2r
