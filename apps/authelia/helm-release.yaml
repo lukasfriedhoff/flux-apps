@@ -38,7 +38,7 @@ spec:
             same_site: lax
     secret:
       additionalSecrets:
-        authelia:
+        authelia-secrets:
           items:
             - key: jwt_secret
             - key: session_secret
