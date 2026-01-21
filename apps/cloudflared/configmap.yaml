@@ -5,7 +5,7 @@ metadata:
   namespace: cloudflared
 data:
   config.yaml: |
-    tunnel: d5e46417-eae1-47fa-9aaa-39a9e84b5733
+    tunnel: 03ed4283-aa2e-4781-8236-fd69a38e130a
     credentials-file: /etc/cloudflared/credentials.json
     ingress:
       - hostname: "*.h4xx.io"
