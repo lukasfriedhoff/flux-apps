@@ -23,6 +23,7 @@ spec:
             - --no-autoupdate
             - --config
             - /etc/cloudflared/config.yaml
+            - --disable-remote-config
             - run
           volumeMounts:
             - name: cloudflared-config
