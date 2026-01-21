@@ -15,6 +15,12 @@ spec:
         name: authelia
         namespace: authelia
       interval: 10m0s
+  install:
+    disableOpenAPIValidation: true
+    disableSchemaValidation: true
+  upgrade:
+    disableOpenAPIValidation: true
+    disableSchemaValidation: true
   values:
     ingress:
       enabled: true
@@ -32,20 +38,18 @@ spec:
     configMap:
       disabled: false
       existingConfigMap: authelia-config
-      extraConfigs:
-        - users_database.yml
       session:
         cookies:
           - domain: h4xx.io
             same_site: lax
-    extraVolumes:
-      - name: authelia-configmap
-        configMap:
-          name: authelia-config
     extraVolumeMounts:
-      - name: authelia-configmap
-        mountPath: /app/users_database.yml
+      - name: authelia-users
+        mountPath: /config/users_database.yml
         subPath: users_database.yml
+    extraVolumes:
+      - name: authelia-users
+        secret:
+          secretName: authelia-users
     persistence:
       enabled: true
       storageClass: ssd-rbd-2r
