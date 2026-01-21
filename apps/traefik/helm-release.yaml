@@ -27,10 +27,6 @@ spec:
     # No external LoadBalancer needed - cloudflared handles external traffic
     service:
       type: ClusterIP
-    # Disable dashboard externally (access via port-forward if needed)
-    ingressRoute:
-      dashboard:
-        enabled: false
     # Enable Kubernetes Ingress provider
     providers:
       kubernetesIngress:

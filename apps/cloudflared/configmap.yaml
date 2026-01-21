@@ -8,9 +8,19 @@ data:
     tunnel: 03ed4283-aa2e-4781-8236-fd69a38e130a
     credentials-file: /etc/cloudflared/credentials.json
     ingress:
-      - hostname: "*.h4xx.io"
+      - hostname: nextcloud.h4xx.io
         service: https://traefik.traefik.svc.cluster.local:443
         originRequest:
           originServerName: nextcloud.h4xx.io
-          noTLSVerify: true
+          httpHostHeader: nextcloud.h4xx.io
+      - hostname: auth.h4xx.io
+        service: https://traefik.traefik.svc.cluster.local:443
+        originRequest:
+          originServerName: auth.h4xx.io
+          httpHostHeader: auth.h4xx.io
+      - hostname: dashboard.h4xx.io
+        service: https://traefik.traefik.svc.cluster.local:443
+        originRequest:
+          originServerName: dashboard.h4xx.io
+          httpHostHeader: dashboard.h4xx.io
       - service: http_status:404
