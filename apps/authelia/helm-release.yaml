@@ -24,6 +24,8 @@ spec:
         external-dns.alpha.kubernetes.io/target: 03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+        - auth.h4xx.io
       tls:
         enabled: true
         secret: authelia-tls
