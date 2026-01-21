@@ -42,14 +42,15 @@ spec:
         cookies:
           - domain: h4xx.io
             same_site: lax
-    extraVolumeMounts:
-      - name: authelia-users
-        mountPath: /config/users_database.yml
-        subPath: users_database.yml
-    extraVolumes:
-      - name: authelia-users
-        secret:
-          secretName: authelia-users
+    pod:
+      extraVolumeMounts:
+        - name: authelia-users
+          mountPath: /config/users_database.yml
+          subPath: users_database.yml
+      extraVolumes:
+        - name: authelia-users
+          secret:
+            secretName: authelia-users
     persistence:
       enabled: true
       storageClass: ssd-rbd-2r
