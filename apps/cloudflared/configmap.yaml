@@ -10,4 +10,7 @@ data:
     ingress:
       - hostname: "*.h4xx.io"
         service: https://traefik.traefik.svc.cluster.local:443
+        originRequest:
+          originServerName: nextcloud.h4xx.io
+          noTLSVerify: true
       - service: http_status:404
