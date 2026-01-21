@@ -21,15 +21,16 @@ spec:
           args:
             - tunnel
             - --no-autoupdate
+            - --config
+            - /etc/cloudflared/config.yaml
             - run
-            - --token
-            - $(TUNNEL_TOKEN)
-          env:
-            - name: TUNNEL_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: cloudflare-tunnel-credentials
-                  key: token
+          volumeMounts:
+            - name: cloudflared-config
+              mountPath: /etc/cloudflared/config.yaml
+              subPath: config.yaml
+            - name: cloudflared-creds
+              mountPath: /etc/cloudflared/credentials.json
+              subPath: credentials.json
           resources:
             requests:
               memory: 64Mi
@@ -42,3 +43,10 @@ spec:
             capabilities:
               drop:
                 - ALL
+      volumes:
+        - name: cloudflared-config
+          configMap:
+            name: cloudflared-config
+        - name: cloudflared-creds
+          secret:
+            secretName: cloudflare-tunnel-credentials

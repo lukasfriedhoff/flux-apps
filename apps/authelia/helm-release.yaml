@@ -1,0 +1,45 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: authelia
+  namespace: authelia
+spec:
+  interval: 10m0s
+  timeout: 10m0s
+  chart:
+    spec:
+      chart: authelia
+      version: 0.10.49
+      sourceRef:
+        kind: HelmRepository
+        name: authelia
+        namespace: authelia
+      interval: 10m0s
+  values:
+    ingress:
+      enabled: true
+      className: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        external-dns.alpha.kubernetes.io/target: d5e46417-eae1-47fa-9aaa-39a9e84b5733.cfargotunnel.com
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      tls:
+        enabled: true
+        secret: authelia-tls
+    configMap:
+      disabled: false
+      existingConfigMap: authelia-config
+      extraConfigs:
+        - users_database.yml
+    secret:
+      additionalSecrets:
+        authelia:
+          items:
+            - key: jwt_secret
+            - key: session_secret
+            - key: storage_encryption_key
+    persistence:
+      enabled: true
+      storageClass: ssd-rbd-2r
+      size: 1Gi
