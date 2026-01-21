@@ -32,6 +32,10 @@ spec:
       existingConfigMap: authelia-config
       extraConfigs:
         - users_database.yml
+    session:
+      cookies:
+        - domain: h4xx.io
+          same_site: lax
     secret:
       additionalSecrets:
         authelia:
