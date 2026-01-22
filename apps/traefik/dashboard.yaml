@@ -47,3 +47,25 @@ spec:
           kind: TraefikService
   tls:
     secretName: traefik-dashboard-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik-dashboard-dns
+  namespace: traefik
+  annotations:
+    external-dns.alpha.kubernetes.io/target: 03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com
+spec:
+  ingressClassName: external-dns
+  rules:
+    - host: dashboard.h4xx.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: traefik
+                port:
+                  number: 80
