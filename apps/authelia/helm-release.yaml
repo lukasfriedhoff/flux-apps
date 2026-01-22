@@ -44,6 +44,8 @@ spec:
           - domain: h4xx.io
             same_site: lax
     pod:
+      annotations:
+        reloader.stakater.com/auto: "true"
       extraVolumeMounts:
         - name: authelia-users
           mountPath: /config/users_database.yml
