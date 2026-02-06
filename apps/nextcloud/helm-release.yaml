@@ -59,6 +59,7 @@ spec:
             'oidc_login_auto_redirect' => false,
             'oidc_login_end_session_redirect' => false,
             'oidc_login_logout_url' => 'https://nextcloud.h4xx.io/apps/oidc_login/oidc',
+            'oidc_login_disable_registration' => false,
           );
       hooks:
         before-starting: |-
