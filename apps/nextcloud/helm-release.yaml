@@ -36,11 +36,30 @@ spec:
           value: https
         - name: TRUSTED_PROXIES
           value: 10.42.0.0/16
+        - name: OIDC_LOGIN_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-oidc
+              key: client_secret
       existingSecret:
         enabled: true
         secretName: nextcloud-admin
         usernameKey: username
         passwordKey: password
+      configs:
+        oidc-login.config.php: |-
+          <?php
+          $CONFIG = array (
+            'oidc_login_provider_url' => 'https://auth.h4xx.io',
+            'oidc_login_client_id' => 'nextcloud',
+            'oidc_login_client_secret' => getenv('OIDC_LOGIN_CLIENT_SECRET'),
+            'oidc_login_button_text' => 'Log in with Authelia',
+            'oidc_login_scope' => 'openid profile email groups',
+            'oidc_login_code_challenge_method' => 'S256',
+            'oidc_login_auto_redirect' => false,
+            'oidc_login_end_session_redirect' => true,
+            'oidc_login_logout_url' => 'https://nextcloud.h4xx.io/apps/oidc_login/oidc',
+          );
     internalDatabase:
       enabled: false
     externalDatabase:

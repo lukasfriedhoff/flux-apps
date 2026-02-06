@@ -49,10 +49,17 @@ spec:
           password:
             secret_name: authelia-mail-credentials
             path: password
+      identity_providers:
+        oidc:
+          enabled: true
+          hmac_secret:
+            secret_name: authelia-oidc
+            path: identity_providers.oidc.hmac.key
     secret:
       existingSecret: authelia-secrets
       additionalSecrets:
         authelia-mail-credentials: {}
+        authelia-oidc: {}
     pod:
       annotations:
         reloader.stakater.com/auto: "true"
