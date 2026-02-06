@@ -37,6 +37,30 @@ data:
       local:
         path: /config/db.sqlite3
 
+    identity_providers:
+      oidc:
+        jwks:
+          - key: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.jwks.rsa.2048.key" | mindent 14 "|" | msquote }}
+            algorithm: 'RS256'
+            use: 'sig'
+        clients:
+          - client_id: nextcloud
+            client_name: Nextcloud
+            client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.nextcloud.secret" | msquote }}
+            authorization_policy: two_factor
+            redirect_uris:
+              - https://nextcloud.h4xx.io/apps/oidc_login/oidc
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+            grant_types:
+              - authorization_code
+              - refresh_token
+            response_types:
+              - code
+
     notifier:
       smtp:
         address: 'submission://posteo.de:587'
