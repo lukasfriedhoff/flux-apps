@@ -39,7 +39,7 @@ data:
 
     notifier:
       smtp:
-        address: 'submission://smtp.posteo.de:587'
+        address: 'submission://posteo.de:587'
         startup_check_address: 'h4xx@posteo.de'
 
   users_database.yml: |
