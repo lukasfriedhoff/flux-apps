@@ -67,6 +67,14 @@ spec:
           set -e
           php /var/www/html/occ app:install -n oidc_login || true
           php /var/www/html/occ app:enable -n oidc_login
+          for i in 1 2 3 4 5; do
+            if php /var/www/html/occ richdocuments:activate-config \
+              --wopi-url="https://nextcloud.h4xx.io/custom_apps/richdocumentscode/proxy.php?req=" \
+              --callback-url="https://nextcloud.h4xx.io"; then
+              break
+            fi
+            sleep 5
+          done
     internalDatabase:
       enabled: false
     externalDatabase:
