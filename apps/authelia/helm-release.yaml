@@ -43,9 +43,30 @@ spec:
         cookies:
           - domain: h4xx.io
             same_site: lax
+      notifier:
+        smtp:
+          enabled: true
+          password:
+            secret_name: authelia-mail-credentials
+            path: password
+    secret:
+      existingSecret: authelia-secrets
+      additionalSecrets:
+        authelia-mail-credentials: {}
     pod:
       annotations:
         reloader.stakater.com/auto: "true"
+      env:
+        - name: AUTHELIA_NOTIFIER_SMTP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: authelia-mail-credentials
+              key: username
+        - name: AUTHELIA_NOTIFIER_SMTP_SENDER
+          valueFrom:
+            secretKeyRef:
+              name: authelia-mail-credentials
+              key: sender
       extraVolumeMounts:
         - name: authelia-users
           mountPath: /config/users_database.yml

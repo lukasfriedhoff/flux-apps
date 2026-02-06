@@ -38,8 +38,9 @@ data:
         path: /config/db.sqlite3
 
     notifier:
-      filesystem:
-        filename: /config/notification.txt
+      smtp:
+        address: 'submission://smtp.posteo.de:587'
+        startup_check_address: 'h4xx@posteo.de'
 
   users_database.yml: |
     users:
