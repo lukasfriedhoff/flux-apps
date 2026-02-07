@@ -23,6 +23,20 @@ data:
       rules:
         - domain: 'auth.h4xx.io'
           policy: bypass
+        - domain: 'collabora.h4xx.io'
+          resources:
+            - '^/cool/adminws/'
+            - '^/cool/getMetrics'
+            - '^/browser/dist/admin/'
+          subject:
+            - 'group:admins'
+          policy: two_factor
+        - domain: 'collabora.h4xx.io'
+          resources:
+            - '^/cool/adminws/'
+            - '^/cool/getMetrics'
+            - '^/browser/dist/admin/'
+          policy: deny
         - domain: '*.h4xx.io'
           policy: two_factor
 
