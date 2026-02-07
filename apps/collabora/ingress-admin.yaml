@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: collabora-admin
+  namespace: collabora
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.priority: "100"
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: collabora.h4xx.io
+      http:
+        paths:
+          - path: /cool/adminws/
+            pathType: Prefix
+            backend:
+              service:
+                name: collabora-collabora-online
+                port:
+                  number: 9980
+          - path: /cool/getMetrics
+            pathType: Exact
+            backend:
+              service:
+                name: collabora-collabora-online
+                port:
+                  number: 9980
+          - path: /browser/dist/admin/
+            pathType: Prefix
+            backend:
+              service:
+                name: collabora-collabora-online
+                port:
+                  number: 9980
+  tls:
+    - secretName: collabora-tls
+      hosts:
+        - collabora.h4xx.io
