@@ -14,6 +14,19 @@ spec:
         name: nextcloud
         namespace: nextcloud
       interval: 10m0s
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: nextcloud
+            patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "10.43.187.245"
+                    hostnames:
+                      - "nextcloud.h4xx.io"
   values:
     ingress:
       enabled: true
