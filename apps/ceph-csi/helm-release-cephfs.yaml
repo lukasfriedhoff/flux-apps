@@ -17,7 +17,7 @@ spec:
       interval: 10m0s
   valuesFrom:
     - kind: ConfigMap
-      name: ceph-csi-config
+      name: ceph-csi-values
       valuesKey: values.yaml
       optional: true
   values:
