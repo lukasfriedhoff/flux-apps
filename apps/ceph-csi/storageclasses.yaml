@@ -8,6 +8,7 @@ provisioner: rbd.csi.ceph.com
 parameters:
   clusterID: "${ceph_cluster_id}"
   pool: k8s-ssd-1r
+  mounter: rbd
   imageFeatures: layering
   csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
   csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
@@ -28,6 +29,7 @@ provisioner: rbd.csi.ceph.com
 parameters:
   clusterID: "${ceph_cluster_id}"
   pool: k8s-ssd-2r
+  mounter: rbd
   imageFeatures: layering
   csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
   csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
@@ -50,6 +52,7 @@ provisioner: rbd.csi.ceph.com
 parameters:
   clusterID: "${ceph_cluster_id}"
   pool: k8s-ssd-3r
+  mounter: rbd
   imageFeatures: layering
   csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
   csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
