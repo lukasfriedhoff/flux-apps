@@ -27,6 +27,9 @@ spec:
           - "${ceph_mon_hosts}"
     provisioner:
       replicaCount: 1
+    nodeplugin:
+      httpMetrics:
+        containerPort: 8082
     storageClass:
       # Disabled - we create storage classes via separate manifests
       create: false
