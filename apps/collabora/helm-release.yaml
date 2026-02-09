@@ -21,11 +21,11 @@ spec:
       enabled: false
     collabora:
       extra_params: --o:ssl.enable=false --o:ssl.termination=true
-      server_name: collabora.h4xx.io
+      server_name: collabora.${delegating_domain}
       aliasgroups:
-        - host: "https://nextcloud.h4xx.io:443"
+        - host: "https://nextcloud.${delegating_domain}:443"
           aliases:
-            - "https://nextcloud.h4xx.io"
+            - "https://nextcloud.${delegating_domain}"
       existingSecret:
         enabled: true
         secretName: collabora-admin
@@ -35,17 +35,17 @@ spec:
       enabled: true
       className: traefik
       annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
-        external-dns.alpha.kubernetes.io/target: 03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com
+        cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+        external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
         traefik.ingress.kubernetes.io/router.priority: "1"
       hosts:
-        - host: collabora.h4xx.io
+        - host: collabora.${delegating_domain}
           paths:
             - path: /
               pathType: ImplementationSpecific
       tls:
         - secretName: collabora-tls
           hosts:
-            - collabora.h4xx.io
+            - collabora.${delegating_domain}

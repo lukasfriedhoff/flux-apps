@@ -5,22 +5,22 @@ metadata:
   namespace: cloudflared
 data:
   config.yaml: |
-    tunnel: 03ed4283-aa2e-4781-8236-fd69a38e130a
+    tunnel: ${cloudflare_tunnel_id}
     credentials-file: /etc/cloudflared/credentials.json
     ingress:
-      - hostname: nextcloud.h4xx.io
+      - hostname: nextcloud.${delegating_domain}
         service: https://traefik.traefik.svc.cluster.local:443
         originRequest:
-          originServerName: nextcloud.h4xx.io
-          httpHostHeader: nextcloud.h4xx.io
-      - hostname: auth.h4xx.io
+          originServerName: nextcloud.${delegating_domain}
+          httpHostHeader: nextcloud.${delegating_domain}
+      - hostname: auth.${delegating_domain}
         service: https://traefik.traefik.svc.cluster.local:443
         originRequest:
-          originServerName: auth.h4xx.io
-          httpHostHeader: auth.h4xx.io
-      - hostname: dashboard.h4xx.io
+          originServerName: auth.${delegating_domain}
+          httpHostHeader: auth.${delegating_domain}
+      - hostname: dashboard.${delegating_domain}
         service: https://traefik.traefik.svc.cluster.local:443
         originRequest:
-          originServerName: dashboard.h4xx.io
-          httpHostHeader: dashboard.h4xx.io
+          originServerName: dashboard.${delegating_domain}
+          httpHostHeader: dashboard.${delegating_domain}
       - service: http_status:404

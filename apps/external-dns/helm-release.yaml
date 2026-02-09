@@ -18,13 +18,13 @@ spec:
   values:
     provider: cloudflare
     domainFilters:
-      - h4xx.io
-      - lab.h4xx.io
+      - ${external_dns_domain_primary}
+      - ${external_dns_domain_secondary}
     sources:
       - ingress
       - service
     policy: upsert-only
-    txtOwnerId: srv1-k3s
+    txtOwnerId: ${external_dns_txt_owner_id}
     extraArgs:
       - --cloudflare-proxied
     env:

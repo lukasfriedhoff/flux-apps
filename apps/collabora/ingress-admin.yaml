@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: collabora.h4xx.io
+    - host: collabora.${delegating_domain}
       http:
         paths:
           - path: /cool/adminws/
@@ -38,4 +38,4 @@ spec:
   tls:
     - secretName: collabora-tls
       hosts:
-        - collabora.h4xx.io
+        - collabora.${delegating_domain}
