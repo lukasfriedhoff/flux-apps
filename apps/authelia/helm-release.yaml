@@ -26,12 +26,12 @@ spec:
       enabled: true
       className: traefik
       annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
-        external-dns.alpha.kubernetes.io/target: 03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com
+        cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+        external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
       rulesOverride:
-        - host: auth.h4xx.io
+        - host: auth.${delegating_domain}
           path: /
       tls:
         enabled: true
@@ -41,7 +41,7 @@ spec:
       existingConfigMap: authelia-config
       session:
         cookies:
-          - domain: h4xx.io
+          - domain: ${delegating_domain}
             same_site: lax
       notifier:
         smtp:
@@ -84,5 +84,5 @@ spec:
             secretName: authelia-users
     persistence:
       enabled: true
-      storageClass: ssd-rbd-2r
+      storageClass: ${default_sts_storage_class_name}
       size: 1Gi

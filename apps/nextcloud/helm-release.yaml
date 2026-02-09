@@ -19,23 +19,23 @@ spec:
       enabled: true
       className: traefik
       annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
-        external-dns.alpha.kubernetes.io/target: 03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com
+        cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+        external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
       tls:
         - secretName: nextcloud-tls
           hosts:
-            - nextcloud.h4xx.io
+            - nextcloud.${delegating_domain}
     nextcloud:
-      host: nextcloud.h4xx.io
+      host: nextcloud.${delegating_domain}
       extraEnv:
         - name: OVERWRITEHOST
-          value: nextcloud.h4xx.io
+          value: nextcloud.${delegating_domain}
         - name: OVERWRITEPROTOCOL
           value: https
         - name: TRUSTED_PROXIES
-          value: 10.42.0.0/16
+          value: ${trusted_proxies_cidr}
         - name: OIDC_LOGIN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
@@ -50,7 +50,7 @@ spec:
         oidc-login.config.php: |-
           <?php
           $CONFIG = array (
-            'oidc_login_provider_url' => 'https://auth.h4xx.io',
+            'oidc_login_provider_url' => 'https://auth.${delegating_domain}',
             'oidc_login_client_id' => 'nextcloud',
             'oidc_login_client_secret' => getenv('OIDC_LOGIN_CLIENT_SECRET'),
             'oidc_login_button_text' => 'Log in with Authelia',
@@ -58,7 +58,7 @@ spec:
             'oidc_login_code_challenge_method' => 'S256',
             'oidc_login_auto_redirect' => false,
             'oidc_login_end_session_redirect' => false,
-            'oidc_login_logout_url' => 'https://nextcloud.h4xx.io/apps/oidc_login/oidc',
+            'oidc_login_logout_url' => 'https://nextcloud.${delegating_domain}/apps/oidc_login/oidc',
             'oidc_login_disable_registration' => false,
           );
       hooks:
@@ -72,12 +72,37 @@ spec:
           php /var/www/html/occ app:disable -n richdocumentscode || true
           for i in 1 2 3 4 5; do
             if php /var/www/html/occ richdocuments:activate-config \
-              --wopi-url="https://collabora.h4xx.io" \
-              --callback-url="https://nextcloud.h4xx.io"; then
+              --wopi-url="https://collabora.${delegating_domain}" \
+              --callback-url="https://nextcloud.${delegating_domain}"; then
               break
             fi
             sleep 5
           done
+      extraInitContainers:
+        - name: migrate-nextcloud-data
+          image: alpine:3.20
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              if [ -f /dest/.ocdata ]; then
+                echo "Nextcloud data already migrated."
+                exit 0
+              fi
+              if [ ! -f /src/.ocdata ]; then
+                echo "No legacy data found, skipping migration."
+                exit 0
+              fi
+              echo "Migrating Nextcloud data to CephFS..."
+              cp -a /src/. /dest/
+          volumeMounts:
+            - name: nextcloud-main
+              mountPath: /src
+              subPath: data
+            - name: nextcloud-data
+              mountPath: /dest
+              subPath: data
     internalDatabase:
       enabled: false
     externalDatabase:
@@ -90,10 +115,25 @@ spec:
         secretName: nextcloud-postgres-app
         usernameKey: username
         passwordKey: password
+    externalRedis:
+      enabled: true
+      host: valkey
+      port: "6379"
+      existingSecret:
+        enabled: true
+        secretName: ${valkey_auth_secret_name}
+        passwordKey: redis-password
+    redis:
+      enabled: false
     persistence:
       enabled: true
-      storageClass: ssd-rbd-2r
+      storageClass: ${default_sts_storage_class_name}
       size: 500Gi
+      nextcloudData:
+        enabled: true
+        storageClass: ${nextcloud_data_storage_class_name}
+        size: ${nextcloud_data_size}
+        accessMode: ReadWriteMany
     resources:
       requests:
         cpu: 100m

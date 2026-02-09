@@ -1,0 +1,32 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: valkey
+  namespace: nextcloud
+spec:
+  interval: 10m0s
+  timeout: 10m0s
+  chart:
+    spec:
+      chart: valkey
+      version: 0.9.3
+      sourceRef:
+        kind: HelmRepository
+        name: valkey
+        namespace: nextcloud
+      interval: 10m0s
+  values:
+    auth:
+      enabled: true
+      usersExistingSecret: ${valkey_auth_secret_name}
+      aclUsers:
+        default:
+          permissions: "~* &* +@all"
+          passwordKey: redis-password
+    replica:
+      enabled: true
+      replicas: ${valkey_replica_count}
+      minReplicasToWrite: ${valkey_min_replicas_to_write}
+      persistence:
+        size: ${valkey_persistence_size}
+        storageClass: ${valkey_storage_class_name}
