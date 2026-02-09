@@ -17,7 +17,7 @@ spec:
       interval: 10m0s
   valuesFrom:
     - kind: ConfigMap
-      name: ceph-csi-values
+      name: ceph-csi-cephfs-values
       valuesKey: values.yaml
       optional: true
   values:
@@ -27,6 +27,8 @@ spec:
           - "${ceph_mon_hosts}"
     provisioner:
       replicaCount: 1
+      httpMetrics:
+        containerPort: 8083
     nodeplugin:
       httpMetrics:
         containerPort: 8082
