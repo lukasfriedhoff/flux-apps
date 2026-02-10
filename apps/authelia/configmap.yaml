@@ -28,6 +28,10 @@ data:
       rules:
         - domain: 'auth.${delegating_domain}'
           policy: bypass
+        - domain: '*.${delegating_domain}'
+          subject:
+            - 'user:testuser'
+          policy: one_factor
         - domain: 'dashboard.${delegating_domain}'
           subject:
             - 'group:traefik-admins'
