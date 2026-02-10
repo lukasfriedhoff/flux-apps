@@ -20,10 +20,11 @@ spec:
       - "--entrypoints.web.http.redirections.entrypoint.to=:443"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
-    podAnnotations:
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "9100"
-      prometheus.io/path: "/metrics"
+    deployment:
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/path: "/metrics"
     ports:
       websecure:
         http:
