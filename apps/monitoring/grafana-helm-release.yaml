@@ -63,7 +63,7 @@ spec:
         allow_assign_grafana_admin: true
         role_attribute_path: contains(groups[*], 'grafana-admins') && 'Admin' || contains(groups[*], 'grafana-users') && 'Editor' || 'Viewer'
     datasources:
-      datasources.yaml: |-
+      datasources.yaml:
         apiVersion: 1
         datasources:
           - name: Loki
