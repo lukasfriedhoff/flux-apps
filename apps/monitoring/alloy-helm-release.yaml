@@ -37,6 +37,48 @@ spec:
             role = "pod"
           }
 
+          discovery.relabel "pods" {
+            targets = discovery.kubernetes.pods.targets
+
+            rule {
+              action = "keep"
+              source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+              regex = "true"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+              target_label = "__metrics_path__"
+              regex = "(.+)"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
+              target_label = "__address__"
+              regex = "([^:]+)(?::\\d+)?;(\\d+)"
+              replacement = "$1:$2"
+            }
+
+            rule {
+              action = "labelmap"
+              regex = "__meta_kubernetes_pod_label_(.+)"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__meta_kubernetes_namespace"]
+              target_label = "namespace"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label = "pod"
+            }
+          }
+
           loki.source.kubernetes "pods" {
             targets = discovery.kubernetes.pods.targets
             forward_to = [loki.write.loki.receiver]
@@ -47,44 +89,10 @@ spec:
           }
 
           prometheus.scrape "pods" {
-            targets = discovery.kubernetes.pods.targets
+            targets = discovery.relabel.pods.output
             forward_to = [prometheus.remote_write.mimir.receiver]
             scrape_interval = "30s"
             scrape_timeout = "10s"
-            relabel_rules = [
-              {
-                action = "keep",
-                source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"],
-                regex = "true",
-              },
-              {
-                action = "replace",
-                source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"],
-                target_label = "__metrics_path__",
-                regex = "(.+)",
-              },
-              {
-                action = "replace",
-                source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"],
-                target_label = "__address__",
-                regex = "([^:]+)(?::\\d+)?;(\\d+)",
-                replacement = "$1:$2",
-              },
-              {
-                action = "labelmap",
-                regex = "__meta_kubernetes_pod_label_(.+)",
-              },
-              {
-                action = "replace",
-                source_labels = ["__meta_kubernetes_namespace"],
-                target_label = "namespace",
-              },
-              {
-                action = "replace",
-                source_labels = ["__meta_kubernetes_pod_name"],
-                target_label = "pod",
-              },
-            ]
           }
 
           loki.write "loki" {
