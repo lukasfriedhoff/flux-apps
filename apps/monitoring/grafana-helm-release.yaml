@@ -36,7 +36,6 @@ spec:
         external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
-        traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
       hosts:
         - grafana.${delegating_domain}
       tls:
@@ -54,6 +53,7 @@ spec:
         enabled: true
         name: Authelia
         allow_sign_up: true
+        auth_style: InHeader
         client_id: grafana
         client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
         scopes: openid profile email groups
