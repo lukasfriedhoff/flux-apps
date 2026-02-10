@@ -28,6 +28,10 @@ data:
       rules:
         - domain: 'auth.${delegating_domain}'
           policy: bypass
+        - domain: 'grafana.${delegating_domain}'
+          subject:
+            - 'user:testuser'
+          policy: one_factor
         - domain: 'dashboard.${delegating_domain}'
           subject:
             - 'group:traefik-admins'
@@ -127,7 +131,7 @@ data:
           - client_id: grafana
             client_name: Grafana
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.grafana.secret" | msquote }}
-            authorization_policy: two_factor
+            authorization_policy: one_factor
             consent_mode: implicit
             redirect_uris:
               - https://grafana.${delegating_domain}/login/generic_oauth
