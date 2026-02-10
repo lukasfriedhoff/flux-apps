@@ -35,6 +35,8 @@ spec:
             - nextcloud.${delegating_domain}
     nextcloud:
       host: nextcloud.${delegating_domain}
+      podSecurityContext:
+        fsGroupChangePolicy: OnRootMismatch
       extraEnv:
         - name: OVERWRITEHOST
           value: nextcloud.${delegating_domain}
