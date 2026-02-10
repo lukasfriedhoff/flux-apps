@@ -37,7 +37,7 @@ configMapGenerator:
       - kubernetes-mixin/proxy.json
       - kubernetes-mixin/scheduler.json
       - kubernetes-mixin/workload-total.json
-  - name: grafana-dashboard-observability
+  - name: grafana-dashboard-loki
     options:
       annotations:
         grafana_folder: Observability
@@ -46,10 +46,20 @@ configMapGenerator:
       - loki/loki-logs.json
       - loki/loki-reads.json
       - loki/loki-writes.json
+  - name: grafana-dashboard-mimir
+    options:
+      annotations:
+        grafana_folder: Observability
+    files:
       - mimir/mimir-overview.json
       - mimir/mimir-queries.json
       - mimir/mimir-reads.json
       - mimir/mimir-writes.json
+  - name: grafana-dashboard-tempo
+    options:
+      annotations:
+        grafana_folder: Observability
+    files:
       - tempo/tempo-operational.json
       - tempo/tempo-reads.json
       - tempo/tempo-writes.json
