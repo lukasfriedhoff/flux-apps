@@ -56,7 +56,6 @@ spec:
       serviceName: traefik
       otlp:
         enabled: true
-        grpc:
+        http:
           enabled: true
-          endpoint: alloy.monitoring.svc.cluster.local:4317
-          insecure: true
+          endpoint: http://alloy.monitoring.svc.cluster.local:4318/v1/traces
