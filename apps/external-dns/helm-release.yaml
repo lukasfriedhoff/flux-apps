@@ -28,7 +28,6 @@ spec:
     extraArgs:
       - --cloudflare-proxied
       - --metrics-address=0.0.0.0:7979
-      - --metrics-path=/metrics
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "7979"
