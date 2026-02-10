@@ -15,6 +15,12 @@ spec:
         namespace: nextcloud
       interval: 10m0s
   values:
+    replicaCount: ${nextcloud_hpa_min_pods}
+    hpa:
+      enabled: true
+      cputhreshold: ${nextcloud_hpa_cpu_threshold}
+      minPods: ${nextcloud_hpa_min_pods}
+      maxPods: ${nextcloud_hpa_max_pods}
     ingress:
       enabled: true
       className: traefik
@@ -79,6 +85,24 @@ spec:
             sleep 5
           done
       extraInitContainers:
+        - name: wait-nextcloud-app
+          image: alpine:3.20
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              for i in $(seq 1 60); do
+                if [ -f /var/www/html/.nextcloud-app-migrated ] || [ -f /var/www/html/config/config.php ]; then
+                  exit 0
+                fi
+                sleep 5
+              done
+              echo "Timed out waiting for Nextcloud app data migration." >&2
+              exit 1
+          volumeMounts:
+            - name: nextcloud-main
+              mountPath: /var/www/html
         - name: migrate-nextcloud-data
           image: alpine:3.20
           command:
@@ -129,8 +153,10 @@ spec:
       enabled: false
     persistence:
       enabled: true
-      storageClass: ${default_sts_storage_class_name}
-      size: 500Gi
+      existingClaim: nextcloud-app
+      storageClass: ${nextcloud_app_storage_class_name}
+      accessMode: ReadWriteMany
+      size: ${nextcloud_app_size}
       nextcloudData:
         enabled: true
         storageClass: ${nextcloud_data_storage_class_name}
