@@ -21,8 +21,36 @@ spec:
       valuesKey: values.yaml
   values:
     fullnameOverride: mimir
+    mimir:
+      structuredConfig:
+        common:
+          storage:
+            backend: s3
+            s3:
+              endpoint: ${monitoring_s3_endpoint}
+              region: ${monitoring_s3_region}
+              bucket_name: ${monitoring_mimir_bucket}
+              insecure: ${monitoring_s3_insecure}
+        blocks_storage:
+          backend: s3
+          s3:
+            endpoint: ${monitoring_s3_endpoint}
+            region: ${monitoring_s3_region}
+            bucket_name: ${monitoring_mimir_bucket}
+            insecure: ${monitoring_s3_insecure}
+        alertmanager_storage:
+          backend: s3
+          s3:
+            endpoint: ${monitoring_s3_endpoint}
+            region: ${monitoring_s3_region}
+            bucket_name: ${monitoring_mimir_bucket}
+            insecure: ${monitoring_s3_insecure}
+        ruler_storage:
+          backend: s3
+          s3:
+            endpoint: ${monitoring_s3_endpoint}
+            region: ${monitoring_s3_region}
+            bucket_name: ${monitoring_mimir_bucket}
+            insecure: ${monitoring_s3_insecure}
     minio:
-      enabled: true
-      persistence:
-        size: ${monitoring_minio_size}
-        storageClass: ${monitoring_minio_storage_class_name}
+      enabled: false

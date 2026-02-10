@@ -31,17 +31,10 @@ spec:
       trace:
         backend: s3
         s3:
-          bucket: tempo-traces
-          endpoint: tempo-minio.monitoring.svc.cluster.local:9000
+          bucket: ${monitoring_tempo_bucket}
+          endpoint: ${monitoring_s3_endpoint}
           region: ${monitoring_s3_region}
-          insecure: true
-          forcepathstyle: true
+          insecure: ${monitoring_s3_insecure}
+          forcepathstyle: ${monitoring_s3_force_path_style}
     minio:
-      enabled: true
-      buckets:
-        - name: tempo-traces
-          policy: none
-          purge: false
-      persistence:
-        size: ${monitoring_minio_size}
-        storageClass: ${monitoring_minio_storage_class_name}
+      enabled: false
