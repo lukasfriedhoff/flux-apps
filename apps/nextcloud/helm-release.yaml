@@ -76,6 +76,8 @@ spec:
           php /var/www/html/occ app:install -n richdocuments || true
           php /var/www/html/occ app:enable -n richdocuments
           php /var/www/html/occ app:disable -n richdocumentscode || true
+          php /var/www/html/occ app:remove -n richdocumentscode || true
+          php /var/www/html/occ config:app:set richdocuments disable_certificate_verification --value=no || true
           for i in 1 2 3 4 5; do
             if php /var/www/html/occ richdocuments:activate-config \
               --wopi-url="https://collabora.${delegating_domain}" \
