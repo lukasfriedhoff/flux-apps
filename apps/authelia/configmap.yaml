@@ -110,6 +110,7 @@ data:
             claims_policy: nextcloud
             redirect_uris:
               - https://nextcloud.${delegating_domain}/apps/oidc_login/oidc
+              - https://nextcloud.${delegating_domain}/index.php/apps/oidc_login/oidc
             scopes:
               - openid
               - profile
@@ -128,6 +129,7 @@ data:
             authorization_policy: two_factor
             redirect_uris:
               - https://grafana.${delegating_domain}/login/generic_oauth
+              - https://grafana.${delegating_domain}/login/generic_oauth/
             scopes:
               - openid
               - profile
