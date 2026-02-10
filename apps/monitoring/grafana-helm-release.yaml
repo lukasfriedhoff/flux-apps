@@ -1,0 +1,92 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  interval: 10m0s
+  timeout: 15m0s
+  chart:
+    spec:
+      chart: grafana
+      version: 11.1.0
+      sourceRef:
+        kind: HelmRepository
+        name: grafana-community
+        namespace: monitoring
+      interval: 10m0s
+  values:
+    fullnameOverride: grafana
+    admin:
+      existingSecret: grafana-admin
+      userKey: admin-user
+      passwordKey: admin-password
+    envValueFrom:
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET:
+        secretKeyRef:
+          name: grafana-oidc
+          key: client_secret
+    service:
+      type: ClusterIP
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+        external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+        traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
+      hosts:
+        - grafana.${delegating_domain}
+      tls:
+        - secretName: grafana-tls
+          hosts:
+            - grafana.${delegating_domain}
+    persistence:
+      enabled: true
+      storageClassName: ${monitoring_storage_class_name}
+      size: ${grafana_persistence_size}
+    grafana.ini:
+      server:
+        root_url: https://grafana.${delegating_domain}
+      auth.generic_oauth:
+        enabled: true
+        name: Authelia
+        allow_sign_up: true
+        client_id: grafana
+        client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
+        scopes: openid profile email groups
+        auth_url: https://auth.${delegating_domain}/api/oidc/authorization
+        token_url: https://auth.${delegating_domain}/api/oidc/token
+        api_url: https://auth.${delegating_domain}/api/oidc/userinfo
+        allow_assign_grafana_admin: true
+        role_attribute_path: contains(groups[*], 'grafana-admins') && 'Admin' || contains(groups[*], 'grafana-users') && 'Editor' || 'Viewer'
+    datasources:
+      datasources.yaml: |-
+        apiVersion: 1
+        datasources:
+          - name: Loki
+            uid: loki
+            type: loki
+            access: proxy
+            url: http://loki-gateway.monitoring.svc.cluster.local
+            jsonData:
+              maxLines: 1000
+          - name: Mimir
+            uid: mimir
+            type: prometheus
+            access: proxy
+            url: http://mimir-gateway.monitoring.svc.cluster.local/prometheus
+            isDefault: true
+          - name: Tempo
+            uid: tempo
+            type: tempo
+            access: proxy
+            url: http://tempo-query-frontend.monitoring.svc.cluster.local:3200
+            jsonData:
+              httpMethod: GET
+              serviceMap:
+                datasourceUid: mimir
+              tracesToLogs:
+                datasourceUid: loki

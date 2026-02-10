@@ -19,6 +19,10 @@ spec:
     replicaCount: 1
     autoscaling:
       enabled: false
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9980"
+      prometheus.io/path: "/cool/getMetrics"
     collabora:
       extra_params: --o:ssl.enable=false --o:ssl.termination=true
       server_name: collabora.${delegating_domain}

@@ -19,3 +19,9 @@ spec:
       watchGlobally: true
       reloadOnCreate: true
       reloadOnDelete: true
+      deployment:
+        pod:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "9090"
+            prometheus.io/path: "/metrics"

@@ -1,0 +1,59 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: loki
+  namespace: monitoring
+spec:
+  interval: 10m0s
+  timeout: 15m0s
+  chart:
+    spec:
+      chart: loki
+      version: 6.52.0
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: monitoring
+      interval: 10m0s
+  valuesFrom:
+    - kind: Secret
+      name: loki-values
+      valuesKey: values.yaml
+  values:
+    fullnameOverride: loki
+    deploymentMode: SimpleScalable
+    loki:
+      auth_enabled: false
+      commonConfig:
+        replication_factor: ${loki_replication_factor}
+      schemaConfig:
+        configs:
+          - from: "2024-01-01"
+            store: tsdb
+            object_store: s3
+            schema: v13
+            index:
+              prefix: loki_index_
+              period: 24h
+      storage:
+        type: s3
+        bucketNames:
+          chunks: chunks
+          ruler: ruler
+          admin: admin
+        s3:
+          endpoint: loki-minio.monitoring.svc.cluster.local:9000
+          region: ${monitoring_s3_region}
+          s3ForcePathStyle: true
+          insecure: true
+    read:
+      replicas: ${loki_read_replicas}
+    write:
+      replicas: ${loki_write_replicas}
+    backend:
+      replicas: ${loki_backend_replicas}
+    minio:
+      enabled: true
+      persistence:
+        size: ${monitoring_minio_size}
+        storageClass: ${monitoring_minio_storage_class_name}

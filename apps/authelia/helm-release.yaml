@@ -55,6 +55,10 @@ spec:
           hmac_secret:
             secret_name: authelia-oidc
             path: identity_providers.oidc.hmac.key
+      telemetry:
+        metrics:
+          enabled: true
+          port: 9959
     secret:
       existingSecret: authelia-secrets
       additionalSecrets:
@@ -63,6 +67,9 @@ spec:
     pod:
       annotations:
         reloader.stakater.com/auto: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9959"
+        prometheus.io/path: "/metrics"
       env:
         - name: AUTHELIA_NOTIFIER_SMTP_USERNAME
           valueFrom:
