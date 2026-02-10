@@ -1,0 +1,101 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+
+configMapGenerator:
+  - name: grafana-dashboard-kubernetes
+    options:
+      annotations:
+        grafana_folder: Kubernetes
+    files:
+      - kubernetes-mixin/apiserver.json
+      - kubernetes-mixin/cluster-total.json
+      - kubernetes-mixin/controller-manager.json
+      - kubernetes-mixin/k8s-resources-cluster.json
+      - kubernetes-mixin/k8s-resources-namespace.json
+      - kubernetes-mixin/k8s-resources-node.json
+      - kubernetes-mixin/k8s-resources-pod.json
+      - kubernetes-mixin/k8s-resources-windows-cluster.json
+      - kubernetes-mixin/k8s-resources-windows-namespace.json
+      - kubernetes-mixin/k8s-resources-windows-pod.json
+      - kubernetes-mixin/k8s-resources-workload.json
+      - kubernetes-mixin/k8s-resources-workloads-namespace.json
+      - kubernetes-mixin/k8s-windows-cluster-rsrc-use.json
+      - kubernetes-mixin/k8s-windows-node-rsrc-use.json
+      - kubernetes-mixin/kubelet.json
+      - kubernetes-mixin/namespace-by-pod.json
+      - kubernetes-mixin/namespace-by-workload.json
+      - kubernetes-mixin/persistentvolumesusage.json
+      - kubernetes-mixin/pod-total.json
+      - kubernetes-mixin/proxy.json
+      - kubernetes-mixin/scheduler.json
+      - kubernetes-mixin/workload-total.json
+  - name: grafana-dashboard-observability
+    options:
+      annotations:
+        grafana_folder: Observability
+    files:
+      - loki/loki-operational.json
+      - loki/loki-logs.json
+      - loki/loki-reads.json
+      - loki/loki-writes.json
+      - mimir/mimir-overview.json
+      - mimir/mimir-queries.json
+      - mimir/mimir-reads.json
+      - mimir/mimir-writes.json
+      - tempo/tempo-operational.json
+      - tempo/tempo-reads.json
+      - tempo/tempo-writes.json
+      - tempo/tempo-resources.json
+  - name: grafana-dashboard-traefik
+    options:
+      annotations:
+        grafana_folder: Networking
+    files:
+      - traefik/traefik.json
+  - name: grafana-dashboard-authelia
+    options:
+      annotations:
+        grafana_folder: Apps
+    files:
+      - authelia/authelia.json
+  - name: grafana-dashboard-cert-manager
+    options:
+      annotations:
+        grafana_folder: Apps
+    files:
+      - cert-manager/cert-manager.json
+  - name: grafana-dashboard-nextcloud
+    options:
+      annotations:
+        grafana_folder: Apps
+    files:
+      - nextcloud/nextcloud.json
+  - name: grafana-dashboard-cloudnative-pg
+    options:
+      annotations:
+        grafana_folder: Databases
+    files:
+      - cloudnative-pg/cloudnative-pg.json
+  - name: grafana-dashboard-valkey
+    options:
+      annotations:
+        grafana_folder: Databases
+    files:
+      - valkey/redis.json
+  - name: grafana-dashboard-ceph
+    options:
+      annotations:
+        grafana_folder: Storage
+    files:
+      - ceph/ceph-cluster.json
+      - ceph/ceph-cluster-advanced.json
+      - ceph/cephfsdashboard.json
+      - ceph/rbd-overview.json
+      - ceph/osds-overview.json
+      - ceph/pool-overview.json
+      - ceph/radosgw-overview.json
