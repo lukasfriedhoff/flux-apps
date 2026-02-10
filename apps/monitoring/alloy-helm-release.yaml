@@ -55,34 +55,34 @@ spec:
               {
                 action = "keep",
                 source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"],
-                regex = "true",
+                regex = "true"
               },
               {
                 action = "replace",
                 source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"],
                 target_label = "__metrics_path__",
-                regex = "(.+)",
+                regex = "(.+)"
               },
               {
                 action = "replace",
                 source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"],
                 target_label = "__address__",
                 regex = "([^:]+)(?::\\d+)?;(\\d+)",
-                replacement = "$1:$2",
+                replacement = "$1:$2"
               },
               {
                 action = "labelmap",
-                regex = "__meta_kubernetes_pod_label_(.+)",
+                regex = "__meta_kubernetes_pod_label_(.+)"
               },
               {
                 action = "replace",
                 source_labels = ["__meta_kubernetes_namespace"],
-                target_label = "namespace",
+                target_label = "namespace"
               },
               {
                 action = "replace",
                 source_labels = ["__meta_kubernetes_pod_name"],
-                target_label = "pod",
+                target_label = "pod"
               }
             ]
           }
