@@ -168,3 +168,5 @@ spec:
         memory: 256Mi
       limits:
         memory: 1Gi
+    startupProbe:
+      enabled: true
