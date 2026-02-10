@@ -164,9 +164,9 @@ spec:
         accessMode: ReadWriteMany
     resources:
       requests:
-        cpu: 100m
-        memory: 256Mi
+        cpu: ${nextcloud_resources_requests_cpu}
+        memory: ${nextcloud_resources_requests_memory}
       limits:
-        memory: 1Gi
+        memory: ${nextcloud_resources_limits_memory}
     startupProbe:
       enabled: true
