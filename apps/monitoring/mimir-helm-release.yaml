@@ -29,28 +29,28 @@ spec:
             s3:
               endpoint: ${monitoring_s3_endpoint}
               region: ${monitoring_s3_region}
-              bucket_name: ${monitoring_mimir_bucket}
+              bucket_name: ${monitoring_mimir_blocks_bucket}
               insecure: ${monitoring_s3_insecure}
         blocks_storage:
           backend: s3
           s3:
             endpoint: ${monitoring_s3_endpoint}
             region: ${monitoring_s3_region}
-            bucket_name: ${monitoring_mimir_bucket}
+            bucket_name: ${monitoring_mimir_blocks_bucket}
             insecure: ${monitoring_s3_insecure}
         alertmanager_storage:
           backend: s3
           s3:
             endpoint: ${monitoring_s3_endpoint}
             region: ${monitoring_s3_region}
-            bucket_name: ${monitoring_mimir_bucket}
+            bucket_name: ${monitoring_mimir_alertmanager_bucket}
             insecure: ${monitoring_s3_insecure}
         ruler_storage:
           backend: s3
           s3:
             endpoint: ${monitoring_s3_endpoint}
             region: ${monitoring_s3_region}
-            bucket_name: ${monitoring_mimir_bucket}
+            bucket_name: ${monitoring_mimir_ruler_bucket}
             insecure: ${monitoring_s3_insecure}
     minio:
       enabled: false
