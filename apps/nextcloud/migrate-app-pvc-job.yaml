@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-app-migrate
+  namespace: nextcloud
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: alpine:3.20
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              if [ -f /dest/.nextcloud-app-migrated ]; then
+                echo "Nextcloud app data already migrated."
+                exit 0
+              fi
+              if [ ! -d /src/config ]; then
+                echo "No legacy app data found, initializing empty app volume."
+                mkdir -p /dest/config /dest/custom_apps /dest/themes
+                touch /dest/.nextcloud-app-migrated
+                chmod 0770 /dest /dest/config /dest/custom_apps /dest/themes
+                exit 0
+              fi
+              echo "Migrating Nextcloud app data to CephFS..."
+              mkdir -p /dest/config /dest/custom_apps /dest/themes
+              cp -a /src/config/. /dest/config/
+              if [ -d /src/custom_apps ]; then
+                cp -a /src/custom_apps/. /dest/custom_apps/
+              fi
+              if [ -d /src/themes ]; then
+                cp -a /src/themes/. /dest/themes/
+              fi
+              touch /dest/.nextcloud-app-migrated
+              chmod 0770 /dest /dest/config /dest/custom_apps /dest/themes
+          volumeMounts:
+            - name: legacy-app
+              mountPath: /src
+            - name: nextcloud-app
+              mountPath: /dest
+      volumes:
+        - name: legacy-app
+          persistentVolumeClaim:
+            claimName: nextcloud-nextcloud
+        - name: nextcloud-app
+          persistentVolumeClaim:
+            claimName: nextcloud-app
