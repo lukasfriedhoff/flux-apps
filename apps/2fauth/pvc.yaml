@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: 2fauth-data
+  namespace: 2fauth
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${default_sts_storage_class_name}
+  resources:
+    requests:
+      storage: 1Gi
