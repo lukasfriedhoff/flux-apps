@@ -18,18 +18,53 @@ data:
       file:
         path: /config/users_database.yml
 
+    definitions:
+      user_attributes:
+        nextcloud_is_admin:
+          expression: '"nextcloud-admins" in groups'
+
     access_control:
       default_policy: deny
       rules:
         - domain: 'auth.${delegating_domain}'
           policy: bypass
+        - domain: 'dashboard.${delegating_domain}'
+          subject:
+            - 'group:traefik-admins'
+            - 'group:traefik-users'
+          policy: two_factor
+        - domain: 'grafana.${delegating_domain}'
+          subject:
+            - 'group:grafana-admins'
+            - 'group:grafana-users'
+          policy: two_factor
+        - domain: 'metrics.${delegating_domain}'
+          subject:
+            - 'group:mimir-admins'
+            - 'group:mimir-users'
+          policy: two_factor
+        - domain: 'logs.${delegating_domain}'
+          subject:
+            - 'group:loki-admins'
+            - 'group:loki-users'
+          policy: two_factor
+        - domain: 'traces.${delegating_domain}'
+          subject:
+            - 'group:tempo-admins'
+            - 'group:tempo-users'
+          policy: two_factor
+        - domain: 'nextcloud.${delegating_domain}'
+          subject:
+            - 'group:nextcloud-admins'
+            - 'group:nextcloud-users'
+          policy: two_factor
         - domain: 'collabora.${delegating_domain}'
           resources:
             - '^/cool/adminws/'
             - '^/cool/getMetrics'
             - '^/browser/dist/admin/'
           subject:
-            - 'group:admins'
+            - 'group:collabora-admins'
           policy: two_factor
         - domain: 'collabora.${delegating_domain}'
           resources:
@@ -53,6 +88,16 @@ data:
 
     identity_providers:
       oidc:
+        claims_policies:
+          nextcloud:
+            custom_claims:
+              nextcloud_is_admin:
+                name: is_admin
+                attribute: nextcloud_is_admin
+        scopes:
+          nextcloud_admin:
+            claims:
+              - is_admin
         jwks:
           - key: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.jwks.rsa.2048.key" | mindent 14 "|" | msquote }}
             algorithm: 'RS256'
@@ -62,6 +107,7 @@ data:
             client_name: Nextcloud
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.nextcloud.secret" | msquote }}
             authorization_policy: two_factor
+            claims_policy: nextcloud
             redirect_uris:
               - https://nextcloud.${delegating_domain}/apps/oidc_login/oidc
             scopes:
@@ -70,6 +116,23 @@ data:
               - email
               - groups
               - offline_access
+              - nextcloud_admin
+            grant_types:
+              - authorization_code
+              - refresh_token
+            response_types:
+              - code
+          - client_id: grafana
+            client_name: Grafana
+            client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.grafana.secret" | msquote }}
+            authorization_policy: two_factor
+            redirect_uris:
+              - https://grafana.${delegating_domain}/login/generic_oauth
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
             grant_types:
               - authorization_code
               - refresh_token

@@ -8,3 +8,6 @@
   - prefer CephFS for shared RWX data that must be accessed by multiple pods (e.g., Nextcloud user data, scale-out file shares).
   - local-path is only for dev/test or truly ephemeral data.
   - scaling Nextcloud beyond 1 replica requires shared writable storage for data (and ideally config/custom_apps), so CephFS or object storage is needed.
+- while integrating new apps, always focus on scalability by default
+- never use bitnami charts or images
+- avoid deprecated charts

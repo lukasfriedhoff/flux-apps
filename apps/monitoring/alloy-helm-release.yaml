@@ -1,0 +1,126 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: alloy
+  namespace: monitoring
+spec:
+  interval: 10m0s
+  timeout: 10m0s
+  chart:
+    spec:
+      chart: alloy
+      version: 1.6.0
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: monitoring
+      interval: 10m0s
+  values:
+    fullnameOverride: alloy
+    alloy:
+      extraPorts:
+        - name: otlp-grpc
+          port: 4317
+          targetPort: 4317
+          protocol: TCP
+        - name: otlp-http
+          port: 4318
+          targetPort: 4318
+          protocol: TCP
+      configMap:
+        content: |-
+          logging {
+            level = "info"
+          }
+
+          discovery.kubernetes "pods" {
+            role = "pod"
+          }
+
+          loki.source.kubernetes "pods" {
+            targets = discovery.kubernetes.pods.targets
+            forward_to = [loki.write.loki.receiver]
+          }
+
+          loki.source.kubernetes_events "events" {
+            forward_to = [loki.write.loki.receiver]
+          }
+
+          prometheus.scrape "pods" {
+            targets = discovery.kubernetes.pods.targets
+            forward_to = [prometheus.remote_write.mimir.receiver]
+            scrape_interval = "30s"
+            scrape_timeout = "10s"
+            relabel_rules = [
+              {
+                action = "keep"
+                source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+                regex = "true"
+              },
+              {
+                action = "replace"
+                source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+                target_label = "__metrics_path__"
+                regex = "(.+)"
+              },
+              {
+                action = "replace"
+                source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
+                target_label = "__address__"
+                regex = "([^:]+)(?::\\d+)?;(\\d+)"
+                replacement = "$1:$2"
+              },
+              {
+                action = "labelmap"
+                regex = "__meta_kubernetes_pod_label_(.+)"
+              },
+              {
+                action = "replace"
+                source_labels = ["__meta_kubernetes_namespace"]
+                target_label = "namespace"
+              },
+              {
+                action = "replace"
+                source_labels = ["__meta_kubernetes_pod_name"]
+                target_label = "pod"
+              }
+            ]
+          }
+
+          loki.write "loki" {
+            endpoint {
+              url = "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
+            }
+          }
+
+          prometheus.remote_write "mimir" {
+            endpoint {
+              url = "http://mimir-gateway.monitoring.svc.cluster.local/api/v1/push"
+            }
+          }
+
+          otelcol.receiver.otlp "default" {
+            grpc {
+              endpoint = "0.0.0.0:4317"
+            }
+            http {
+              endpoint = "0.0.0.0:4318"
+            }
+          }
+
+          otelcol.processor.batch "default" {}
+
+          otelcol.exporter.otlp "tempo" {
+            client {
+              endpoint = "tempo-distributor.monitoring.svc.cluster.local:4317"
+              tls {
+                insecure = true
+              }
+            }
+          }
+
+          otelcol.service "traces" {
+            pipelines {
+              traces = [otelcol.receiver.otlp.default, otelcol.processor.batch.default, otelcol.exporter.otlp.tempo]
+            }
+          }

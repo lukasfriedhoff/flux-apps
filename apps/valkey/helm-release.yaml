@@ -16,6 +16,10 @@ spec:
         namespace: nextcloud
       interval: 10m0s
   values:
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9121"
+      prometheus.io/path: "/metrics"
     auth:
       enabled: true
       usersExistingSecret: ${valkey_auth_secret_name}
@@ -30,3 +34,11 @@ spec:
       persistence:
         size: ${valkey_persistence_size}
         storageClass: ${valkey_storage_class_name}
+    metrics:
+      enabled: true
+      service:
+        enabled: true
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "9121"
+          prometheus.io/path: "/metrics"
