@@ -23,4 +23,9 @@ data:
         originRequest:
           originServerName: dashboard.${delegating_domain}
           httpHostHeader: dashboard.${delegating_domain}
+      - hostname: collabora.${delegating_domain}
+        service: https://traefik.traefik.svc.cluster.local:443
+        originRequest:
+          originServerName: collabora.${delegating_domain}
+          httpHostHeader: collabora.${delegating_domain}
       - service: http_status:404
