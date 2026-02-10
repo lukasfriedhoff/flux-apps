@@ -38,14 +38,14 @@ spec:
       storage:
         type: s3
         bucketNames:
-          chunks: chunks
-          ruler: ruler
-          admin: admin
+          chunks: ${monitoring_loki_bucket}
+          ruler: ${monitoring_loki_bucket}
+          admin: ${monitoring_loki_bucket}
         s3:
-          endpoint: loki-minio.monitoring.svc.cluster.local:9000
+          endpoint: ${monitoring_s3_endpoint}
           region: ${monitoring_s3_region}
-          s3ForcePathStyle: true
-          insecure: true
+          s3ForcePathStyle: ${monitoring_s3_force_path_style}
+          insecure: ${monitoring_s3_insecure}
     read:
       replicas: ${loki_read_replicas}
     write:
@@ -53,7 +53,4 @@ spec:
     backend:
       replicas: ${loki_backend_replicas}
     minio:
-      enabled: true
-      persistence:
-        size: ${monitoring_minio_size}
-        storageClass: ${monitoring_minio_storage_class_name}
+      enabled: false
