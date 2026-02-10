@@ -4,3 +4,4 @@ resources:
   - helm-repo.yaml
   - helm-release.yaml
   - dashboard.yaml
+  - wildcard-tls.yaml
