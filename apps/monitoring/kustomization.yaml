@@ -8,3 +8,4 @@ resources:
   - tempo-helm-release.yaml
   - alloy-helm-release.yaml
   - ingress-ingest.yaml
+  - dashboards

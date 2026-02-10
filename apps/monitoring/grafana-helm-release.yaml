@@ -94,3 +94,12 @@ spec:
                 datasourceUid: mimir
               tracesToLogs:
                 datasourceUid: loki
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: monitoring
+        folderAnnotation: grafana_folder
+        provider:
+          foldersFromFilesStructure: false
