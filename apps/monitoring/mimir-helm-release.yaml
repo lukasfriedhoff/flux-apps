@@ -21,9 +21,6 @@ spec:
       valuesKey: values.yaml
   values:
     fullnameOverride: mimir
-    mimir:
-      structuredConfig:
-        auth_enabled: false
     minio:
       enabled: true
       persistence:
