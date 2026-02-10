@@ -106,9 +106,16 @@ spec:
             http {
               endpoint = "0.0.0.0:4318"
             }
+            output {
+              traces = [otelcol.processor.batch.default.input]
+            }
           }
 
-          otelcol.processor.batch "default" {}
+          otelcol.processor.batch "default" {
+            output {
+              traces = [otelcol.exporter.otlp.tempo.input]
+            }
+          }
 
           otelcol.exporter.otlp "tempo" {
             client {
@@ -116,11 +123,5 @@ spec:
               tls {
                 insecure = true
               }
-            }
-          }
-
-          otelcol.service "traces" {
-            pipelines {
-              traces = [otelcol.receiver.otlp.default, otelcol.processor.batch.default, otelcol.exporter.otlp.tempo]
             }
           }
