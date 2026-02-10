@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: 2fauth
-  namespace: 2fauth
+  name: twofauth
+  namespace: twofauth
   annotations:
     cert-manager.io/cluster-issuer: ${default_cluster_issuer}
     external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
@@ -11,17 +11,17 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: 2fauth.${delegating_domain}
+    - host: twofauth.${delegating_domain}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: 2fauth
+                name: twofauth
                 port:
                   number: 80
   tls:
-    - secretName: 2fauth-tls
+    - secretName: twofauth-tls
       hosts:
-        - 2fauth.${delegating_domain}
+        - twofauth.${delegating_domain}
