@@ -1,0 +1,127 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: qbittorrent
+  namespace: media
+spec:
+  interval: 10m0s
+  timeout: 10m0s
+  chart:
+    spec:
+      chart: app-template
+      version: 4.6.2
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: media
+      interval: 10m0s
+  values:
+    controllers:
+      main:
+        initContainers:
+          seed-config:
+            image:
+              repository: alpine
+              tag: 3.20
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                if [ ! -f /config/qBittorrent/qBittorrent.conf ]; then
+                  mkdir -p /config/qBittorrent
+                  cp /config-template/qBittorrent.conf /config/qBittorrent/qBittorrent.conf
+                fi
+            volumeMounts:
+              - name: config
+                mountPath: /config
+              - name: config-template
+                mountPath: /config-template/qBittorrent.conf
+                subPath: qBittorrent.conf
+        containers:
+          gluetun:
+            image:
+              repository: qmcgaw/gluetun
+              tag: v3.40.0
+            env:
+              TZ: ${media_timezone}
+              VPN_SERVICE_PROVIDER: protonvpn
+              OPENVPN_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: openvpn_user
+              OPENVPN_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: openvpn_password
+              SERVER_COUNTRIES: ${protonvpn_server_countries}
+              FIREWALL_INPUT_PORTS: "8080,6881"
+              FIREWALL_OUTBOUND_SUBNETS: "${k8s_pod_cidr},${k8s_service_cidr}"
+            securityContext:
+              capabilities:
+                add:
+                  - NET_ADMIN
+              privileged: true
+          main:
+            image:
+              repository: lscr.io/linuxserver/qbittorrent
+              tag: 5.1.4
+            env:
+              TZ: ${media_timezone}
+              PUID: ${media_puid}
+              PGID: ${media_pgid}
+              WEBUI_PORT: "8080"
+              TORRENTING_PORT: "6881"
+    service:
+      main:
+        ports:
+          http:
+            port: 8080
+    ingress:
+      main:
+        enabled: true
+        className: traefik
+        annotations:
+          cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+          external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: "true"
+          traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
+        hosts:
+          - host: qbittorrent.${delegating_domain}
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - secretName: qbittorrent-tls
+            hosts:
+              - qbittorrent.${delegating_domain}
+    persistence:
+      config:
+        enabled: true
+        accessMode: ReadWriteOnce
+        storageClass: ${arr_config_storage_class_name}
+        size: ${arr_config_size}
+        globalMounts:
+          - path: /config
+      downloads:
+        enabled: true
+        existingClaim: arr-downloads
+        globalMounts:
+          - path: /downloads
+      config-template:
+        enabled: true
+        type: configMap
+        name: qbittorrent-config
+        globalMounts:
+          - path: /config-template/qBittorrent.conf
+            subPath: qBittorrent.conf
+      tun:
+        enabled: true
+        type: hostPath
+        hostPath: /dev/net/tun
+        hostPathType: CharDevice
+        globalMounts:
+          - path: /dev/net/tun

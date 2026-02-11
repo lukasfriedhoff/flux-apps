@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recyclarr-config
+  namespace: media
+data:
+  recyclarr.yml: |-
+    # yaml-language-server: $schema=https://raw.githubusercontent.com/recyclarr/recyclarr/master/schemas/config-schema.json
+    sonarr:
+      sonarr:
+        base_url: !secret sonarr_base_url
+        api_key: !secret sonarr_api_key
+    radarr:
+      radarr:
+        base_url: !secret radarr_base_url
+        api_key: !secret radarr_api_key

@@ -1,0 +1,59 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyseerr
+  namespace: media
+spec:
+  interval: 10m0s
+  timeout: 10m0s
+  chart:
+    spec:
+      chart: app-template
+      version: 4.6.2
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: media
+      interval: 10m0s
+  values:
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              repository: ghcr.io/fallenbagel/jellyseerr
+              tag: v2.7.3
+            env:
+              TZ: ${media_timezone}
+    service:
+      main:
+        ports:
+          http:
+            port: 5055
+    ingress:
+      main:
+        enabled: true
+        className: traefik
+        annotations:
+          cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+          external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: "true"
+          traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
+        hosts:
+          - host: jellyseerr.${delegating_domain}
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - secretName: jellyseerr-tls
+            hosts:
+              - jellyseerr.${delegating_domain}
+    persistence:
+      config:
+        enabled: true
+        accessMode: ReadWriteOnce
+        storageClass: ${arr_config_storage_class_name}
+        size: ${arr_config_size}
+        globalMounts:
+          - path: /app/config

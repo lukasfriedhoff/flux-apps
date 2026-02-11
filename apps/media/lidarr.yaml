@@ -1,0 +1,71 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: lidarr
+  namespace: media
+spec:
+  interval: 10m0s
+  timeout: 10m0s
+  chart:
+    spec:
+      chart: app-template
+      version: 4.6.2
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: media
+      interval: 10m0s
+  values:
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              repository: lscr.io/linuxserver/lidarr
+              tag: 3.1.0
+            env:
+              TZ: ${media_timezone}
+              PUID: ${media_puid}
+              PGID: ${media_pgid}
+    service:
+      main:
+        ports:
+          http:
+            port: 8686
+    ingress:
+      main:
+        enabled: true
+        className: traefik
+        annotations:
+          cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+          external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: "true"
+          traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
+        hosts:
+          - host: lidarr.${delegating_domain}
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - secretName: lidarr-tls
+            hosts:
+              - lidarr.${delegating_domain}
+    persistence:
+      config:
+        enabled: true
+        accessMode: ReadWriteOnce
+        storageClass: ${arr_config_storage_class_name}
+        size: ${arr_config_size}
+        globalMounts:
+          - path: /config
+      downloads:
+        enabled: true
+        existingClaim: arr-downloads
+        globalMounts:
+          - path: /downloads
+      media:
+        enabled: true
+        existingClaim: arr-media
+        globalMounts:
+          - path: /media
