@@ -21,7 +21,7 @@ spec:
         containers:
           main:
             image:
-              repository: lscr.io/linuxserver/readarr
+              repository: lsiodev/readarr
               tag: develop
             env:
               TZ: ${media_timezone}
