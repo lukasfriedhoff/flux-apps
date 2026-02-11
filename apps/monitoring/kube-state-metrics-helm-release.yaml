@@ -1,20 +1,22 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: cnpg
-  namespace: cnpg-system
+  name: kube-state-metrics
+  namespace: monitoring
 spec:
   interval: 10m0s
   timeout: 10m0s
   chart:
     spec:
-      chart: cloudnative-pg
+      chart: kube-state-metrics
+      version: 7.1.0
       sourceRef:
         kind: HelmRepository
-        name: cnpg
-        namespace: cnpg-system
+        name: prometheus-community
+        namespace: monitoring
       interval: 10m0s
   values:
+    fullnameOverride: kube-state-metrics
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "8080"

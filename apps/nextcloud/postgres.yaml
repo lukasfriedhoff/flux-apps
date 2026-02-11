@@ -6,6 +6,11 @@ metadata:
 spec:
   instances: 1
   primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
   storage:
     storageClass: ${default_sts_storage_class_name}
     size: 10Gi
