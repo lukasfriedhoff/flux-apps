@@ -22,7 +22,7 @@ spec:
           main:
             image:
               repository: lscr.io/linuxserver/readarr
-              tag: nightly
+              tag: develop
             env:
               TZ: ${media_timezone}
               PUID: ${media_puid}

@@ -22,7 +22,7 @@ spec:
           main:
             image:
               repository: ghcr.io/fallenbagel/jellyseerr
-              tag: v2.7.3
+              tag: 2.7.3
             env:
               TZ: ${media_timezone}
     service:

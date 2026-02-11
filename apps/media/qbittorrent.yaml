@@ -100,10 +100,6 @@ spec:
         size: ${arr_config_size}
         globalMounts:
           - path: /config
-        advancedMounts:
-          main:
-            seed-config:
-              - path: /config
       downloads:
         enabled: true
         existingClaim: arr-downloads
@@ -116,11 +112,6 @@ spec:
         globalMounts:
           - path: /config-template/qBittorrent.conf
             subPath: qBittorrent.conf
-        advancedMounts:
-          main:
-            seed-config:
-              - path: /config-template/qBittorrent.conf
-                subPath: qBittorrent.conf
       tun:
         enabled: true
         type: hostPath
