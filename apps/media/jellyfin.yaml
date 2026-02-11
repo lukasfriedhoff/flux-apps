@@ -59,6 +59,13 @@ spec:
         size: ${arr_config_size}
         globalMounts:
           - path: /config
+      sso-config:
+        enabled: true
+        type: secret
+        name: jellyfin-sso
+        globalMounts:
+          - path: /config/plugins/configurations/SSO-Auth.xml
+            subPath: SSO-Auth.xml
       media:
         enabled: true
         existingClaim: arr-media
