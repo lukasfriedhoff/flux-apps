@@ -28,10 +28,25 @@ spec:
               - -c
               - |
                 set -e
+                mkdir -p /config/qBittorrent
                 if [ ! -f /config/qBittorrent/qBittorrent.conf ]; then
-                  mkdir -p /config/qBittorrent
                   cp /config-template/qBittorrent.conf /config/qBittorrent/qBittorrent.conf
                 fi
+
+                config=/config/qBittorrent/qBittorrent.conf
+                ensure_pref() {
+                  key="$1"
+                  value="$2"
+                  if grep -q "^${key}=" "$config"; then
+                    sed -i "s|^${key}=.*|${key}=${value}|" "$config"
+                  else
+                    echo "${key}=${value}" >> "$config"
+                  fi
+                }
+
+                ensure_pref 'WebUI\\Authentication\\Enabled' 'false'
+                ensure_pref 'WebUI\\BypassAuthSubnetWhitelistEnabled' 'true'
+                ensure_pref 'WebUI\\BypassAuthSubnetWhitelist' '${k8s_pod_cidr},${k8s_service_cidr}'
         containers:
           gluetun:
             image:
