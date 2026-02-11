@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - helm-repo.yaml
   - grafana-helm-release.yaml
+  - kube-state-metrics-helm-release.yaml
+  - node-exporter-helm-release.yaml
   - loki-helm-release.yaml
   - mimir-helm-release.yaml
   - tempo-helm-release.yaml

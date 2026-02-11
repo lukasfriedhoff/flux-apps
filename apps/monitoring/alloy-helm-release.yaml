@@ -95,6 +95,16 @@ spec:
             scrape_timeout = "10s"
           }
 
+          prometheus.scrape "ceph" {
+            targets = [
+              { "__address__" = "${ceph_mgr_prometheus_endpoint}" },
+            ]
+            forward_to = [prometheus.remote_write.mimir.receiver]
+            job_name = "ceph"
+            scrape_interval = "30s"
+            scrape_timeout = "10s"
+          }
+
           loki.write "loki" {
             endpoint {
               url = "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
