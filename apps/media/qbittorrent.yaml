@@ -32,12 +32,6 @@ spec:
                   mkdir -p /config/qBittorrent
                   cp /config-template/qBittorrent.conf /config/qBittorrent/qBittorrent.conf
                 fi
-            volumeMounts:
-              - name: config
-                mountPath: /config
-              - name: config-template
-                mountPath: /config-template/qBittorrent.conf
-                subPath: qBittorrent.conf
         containers:
           gluetun:
             image:
@@ -106,6 +100,10 @@ spec:
         size: ${arr_config_size}
         globalMounts:
           - path: /config
+        advancedMounts:
+          main:
+            seed-config:
+              - path: /config
       downloads:
         enabled: true
         existingClaim: arr-downloads
@@ -118,6 +116,11 @@ spec:
         globalMounts:
           - path: /config-template/qBittorrent.conf
             subPath: qBittorrent.conf
+        advancedMounts:
+          main:
+            seed-config:
+              - path: /config-template/qBittorrent.conf
+                subPath: qBittorrent.conf
       tun:
         enabled: true
         type: hostPath
