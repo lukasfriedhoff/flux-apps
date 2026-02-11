@@ -37,10 +37,10 @@ spec:
                 ensure_pref() {
                   key="$1"
                   value="$2"
-                  if grep -q "^${key}=" "$config"; then
-                    sed -i "s|^${key}=.*|${key}=${value}|" "$config"
+                  if grep -q "^$key=" "$config"; then
+                    sed -i "s|^$key=.*|$key=$value|" "$config"
                   else
-                    echo "${key}=${value}" >> "$config"
+                    echo "$key=$value" >> "$config"
                   fi
                 }
 
