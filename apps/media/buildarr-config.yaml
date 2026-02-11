@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: buildarr-config
+  namespace: media
+data:
+  buildarr.yml: |-
+    ---
+    includes:
+      - buildarr-secret.yml
+
+    buildarr:
+      watch_config: false
+      update_days:
+        - monday
+        - tuesday
+        - wednesday
+        - thursday
+        - friday
+        - saturday
+        - sunday
+      update_times:
+        - "03:00"
+
+    sonarr:
+      hostname: sonarr.media.svc.cluster.local
+      port: 8989
+      protocol: http
+
+    radarr:
+      hostname: radarr.media.svc.cluster.local
+      port: 7878
+      protocol: http

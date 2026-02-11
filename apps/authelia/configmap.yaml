@@ -76,6 +76,51 @@ data:
             - '^/cool/getMetrics'
             - '^/browser/dist/admin/'
           policy: deny
+        - domain: 'qbittorrent.${delegating_domain}'
+          subject:
+            - 'group:qbittorrent-admins'
+            - 'group:qbittorrent-users'
+          policy: two_factor
+        - domain: 'prowlarr.${delegating_domain}'
+          subject:
+            - 'group:prowlarr-admins'
+            - 'group:prowlarr-users'
+          policy: two_factor
+        - domain: 'sonarr.${delegating_domain}'
+          subject:
+            - 'group:sonarr-admins'
+            - 'group:sonarr-users'
+          policy: two_factor
+        - domain: 'radarr.${delegating_domain}'
+          subject:
+            - 'group:radarr-admins'
+            - 'group:radarr-users'
+          policy: two_factor
+        - domain: 'lidarr.${delegating_domain}'
+          subject:
+            - 'group:lidarr-admins'
+            - 'group:lidarr-users'
+          policy: two_factor
+        - domain: 'readarr.${delegating_domain}'
+          subject:
+            - 'group:readarr-admins'
+            - 'group:readarr-users'
+          policy: two_factor
+        - domain: 'bazarr.${delegating_domain}'
+          subject:
+            - 'group:bazarr-admins'
+            - 'group:bazarr-users'
+          policy: two_factor
+        - domain: 'jellyseerr.${delegating_domain}'
+          subject:
+            - 'group:jellyseerr-admins'
+            - 'group:jellyseerr-users'
+          policy: two_factor
+        - domain: 'jellyfin.${delegating_domain}'
+          subject:
+            - 'group:jellyfin-admins'
+            - 'group:jellyfin-users'
+          policy: two_factor
         - domain: '*.${delegating_domain}'
           policy: two_factor
 
