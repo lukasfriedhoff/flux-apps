@@ -34,13 +34,13 @@ spec:
                   --repository https://dl-cdn.alpinelinux.org/alpine/v3.20/community \
                   ca-certificates curl unzip
                 update-ca-certificates
-                plugin_dir=/config/plugins/SSO-Auth
+                plugin_dir=/config/plugins/sso
+                version_file=$plugin_dir/.version
                 plugin_version=4.0.0.3
                 plugin_url=https://github.com/9p4/jellyfin-plugin-sso/releases/download/v4.0.0.3/sso-authentication_4.0.0.3.zip
                 plugin_sha256=de0951255bec4ed646037641e7e0aa1210b3a00a141406548087bed994cb9bdd
 
-                if [ -f "$plugin_dir/meta.json" ] \
-                  && grep -q "\"version\": \"$plugin_version\"" "$plugin_dir/meta.json"; then
+                if [ -f "$version_file" ] && [ "$(cat "$version_file")" = "$plugin_version" ]; then
                   echo "SSO plugin $plugin_version already installed"
                   exit 0
                 fi
@@ -49,7 +49,9 @@ spec:
                 curl -fsSL --retry 3 --retry-delay 2 -o "$tmp_dir/sso.zip" "$plugin_url"
                 echo "$plugin_sha256  $tmp_dir/sso.zip" | sha256sum -c -
                 mkdir -p "$plugin_dir"
-                unzip -o "$tmp_dir/sso.zip" -d "$plugin_dir"
+                unzip -o "$tmp_dir/sso.zip" -d "$tmp_dir/unpacked"
+                cp -f "$tmp_dir"/unpacked/*.dll "$plugin_dir/"
+                echo "$plugin_version" > "$version_file"
                 chown -R "$PUID:$PGID" "$plugin_dir"
             env:
               PUID: ${media_puid}
