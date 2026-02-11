@@ -111,8 +111,8 @@ spec:
           prometheus.scrape "ceph" {
             targets = [
               {
-                "__address__" = "${ceph_mgr_prometheus_endpoint}"
-                "cluster" = "${cluster_name}"
+                "__address__" = "${ceph_mgr_prometheus_endpoint}",
+                "cluster" = "${cluster_name}",
               },
             ]
             forward_to = [prometheus.remote_write.mimir.receiver]
