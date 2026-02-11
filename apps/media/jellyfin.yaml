@@ -40,17 +40,17 @@ spec:
                 plugin_sha256=de0951255bec4ed646037641e7e0aa1210b3a00a141406548087bed994cb9bdd
 
                 if [ -f "$plugin_dir/meta.json" ] \
-                  && grep -q "\"version\": \"${plugin_version}\"" "$plugin_dir/meta.json"; then
-                  echo "SSO plugin ${plugin_version} already installed"
+                  && grep -q "\"version\": \"$plugin_version\"" "$plugin_dir/meta.json"; then
+                  echo "SSO plugin $plugin_version already installed"
                   exit 0
                 fi
 
                 tmp_dir=$(mktemp -d)
                 curl -fsSL --retry 3 --retry-delay 2 -o "$tmp_dir/sso.zip" "$plugin_url"
-                echo "${plugin_sha256}  $tmp_dir/sso.zip" | sha256sum -c -
+                echo "$plugin_sha256  $tmp_dir/sso.zip" | sha256sum -c -
                 mkdir -p "$plugin_dir"
                 unzip -o "$tmp_dir/sso.zip" -d "$plugin_dir"
-                chown -R "${PUID}:${PGID}" "$plugin_dir"
+                chown -R "$PUID:$PGID" "$plugin_dir"
             env:
               PUID: ${media_puid}
               PGID: ${media_pgid}
