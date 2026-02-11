@@ -22,13 +22,18 @@ spec:
           install-sso-plugin:
             image:
               repository: alpine
-              tag: 3.20
+              tag: 3.20.3
+              pullPolicy: Always
             command:
               - /bin/sh
               - -c
               - |
                 set -eu
-                apk add --no-cache curl unzip
+                apk add --no-cache \
+                  --repository https://dl-cdn.alpinelinux.org/alpine/v3.20/main \
+                  --repository https://dl-cdn.alpinelinux.org/alpine/v3.20/community \
+                  ca-certificates curl unzip
+                update-ca-certificates
                 plugin_dir=/config/plugins/SSO-Auth
                 plugin_version=4.0.0.3
                 plugin_url=https://github.com/9p4/jellyfin-plugin-sso/releases/download/v4.0.0.3/sso-authentication_4.0.0.3.zip
@@ -41,7 +46,7 @@ spec:
                 fi
 
                 tmp_dir=$(mktemp -d)
-                curl -fsSL -o "$tmp_dir/sso.zip" "$plugin_url"
+                curl -fsSL --retry 3 --retry-delay 2 -o "$tmp_dir/sso.zip" "$plugin_url"
                 echo "${plugin_sha256}  $tmp_dir/sso.zip" | sha256sum -c -
                 mkdir -p "$plugin_dir"
                 unzip -o "$tmp_dir/sso.zip" -d "$plugin_dir"
