@@ -59,6 +59,13 @@ spec:
         size: ${arr_config_size}
         globalMounts:
           - path: /config
+      branding:
+        enabled: true
+        type: configMap
+        name: jellyfin-branding
+        globalMounts:
+          - path: /config/branding.xml
+            subPath: branding.xml
       sso-config:
         enabled: true
         type: secret
