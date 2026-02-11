@@ -45,8 +45,10 @@ spec:
                 }
 
                 ensure_pref 'WebUI\\Authentication\\Enabled' 'false'
-                ensure_pref 'WebUI\\BypassAuthSubnetWhitelistEnabled' 'true'
-                ensure_pref 'WebUI\\BypassAuthSubnetWhitelist' '${k8s_pod_cidr},${k8s_service_cidr}'
+                ensure_pref 'WebUI\\AuthSubnetWhitelistEnabled' 'true'
+                ensure_pref 'WebUI\\AuthSubnetWhitelist' '${k8s_pod_cidr},${k8s_service_cidr}'
+
+                sed -i '/^=$/d' "$config"
         containers:
           gluetun:
             image:

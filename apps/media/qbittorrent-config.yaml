@@ -12,9 +12,9 @@ data:
     WebUI\LocalHostAuth=false
     WebUI\Port=8080
     WebUI\UseUPnP=false
+    WebUI\AuthSubnetWhitelistEnabled=true
+    WebUI\AuthSubnetWhitelist=${k8s_pod_cidr},${k8s_service_cidr}
     WebUI\Authentication\Enabled=false
-    WebUI\BypassAuthSubnetWhitelistEnabled=true
-    WebUI\BypassAuthSubnetWhitelist=${k8s_pod_cidr},${k8s_service_cidr}
     Downloads\SavePath=/downloads
     Downloads\TempPath=/downloads/incomplete
     Downloads\TempPathEnabled=true
