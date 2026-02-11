@@ -68,8 +68,21 @@ spec:
 
             rule {
               action = "replace"
+              source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_instance"]
+              target_label = "job"
+              regex = "(.+)"
+            }
+
+            rule {
+              action = "replace"
               source_labels = ["__meta_kubernetes_namespace"]
               target_label = "namespace"
+            }
+
+            rule {
+              action = "replace"
+              target_label = "cluster"
+              replacement = "${cluster_name}"
             }
 
             rule {
@@ -97,7 +110,10 @@ spec:
 
           prometheus.scrape "ceph" {
             targets = [
-              { "__address__" = "${ceph_mgr_prometheus_endpoint}" },
+              {
+                "__address__" = "${ceph_mgr_prometheus_endpoint}"
+                "cluster" = "${cluster_name}"
+              },
             ]
             forward_to = [prometheus.remote_write.mimir.receiver]
             job_name = "ceph"
