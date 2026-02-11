@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jellyfin-branding
+  namespace: media
+data:
+  branding.xml: |-
+    <?xml version="1.0" encoding="utf-8"?>
+    <BrandingOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <LoginDisclaimer><![CDATA[
+    <form action="https://jellyfin.${delegating_domain}/sso/OID/start/authelia">
+      <button class="raised block emby-button button-submit">
+        Sign in with Authelia
+      </button>
+    </form>
+      ]]></LoginDisclaimer>
+      <CustomCss><![CDATA[
+    a.raised.emby-button {
+      padding: 0.9em 1em;
+      color: inherit !important;
+    }
+
+    .disclaimerContainer {
+      display: block;
+    }
+      ]]></CustomCss>
+      <SplashscreenEnabled>false</SplashscreenEnabled>
+      <SplashscreenLocation />
+    </BrandingOptions>

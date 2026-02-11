@@ -15,6 +15,7 @@ resources:
   - bazarr.yaml
   - jellyseerr.yaml
   - jellyfin.yaml
+  - jellyfin-branding.yaml
   - flaresolverr.yaml
   - buildarr-config.yaml
   - buildarr.yaml
