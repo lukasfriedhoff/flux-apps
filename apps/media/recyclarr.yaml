@@ -21,8 +21,8 @@ spec:
         type: cronjob
         cronjob:
           schedule: "0 4 * * *"
-          successfulJobsHistoryLimit: 1
-          failedJobsHistoryLimit: 3
+          successfulJobsHistory: 1
+          failedJobsHistory: 3
         containers:
           main:
             image:
