@@ -48,7 +48,7 @@ spec:
           insecure: ${monitoring_s3_insecure}
     gateway:
       replicas: ${loki_read_replicas}
-      affinity: {}
+      affinity: null
     distributor:
       replicas: ${loki_write_replicas}
     ingester:
