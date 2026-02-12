@@ -48,10 +48,13 @@ spec:
           insecure: ${monitoring_s3_insecure}
     gateway:
       replicas: ${loki_read_replicas}
+      affinity: {}
     distributor:
       replicas: ${loki_write_replicas}
     ingester:
       replicas: ${loki_write_replicas}
+      zoneAwareReplication:
+        enabled: false
     querier:
       replicas: ${loki_read_replicas}
     queryFrontend:
