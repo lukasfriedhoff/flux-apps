@@ -54,6 +54,8 @@ spec:
             insecure: ${monitoring_s3_insecure}
         ingest_storage:
           enabled: false
+        ingester:
+          push_grpc_method_enabled: true
     kafka:
       enabled: false
     minio:
