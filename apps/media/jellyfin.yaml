@@ -34,7 +34,7 @@ spec:
                   --repository https://dl-cdn.alpinelinux.org/alpine/v3.20/community \
                   ca-certificates curl unzip
                 update-ca-certificates
-                plugin_dir=/config/plugins/sso
+                plugin_dir=/config/data/plugins/sso
                 version_file=$plugin_dir/.version
                 plugin_version=4.0.0.3
                 plugin_url=https://github.com/9p4/jellyfin-plugin-sso/releases/download/v4.0.0.3/sso-authentication_4.0.0.3.zip
@@ -109,7 +109,7 @@ spec:
         type: secret
         name: jellyfin-sso
         globalMounts:
-          - path: /config/plugins/configurations/SSO-Auth.xml
+          - path: /config/data/plugins/configurations/SSO-Auth.xml
             subPath: SSO-Auth.xml
       media:
         enabled: true
