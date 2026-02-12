@@ -21,7 +21,7 @@ spec:
       valuesKey: values.yaml
   values:
     fullnameOverride: loki
-    deploymentMode: SimpleScalable
+    deploymentMode: Distributed
     loki:
       auth_enabled: false
       commonConfig:
@@ -46,11 +46,23 @@ spec:
           region: ${monitoring_s3_region}
           s3ForcePathStyle: ${monitoring_s3_force_path_style}
           insecure: ${monitoring_s3_insecure}
-    read:
+    gateway:
       replicas: ${loki_read_replicas}
-    write:
+    distributor:
       replicas: ${loki_write_replicas}
-    backend:
+    ingester:
+      replicas: ${loki_write_replicas}
+    querier:
+      replicas: ${loki_read_replicas}
+    queryFrontend:
+      replicas: ${loki_read_replicas}
+    queryScheduler:
+      replicas: ${loki_read_replicas}
+    indexGateway:
+      replicas: ${loki_backend_replicas}
+    compactor:
+      replicas: ${loki_backend_replicas}
+    ruler:
       replicas: ${loki_backend_replicas}
     minio:
       enabled: false
