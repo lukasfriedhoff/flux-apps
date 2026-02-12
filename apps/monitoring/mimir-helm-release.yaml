@@ -58,8 +58,8 @@ spec:
           push_grpc_method_enabled: true
         limits:
           max_global_series_per_user: 500000
-          ingestion_rate: 200000
-          ingestion_burst_size: 500000
+          ingestion_rate: 500000
+          ingestion_burst_size: 1000000
     kafka:
       enabled: false
     minio:
