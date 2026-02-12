@@ -52,5 +52,9 @@ spec:
             region: ${monitoring_s3_region}
             bucket_name: ${monitoring_mimir_ruler_bucket}
             insecure: ${monitoring_s3_insecure}
+        ingest_storage:
+          enabled: false
+    kafka:
+      enabled: false
     minio:
       enabled: false
