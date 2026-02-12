@@ -64,5 +64,11 @@ spec:
       replicas: ${loki_backend_replicas}
     ruler:
       replicas: ${loki_backend_replicas}
+    read:
+      replicas: 0
+    write:
+      replicas: 0
+    backend:
+      replicas: 0
     minio:
       enabled: false
