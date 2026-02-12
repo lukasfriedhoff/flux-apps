@@ -203,6 +203,7 @@ data:
             scopes:
               - openid
               - profile
+              - email
               - groups
             response_types:
               - code
