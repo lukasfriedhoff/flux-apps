@@ -37,6 +37,10 @@ spec:
             role = "pod"
           }
 
+          discovery.kubernetes "endpoints" {
+            role = "endpoints"
+          }
+
           discovery.relabel "pods" {
             targets = discovery.kubernetes.pods.targets
 
@@ -92,6 +96,92 @@ spec:
             }
           }
 
+          discovery.relabel "node_exporter" {
+            targets = discovery.kubernetes.endpoints.targets
+
+            rule {
+              action = "keep"
+              source_labels = ["__meta_kubernetes_namespace"]
+              regex = "monitoring"
+            }
+
+            rule {
+              action = "keep"
+              source_labels = ["__meta_kubernetes_service_name"]
+              regex = "node-exporter"
+            }
+
+            rule {
+              action = "keep"
+              source_labels = ["__meta_kubernetes_endpoint_port_name"]
+              regex = "metrics"
+            }
+
+            rule {
+              action = "replace"
+              target_label = "job"
+              replacement = "node-exporter"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__meta_kubernetes_namespace"]
+              target_label = "namespace"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__meta_kubernetes_endpoint_node_name"]
+              target_label = "node"
+            }
+
+            rule {
+              action = "replace"
+              target_label = "cluster"
+              replacement = "${cluster_name}"
+            }
+          }
+
+          discovery.relabel "kube_state_metrics" {
+            targets = discovery.kubernetes.endpoints.targets
+
+            rule {
+              action = "keep"
+              source_labels = ["__meta_kubernetes_namespace"]
+              regex = "monitoring"
+            }
+
+            rule {
+              action = "keep"
+              source_labels = ["__meta_kubernetes_service_name"]
+              regex = "kube-state-metrics"
+            }
+
+            rule {
+              action = "keep"
+              source_labels = ["__meta_kubernetes_endpoint_port_name"]
+              regex = "http"
+            }
+
+            rule {
+              action = "replace"
+              target_label = "job"
+              replacement = "kube-state-metrics"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__meta_kubernetes_namespace"]
+              target_label = "namespace"
+            }
+
+            rule {
+              action = "replace"
+              target_label = "cluster"
+              replacement = "${cluster_name}"
+            }
+          }
+
           loki.source.kubernetes "pods" {
             targets = discovery.kubernetes.pods.targets
             forward_to = [loki.write.loki.receiver]
@@ -103,6 +193,20 @@ spec:
 
           prometheus.scrape "pods" {
             targets = discovery.relabel.pods.output
+            forward_to = [prometheus.remote_write.mimir.receiver]
+            scrape_interval = "30s"
+            scrape_timeout = "10s"
+          }
+
+          prometheus.scrape "node_exporter" {
+            targets = discovery.relabel.node_exporter.output
+            forward_to = [prometheus.remote_write.mimir.receiver]
+            scrape_interval = "30s"
+            scrape_timeout = "10s"
+          }
+
+          prometheus.scrape "kube_state_metrics" {
+            targets = discovery.relabel.kube_state_metrics.output
             forward_to = [prometheus.remote_write.mimir.receiver]
             scrape_interval = "30s"
             scrape_timeout = "10s"
