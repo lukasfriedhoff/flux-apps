@@ -258,7 +258,7 @@ spec:
           }
 
           discovery.relabel "monitoring_components" {
-            targets = discovery.kubernetes.endpoints.targets
+            targets = discovery.kubernetes.pods.targets
 
             rule {
               action = "keep"
@@ -268,24 +268,32 @@ spec:
 
             rule {
               action = "keep"
-              source_labels = ["__meta_kubernetes_service_label_app_kubernetes_io_name"]
+              source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
               regex = "loki|mimir|tempo"
             }
 
             rule {
               action = "keep"
-              source_labels = ["__meta_kubernetes_endpoint_port_number"]
-              regex = "3100|3200|8080|9150"
-            }
-
-            rule {
-              action = "labelmap"
-              regex = "__meta_kubernetes_service_label_(.+)"
+              source_labels = ["__meta_kubernetes_pod_container_port_name"]
+              regex = "http-metrics"
             }
 
             rule {
               action = "replace"
-              source_labels = ["__meta_kubernetes_service_name"]
+              source_labels = ["__meta_kubernetes_pod_ip", "__meta_kubernetes_pod_container_port_number"]
+              target_label = "__address__"
+              regex = "(.+);(\\d+)"
+              replacement = "$1:$2"
+            }
+
+            rule {
+              action = "labelmap"
+              regex = "__meta_kubernetes_pod_label_(.+)"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
               target_label = "job"
             }
 
@@ -299,6 +307,12 @@ spec:
               action = "replace"
               target_label = "cluster"
               replacement = "${cluster_name}"
+            }
+
+            rule {
+              action = "replace"
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label = "pod"
             }
           }
 
