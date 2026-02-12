@@ -44,17 +44,16 @@ spec:
 
                 if [ -f "$version_file" ] && [ "$(cat "$version_file")" = "$plugin_version" ]; then
                   echo "SSO plugin $plugin_version already installed"
-                  exit 0
+                else
+                  tmp_dir=$(mktemp -d)
+                  curl -fsSL --retry 3 --retry-delay 2 -o "$tmp_dir/sso.zip" "$plugin_url"
+                  echo "$plugin_sha256  $tmp_dir/sso.zip" | sha256sum -c -
+                  mkdir -p "$plugin_dir"
+                  unzip -o "$tmp_dir/sso.zip" -d "$tmp_dir/unpacked"
+                  cp -f "$tmp_dir"/unpacked/*.dll "$plugin_dir/"
+                  echo "$plugin_version" > "$version_file"
+                  chown -R "$PUID:$PGID" "$plugin_dir"
                 fi
-
-                tmp_dir=$(mktemp -d)
-                curl -fsSL --retry 3 --retry-delay 2 -o "$tmp_dir/sso.zip" "$plugin_url"
-                echo "$plugin_sha256  $tmp_dir/sso.zip" | sha256sum -c -
-                mkdir -p "$plugin_dir"
-                unzip -o "$tmp_dir/sso.zip" -d "$tmp_dir/unpacked"
-                cp -f "$tmp_dir"/unpacked/*.dll "$plugin_dir/"
-                echo "$plugin_version" > "$version_file"
-                chown -R "$PUID:$PGID" "$plugin_dir"
 
                 if [ -f "$config_seed" ] && [ ! -s "$config_target" ]; then
                   mkdir -p "$(dirname "$config_target")"
