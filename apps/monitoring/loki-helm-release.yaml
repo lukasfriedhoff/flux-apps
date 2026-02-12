@@ -49,6 +49,8 @@ spec:
     gateway:
       replicas: ${loki_read_replicas}
       affinity: null
+      deploymentStrategy:
+        type: Recreate
     distributor:
       replicas: ${loki_write_replicas}
     ingester:
