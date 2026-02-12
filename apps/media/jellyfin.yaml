@@ -36,6 +36,8 @@ spec:
                 update-ca-certificates
                 plugin_dir=/config/data/plugins/sso
                 version_file=$plugin_dir/.version
+                config_seed=/config-seed/SSO-Auth.xml
+                config_target=/config/data/plugins/configurations/SSO-Auth.xml
                 plugin_version=4.0.0.3
                 plugin_url=https://github.com/9p4/jellyfin-plugin-sso/releases/download/v4.0.0.3/sso-authentication_4.0.0.3.zip
                 plugin_sha256=de0951255bec4ed646037641e7e0aa1210b3a00a141406548087bed994cb9bdd
@@ -53,6 +55,12 @@ spec:
                 cp -f "$tmp_dir"/unpacked/*.dll "$plugin_dir/"
                 echo "$plugin_version" > "$version_file"
                 chown -R "$PUID:$PGID" "$plugin_dir"
+
+                if [ -f "$config_seed" ] && [ ! -f "$config_target" ]; then
+                  mkdir -p "$(dirname "$config_target")"
+                  cp -f "$config_seed" "$config_target"
+                  chown "$PUID:$PGID" "$config_target"
+                fi
             env:
               PUID: ${media_puid}
               PGID: ${media_pgid}
@@ -103,12 +111,12 @@ spec:
         globalMounts:
           - path: /config/branding.xml
             subPath: branding.xml
-      sso-config:
+      sso-seed:
         enabled: true
         type: secret
         name: jellyfin-sso
         globalMounts:
-          - path: /config/data/plugins/configurations/SSO-Auth.xml
+          - path: /config-seed/SSO-Auth.xml
             subPath: SSO-Auth.xml
       media:
         enabled: true
