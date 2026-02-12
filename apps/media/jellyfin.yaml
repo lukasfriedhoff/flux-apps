@@ -56,7 +56,7 @@ spec:
                 echo "$plugin_version" > "$version_file"
                 chown -R "$PUID:$PGID" "$plugin_dir"
 
-                if [ -f "$config_seed" ] && [ ! -f "$config_target" ]; then
+                if [ -f "$config_seed" ] && [ ! -s "$config_target" ]; then
                   mkdir -p "$(dirname "$config_target")"
                   cp -f "$config_seed" "$config_target"
                   chown "$PUID:$PGID" "$config_target"
