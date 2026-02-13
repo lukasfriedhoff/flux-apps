@@ -63,9 +63,9 @@ spec:
         use_pkce: true
         auth_url: https://auth.${delegating_domain}/api/oidc/authorization
         token_url: https://auth.${delegating_domain}/api/oidc/token
-        api_url: http://authelia.authelia.svc.cluster.local/api/oidc/userinfo
+        api_url: https://auth.${delegating_domain}/api/oidc/userinfo
         allow_assign_grafana_admin: true
-        role_attribute_path: contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'grafana-admins') && 'Admin' || contains(groups[*], 'grafana-users') && 'Editor' || 'Viewer'
+        role_attribute_path: (contains(groups[*], 'admins') && 'GrafanaAdmin') || (contains(groups[*], 'grafana-admins') && 'GrafanaAdmin') || (contains(groups[*], 'grafana-users') && 'Editor') || 'Viewer'
     datasources:
       datasources.yaml:
         apiVersion: 1
