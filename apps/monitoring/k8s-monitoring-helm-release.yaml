@@ -1,0 +1,45 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: k8s-monitoring
+  namespace: ${k8s_monitoring_namespace:=monitoring}
+spec:
+  interval: 10m0s
+  timeout: 15m0s
+  chart:
+    spec:
+      chart: k8s-monitoring
+      version: ${k8s_monitoring_chart_version:=3.4.0}
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: ${k8s_monitoring_namespace:=monitoring}
+      interval: 10m0s
+  valuesFrom:
+    - kind: ConfigMap
+      name: k8s-monitoring-values
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: ConfigMap
+              name: k8s-monitoring-kube-state-metrics-customresourcestate-config
+              namespace: ${k8s_monitoring_namespace:=monitoring}
+            patch: |-
+              - op: add
+                path: /metadata/labels/reloader
+                value: "enabled"
+              - op: add
+                path: /metadata/annotations/reloader.stakater.com~1match
+                value: "true"
+          - target:
+              kind: Deployment
+              name: k8s-monitoring-kube-state-metrics
+              namespace: ${k8s_monitoring_namespace:=monitoring}
+            patch: |-
+              - op: add
+                path: /spec/template/metadata/labels/reloader
+                value: "enabled"
+              - op: add
+                path: /spec/template/metadata/annotations/reloader.stakater.com~1search
+                value: "true"

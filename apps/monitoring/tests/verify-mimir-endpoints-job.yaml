@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-mimir-endpoints-job
+  namespace: monitoring
+spec:
+  template:
+    spec:
+      containers:
+        - name: query-endpoints-and-verify
+          image: curlimages/curl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              if [ "$(curl -o /dev/null -s -w "%{http_code}" http://mimir-ruler.monitoring.svc.cluster.local:8080)" -ne 200 ]; then
+                echo "Endpoint check failed"
+                exit 1
+              fi
+
+              if ! curl -s http://mimir-ruler.monitoring.svc.cluster.local:8080/ingester/ring | grep -q ACTIVE; then
+                echo "Did not find any active ingesters in ring"
+                exit 1
+              fi
+
+              exit 0
+      restartPolicy: Never

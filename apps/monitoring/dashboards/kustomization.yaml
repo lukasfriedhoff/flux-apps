@@ -15,27 +15,18 @@ configMapGenerator:
       annotations:
         grafana_folder: Kubernetes
     files:
-      - kubernetes-mixin/apiserver.json
       - kubernetes-mixin/cluster-total.json
-      - kubernetes-mixin/controller-manager.json
       - kubernetes-mixin/k8s-resources-cluster.json
       - kubernetes-mixin/k8s-resources-namespace.json
       - kubernetes-mixin/k8s-resources-node.json
       - kubernetes-mixin/k8s-resources-pod.json
-      - kubernetes-mixin/k8s-resources-windows-cluster.json
-      - kubernetes-mixin/k8s-resources-windows-namespace.json
-      - kubernetes-mixin/k8s-resources-windows-pod.json
       - kubernetes-mixin/k8s-resources-workload.json
       - kubernetes-mixin/k8s-resources-workloads-namespace.json
-      - kubernetes-mixin/k8s-windows-cluster-rsrc-use.json
-      - kubernetes-mixin/k8s-windows-node-rsrc-use.json
       - kubernetes-mixin/kubelet.json
       - kubernetes-mixin/namespace-by-pod.json
       - kubernetes-mixin/namespace-by-workload.json
       - kubernetes-mixin/persistentvolumesusage.json
       - kubernetes-mixin/pod-total.json
-      - kubernetes-mixin/proxy.json
-      - kubernetes-mixin/scheduler.json
       - kubernetes-mixin/workload-total.json
   - name: grafana-dashboard-loki
     options:
