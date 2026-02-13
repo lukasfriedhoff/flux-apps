@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ${k8s_monitoring_namespace:=k8s-monitoring}
+resources:
+  - files/alerts.yaml
+  - files/rules.yaml

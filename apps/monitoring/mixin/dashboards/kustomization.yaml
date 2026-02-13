@@ -1,0 +1,75 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+labels:
+- pairs:
+    grafana_dashboard: "1"
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+commonAnnotations:
+  k8s-sidecar-target-directory: k8s-mixin
+configMapGenerator:
+- files:
+  - files/cluster-total.json
+  name: k8s-mixin-cluster-total
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/k8s-resources-cluster.json
+  name: k8s-mixin-k8s-resources-cluster
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/k8s-resources-namespace.json
+  name: k8s-mixin-k8s-resources-namespace
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/k8s-resources-node.json
+  name: k8s-mixin-k8s-resources-node
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/k8s-resources-pod.json
+  name: k8s-mixin-k8s-resources-pod
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/k8s-resources-workload.json
+  name: k8s-mixin-k8s-resources-workload
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/k8s-resources-workloads-namespace.json
+  name: k8s-mixin-k8s-resources-workloads-namespace
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/kubelet.json
+  name: k8s-mixin-kubelet
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/namespace-by-pod.json
+  name: k8s-mixin-namespace-by-pod
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/namespace-by-workload.json
+  name: k8s-mixin-namespace-by-workload
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/persistentvolumesusage.json
+  name: k8s-mixin-persistentvolumesusage
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/pod-total.json
+  name: k8s-mixin-pod-total
+  options:
+    disableNameSuffixHash: true
+- files:
+  - files/workload-total.json
+  name: k8s-mixin-workload-total
+  options:
+    disableNameSuffixHash: true
