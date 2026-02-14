@@ -134,8 +134,8 @@ spec:
               apk add --no-cache curl tar >/dev/null
               apps_dir=/custom_apps
               tmp_dir=/tmp/app-downloads
-              rm -rf "$apps_dir"
               mkdir -p "$apps_dir" "$tmp_dir"
+              find "$apps_dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
               fetch_app() {
                 name="$1"
                 url="$2"
