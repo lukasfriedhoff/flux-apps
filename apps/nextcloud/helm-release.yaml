@@ -140,9 +140,9 @@ spec:
                 name="$1"
                 url="$2"
                 sha="$3"
-                archive="$tmp_dir/${name}.tar.gz"
+                archive="$tmp_dir/$name.tar.gz"
                 curl -fsSL "$url" -o "$archive"
-                echo "${sha}  ${archive}" | sha256sum -c - >/dev/null
+                echo "$sha  $archive" | sha256sum -c - >/dev/null
                 tar -xzf "$archive" -C "$apps_dir"
               }
               fetch_app \
