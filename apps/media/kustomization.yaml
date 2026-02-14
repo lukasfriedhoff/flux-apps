@@ -8,6 +8,7 @@ resources:
   - qbittorrent-config.yaml
   - qbittorrent.yaml
   - prowlarr.yaml
+  - arr-api-key-init.yaml
   - sonarr.yaml
   - radarr.yaml
   - lidarr.yaml
