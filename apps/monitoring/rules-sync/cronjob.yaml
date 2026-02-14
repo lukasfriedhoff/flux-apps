@@ -25,7 +25,7 @@ spec:
               args:
                 - rules
                 - load
-                - --address=http://mimir-gateway.${k8s_monitoring_namespace:=monitoring}.svc.cluster.local:8080/prometheus
+                - --address=http://mimir-gateway.${k8s_monitoring_namespace:=monitoring}.svc.cluster.local:8080
                 - --id=${monitoring_tenant_id:=main}
                 - /rules/rules.yaml
                 - /rules/alerts.yaml
