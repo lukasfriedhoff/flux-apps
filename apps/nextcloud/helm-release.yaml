@@ -132,18 +132,12 @@ spec:
             - |
               set -eu
               apk add --no-cache curl tar >/dev/null
-              apps_dir=/custom_apps
-              tmp_dir=/tmp/app-downloads
-              mkdir -p "$apps_dir" "$tmp_dir"
-              find "$apps_dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+              mkdir -p /custom_apps /tmp/app-downloads
+              find /custom_apps -mindepth 1 -maxdepth 1 -exec rm -rf {} +
               fetch_app() {
-                name="$1"
-                url="$2"
-                sha="$3"
-                archive="$tmp_dir/$name.tar.gz"
-                curl -fsSL "$url" -o "$archive"
-                echo "$sha  $archive" | sha256sum -c - >/dev/null
-                tar -xzf "$archive" -C "$apps_dir"
+                curl -fsSL "$2" -o "/tmp/app-downloads/$1.tar.gz"
+                echo "$3  /tmp/app-downloads/$1.tar.gz" | sha256sum -c - >/dev/null
+                tar -xzf "/tmp/app-downloads/$1.tar.gz" -C /custom_apps
               }
               fetch_app \
                 mail \
@@ -157,7 +151,7 @@ spec:
                 oidc_login \
                 https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
                 014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912
-              chown -R 33:33 "$apps_dir"
+              chown -R 33:33 /custom_apps
           volumeMounts:
             - name: nextcloud-custom-apps
               mountPath: /custom_apps
