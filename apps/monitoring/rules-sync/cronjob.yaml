@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mimir-rules-sync
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: mimir-rules-sync
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: mimir-rules-sync
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: mimirtool
+              image: grafana/mimirtool:3.0.1
+              args:
+                - rules
+                - load
+                - --address=http://mimir-gateway.${k8s_monitoring_namespace:=monitoring}.svc.cluster.local:8080/prometheus
+                - --id=${monitoring_tenant_id:=main}
+                - /rules/rules.yaml
+                - /rules/alerts.yaml
+              volumeMounts:
+                - name: mimir-rules
+                  mountPath: /rules
+                  readOnly: true
+          volumes:
+            - name: mimir-rules
+              configMap:
+                name: mimir-rules
