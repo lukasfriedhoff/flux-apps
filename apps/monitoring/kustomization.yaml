@@ -8,4 +8,5 @@ resources:
   - mimir-helm-release.yaml
   - tempo-helm-release.yaml
   - ingress-ingest.yaml
+  - rules-sync
   - dashboards

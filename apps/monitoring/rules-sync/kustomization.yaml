@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: mimir-rules
+    files:
+      - rules.yaml
+      - alerts.yaml
+resources:
+  - cronjob.yaml
