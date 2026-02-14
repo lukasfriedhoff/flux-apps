@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-verify-custom-apps
+  namespace: nextcloud
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: verify
+          image: alpine:3.20
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              apk add --no-cache curl tar >/dev/null
+              tmp_dir=/tmp/app-downloads
+              mkdir -p /custom_apps "$tmp_dir"
+              verify_app() {
+                curl -fsSL "$2" -o "$tmp_dir/$1.tar.gz"
+                echo "$3  $tmp_dir/$1.tar.gz" | sha256sum -c - >/dev/null
+                tar -xzf "$tmp_dir/$1.tar.gz" -C /custom_apps
+                if [ ! -d "/custom_apps/$1" ]; then
+                  echo "Missing app directory: $1" >&2
+                  exit 1
+                fi
+              }
+              verify_app \
+                mail \
+                https://github.com/nextcloud-releases/mail/releases/download/v5.6.12/mail-v5.6.12.tar.gz \
+                eddf79115bc5b1fbfae9c96f0630614b4fced1bfe75b2468a71fc22fd5e4a838
+              verify_app \
+                richdocuments \
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v9.0.2/richdocuments-v9.0.2.tar.gz \
+                ceeed1c207f373569729b9cdfa2a4c4ecade4dd83d8fddc13f01840316bc0366
+              verify_app \
+                oidc_login \
+                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
+                014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912
+          volumeMounts:
+            - name: nextcloud-custom-apps
+              mountPath: /custom_apps
+      volumes:
+        - name: nextcloud-custom-apps
+          emptyDir: {}
