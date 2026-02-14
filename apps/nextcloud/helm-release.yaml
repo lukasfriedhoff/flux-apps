@@ -88,6 +88,8 @@ spec:
           fi
           php /var/www/html/occ app:install -n oidc_login || true
           php /var/www/html/occ app:enable -n oidc_login
+          php /var/www/html/occ app:install -n mail || true
+          php /var/www/html/occ app:enable -n mail || true
           php /var/www/html/occ app:install -n serverinfo || true
           php /var/www/html/occ app:enable -n serverinfo
           php /var/www/html/occ app:install -n richdocuments || true
