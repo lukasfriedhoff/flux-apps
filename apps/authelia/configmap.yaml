@@ -143,6 +143,12 @@ data:
               nextcloud_is_admin:
                 name: is_admin
                 attribute: nextcloud_is_admin
+          grafana:
+            id_token:
+              - email
+              - name
+              - groups
+              - preferred_username
         scopes:
           nextcloud_admin:
             claims:
@@ -178,6 +184,7 @@ data:
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.grafana.secret" | msquote }}
             authorization_policy: one_factor
             consent_mode: implicit
+            claims_policy: grafana
             redirect_uris:
               - https://grafana.${delegating_domain}/login/generic_oauth
               - https://grafana.${delegating_domain}/login/generic_oauth/
