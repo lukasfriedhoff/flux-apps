@@ -82,6 +82,10 @@ spec:
         before-starting: |-
           #!/bin/sh
           set -e
+          if [ -d /var/www/html/custom_apps/mail ] && [ ! -f /var/www/html/custom_apps/mail/vendor/autoload.php ]; then
+            echo "Removing broken mail app from custom_apps."
+            rm -rf /var/www/html/custom_apps/mail
+          fi
           php /var/www/html/occ app:install -n oidc_login || true
           php /var/www/html/occ app:enable -n oidc_login
           php /var/www/html/occ app:install -n serverinfo || true
