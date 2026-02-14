@@ -27,6 +27,7 @@ spec:
               TZ: ${media_timezone}
               PUID: ${media_puid}
               PGID: ${media_pgid}
+              ARR_APP: sonarr
     service:
       main:
         ports:
@@ -52,6 +53,23 @@ spec:
             hosts:
               - sonarr.${delegating_domain}
     persistence:
+      api-key-init:
+        enabled: true
+        type: configMap
+        name: arr-api-key-init
+        defaultMode: 0555
+        globalMounts:
+          - path: /custom-cont-init.d/10-arr-api-key.sh
+            subPath: 10-arr-api-key.sh
+            readOnly: true
+      api-keys:
+        enabled: true
+        type: secret
+        name: arr-api-keys
+        defaultMode: 0440
+        globalMounts:
+          - path: /run/secrets/arr
+            readOnly: true
       config:
         enabled: true
         accessMode: ReadWriteOnce

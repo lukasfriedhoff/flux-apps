@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arr-api-key-init
+  namespace: media
+data:
+  10-arr-api-key.sh: |-
+    #!/usr/bin/with-contenv sh
+    set -eu
+
+    app="${ARR_APP:-}"
+    key_file="/run/secrets/arr/${app}_api_key"
+    config_file="/config/config.xml"
+
+    if [ -z "$app" ] || [ ! -f "$key_file" ]; then
+      echo "ARR API key init: missing ARR_APP or key file" >&2
+      exit 1
+    fi
+
+    update_key() {
+      key="$(cat "$key_file")"
+      if [ -f "$config_file" ]; then
+        if xmlstarlet sel -t -v '/Config/ApiKey' "$config_file" >/dev/null 2>&1; then
+          xmlstarlet ed -L -u '/Config/ApiKey' -v "$key" "$config_file"
+        else
+          xmlstarlet ed -L -s '/Config' -t elem -n ApiKey -v "$key" "$config_file"
+        fi
+      fi
+    }
+
+    if [ -f "$config_file" ]; then
+      update_key
+    else
+      (
+        while [ ! -f "$config_file" ]; do
+          sleep 2
+        done
+        update_key
+      ) &
+    fi
