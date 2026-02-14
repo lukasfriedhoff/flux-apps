@@ -36,6 +36,15 @@ spec:
         storageClass: ${valkey_storage_class_name}
     metrics:
       enabled: true
+      exporter:
+        args:
+          - --redis.password-file=/etc/valkey-auth/redis-password
+        extraExporterSecrets:
+          - name: ${valkey_auth_secret_name}
+        extraVolumeMounts:
+          - name: ${valkey_auth_secret_name}-exporter
+            mountPath: /etc/valkey-auth
+            readOnly: true
       service:
         enabled: true
         annotations:
