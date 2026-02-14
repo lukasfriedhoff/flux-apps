@@ -8,8 +8,9 @@ data:
     #!/usr/bin/with-contenv sh
     set -eu
 
-    app="${ARR_APP:-}"
-    key_file="/run/secrets/arr/${app}_api_key"
+    app="$ARR_APP"
+    key_file="/run/secrets/arr/$app"
+    key_file="$key_file"_api_key
     config_file="/config/config.xml"
 
     if [ -z "$app" ] || [ ! -f "$key_file" ]; then
