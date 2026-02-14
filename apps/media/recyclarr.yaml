@@ -34,8 +34,6 @@ spec:
               - sync
               - --config
               - /config/recyclarr.yml
-              - --secrets
-              - /config/secrets.yml
             workingDir: /config
             env:
               TZ: ${media_timezone}
