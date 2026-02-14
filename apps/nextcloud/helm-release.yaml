@@ -78,14 +78,16 @@ spec:
             'oidc_login_default_group' => 'nextcloud-users',
             'oidc_create_groups' => true,
           );
+        appstore.config.php: |-
+          <?php
+          $CONFIG = array (
+            'appstoreenabled' => false,
+            'appstore.experimental.enabled' => false,
+          );
       hooks:
         before-starting: |-
           #!/bin/sh
           set -e
-          if [ -d /var/www/html/custom_apps/mail ] && [ ! -f /var/www/html/custom_apps/mail/vendor/autoload.php ]; then
-            echo "Removing broken mail app from custom_apps."
-            rm -rf /var/www/html/custom_apps/mail
-          fi
           php /var/www/html/occ app:install -n oidc_login || true
           php /var/www/html/occ app:enable -n oidc_login
           php /var/www/html/occ app:install -n mail || true
@@ -106,6 +108,43 @@ spec:
             sleep 5
           done
       extraInitContainers:
+        - name: seed-custom-apps
+          image: alpine:3.20
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              apk add --no-cache curl tar >/dev/null
+              apps_dir=/custom_apps
+              tmp_dir=/tmp/app-downloads
+              rm -rf "$apps_dir"
+              mkdir -p "$apps_dir" "$tmp_dir"
+              fetch_app() {
+                name="$1"
+                url="$2"
+                sha="$3"
+                archive="$tmp_dir/${name}.tar.gz"
+                curl -fsSL "$url" -o "$archive"
+                echo "${sha}  ${archive}" | sha256sum -c - >/dev/null
+                tar -xzf "$archive" -C "$apps_dir"
+              }
+              fetch_app \
+                mail \
+                https://github.com/nextcloud-releases/mail/releases/download/v5.6.12/mail-v5.6.12.tar.gz \
+                eddf79115bc5b1fbfae9c96f0630614b4fced1bfe75b2468a71fc22fd5e4a838
+              fetch_app \
+                richdocuments \
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v9.0.2/richdocuments-v9.0.2.tar.gz \
+                ceeed1c207f373569729b9cdfa2a4c4ecade4dd83d8fddc13f01840316bc0366
+              fetch_app \
+                oidc_login \
+                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
+                014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912
+              chown -R 33:33 "$apps_dir"
+          volumeMounts:
+            - name: nextcloud-custom-apps
+              mountPath: /custom_apps
         - name: wait-nextcloud-app
           image: alpine:3.20
           command:
@@ -150,6 +189,13 @@ spec:
             - name: nextcloud-data
               mountPath: /dest
               subPath: data
+      extraVolumes:
+        - name: nextcloud-custom-apps
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: nextcloud-custom-apps
+          mountPath: /var/www/html/custom_apps
+          readOnly: true
     internalDatabase:
       enabled: false
     externalDatabase:
