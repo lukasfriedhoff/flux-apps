@@ -38,7 +38,7 @@ spec:
       enabled: true
       exporter:
         args:
-          - --redis.password-file=/etc/valkey-auth/redis-password
+          - --redis.password-file=/etc/valkey-auth/redis-exporter-passwords.json
         extraExporterSecrets:
           - name: ${valkey_auth_secret_name}
         extraVolumeMounts:
