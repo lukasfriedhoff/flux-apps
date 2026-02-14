@@ -84,6 +84,22 @@ spec:
             'appstoreenabled' => false,
             'appstore.experimental.enabled' => false,
           );
+        apps-paths.config.php: |-
+          <?php
+          $CONFIG = array (
+            'apps_paths' => array (
+              array (
+                'path' => '/var/www/html/apps',
+                'url' => '/apps',
+                'writable' => false,
+              ),
+              array (
+                'path' => '/custom_apps',
+                'url' => '/custom_apps',
+                'writable' => false,
+              ),
+            ),
+          );
       hooks:
         before-starting: |-
           #!/bin/sh
@@ -194,7 +210,7 @@ spec:
           emptyDir: {}
       extraVolumeMounts:
         - name: nextcloud-custom-apps
-          mountPath: /var/www/html/custom_apps
+          mountPath: /custom_apps
           readOnly: true
     internalDatabase:
       enabled: false
