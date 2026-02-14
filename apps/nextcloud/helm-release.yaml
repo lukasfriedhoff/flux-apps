@@ -104,6 +104,10 @@ spec:
         before-starting: |-
           #!/bin/sh
           set -e
+          if php /var/www/html/occ status --output=json | grep -q '"needsDbUpgrade":true'; then
+            echo "Running Nextcloud upgrade."
+            php /var/www/html/occ upgrade --no-interaction
+          fi
           php /var/www/html/occ app:install -n oidc_login || true
           php /var/www/html/occ app:enable -n oidc_login
           php /var/www/html/occ app:install -n mail || true
