@@ -40,7 +40,6 @@ spec:
                     -o /tmp/app-downloads/oidc_login.tar.gz
                   echo "014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912  /tmp/app-downloads/oidc_login.tar.gz" | sha256sum -c - >/dev/null
                   tar -xzf /tmp/app-downloads/oidc_login.tar.gz -C /custom_apps
-                  chown -R 33:33 /custom_apps
                   php /var/www/html/occ status --output=json | tee /tmp/occ-status.json
                   if grep -q '"needsDbUpgrade":true' /tmp/occ-status.json; then
                     echo "Nextcloud requires a database upgrade." >&2
