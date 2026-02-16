@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-upgrade-check
+  namespace: nextcloud
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsUser: 33
+            runAsGroup: 33
+            fsGroup: 33
+          containers:
+            - name: check
+              image: docker.io/library/nextcloud:32.0.6-apache
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  mkdir -p /custom_apps /tmp/app-downloads
+                  find /custom_apps -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+                  curl -fsSL https://github.com/nextcloud-releases/mail/releases/download/v5.6.12/mail-v5.6.12.tar.gz \
+                    -o /tmp/app-downloads/mail.tar.gz
+                  echo "eddf79115bc5b1fbfae9c96f0630614b4fced1bfe75b2468a71fc22fd5e4a838  /tmp/app-downloads/mail.tar.gz" | sha256sum -c - >/dev/null
+                  tar -xzf /tmp/app-downloads/mail.tar.gz -C /custom_apps
+                  curl -fsSL https://github.com/nextcloud-releases/richdocuments/releases/download/v9.0.2/richdocuments-v9.0.2.tar.gz \
+                    -o /tmp/app-downloads/richdocuments.tar.gz
+                  echo "ceeed1c207f373569729b9cdfa2a4c4ecade4dd83d8fddc13f01840316bc0366  /tmp/app-downloads/richdocuments.tar.gz" | sha256sum -c - >/dev/null
+                  tar -xzf /tmp/app-downloads/richdocuments.tar.gz -C /custom_apps
+                  curl -fsSL https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
+                    -o /tmp/app-downloads/oidc_login.tar.gz
+                  echo "014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912  /tmp/app-downloads/oidc_login.tar.gz" | sha256sum -c - >/dev/null
+                  tar -xzf /tmp/app-downloads/oidc_login.tar.gz -C /custom_apps
+                  chown -R 33:33 /custom_apps
+                  php /var/www/html/occ status --output=json | tee /tmp/occ-status.json
+                  if grep -q '"needsDbUpgrade":true' /tmp/occ-status.json; then
+                    echo "Nextcloud requires a database upgrade." >&2
+                    exit 1
+                  fi
+                  if grep -q '"maintenance":true' /tmp/occ-status.json; then
+                    echo "Nextcloud is in maintenance mode." >&2
+                    exit 1
+                  fi
+              volumeMounts:
+                - name: nextcloud-app
+                  mountPath: /var/www/html
+                  readOnly: true
+                - name: nextcloud-data
+                  mountPath: /var/www/html/data
+                  readOnly: true
+                - name: nextcloud-custom-apps
+                  mountPath: /custom_apps
+          volumes:
+            - name: nextcloud-app
+              persistentVolumeClaim:
+                claimName: nextcloud-app
+            - name: nextcloud-data
+              persistentVolumeClaim:
+                claimName: nextcloud-nextcloud-data
+            - name: nextcloud-custom-apps
+              emptyDir: {}
