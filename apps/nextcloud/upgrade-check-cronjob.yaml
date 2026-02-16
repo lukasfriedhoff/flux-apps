@@ -14,21 +14,18 @@ spec:
       template:
         spec:
           restartPolicy: Never
-          securityContext:
-            runAsUser: 33
-            runAsGroup: 33
-            fsGroup: 33
           serviceAccountName: nextcloud-upgrade-check
           containers:
             - name: check
-              image: registry.k8s.io/kubectl:v1.30.0
+              image: alpine:3.20
               command:
                 - /bin/sh
                 - -c
                 - |
                   set -eu
+                  apk add --no-cache kubectl >/dev/null
                   kubectl -n nextcloud get pods -l app.kubernetes.io/name=nextcloud -o jsonpath='{.items[0].metadata.name}' \
-                    | xargs -r -I{} kubectl -n nextcloud exec {} -- php /var/www/html/occ status --output=json \
+                    | xargs -r -I{} kubectl -n nextcloud exec {} -- /bin/sh -c "php /var/www/html/occ status --output=json" \
                     | tee /tmp/occ-status.json
                   if grep -q '"needsDbUpgrade":true' /tmp/occ-status.json; then
                     echo "Nextcloud requires a database upgrade." >&2
