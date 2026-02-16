@@ -53,9 +53,15 @@ spec:
                 - name: nextcloud-app
                   mountPath: /var/www/html
                   readOnly: true
+                  subPath: html
+                - name: nextcloud-app
+                  mountPath: /var/www/html/config
+                  readOnly: true
+                  subPath: config
                 - name: nextcloud-data
                   mountPath: /var/www/html/data
                   readOnly: true
+                  subPath: data
                 - name: nextcloud-custom-apps
                   mountPath: /custom_apps
           volumes:
