@@ -38,3 +38,5 @@ spec:
           forcepathstyle: ${monitoring_s3_force_path_style}
     minio:
       enabled: false
+    ingester:
+      replicas: ${tempo_ingester_replicas}
