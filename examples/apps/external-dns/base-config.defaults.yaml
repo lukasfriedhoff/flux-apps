@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  external_dns_domain_primary: "h4xx.io"
+  external_dns_domain_secondary: "lab.h4xx.io"
+  external_dns_txt_owner_id: "srv1-k3s"
