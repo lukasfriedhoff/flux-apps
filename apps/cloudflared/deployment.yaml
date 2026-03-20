@@ -53,4 +53,4 @@ spec:
             name: cloudflared-config
         - name: cloudflared-creds
           secret:
-            secretName: cloudflare-tunnel-credentials
+            secretName: ${cloudflare_tunnel_secret_name}
