@@ -64,3 +64,15 @@ spec:
       enabled: false
     minio:
       enabled: false
+    ingester:
+      replicas: ${mimir_ingester_replicas}
+      zoneAwareReplication:
+        enabled: ${mimir_ingester_zone_aware_replication}
+    store_gateway:
+      replicas: ${mimir_store_gateway_replicas}
+      zoneAwareReplication:
+        enabled: ${mimir_store_gateway_zone_aware_replication}
+    querier:
+      replicas: ${mimir_querier_replicas}
+    query_scheduler:
+      replicas: ${mimir_query_scheduler_replicas}
