@@ -18,8 +18,7 @@ spec:
   values:
     provider: cloudflare
     domainFilters:
-      - ${external_dns_domain_primary}
-      - ${external_dns_domain_secondary}
+      - ${delegating_domain}
     sources:
       - ingress
       - service
