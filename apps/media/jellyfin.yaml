@@ -21,19 +21,14 @@ spec:
         initContainers:
           install-sso-plugin:
             image:
-              repository: alpine
-              tag: 3.20.3
-              pullPolicy: Always
+              repository: python
+              tag: 3.12.11-slim
+              pullPolicy: IfNotPresent
             command:
               - /bin/sh
               - -c
               - |
                 set -eu
-                apk add --no-cache \
-                  --repository https://dl-cdn.alpinelinux.org/alpine/v3.20/main \
-                  --repository https://dl-cdn.alpinelinux.org/alpine/v3.20/community \
-                  ca-certificates curl unzip
-                update-ca-certificates
                 plugin_dir=/config/data/plugins/sso
                 version_file=$plugin_dir/.version
                 config_seed=/config-seed/SSO-Auth.xml
@@ -46,13 +41,13 @@ spec:
                   echo "SSO plugin $plugin_version already installed"
                 else
                   tmp_dir=$(mktemp -d)
-                  curl -fsSL --retry 3 --retry-delay 2 -o "$tmp_dir/sso.zip" "$plugin_url"
-                  echo "$plugin_sha256  $tmp_dir/sso.zip" | sha256sum -c -
+                  python3 -c 'import hashlib,sys,urllib.request;u,s,o=sys.argv[1:4];d=urllib.request.urlopen(u,timeout=60).read();h=hashlib.sha256(d).hexdigest();assert h==s,f"checksum mismatch: {h} != {s}";open(o,"wb").write(d)' "$plugin_url" "$plugin_sha256" "$tmp_dir/sso.zip"
                   mkdir -p "$plugin_dir"
-                  unzip -o "$tmp_dir/sso.zip" -d "$tmp_dir/unpacked"
+                  python3 -c 'import sys,zipfile;z,o=sys.argv[1:3];zipfile.ZipFile(z).extractall(o)' "$tmp_dir/sso.zip" "$tmp_dir/unpacked"
                   cp -f "$tmp_dir"/unpacked/*.dll "$plugin_dir/"
                   echo "$plugin_version" > "$version_file"
                   chown -R "$PUID:$PGID" "$plugin_dir"
+                  rm -rf "$tmp_dir"
                 fi
 
                 if [ -f "$config_seed" ] && [ ! -s "$config_target" ]; then
