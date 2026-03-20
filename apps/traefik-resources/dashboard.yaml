@@ -23,7 +23,7 @@ metadata:
   namespace: traefik
 spec:
   forwardAuth:
-    address: http://authelia.authelia.svc.cluster.local/api/verify?rd=https://auth.${delegating_domain}
+    address: http://authelia.authelia.svc.cluster.local/api/verify?rd=https://auth${public_host_suffix}.${delegating_domain}
     trustForwardHeader: true
     authRequestHeaders:
       - Authorization
@@ -45,7 +45,7 @@ spec:
     name: ${default_cluster_issuer}
     kind: ClusterIssuer
   dnsNames:
-    - dashboard.${delegating_domain}
+    - dashboard${public_host_suffix}.${delegating_domain}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -59,7 +59,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`dashboard.${delegating_domain}`)
+    - match: Host(`dashboard${public_host_suffix}.${delegating_domain}`)
       kind: Rule
       middlewares:
         - name: authelia-forwardauth
@@ -80,7 +80,7 @@ metadata:
 spec:
   ingressClassName: external-dns
   rules:
-    - host: dashboard.${delegating_domain}
+    - host: dashboard${public_host_suffix}.${delegating_domain}
       http:
         paths:
           - path: /

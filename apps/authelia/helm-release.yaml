@@ -31,7 +31,7 @@ spec:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
       rulesOverride:
-        - host: auth.${delegating_domain}
+        - host: auth${public_host_suffix}.${delegating_domain}
           path: /
       tls:
         enabled: true

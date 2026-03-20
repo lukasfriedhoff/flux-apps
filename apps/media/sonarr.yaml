@@ -44,14 +44,14 @@ spec:
           traefik.ingress.kubernetes.io/router.tls: "true"
           traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
         hosts:
-          - host: sonarr.${delegating_domain}
+          - host: sonarr${public_host_suffix}.${delegating_domain}
             paths:
               - path: /
                 pathType: Prefix
         tls:
           - secretName: sonarr-tls
             hosts:
-              - sonarr.${delegating_domain}
+              - sonarr${public_host_suffix}.${delegating_domain}
     persistence:
       api-key-init:
         enabled: true

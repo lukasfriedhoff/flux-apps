@@ -8,7 +8,7 @@ data:
     <?xml version="1.0" encoding="utf-8"?>
     <BrandingOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
       <LoginDisclaimer><![CDATA[
-    <form action="https://jellyfin.${delegating_domain}/sso/OID/start/authelia">
+    <form action="https://jellyfin${public_host_suffix}.${delegating_domain}/sso/OID/start/authelia">
       <button class="raised block emby-button button-submit">
         Sign in with Authelia
       </button>
