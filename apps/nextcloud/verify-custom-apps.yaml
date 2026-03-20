@@ -10,23 +10,16 @@ spec:
       restartPolicy: Never
       containers:
         - name: verify
-          image: alpine:3.20
+          image: python:3.12.11-slim
           command:
             - /bin/sh
             - -c
             - |
               set -eu
-              apk add --no-cache curl tar >/dev/null
               tmp_dir=/tmp/app-downloads
               mkdir -p /custom_apps "$tmp_dir"
               verify_app() {
-                curl -fsSL "$2" -o "$tmp_dir/$1.tar.gz"
-                echo "$3  $tmp_dir/$1.tar.gz" | sha256sum -c - >/dev/null
-                tar -xzf "$tmp_dir/$1.tar.gz" -C /custom_apps
-                if [ ! -d "/custom_apps/$1" ]; then
-                  echo "Missing app directory: $1" >&2
-                  exit 1
-                fi
+                python3 -c 'import hashlib,os,sys,tarfile,urllib.request;name,url,expected,tmp,target=sys.argv[1:6];archive=os.path.join(tmp,f"{name}.tar.gz");data=urllib.request.urlopen(url,timeout=60).read();digest=hashlib.sha256(data).hexdigest();assert digest==expected,f"checksum mismatch for {name}: {digest} != {expected}";open(archive,"wb").write(data);tarfile.open(archive,"r:gz").extractall(target);assert os.path.isdir(os.path.join(target,name)),f"Missing app directory: {name}"' "$1" "$2" "$3" "$tmp_dir" "/custom_apps"
               }
               verify_app \
                 mail \
