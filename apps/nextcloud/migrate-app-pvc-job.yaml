@@ -50,7 +50,7 @@ spec:
       volumes:
         - name: legacy-app
           persistentVolumeClaim:
-            claimName: nextcloud-nextcloud
+            claimName: nextcloud-app
         - name: nextcloud-app
           persistentVolumeClaim:
             claimName: nextcloud-app
