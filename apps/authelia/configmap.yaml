@@ -41,32 +41,32 @@ data:
           subject:
             - 'group:traefik-admins'
             - 'group:traefik-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'grafana${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:grafana-admins'
             - 'group:grafana-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'metrics${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:mimir-admins'
             - 'group:mimir-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'logs${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:loki-admins'
             - 'group:loki-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'traces${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:tempo-admins'
             - 'group:tempo-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'nextcloud${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:nextcloud-admins'
             - 'group:nextcloud-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'collabora${public_host_suffix}.${delegating_domain}'
           resources:
             - '^/cool/adminws/'
@@ -74,7 +74,7 @@ data:
             - '^/browser/dist/admin/'
           subject:
             - 'group:collabora-admins'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'collabora${public_host_suffix}.${delegating_domain}'
           resources:
             - '^/cool/adminws/'
@@ -85,49 +85,49 @@ data:
           subject:
             - 'group:qbittorrent-admins'
             - 'group:qbittorrent-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'prowlarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:prowlarr-admins'
             - 'group:prowlarr-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'sonarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:sonarr-admins'
             - 'group:sonarr-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'radarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:radarr-admins'
             - 'group:radarr-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'lidarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:lidarr-admins'
             - 'group:lidarr-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'readarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:readarr-admins'
             - 'group:readarr-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'bazarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:bazarr-admins'
             - 'group:bazarr-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'jellyseerr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:jellyseerr-admins'
             - 'group:jellyseerr-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: 'jellyfin${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:jellyfin-admins'
             - 'group:jellyfin-users'
-          policy: two_factor
+          policy: ${authelia_access_policy}
         - domain: '*.${delegating_domain}'
-          policy: two_factor
+          policy: ${authelia_access_policy}
 
     session:
       name: authelia_session
@@ -166,7 +166,7 @@ data:
           - client_id: nextcloud
             client_name: Nextcloud
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.nextcloud.secret" | msquote }}
-            authorization_policy: two_factor
+            authorization_policy: ${authelia_oidc_policy}
             consent_mode: implicit
             claims_policy: nextcloud
             redirect_uris:
@@ -207,7 +207,7 @@ data:
             client_name: Jellyfin
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.jellyfin.secret" | msquote }}
             public: false
-            authorization_policy: two_factor
+            authorization_policy: ${authelia_oidc_policy}
             require_pkce: true
             pkce_challenge_method: 'S256'
             redirect_uris:

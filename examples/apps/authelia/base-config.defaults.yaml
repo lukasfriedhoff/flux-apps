@@ -6,6 +6,8 @@ metadata:
 data:
   authelia_smtp_address: "submission://posteo.de:587"
   authelia_smtp_startup_check_address: "h4xx@posteo.de"
+  authelia_access_policy: "two_factor"
+  authelia_oidc_policy: "two_factor"
   cloudflare_tunnel_hostname: "03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com"
   default_cluster_issuer: "letsencrypt-prod"
   default_sts_storage_class_name: "ssd-rbd-2r"
