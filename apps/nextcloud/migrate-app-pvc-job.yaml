@@ -49,8 +49,7 @@ spec:
               mountPath: /dest
       volumes:
         - name: legacy-app
-          persistentVolumeClaim:
-            claimName: nextcloud-app
+          emptyDir: {}
         - name: nextcloud-app
           persistentVolumeClaim:
             claimName: nextcloud-app
