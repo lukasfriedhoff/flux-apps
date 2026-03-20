@@ -11,3 +11,8 @@
 - while integrating new apps, always focus on scalability by default
 - never use bitnami charts or images
 - avoid deprecated charts
+- maintain `examples/apps/<app>/` for every app:
+  - `base-config.defaults.yaml` lists app substitution keys with sane defaults.
+  - `flux-cluster-kustomization.yaml` shows how the app is wired from a cluster repo.
+- when app placeholders (`${...}`) change, update the matching `examples/apps/<app>/base-config.defaults.yaml` in the same commit.
+- examples must stay cluster-agnostic (no secret values, no per-cluster overrides).

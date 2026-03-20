@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  letsencrypt_email: "letsencrypt@h4xx.io"
+  letsencrypt_server: "https://acme-v02.api.letsencrypt.org/directory"
+  letsencrypt_staging_server: "https://acme-staging-v02.api.letsencrypt.org/directory"
