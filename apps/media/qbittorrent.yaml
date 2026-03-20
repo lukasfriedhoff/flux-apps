@@ -101,14 +101,14 @@ spec:
           traefik.ingress.kubernetes.io/router.tls: "true"
           traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
         hosts:
-          - host: qbittorrent.${delegating_domain}
+          - host: qbittorrent${public_host_suffix}.${delegating_domain}
             paths:
               - path: /
                 pathType: Prefix
         tls:
           - secretName: qbittorrent-tls
             hosts:
-              - qbittorrent.${delegating_domain}
+              - qbittorrent${public_host_suffix}.${delegating_domain}
     persistence:
       config:
         enabled: true

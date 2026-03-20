@@ -30,7 +30,7 @@ spec:
               protocol: TCP
           env:
             - name: NEXTCLOUD_SERVER
-              value: https://nextcloud.${delegating_domain}
+              value: https://nextcloud${public_host_suffix}.${delegating_domain}
             - name: NEXTCLOUD_USERNAME
               valueFrom:
                 secretKeyRef:

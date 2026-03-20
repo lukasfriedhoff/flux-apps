@@ -37,18 +37,18 @@ spec:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:
-        - grafana.${delegating_domain}
+        - grafana${public_host_suffix}.${delegating_domain}
       tls:
         - secretName: grafana-tls
           hosts:
-            - grafana.${delegating_domain}
+            - grafana${public_host_suffix}.${delegating_domain}
     persistence:
       enabled: true
       storageClassName: ${monitoring_storage_class_name}
       size: ${grafana_persistence_size}
     grafana.ini:
       server:
-        root_url: https://grafana.${delegating_domain}
+        root_url: https://grafana${public_host_suffix}.${delegating_domain}
       auth.generic_oauth:
         enabled: true
         name: Authelia
@@ -61,9 +61,9 @@ spec:
         name_attribute_path: name
         groups_attribute_path: groups
         use_pkce: true
-        auth_url: https://auth.${delegating_domain}/api/oidc/authorization
-        token_url: https://auth.${delegating_domain}/api/oidc/token
-        api_url: https://auth.${delegating_domain}/api/oidc/userinfo
+        auth_url: https://auth${public_host_suffix}.${delegating_domain}/api/oidc/authorization
+        token_url: https://auth${public_host_suffix}.${delegating_domain}/api/oidc/token
+        api_url: https://auth${public_host_suffix}.${delegating_domain}/api/oidc/userinfo
         allow_assign_grafana_admin: true
         role_attribute_path: (contains(groups[*], 'admins') && 'GrafanaAdmin') || (contains(groups[*], 'grafana-admins') && 'GrafanaAdmin') || (contains(groups[*], 'grafana-users') && 'Editor') || 'Viewer'
     datasources:

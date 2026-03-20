@@ -43,14 +43,14 @@ spec:
           traefik.ingress.kubernetes.io/router.tls: "true"
           traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
         hosts:
-          - host: bazarr.${delegating_domain}
+          - host: bazarr${public_host_suffix}.${delegating_domain}
             paths:
               - path: /
                 pathType: Prefix
         tls:
           - secretName: bazarr-tls
             hosts:
-              - bazarr.${delegating_domain}
+              - bazarr${public_host_suffix}.${delegating_domain}
     persistence:
       config:
         enabled: true

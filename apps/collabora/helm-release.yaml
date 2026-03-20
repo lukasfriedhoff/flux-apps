@@ -25,11 +25,11 @@ spec:
       prometheus.io/path: "/cool/getMetrics"
     collabora:
       extra_params: --o:ssl.enable=false --o:ssl.termination=true
-      server_name: collabora.${delegating_domain}
+      server_name: collabora${public_host_suffix}.${delegating_domain}
       aliasgroups:
-        - host: "https://nextcloud.${delegating_domain}:443"
+        - host: "https://nextcloud${public_host_suffix}.${delegating_domain}:443"
           aliases:
-            - "https://nextcloud.${delegating_domain}"
+            - "https://nextcloud${public_host_suffix}.${delegating_domain}"
       existingSecret:
         enabled: true
         secretName: collabora-admin
@@ -45,11 +45,11 @@ spec:
         traefik.ingress.kubernetes.io/router.tls: "true"
         traefik.ingress.kubernetes.io/router.priority: "1"
       hosts:
-        - host: collabora.${delegating_domain}
+        - host: collabora${public_host_suffix}.${delegating_domain}
           paths:
             - path: /
               pathType: ImplementationSpecific
       tls:
         - secretName: collabora-tls
           hosts:
-            - collabora.${delegating_domain}
+            - collabora${public_host_suffix}.${delegating_domain}

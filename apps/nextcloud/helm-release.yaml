@@ -32,14 +32,14 @@ spec:
       tls:
         - secretName: nextcloud-tls
           hosts:
-            - nextcloud.${delegating_domain}
+            - nextcloud${public_host_suffix}.${delegating_domain}
     nextcloud:
-      host: nextcloud.${delegating_domain}
+      host: nextcloud${public_host_suffix}.${delegating_domain}
       podSecurityContext:
         fsGroupChangePolicy: OnRootMismatch
       extraEnv:
         - name: OVERWRITEHOST
-          value: nextcloud.${delegating_domain}
+          value: nextcloud${public_host_suffix}.${delegating_domain}
         - name: OVERWRITEPROTOCOL
           value: https
         - name: TRUSTED_PROXIES
@@ -58,7 +58,7 @@ spec:
         oidc-login.config.php: |-
           <?php
           $CONFIG = array (
-            'oidc_login_provider_url' => 'https://auth.${delegating_domain}',
+            'oidc_login_provider_url' => 'https://auth${public_host_suffix}.${delegating_domain}',
             'oidc_login_client_id' => 'nextcloud',
             'oidc_login_client_secret' => getenv('OIDC_LOGIN_CLIENT_SECRET'),
             'oidc_login_button_text' => 'Log in with Authelia',
@@ -66,7 +66,7 @@ spec:
             'oidc_login_code_challenge_method' => 'S256',
             'oidc_login_auto_redirect' => false,
             'oidc_login_end_session_redirect' => false,
-            'oidc_login_logout_url' => 'https://nextcloud.${delegating_domain}/apps/oidc_login/oidc',
+            'oidc_login_logout_url' => 'https://nextcloud${public_host_suffix}.${delegating_domain}/apps/oidc_login/oidc',
             'oidc_login_disable_registration' => false,
             'oidc_login_attributes' => array (
               'id' => 'sub',
@@ -125,8 +125,8 @@ spec:
           php /var/www/html/occ config:app:set richdocuments disable_certificate_verification --value=no || true
           for i in 1 2 3 4 5; do
             if php /var/www/html/occ richdocuments:activate-config \
-              --wopi-url="https://collabora.${delegating_domain}" \
-              --callback-url="https://nextcloud.${delegating_domain}"; then
+              --wopi-url="https://collabora${public_host_suffix}.${delegating_domain}" \
+              --callback-url="https://nextcloud${public_host_suffix}.${delegating_domain}"; then
               break
             fi
             sleep 5

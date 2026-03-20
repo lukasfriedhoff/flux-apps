@@ -17,7 +17,7 @@ data:
         address: 'tcp://:9959/metrics'
 
     theme: dark
-    default_redirection_url: https://nextcloud.${delegating_domain}
+    default_redirection_url: https://nextcloud${public_host_suffix}.${delegating_domain}
 
     authentication_backend:
       file:
@@ -31,43 +31,43 @@ data:
     access_control:
       default_policy: deny
       rules:
-        - domain: 'auth.${delegating_domain}'
+        - domain: 'auth${public_host_suffix}.${delegating_domain}'
           policy: bypass
-        - domain: 'grafana.${delegating_domain}'
+        - domain: 'grafana${public_host_suffix}.${delegating_domain}'
           subject:
             - 'user:testuser'
           policy: one_factor
-        - domain: 'dashboard.${delegating_domain}'
+        - domain: 'dashboard${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:traefik-admins'
             - 'group:traefik-users'
           policy: two_factor
-        - domain: 'grafana.${delegating_domain}'
+        - domain: 'grafana${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:grafana-admins'
             - 'group:grafana-users'
           policy: two_factor
-        - domain: 'metrics.${delegating_domain}'
+        - domain: 'metrics${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:mimir-admins'
             - 'group:mimir-users'
           policy: two_factor
-        - domain: 'logs.${delegating_domain}'
+        - domain: 'logs${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:loki-admins'
             - 'group:loki-users'
           policy: two_factor
-        - domain: 'traces.${delegating_domain}'
+        - domain: 'traces${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:tempo-admins'
             - 'group:tempo-users'
           policy: two_factor
-        - domain: 'nextcloud.${delegating_domain}'
+        - domain: 'nextcloud${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:nextcloud-admins'
             - 'group:nextcloud-users'
           policy: two_factor
-        - domain: 'collabora.${delegating_domain}'
+        - domain: 'collabora${public_host_suffix}.${delegating_domain}'
           resources:
             - '^/cool/adminws/'
             - '^/cool/getMetrics'
@@ -75,53 +75,53 @@ data:
           subject:
             - 'group:collabora-admins'
           policy: two_factor
-        - domain: 'collabora.${delegating_domain}'
+        - domain: 'collabora${public_host_suffix}.${delegating_domain}'
           resources:
             - '^/cool/adminws/'
             - '^/cool/getMetrics'
             - '^/browser/dist/admin/'
           policy: deny
-        - domain: 'qbittorrent.${delegating_domain}'
+        - domain: 'qbittorrent${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:qbittorrent-admins'
             - 'group:qbittorrent-users'
           policy: two_factor
-        - domain: 'prowlarr.${delegating_domain}'
+        - domain: 'prowlarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:prowlarr-admins'
             - 'group:prowlarr-users'
           policy: two_factor
-        - domain: 'sonarr.${delegating_domain}'
+        - domain: 'sonarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:sonarr-admins'
             - 'group:sonarr-users'
           policy: two_factor
-        - domain: 'radarr.${delegating_domain}'
+        - domain: 'radarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:radarr-admins'
             - 'group:radarr-users'
           policy: two_factor
-        - domain: 'lidarr.${delegating_domain}'
+        - domain: 'lidarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:lidarr-admins'
             - 'group:lidarr-users'
           policy: two_factor
-        - domain: 'readarr.${delegating_domain}'
+        - domain: 'readarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:readarr-admins'
             - 'group:readarr-users'
           policy: two_factor
-        - domain: 'bazarr.${delegating_domain}'
+        - domain: 'bazarr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:bazarr-admins'
             - 'group:bazarr-users'
           policy: two_factor
-        - domain: 'jellyseerr.${delegating_domain}'
+        - domain: 'jellyseerr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:jellyseerr-admins'
             - 'group:jellyseerr-users'
           policy: two_factor
-        - domain: 'jellyfin.${delegating_domain}'
+        - domain: 'jellyfin${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:jellyfin-admins'
             - 'group:jellyfin-users'
@@ -170,8 +170,8 @@ data:
             consent_mode: implicit
             claims_policy: nextcloud
             redirect_uris:
-              - https://nextcloud.${delegating_domain}/apps/oidc_login/oidc
-              - https://nextcloud.${delegating_domain}/index.php/apps/oidc_login/oidc
+              - https://nextcloud${public_host_suffix}.${delegating_domain}/apps/oidc_login/oidc
+              - https://nextcloud${public_host_suffix}.${delegating_domain}/index.php/apps/oidc_login/oidc
             scopes:
               - openid
               - profile
@@ -191,8 +191,8 @@ data:
             consent_mode: implicit
             claims_policy: grafana
             redirect_uris:
-              - https://grafana.${delegating_domain}/login/generic_oauth
-              - https://grafana.${delegating_domain}/login/generic_oauth/
+              - https://grafana${public_host_suffix}.${delegating_domain}/login/generic_oauth
+              - https://grafana${public_host_suffix}.${delegating_domain}/login/generic_oauth/
             scopes:
               - openid
               - profile
@@ -211,7 +211,7 @@ data:
             require_pkce: true
             pkce_challenge_method: 'S256'
             redirect_uris:
-              - https://jellyfin.${delegating_domain}/sso/OID/redirect/authelia
+              - https://jellyfin${public_host_suffix}.${delegating_domain}/sso/OID/redirect/authelia
             scopes:
               - openid
               - profile
