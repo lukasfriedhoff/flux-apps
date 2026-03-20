@@ -1,14 +1,14 @@
 ---
-# ssd-cephfs-1r: 1 replica (no redundancy) - shared filesystem
+# CephFS storage classes (names/fs/pools can be overridden per cluster overlay)
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: ssd-cephfs-1r
+  name: "${ceph_cephfs_storage_class_1r_name:=ssd-cephfs-1r}"
 provisioner: cephfs.csi.ceph.com
 parameters:
   clusterID: "${ceph_cluster_id}"
-  fsName: ssd-cephfs
-  pool: ssd-cephfs-1r
+  fsName: "${ceph_cephfs_fs_name:=ssd-cephfs}"
+  pool: "${ceph_cephfs_storage_class_1r_pool:=ssd-cephfs-1r}"
   mounter: fuse
   csi.storage.k8s.io/provisioner-secret-name: csi-cephfs-secret
   csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
@@ -20,16 +20,15 @@ reclaimPolicy: Delete
 allowVolumeExpansion: true
 volumeBindingMode: Immediate
 ---
-# ssd-cephfs-2r: 2 replicas - shared filesystem
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: ssd-cephfs-2r
+  name: "${ceph_cephfs_storage_class_2r_name:=ssd-cephfs-2r}"
 provisioner: cephfs.csi.ceph.com
 parameters:
   clusterID: "${ceph_cluster_id}"
-  fsName: ssd-cephfs
-  pool: ssd-cephfs-2r
+  fsName: "${ceph_cephfs_fs_name:=ssd-cephfs}"
+  pool: "${ceph_cephfs_storage_class_2r_pool:=ssd-cephfs-2r}"
   mounter: fuse
   csi.storage.k8s.io/provisioner-secret-name: csi-cephfs-secret
   csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
@@ -41,16 +40,15 @@ reclaimPolicy: Delete
 allowVolumeExpansion: true
 volumeBindingMode: Immediate
 ---
-# ssd-cephfs-3r: 3 replicas - shared filesystem
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: ssd-cephfs-3r
+  name: "${ceph_cephfs_storage_class_3r_name:=ssd-cephfs-3r}"
 provisioner: cephfs.csi.ceph.com
 parameters:
   clusterID: "${ceph_cluster_id}"
-  fsName: ssd-cephfs
-  pool: ssd-cephfs-3r
+  fsName: "${ceph_cephfs_fs_name:=ssd-cephfs}"
+  pool: "${ceph_cephfs_storage_class_3r_pool:=ssd-cephfs-3r}"
   mounter: fuse
   csi.storage.k8s.io/provisioner-secret-name: csi-cephfs-secret
   csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
