@@ -106,6 +106,14 @@ spec:
         before-starting: |-
           #!/bin/sh
           set -e
+          # Avoid getcwd failures if the previous working directory vanished.
+          cd /
+          # On slow or interrupted bootstrap runs, /var/www/html may exist while occ
+          # is not yet available; do not crash-loop the pod in that case.
+          if [ ! -x /var/www/html/occ ]; then
+            echo "Nextcloud occ is not available yet, skipping before-starting hook."
+            exit 0
+          fi
           if [ ! -e /var/www/html/public ] && [ -d /var/www/html/lib/public ]; then
             ln -s lib/public /var/www/html/public
           fi
