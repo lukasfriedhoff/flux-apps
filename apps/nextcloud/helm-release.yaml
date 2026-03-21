@@ -145,6 +145,19 @@ spec:
             sleep 5
           done
       extraInitContainers:
+        - name: fix-var-www-permissions
+          image: alpine:3.20
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /var/www
+              chmod 0755 /var/www
+          volumeMounts:
+            - name: nextcloud-main
+              mountPath: /var/www
+              subPath: root
         - name: seed-custom-apps
           image: python:3.12.11-slim
           command:
