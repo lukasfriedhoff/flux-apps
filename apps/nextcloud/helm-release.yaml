@@ -5,8 +5,9 @@ metadata:
   namespace: nextcloud
 spec:
   interval: 10m0s
-  # Nextcloud may need a long first-start window on RWX CephFS volumes.
-  timeout: 45m0s
+  # First bootstrap/upgrade on RWX CephFS can take a long time due rsync.
+  # Keep Helm waiting long enough to avoid interrupting and restarting sync.
+  timeout: 4h0m0s
   chart:
     spec:
       chart: nextcloud
@@ -259,4 +260,4 @@ spec:
       initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 5
-      failureThreshold: 180
+      failureThreshold: 2160
