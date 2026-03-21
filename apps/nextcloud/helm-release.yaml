@@ -5,7 +5,8 @@ metadata:
   namespace: nextcloud
 spec:
   interval: 10m0s
-  timeout: 15m0s
+  # Nextcloud may need a long first-start window on RWX CephFS volumes.
+  timeout: 45m0s
   chart:
     spec:
       chart: nextcloud
@@ -252,3 +253,7 @@ spec:
         memory: ${nextcloud_resources_limits_memory}
     startupProbe:
       enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 180
