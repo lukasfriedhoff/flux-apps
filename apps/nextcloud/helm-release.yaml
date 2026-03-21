@@ -143,14 +143,15 @@ spec:
             echo "Disabling maintenance mode."
             php /var/www/html/occ maintenance:mode --off
           fi
-          php /var/www/html/occ app:install -n oidc_login || true
-          php /var/www/html/occ app:enable -n oidc_login
-          php /var/www/html/occ app:install -n mail || true
-          php /var/www/html/occ app:enable -n mail || true
-          php /var/www/html/occ app:install -n serverinfo || true
-          php /var/www/html/occ app:enable -n serverinfo
-          php /var/www/html/occ app:install -n richdocuments || true
-          php /var/www/html/occ app:enable -n richdocuments
+          ensure_app_enabled() {
+            app="$1"
+            php /var/www/html/occ app:install -n "$app" || true
+            php /var/www/html/occ app:enable -n "$app" || true
+          }
+          ensure_app_enabled oidc_login
+          ensure_app_enabled mail
+          ensure_app_enabled serverinfo
+          ensure_app_enabled richdocuments
           php /var/www/html/occ app:disable -n richdocumentscode || true
           php /var/www/html/occ app:remove -n richdocumentscode || true
           php /var/www/html/occ config:app:set richdocuments disable_certificate_verification --value=no || true
