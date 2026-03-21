@@ -154,10 +154,21 @@ spec:
               set -eu
               mkdir -p /var/www
               chmod 0755 /var/www
+              mkdir -p /var/www-config
+              chown 33:33 /var/www-config
+              chmod 0770 /var/www-config
+              if [ ! -f /var/www-config/config.php ]; then
+                touch /var/www-config/config.php
+                chown 33:33 /var/www-config/config.php
+                chmod 0640 /var/www-config/config.php
+              fi
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www
               subPath: root
+            - name: nextcloud-main
+              mountPath: /var/www-config
+              subPath: config
         - name: seed-custom-apps
           image: python:3.12.11-slim
           command:
