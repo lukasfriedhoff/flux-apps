@@ -132,31 +132,34 @@ spec:
             echo "Nextcloud install not complete yet; skipping app configuration hook."
             exit 0
           fi
+          occ_safe() {
+            timeout 60 php /var/www/html/occ "$@" || true
+          }
           if [ ! -e /var/www/html/public ] && [ -d /var/www/html/lib/public ]; then
             ln -s lib/public /var/www/html/public
           fi
           if php /var/www/html/occ status --output=json | grep -q '"needsDbUpgrade":true'; then
             echo "Running Nextcloud upgrade."
-            php /var/www/html/occ upgrade --no-interaction
+            occ_safe upgrade --no-interaction
           fi
           if php /var/www/html/occ status --output=json | grep -q '"maintenance":true' && ! php /var/www/html/occ status --output=json | grep -q '"needsDbUpgrade":true'; then
             echo "Disabling maintenance mode."
-            php /var/www/html/occ maintenance:mode --off
+            occ_safe maintenance:mode --off
           fi
           ensure_app_enabled() {
             app="$1"
-            php /var/www/html/occ app:install -n "$app" || true
-            php /var/www/html/occ app:enable -n "$app" || true
+            occ_safe app:install -n "$app"
+            occ_safe app:enable -n "$app"
           }
           ensure_app_enabled oidc_login
           ensure_app_enabled mail
           ensure_app_enabled serverinfo
           ensure_app_enabled richdocuments
-          php /var/www/html/occ app:disable -n richdocumentscode || true
-          php /var/www/html/occ app:remove -n richdocumentscode || true
-          php /var/www/html/occ config:app:set richdocuments disable_certificate_verification --value=no || true
+          occ_safe app:disable -n richdocumentscode
+          occ_safe app:remove -n richdocumentscode
+          occ_safe config:app:set richdocuments disable_certificate_verification --value=no
           for i in 1 2 3 4 5; do
-            if php /var/www/html/occ richdocuments:activate-config \
+            if timeout 30 php /var/www/html/occ richdocuments:activate-config \
               --wopi-url="https://collabora${public_host_suffix}.${delegating_domain}" \
               --callback-url="https://nextcloud${public_host_suffix}.${delegating_domain}"; then
               break
