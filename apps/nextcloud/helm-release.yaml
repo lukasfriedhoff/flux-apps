@@ -8,6 +8,10 @@ spec:
   # First bootstrap/upgrade on RWX CephFS can take a long time due rsync.
   # Keep Helm waiting long enough to avoid interrupting and restarting sync.
   timeout: 4h0m0s
+  # Force replacement on upgrade to recover from historical duplicate
+  # volumeMount path entries that break patch-based upgrades.
+  upgrade:
+    force: true
   chart:
     spec:
       chart: nextcloud
