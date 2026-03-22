@@ -24,6 +24,7 @@ spec:
     mimir:
       structuredConfig:
         common:
+          replication_factor: ${mimir_replication_factor}
           storage:
             backend: s3
             s3:
