@@ -334,6 +334,7 @@ spec:
       size: ${nextcloud_app_size}
       nextcloudData:
         enabled: true
+        existingClaim: nextcloud-nextcloud-data
         storageClass: ${nextcloud_data_storage_class_name}
         size: ${nextcloud_data_size}
         accessMode: ReadWriteMany
