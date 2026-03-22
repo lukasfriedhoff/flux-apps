@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: prowlarr
+  name: profilarr
   namespace: media
 spec:
   interval: 10m0s
@@ -16,28 +16,23 @@ spec:
         namespace: media
       interval: 10m0s
   values:
-    defaultPodOptions:
-      dnsConfig:
-        options:
-          - name: ndots
-            value: "1"
     controllers:
       main:
         containers:
           main:
             image:
-              repository: lscr.io/linuxserver/prowlarr
-              tag: 2.3.0
+              repository: ghcr.io/dictionarry-hub/profilarr
+              tag: latest
             env:
               TZ: ${media_timezone}
               PUID: ${media_puid}
               PGID: ${media_pgid}
-              DOTNET_SYSTEM_NET_DISABLEIPV6: "1"
+              AUTH: "off"
     service:
       main:
         ports:
           http:
-            port: 9696
+            port: 6868
     ingress:
       main:
         enabled: true
@@ -49,14 +44,14 @@ spec:
           traefik.ingress.kubernetes.io/router.tls: "true"
           traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
         hosts:
-          - host: prowlarr${public_host_suffix}.${delegating_domain}
+          - host: profilarr${public_host_suffix}.${delegating_domain}
             paths:
               - path: /
                 pathType: Prefix
         tls:
-          - secretName: prowlarr-tls
+          - secretName: profilarr-tls
             hosts:
-              - prowlarr${public_host_suffix}.${delegating_domain}
+              - profilarr${public_host_suffix}.${delegating_domain}
     persistence:
       config:
         enabled: true

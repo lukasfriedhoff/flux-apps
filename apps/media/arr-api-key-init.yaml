@@ -18,24 +18,50 @@ data:
       exit 1
     fi
 
+    wait_for_valid_xml() {
+      attempts=0
+      while [ "$attempts" -lt 120 ]; do
+        if [ -s "$config_file" ] && xmlstarlet val -q "$config_file" >/dev/null 2>&1; then
+          return 0
+        fi
+        attempts=$((attempts + 1))
+        sleep 2
+      done
+      echo "ARR API key init: config XML not valid after waiting, skipping key update for $app" >&2
+      return 1
+    }
+
     update_key() {
       key="$(cat "$key_file")"
-      if [ -f "$config_file" ]; then
-        if xmlstarlet sel -t -v '/Config/ApiKey' "$config_file" >/dev/null 2>&1; then
-          xmlstarlet ed -L -u '/Config/ApiKey' -v "$key" "$config_file"
-        else
-          xmlstarlet ed -L -s '/Config' -t elem -n ApiKey -v "$key" "$config_file"
-        fi
+      tmp_file="$(mktemp)"
+      if xmlstarlet sel -t -v '/Config/ApiKey' "$config_file" >/dev/null 2>&1; then
+        xmlstarlet ed -u '/Config/ApiKey' -v "$key" "$config_file" > "$tmp_file"
+      else
+        xmlstarlet ed -s '/Config' -t elem -n ApiKey -v "$key" "$config_file" > "$tmp_file"
+      fi
+      if xmlstarlet val -q "$tmp_file" >/dev/null 2>&1; then
+        mv "$tmp_file" "$config_file"
+        chown "${PUID:-1000}:${PGID:-1000}" "$config_file" || true
+        chmod 0644 "$config_file" || true
+      else
+        rm -f "$tmp_file"
+        echo "ARR API key init: refusing to write invalid XML for $app" >&2
+        return 1
       fi
     }
 
     if [ -f "$config_file" ]; then
+      wait_for_valid_xml || exit 0
       update_key
     else
       (
-        while [ ! -f "$config_file" ]; do
+        attempts=0
+        while [ ! -f "$config_file" ] && [ "$attempts" -lt 120 ]; do
+          attempts=$((attempts + 1))
           sleep 2
         done
+        [ -f "$config_file" ] || exit 0
+        wait_for_valid_xml || exit 0
         update_key
       ) &
     fi

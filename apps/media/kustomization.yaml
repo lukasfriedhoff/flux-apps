@@ -8,6 +8,8 @@ resources:
   - qbittorrent-config.yaml
   - qbittorrent.yaml
   - prowlarr.yaml
+  - prowlarr-bootstrap-config.yaml
+  - prowlarr-bootstrap.yaml
   - arr-api-key-init.yaml
   - sonarr.yaml
   - radarr.yaml
@@ -20,5 +22,6 @@ resources:
   - flaresolverr.yaml
   - buildarr-config.yaml
   - buildarr.yaml
+  - profilarr.yaml
   - recyclarr-config.yaml
   - recyclarr.yaml

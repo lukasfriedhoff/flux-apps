@@ -21,6 +21,7 @@ spec:
         type: cronjob
         cronjob:
           schedule: "0 3 * * *"
+          suspend: true
           successfulJobsHistory: 1
           failedJobsHistory: 3
         containers:
