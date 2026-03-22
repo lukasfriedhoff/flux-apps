@@ -19,20 +19,23 @@ spec:
               tmp_dir=/tmp/app-downloads
               mkdir -p /custom_apps "$tmp_dir"
               verify_app() {
-                python3 -c 'import hashlib,os,sys,tarfile,urllib.request;name,url,expected,tmp,target=sys.argv[1:6];archive=os.path.join(tmp,f"{name}.tar.gz");data=urllib.request.urlopen(url,timeout=60).read();digest=hashlib.sha256(data).hexdigest();assert digest==expected,f"checksum mismatch for {name}: {digest} != {expected}";open(archive,"wb").write(data);tarfile.open(archive,"r:gz").extractall(target);assert os.path.isdir(os.path.join(target,name)),f"Missing app directory: {name}"' "$1" "$2" "$3" "$tmp_dir" "/custom_apps"
+                python3 -c 'import hashlib,os,sys,tarfile,urllib.request;name,url,expected,tmp,target,required=sys.argv[1:7];archive=os.path.join(tmp,f"{name}.tar.gz");data=urllib.request.urlopen(url,timeout=60).read();digest=hashlib.sha256(data).hexdigest();assert digest==expected,f"checksum mismatch for {name}: {digest} != {expected}";open(archive,"wb").write(data);tarfile.open(archive,"r:gz").extractall(target);appdir=os.path.join(target,name);assert os.path.isdir(appdir),f"Missing app directory: {name}";required_path=os.path.join(target,required);assert os.path.isfile(required_path),f"Missing required file for {name}: {required}"' "$1" "$2" "$3" "$tmp_dir" "/custom_apps" "$4"
               }
               verify_app \
                 mail \
-                https://github.com/nextcloud-releases/mail/releases/download/v5.6.12/mail-v5.6.12.tar.gz \
-                eddf79115bc5b1fbfae9c96f0630614b4fced1bfe75b2468a71fc22fd5e4a838
+                https://github.com/nextcloud-releases/mail/releases/download/v5.7.4/mail-v5.7.4.tar.gz \
+                4975770bd441349169dceb9d0dc6dd9d6c2e85e0d095ed5a536c117ce52d2eaa \
+                mail/vendor/autoload.php
               verify_app \
                 richdocuments \
-                https://github.com/nextcloud-releases/richdocuments/releases/download/v9.0.2/richdocuments-v9.0.2.tar.gz \
-                ceeed1c207f373569729b9cdfa2a4c4ecade4dd83d8fddc13f01840316bc0366
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v10.1.2/richdocuments-v10.1.2.tar.gz \
+                5bb91dd34ff98e666531143fc43077f961e52a30aafe18115d1c9e5b2bb62ca2 \
+                richdocuments/appinfo/info.xml
               verify_app \
                 oidc_login \
                 https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
-                014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912
+                014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912 \
+                oidc_login/appinfo/info.xml
           volumeMounts:
             - name: nextcloud-custom-apps
               mountPath: /custom_apps

@@ -157,6 +157,17 @@ spec:
             app="$1"
             occ_safe app:enable -n "$app"
           }
+          enable_custom_app_if_present() {
+            app="$1"
+            marker="$2"
+            if [ -f "$marker" ]; then
+              ensure_app_enabled "$app"
+              return 0
+            fi
+            echo "Custom app '$app' missing required file '$marker'; disabling it."
+            occ_safe app:disable -n "$app"
+            return 1
+          }
           configure_oidc_login() {
             provider="$NEXTCLOUD_OIDC_PROVIDER"
             if [ -z "$provider" ]; then
@@ -166,6 +177,9 @@ spec:
               authelia)
                 if [ -z "$OIDC_LOGIN_CLIENT_SECRET" ]; then
                   echo "NEXTCLOUD_OIDC_PROVIDER=authelia but OIDC secret is missing; disabling oidc_login."
+                  occ_safe app:disable -n oidc_login
+                elif [ ! -f /var/www/html/custom_apps/oidc_login/appinfo/info.xml ]; then
+                  echo "OIDC app payload missing; disabling oidc_login."
                   occ_safe app:disable -n oidc_login
                 else
                   ensure_app_enabled oidc_login
@@ -182,20 +196,21 @@ spec:
             esac
           }
           configure_oidc_login
-          ensure_app_enabled mail
+          enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
           ensure_app_enabled serverinfo
-          ensure_app_enabled richdocuments
-          occ_safe app:disable -n richdocumentscode
-          occ_safe app:remove -n richdocumentscode
-          occ_safe config:app:set richdocuments disable_certificate_verification --value=no
-          for i in 1 2 3 4 5; do
-            if timeout 30 php /var/www/html/occ richdocuments:activate-config \
-              --wopi-url="https://collabora${public_host_suffix}.${delegating_domain}" \
-              --callback-url="https://nextcloud${public_host_suffix}.${delegating_domain}"; then
-              break
-            fi
-            sleep 5
-          done
+          if enable_custom_app_if_present richdocuments /var/www/html/custom_apps/richdocuments/appinfo/info.xml; then
+            occ_safe app:disable -n richdocumentscode
+            occ_safe app:remove -n richdocumentscode
+            occ_safe config:app:set richdocuments disable_certificate_verification --value=no
+            for i in 1 2 3 4 5; do
+              if timeout 30 php /var/www/html/occ richdocuments:activate-config \
+                --wopi-url="https://collabora${public_host_suffix}.${delegating_domain}" \
+                --callback-url="https://nextcloud${public_host_suffix}.${delegating_domain}"; then
+                break
+              fi
+              sleep 5
+            done
+          fi
       extraInitContainers:
         - name: fix-var-www-permissions
           image: alpine:3.20
@@ -234,24 +249,58 @@ spec:
             - -c
             - |
               set -eu
-              mkdir -p /var/www/html/custom_apps /tmp/app-downloads
-              find /var/www/html/custom_apps -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+              target=/var/www/html/custom_apps
+              tmp_root=/tmp/app-downloads
+              mkdir -p "$target" "$tmp_root"
+              lockdir="$target/.seed-lock"
+              acquired=0
+              for _ in $(seq 1 60); do
+                if mkdir "$lockdir" 2>/dev/null; then
+                  acquired=1
+                  break
+                fi
+                sleep 2
+              done
+              if [ "$acquired" -ne 1 ]; then
+                echo "Unable to acquire custom app seed lock: $lockdir" >&2
+                exit 1
+              fi
+              cleanup() {
+                rmdir "$lockdir" 2>/dev/null || true
+              }
+              trap cleanup EXIT
               fetch_app() {
-                python3 -c 'import hashlib,os,sys,tarfile,urllib.request;name,url,expected,tmp,target=sys.argv[1:6];archive=os.path.join(tmp,f"{name}.tar.gz");data=urllib.request.urlopen(url,timeout=60).read();digest=hashlib.sha256(data).hexdigest();assert digest==expected,f"checksum mismatch for {name}: {digest} != {expected}";open(archive,"wb").write(data);tarfile.open(archive,"r:gz").extractall(target);assert os.path.isdir(os.path.join(target,name)),f"Missing app directory: {name}"' "$1" "$2" "$3" "/tmp/app-downloads" "/var/www/html/custom_apps"
+                name="$1"
+                url="$2"
+                expected="$3"
+                required="$4"
+                stage="$tmp_root/$name"
+                rm -rf "$stage"
+                mkdir -p "$stage"
+                python3 -c 'import hashlib,os,sys,tarfile,urllib.request;name,url,expected,stage=sys.argv[1:5];archive=os.path.join(stage,f"{name}.tar.gz");data=urllib.request.urlopen(url,timeout=60).read();digest=hashlib.sha256(data).hexdigest();assert digest==expected,f"checksum mismatch for {name}: {digest} != {expected}";open(archive,"wb").write(data);tarfile.open(archive,"r:gz").extractall(stage);assert os.path.isdir(os.path.join(stage,name)),f"Missing app directory: {name}"' "$name" "$url" "$expected" "$stage"
+                if [ ! -f "$stage/$required" ]; then
+                  echo "Missing required file '$required' in app '$name' payload" >&2
+                  exit 1
+                fi
+                rm -rf "$target/$name"
+                mv "$stage/$name" "$target/$name"
               }
               fetch_app \
                 mail \
-                https://github.com/nextcloud-releases/mail/releases/download/v5.6.12/mail-v5.6.12.tar.gz \
-                eddf79115bc5b1fbfae9c96f0630614b4fced1bfe75b2468a71fc22fd5e4a838
+                https://github.com/nextcloud-releases/mail/releases/download/v5.7.4/mail-v5.7.4.tar.gz \
+                4975770bd441349169dceb9d0dc6dd9d6c2e85e0d095ed5a536c117ce52d2eaa \
+                mail/vendor/autoload.php
               fetch_app \
                 richdocuments \
-                https://github.com/nextcloud-releases/richdocuments/releases/download/v9.0.2/richdocuments-v9.0.2.tar.gz \
-                ceeed1c207f373569729b9cdfa2a4c4ecade4dd83d8fddc13f01840316bc0366
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v10.1.2/richdocuments-v10.1.2.tar.gz \
+                5bb91dd34ff98e666531143fc43077f961e52a30aafe18115d1c9e5b2bb62ca2 \
+                richdocuments/appinfo/info.xml
               fetch_app \
                 oidc_login \
                 https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
-                014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912
-              chown -R 33:33 /var/www/html/custom_apps
+                014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912 \
+                oidc_login/appinfo/info.xml
+              chown -R 33:33 "$target"
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www/html/custom_apps
