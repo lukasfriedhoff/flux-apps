@@ -99,7 +99,7 @@ spec:
                 'writable' => false,
               ),
               array (
-                'path' => '/custom_apps',
+                'path' => '/var/www/html/custom_apps',
                 'url' => '/custom_apps',
                 'writable' => false,
               ),
@@ -231,10 +231,10 @@ spec:
             - -c
             - |
               set -eu
-              mkdir -p /custom_apps /tmp/app-downloads
-              find /custom_apps -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+              mkdir -p /var/www/html/custom_apps /tmp/app-downloads
+              find /var/www/html/custom_apps -mindepth 1 -maxdepth 1 -exec rm -rf {} +
               fetch_app() {
-                python3 -c 'import hashlib,os,sys,tarfile,urllib.request;name,url,expected,tmp,target=sys.argv[1:6];archive=os.path.join(tmp,f"{name}.tar.gz");data=urllib.request.urlopen(url,timeout=60).read();digest=hashlib.sha256(data).hexdigest();assert digest==expected,f"checksum mismatch for {name}: {digest} != {expected}";open(archive,"wb").write(data);tarfile.open(archive,"r:gz").extractall(target);assert os.path.isdir(os.path.join(target,name)),f"Missing app directory: {name}"' "$1" "$2" "$3" "/tmp/app-downloads" "/custom_apps"
+                python3 -c 'import hashlib,os,sys,tarfile,urllib.request;name,url,expected,tmp,target=sys.argv[1:6];archive=os.path.join(tmp,f"{name}.tar.gz");data=urllib.request.urlopen(url,timeout=60).read();digest=hashlib.sha256(data).hexdigest();assert digest==expected,f"checksum mismatch for {name}: {digest} != {expected}";open(archive,"wb").write(data);tarfile.open(archive,"r:gz").extractall(target);assert os.path.isdir(os.path.join(target,name)),f"Missing app directory: {name}"' "$1" "$2" "$3" "/tmp/app-downloads" "/var/www/html/custom_apps"
               }
               fetch_app \
                 mail \
@@ -248,10 +248,10 @@ spec:
                 oidc_login \
                 https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
                 014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912
-              chown -R 33:33 /custom_apps
+              chown -R 33:33 /var/www/html/custom_apps
           volumeMounts:
             - name: nextcloud-custom-apps
-              mountPath: /custom_apps
+              mountPath: /var/www/html/custom_apps
         - name: wait-nextcloud-app
           image: alpine:3.20
           command:
@@ -301,7 +301,7 @@ spec:
           emptyDir: {}
       extraVolumeMounts:
         - name: nextcloud-custom-apps
-          mountPath: /custom_apps
+          mountPath: /var/www/html/custom_apps
           readOnly: true
     internalDatabase:
       enabled: false
