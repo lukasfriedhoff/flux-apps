@@ -249,8 +249,9 @@ spec:
                 014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912
               chown -R 33:33 /var/www/html/custom_apps
           volumeMounts:
-            - name: nextcloud-custom-apps
+            - name: nextcloud-main
               mountPath: /var/www/html/custom_apps
+              subPath: custom_apps
         - name: wait-nextcloud-app
           image: alpine:3.20
           command:
@@ -295,13 +296,6 @@ spec:
             - name: nextcloud-data
               mountPath: /dest
               subPath: data
-      extraVolumes:
-        - name: nextcloud-custom-apps
-          emptyDir: {}
-      extraVolumeMounts:
-        - name: nextcloud-custom-apps
-          mountPath: /var/www/html/custom_apps
-          readOnly: true
     internalDatabase:
       enabled: false
     externalDatabase:
