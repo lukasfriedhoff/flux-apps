@@ -4,10 +4,10 @@ metadata:
   name: collabora-admin
   namespace: collabora
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.priority: "100"
-    traefik.ingress.kubernetes.io/router.middlewares: collabora-force-https@kubernetescrd,traefik-authelia-forwardauth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
