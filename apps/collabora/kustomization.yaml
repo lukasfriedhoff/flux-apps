@@ -4,5 +4,6 @@ resources:
   - helm-repo.yaml
   - middleware-https-redirect.yaml
   - network-policy.yaml
+  - ingress-http-redirect.yaml
   - helm-release.yaml
   - ingress-admin.yaml

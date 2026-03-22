@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: collabora-http-redirect
+  namespace: collabora
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.priority: "200"
+    traefik.ingress.kubernetes.io/router.middlewares: collabora-force-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: collabora${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: collabora-collabora-online
+                port:
+                  number: 9980
