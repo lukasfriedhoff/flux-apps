@@ -296,6 +296,10 @@ spec:
             - name: nextcloud-data
               mountPath: /dest
               subPath: data
+      # Explicitly clear chart defaults to avoid rendering an invalid mount
+      # entry with an empty `name` when no extra mounts are required.
+      extraVolumeMounts: []
+      extraVolumes: []
     internalDatabase:
       enabled: false
     externalDatabase:
