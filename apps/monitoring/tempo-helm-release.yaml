@@ -38,5 +38,11 @@ spec:
           forcepathstyle: ${monitoring_s3_force_path_style}
     minio:
       enabled: false
+    tempo:
+      structuredConfig:
+        ingester:
+          lifecycler:
+            ring:
+              replication_factor: ${tempo_replication_factor}
     ingester:
       replicas: ${tempo_ingester_replicas}
