@@ -24,7 +24,6 @@ spec:
     mimir:
       structuredConfig:
         common:
-          replication_factor: ${mimir_replication_factor}
           storage:
             backend: s3
             s3:
@@ -57,6 +56,8 @@ spec:
           enabled: false
         ingester:
           push_grpc_method_enabled: true
+          ring:
+            replication_factor: ${mimir_replication_factor}
         limits:
           max_global_series_per_user: 1000000
           ingestion_rate: 1000000
