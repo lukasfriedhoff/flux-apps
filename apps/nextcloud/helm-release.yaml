@@ -151,7 +151,6 @@ spec:
           fi
           ensure_app_enabled() {
             app="$1"
-            occ_safe app:install -n "$app"
             occ_safe app:enable -n "$app"
           }
           configure_oidc_login() {
