@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-verify-custom-apps
+  name: nextcloud-verify-custom-apps-v2
   namespace: nextcloud
 spec:
   backoffLimit: 0
