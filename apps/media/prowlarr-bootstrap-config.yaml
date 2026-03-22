@@ -1,0 +1,202 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prowlarr-bootstrap-config
+  namespace: media
+data:
+  bootstrap.sh: |-
+    #!/bin/sh
+    set -eu
+
+    PROWLARR_URL="${PROWLARR_URL:-http://prowlarr:9696}"
+
+    log() {
+      printf '[prowlarr-bootstrap] %s\n' "$*"
+    }
+
+    read_api_key() {
+      file="$1"
+      if [ ! -f "$file" ]; then
+        return 1
+      fi
+      sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' "$file" | head -n1
+    }
+
+    PROWLARR_API_KEY="${PROWLARR_API_KEY:-$(read_api_key /mnt/prowlarr/config.xml || true)}"
+    SONARR_API_KEY="${SONARR_API_KEY:-$(read_api_key /mnt/sonarr/config.xml || true)}"
+    RADARR_API_KEY="${RADARR_API_KEY:-$(read_api_key /mnt/radarr/config.xml || true)}"
+    LIDARR_API_KEY="${LIDARR_API_KEY:-$(read_api_key /mnt/lidarr/config.xml || true)}"
+    READARR_API_KEY="${READARR_API_KEY:-$(read_api_key /mnt/readarr/config.xml || true)}"
+
+    if [ -z "$PROWLARR_API_KEY" ]; then
+      log "Prowlarr API key missing; skipping."
+      exit 0
+    fi
+
+    discover_prowlarr_url() {
+      # Different container images on this cluster resolve short names/FQDNs differently.
+      # Probe both variants and keep retrying until Prowlarr becomes reachable.
+      attempt=0
+      while [ "$attempt" -lt 20 ]; do
+        for candidate in "$PROWLARR_URL" "http://prowlarr:9696" "http://prowlarr.media.svc.cluster.local:9696"; do
+          if curl -sS -m 5 -H "X-Api-Key: $PROWLARR_API_KEY" "$candidate/api/v1/system/status" >/dev/null 2>&1; then
+            printf '%s' "$candidate"
+            return 0
+          fi
+        done
+        attempt=$((attempt + 1))
+        sleep 3
+      done
+      return 1
+    }
+
+    PROWLARR_URL="$(discover_prowlarr_url || true)"
+    if [ -z "$PROWLARR_URL" ]; then
+      log "Unable to reach Prowlarr API; exiting."
+      exit 1
+    fi
+
+    prowlarr_get() {
+      path="$1"
+      curl -sS -m 20 -H "X-Api-Key: $PROWLARR_API_KEY" "$PROWLARR_URL$path"
+    }
+
+    prowlarr_post() {
+      path="$1"
+      payload="$2"
+      curl -sS -m 30 -X POST \
+        -H "X-Api-Key: $PROWLARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$PROWLARR_URL$path"
+    }
+
+    prowlarr_put() {
+      path="$1"
+      payload="$2"
+      curl -sS -m 30 -X PUT \
+        -H "X-Api-Key: $PROWLARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$PROWLARR_URL$path"
+    }
+
+    ensure_app() {
+      impl="$1"
+      name="$2"
+      base_url="$3"
+      app_key="$4"
+
+      if [ -z "$app_key" ]; then
+        log "Skipping app $name ($impl): API key missing."
+        return 0
+      fi
+
+      apps_json="$(prowlarr_get /api/v1/applications)"
+      app_json="$(printf '%s' "$apps_json" | jq -c --arg impl "$impl" 'map(select(.implementation == $impl))[0]')"
+
+      if [ "$app_json" = "null" ]; then
+        app_json="$(prowlarr_get /api/v1/applications/schema | jq -c --arg impl "$impl" 'map(select(.implementation == $impl))[0]')"
+        if [ "$app_json" = "null" ]; then
+          log "No schema found for app implementation $impl; skipping."
+          return 0
+        fi
+        app_json="$(printf '%s' "$app_json" | jq -c \
+          --arg name "$name" \
+          --arg prowlarrUrl "$PROWLARR_URL" \
+          --arg baseUrl "$base_url" \
+          --arg apiKey "$app_key" '
+            .name = $name
+            | .enable = true
+            | .syncLevel = "fullSync"
+            | (.fields[]? | select(.name == "prowlarrUrl")).value = $prowlarrUrl
+            | (.fields[]? | select(.name == "baseUrl")).value = $baseUrl
+            | (.fields[]? | select(.name == "apiKey")).value = $apiKey
+          ')"
+        if prowlarr_post /api/v1/applications "$app_json" >/dev/null; then
+          log "Created app $name ($impl)."
+        else
+          log "Failed to create app $name ($impl)."
+        fi
+      else
+        app_id="$(printf '%s' "$app_json" | jq -r '.id')"
+        app_json="$(printf '%s' "$app_json" | jq -c \
+          --arg name "$name" \
+          --arg prowlarrUrl "$PROWLARR_URL" \
+          --arg baseUrl "$base_url" \
+          --arg apiKey "$app_key" '
+            .name = $name
+            | .enable = true
+            | .syncLevel = "fullSync"
+            | (.fields[]? | select(.name == "prowlarrUrl")).value = $prowlarrUrl
+            | (.fields[]? | select(.name == "baseUrl")).value = $baseUrl
+            | (.fields[]? | select(.name == "apiKey")).value = $apiKey
+          ')"
+        if prowlarr_put "/api/v1/applications/$app_id" "$app_json" >/dev/null; then
+          log "Updated app $name ($impl)."
+        else
+          log "Failed to update app $name ($impl)."
+        fi
+      fi
+    }
+
+    ensure_indexer() {
+      impl="$1"
+      name="$2"
+      enabled="$3"
+      api_key="$4"
+
+      idx_json="$(prowlarr_get /api/v1/indexer | jq -c --arg impl "$impl" 'map(select(.implementation == $impl))[0]')"
+
+      if [ "$idx_json" = "null" ]; then
+        idx_json="$(prowlarr_get /api/v1/indexer/schema | jq -c --arg impl "$impl" 'map(select(.implementation == $impl))[0]')"
+        if [ "$idx_json" = "null" ]; then
+          log "No schema found for indexer implementation $impl; skipping."
+          return 0
+        fi
+        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" '
+          .name = $name
+          | .enable = ($enabled == "true")
+        ')"
+        if [ -n "$api_key" ]; then
+          idx_json="$(printf '%s' "$idx_json" | jq -c --arg apiKey "$api_key" '(.fields[]? | select(.name == "apiKey")).value = $apiKey')"
+        fi
+        if prowlarr_post /api/v1/indexer "$idx_json" >/dev/null; then
+          log "Created indexer $name ($impl)."
+        else
+          log "Failed to create indexer $name ($impl)."
+        fi
+      else
+        idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
+        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" '
+          .name = $name
+          | .enable = ($enabled == "true")
+        ')"
+        if [ -n "$api_key" ]; then
+          idx_json="$(printf '%s' "$idx_json" | jq -c --arg apiKey "$api_key" '(.fields[]? | select(.name == "apiKey")).value = $apiKey')"
+        fi
+        if prowlarr_put "/api/v1/indexer/$idx_id" "$idx_json" >/dev/null; then
+          log "Updated indexer $name ($impl)."
+        else
+          log "Failed to update indexer $name ($impl)."
+        fi
+      fi
+    }
+
+    ensure_app "Sonarr" "sonarr" "http://sonarr:8989" "$SONARR_API_KEY"
+    ensure_app "Radarr" "radarr" "http://radarr:7878" "$RADARR_API_KEY"
+    ensure_app "Lidarr" "lidarr" "http://lidarr:8686" "$LIDARR_API_KEY"
+    ensure_app "Readarr" "readarr" "http://readarr:8787" "$READARR_API_KEY"
+
+    ensure_indexer "Knaben" "Knaben" true ""
+    ensure_indexer "TorrentsCSV" "TorrentsCSV" true ""
+    if [ -n "${TORRENTSYNDIKAT_API_KEY:-}" ]; then
+      ensure_indexer "TorrentSyndikat" "TorrentSyndikat" true "$TORRENTSYNDIKAT_API_KEY"
+    else
+      ensure_indexer "TorrentSyndikat" "TorrentSyndikat" false ""
+    fi
+
+    # Push current indexer set into downstream Arr apps.
+    prowlarr_post /api/v1/command '{"name":"ApplicationIndexerSync"}' >/dev/null || true
+
+    log "Bootstrap run complete."

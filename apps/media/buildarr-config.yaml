@@ -23,11 +23,11 @@ data:
         - "03:00"
 
     sonarr:
-      hostname: sonarr.media.svc.cluster.local
+      hostname: sonarr
       port: 8989
       protocol: http
 
     radarr:
-      hostname: radarr.media.svc.cluster.local
+      hostname: radarr
       port: 7878
       protocol: http

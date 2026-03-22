@@ -1,0 +1,77 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: prowlarr-bootstrap
+  namespace: media
+spec:
+  interval: 10m0s
+  timeout: 10m0s
+  chart:
+    spec:
+      chart: app-template
+      version: 4.6.2
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: media
+      interval: 10m0s
+  values:
+    controllers:
+      main:
+        type: cronjob
+        cronjob:
+          schedule: "*/30 * * * *"
+          successfulJobsHistory: 1
+          failedJobsHistory: 3
+        containers:
+          main:
+            image:
+              repository: alpine
+              tag: 3.20
+            command:
+              - /bin/sh
+              - -c
+            args:
+              - apk add --no-cache curl jq >/dev/null && /scripts/bootstrap.sh
+            env:
+              PROWLARR_URL: http://prowlarr:9696
+    persistence:
+      script:
+        enabled: true
+        type: configMap
+        name: prowlarr-bootstrap-config
+        defaultMode: 0555
+        globalMounts:
+          - path: /scripts/bootstrap.sh
+            subPath: bootstrap.sh
+            readOnly: true
+      prowlarr:
+        enabled: true
+        existingClaim: prowlarr
+        globalMounts:
+          - path: /mnt/prowlarr
+            readOnly: true
+      sonarr:
+        enabled: true
+        existingClaim: sonarr
+        globalMounts:
+          - path: /mnt/sonarr
+            readOnly: true
+      radarr:
+        enabled: true
+        existingClaim: radarr
+        globalMounts:
+          - path: /mnt/radarr
+            readOnly: true
+      lidarr:
+        enabled: true
+        existingClaim: lidarr
+        globalMounts:
+          - path: /mnt/lidarr
+            readOnly: true
+      readarr:
+        enabled: true
+        existingClaim: readarr
+        globalMounts:
+          - path: /mnt/readarr
+            readOnly: true
