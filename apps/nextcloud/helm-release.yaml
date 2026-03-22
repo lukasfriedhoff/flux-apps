@@ -46,11 +46,14 @@ spec:
           value: https
         - name: TRUSTED_PROXIES
           value: ${trusted_proxies_cidr}
+        - name: NEXTCLOUD_OIDC_PROVIDER
+          value: ${nextcloud_oidc}
         - name: OIDC_LOGIN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: nextcloud-oidc
               key: client_secret
+              optional: true
       existingSecret:
         enabled: true
         secretName: nextcloud-admin
@@ -151,7 +154,28 @@ spec:
             occ_safe app:install -n "$app"
             occ_safe app:enable -n "$app"
           }
-          ensure_app_enabled oidc_login
+          configure_oidc_login() {
+            provider="${NEXTCLOUD_OIDC_PROVIDER:-none}"
+            case "$provider" in
+              authelia)
+                if [ -z "${OIDC_LOGIN_CLIENT_SECRET:-}" ]; then
+                  echo "NEXTCLOUD_OIDC_PROVIDER=authelia but OIDC secret is missing; disabling oidc_login."
+                  occ_safe app:disable -n oidc_login
+                else
+                  ensure_app_enabled oidc_login
+                fi
+                ;;
+              none|disabled|false|"")
+                echo "OIDC provider disabled; disabling oidc_login."
+                occ_safe app:disable -n oidc_login
+                ;;
+              *)
+                echo "Unknown NEXTCLOUD_OIDC_PROVIDER='$provider'; disabling oidc_login."
+                occ_safe app:disable -n oidc_login
+                ;;
+            esac
+          }
+          configure_oidc_login
           ensure_app_enabled mail
           ensure_app_enabled serverinfo
           ensure_app_enabled richdocuments
