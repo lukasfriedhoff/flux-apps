@@ -155,10 +155,13 @@ spec:
             occ_safe app:enable -n "$app"
           }
           configure_oidc_login() {
-            provider="${NEXTCLOUD_OIDC_PROVIDER:-none}"
+            provider="$NEXTCLOUD_OIDC_PROVIDER"
+            if [ -z "$provider" ]; then
+              provider="none"
+            fi
             case "$provider" in
               authelia)
-                if [ -z "${OIDC_LOGIN_CLIENT_SECRET:-}" ]; then
+                if [ -z "$OIDC_LOGIN_CLIENT_SECRET" ]; then
                   echo "NEXTCLOUD_OIDC_PROVIDER=authelia but OIDC secret is missing; disabling oidc_login."
                   occ_safe app:disable -n oidc_login
                 else
