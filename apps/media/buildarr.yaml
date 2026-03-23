@@ -33,6 +33,8 @@ spec:
               - buildarr
             args:
               - run
+              - --plugin
+              - sonarr
             workingDir: /config
             env:
               PUID: ${media_puid}
