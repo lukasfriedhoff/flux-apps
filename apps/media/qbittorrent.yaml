@@ -56,18 +56,43 @@ spec:
               tag: v3.40.0
             env:
               TZ: ${media_timezone}
-              VPN_SERVICE_PROVIDER: protonvpn
-              OPENVPN_USER:
+              VPN_SERVICE_PROVIDER: custom
+              VPN_TYPE: wireguard
+              WIREGUARD_PRIVATE_KEY:
                 valueFrom:
                   secretKeyRef:
                     name: media-protonvpn
-                    key: openvpn_user
-              OPENVPN_PASSWORD:
+                    key: wireguard_private_key
+              WIREGUARD_ADDRESSES:
                 valueFrom:
                   secretKeyRef:
                     name: media-protonvpn
-                    key: openvpn_password
-              SERVER_COUNTRIES: ${protonvpn_server_countries}
+                    key: wireguard_addresses
+              WIREGUARD_PUBLIC_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_public_key
+              WIREGUARD_ENDPOINT_IP:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_endpoint_ip
+              WIREGUARD_ENDPOINT_PORT:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_endpoint_port
+              WIREGUARD_ALLOWED_IPS:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_allowed_ips
+              DNS_ADDRESS:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_dns
               FIREWALL_INPUT_PORTS: "8080,6881"
               FIREWALL_OUTBOUND_SUBNETS: "${k8s_pod_cidr},${k8s_service_cidr}"
             securityContext:
