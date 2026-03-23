@@ -26,8 +26,5 @@ data:
       hostname: sonarr
       port: 8989
       protocol: http
-
-    radarr:
-      hostname: radarr
-      port: 7878
-      protocol: http
+    # NOTE: radarr disabled for now due buildarr-radarr enum mismatch
+    # (colonReplacementFormat) with current Radarr API response.

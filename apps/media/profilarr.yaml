@@ -21,7 +21,7 @@ spec:
         containers:
           main:
             image:
-              repository: ghcr.io/dictionarry-hub/profilarr
+              repository: santiagosayshey/profilarr
               tag: latest
             env:
               TZ: ${media_timezone}
