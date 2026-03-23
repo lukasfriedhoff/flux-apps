@@ -8,9 +8,10 @@ data:
     # yaml-language-server: $schema=https://raw.githubusercontent.com/recyclarr/recyclarr/master/schemas/config-schema.json
     sonarr:
       sonarr:
-        base_url: !secret sonarr_base_url
+        # Use short in-namespace service names to avoid resolver issues seen with full FQDNs
+        base_url: http://sonarr:8989
         api_key: !secret sonarr_api_key
     radarr:
       radarr:
-        base_url: !secret radarr_base_url
+        base_url: http://radarr:7878
         api_key: !secret radarr_api_key
