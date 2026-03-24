@@ -52,8 +52,8 @@ data:
 
     PROWLARR_URL="$(discover_prowlarr_url || true)"
     if [ -z "$PROWLARR_URL" ]; then
-      log "Unable to reach Prowlarr API; exiting."
-      exit 1
+      log "Unable to reach Prowlarr API; deferring bootstrap to next run."
+      exit 0
     fi
 
     prowlarr_get() {
@@ -183,20 +183,20 @@ data:
       fi
     }
 
-    ensure_app "Sonarr" "sonarr" "http://sonarr:8989" "$SONARR_API_KEY"
-    ensure_app "Radarr" "radarr" "http://radarr:7878" "$RADARR_API_KEY"
-    ensure_app "Lidarr" "lidarr" "http://lidarr:8686" "$LIDARR_API_KEY"
-    ensure_app "Readarr" "readarr" "http://readarr:8787" "$READARR_API_KEY"
+    ensure_app "Sonarr" "sonarr" "http://sonarr:8989" "$SONARR_API_KEY" || log "Failed to sync Sonarr app; will retry."
+    ensure_app "Radarr" "radarr" "http://radarr:7878" "$RADARR_API_KEY" || log "Failed to sync Radarr app; will retry."
+    ensure_app "Lidarr" "lidarr" "http://lidarr:8686" "$LIDARR_API_KEY" || log "Failed to sync Lidarr app; will retry."
+    ensure_app "Readarr" "readarr" "http://readarr:8787" "$READARR_API_KEY" || log "Failed to sync Readarr app; will retry."
 
-    ensure_indexer "Knaben" "Knaben" true ""
-    ensure_indexer "TorrentsCSV" "TorrentsCSV" true ""
+    ensure_indexer "Knaben" "Knaben" true "" || log "Failed to sync Knaben indexer; will retry."
+    ensure_indexer "TorrentsCSV" "TorrentsCSV" true "" || log "Failed to sync TorrentsCSV indexer; will retry."
     if [ -n "${TORRENTSYNDIKAT_API_KEY:-}" ]; then
-      ensure_indexer "TorrentSyndikat" "TorrentSyndikat" true "$TORRENTSYNDIKAT_API_KEY"
+      ensure_indexer "TorrentSyndikat" "TorrentSyndikat" true "$TORRENTSYNDIKAT_API_KEY" || log "Failed to sync TorrentSyndikat indexer; will retry."
     else
-      ensure_indexer "TorrentSyndikat" "TorrentSyndikat" false ""
+      ensure_indexer "TorrentSyndikat" "TorrentSyndikat" false "" || log "Failed to disable TorrentSyndikat indexer; will retry."
     fi
 
     # Push current indexer set into downstream Arr apps.
-    prowlarr_post /api/v1/command '{"name":"ApplicationIndexerSync"}' >/dev/null || true
+    prowlarr_post /api/v1/command '{"name":"ApplicationIndexerSync"}' >/dev/null || log "ApplicationIndexerSync command failed; will retry."
 
     log "Bootstrap run complete."

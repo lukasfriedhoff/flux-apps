@@ -22,6 +22,8 @@ spec:
         cronjob:
           schedule: "0 3 * * *"
           suspend: true
+          concurrencyPolicy: Forbid
+          backoffLimit: 1
           successfulJobsHistory: 1
           failedJobsHistory: 3
         containers:

@@ -6,6 +6,12 @@ metadata:
 spec:
   interval: 10m0s
   timeout: 15m0s
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   chart:
     spec:
       chart: mimir-distributed
@@ -118,10 +124,10 @@ spec:
       resources:
         requests:
           cpu: 50m
-          memory: 128Mi
+          memory: 256Mi
         limits:
           cpu: 300m
-          memory: 256Mi
+          memory: 768Mi
     compactor:
       resources:
         requests:
