@@ -95,6 +95,13 @@ spec:
               tracesToLogs:
                 datasourceUid: loki
     sidecar:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
       dashboards:
         enabled: true
         label: grafana_dashboard
@@ -103,3 +110,10 @@ spec:
         folderAnnotation: grafana_folder
         provider:
           foldersFromFilesStructure: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi

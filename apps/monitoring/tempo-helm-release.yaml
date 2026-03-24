@@ -46,3 +46,50 @@ spec:
               replication_factor: ${tempo_replication_factor}
     ingester:
       replicas: ${tempo_ingester_replicas}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    distributor:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    compactor:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    querier:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    queryFrontend:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    memcached:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi

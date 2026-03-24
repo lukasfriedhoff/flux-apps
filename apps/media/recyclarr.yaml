@@ -37,6 +37,13 @@ spec:
             workingDir: /config
             env:
               TZ: ${media_timezone}
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                cpu: 200m
+                memory: 256Mi
     persistence:
       config:
         enabled: true

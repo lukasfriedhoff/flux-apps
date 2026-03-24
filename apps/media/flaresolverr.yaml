@@ -26,6 +26,13 @@ spec:
             env:
               TZ: ${media_timezone}
               LOG_LEVEL: info
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                cpu: 250m
+                memory: 256Mi
     service:
       main:
         ports:

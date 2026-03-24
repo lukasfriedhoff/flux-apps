@@ -51,24 +51,87 @@ spec:
       affinity: null
       deploymentStrategy:
         type: Recreate
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
     distributor:
       replicas: ${loki_write_replicas}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 384Mi
     ingester:
       replicas: ${loki_write_replicas}
       zoneAwareReplication:
         enabled: false
+      resources:
+        requests:
+          cpu: 200m
+          memory: 384Mi
+        limits:
+          cpu: 1000m
+          memory: 768Mi
     querier:
       replicas: ${loki_read_replicas}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 384Mi
     queryFrontend:
       replicas: ${loki_read_replicas}
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
     queryScheduler:
       replicas: ${loki_read_replicas}
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
     indexGateway:
       replicas: ${loki_backend_replicas}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 384Mi
     compactor:
       replicas: ${loki_backend_replicas}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 384Mi
     ruler:
       replicas: ${loki_backend_replicas}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 384Mi
     read:
       replicas: 0
     write:
@@ -77,3 +140,7 @@ spec:
       replicas: 0
     minio:
       enabled: false
+    chunksCache:
+      allocatedMemory: 512
+    resultsCache:
+      allocatedMemory: 128

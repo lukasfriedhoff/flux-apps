@@ -45,6 +45,13 @@ spec:
       exporter:
         args:
           - --redis.password-file=/etc/valkey-auth/redis-exporter-passwords.json
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 192Mi
         extraExporterSecrets:
           - name: ${valkey_auth_secret_name}
         extraVolumeMounts:
@@ -57,3 +64,10 @@ spec:
           prometheus.io/scrape: "true"
           prometheus.io/port: "9121"
           prometheus.io/path: "/metrics"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi

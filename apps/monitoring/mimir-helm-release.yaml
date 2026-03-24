@@ -70,11 +70,103 @@ spec:
       replicas: ${mimir_ingester_replicas}
       zoneAwareReplication:
         enabled: ${mimir_ingester_zone_aware_replication}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 600m
+          memory: 512Mi
     store_gateway:
       replicas: ${mimir_store_gateway_replicas}
       zoneAwareReplication:
         enabled: ${mimir_store_gateway_zone_aware_replication}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 600m
+          memory: 512Mi
     querier:
       replicas: ${mimir_querier_replicas}
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
     query_scheduler:
       replicas: ${mimir_query_scheduler_replicas}
+      resources:
+        requests:
+          cpu: 25m
+          memory: 96Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+    gateway:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
+    distributor:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    compactor:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 600m
+          memory: 512Mi
+    alertmanager:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    query_frontend:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    ruler:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    overrides_exporter:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
+    rollout_operator:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi

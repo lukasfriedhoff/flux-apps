@@ -28,6 +28,13 @@ spec:
               PUID: ${media_puid}
               PGID: ${media_pgid}
               AUTH: "off"
+            resources:
+              requests:
+                cpu: 25m
+                memory: 96Mi
+              limits:
+                cpu: 250m
+                memory: 256Mi
     service:
       main:
         ports:

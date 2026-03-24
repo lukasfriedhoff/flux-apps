@@ -39,6 +39,13 @@ spec:
             env:
               PUID: ${media_puid}
               PGID: ${media_pgid}
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                cpu: 200m
+                memory: 256Mi
     persistence:
       config:
         enabled: true
