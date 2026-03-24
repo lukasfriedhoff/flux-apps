@@ -291,6 +291,10 @@ spec:
                 url="$2"
                 expected="$3"
                 required="$4"
+                if [ -f "$target/$required" ]; then
+                  echo "Custom app '$name' already present; skipping download."
+                  return 0
+                fi
                 stage="$tmp_root/$name"
                 rm -rf "$stage"
                 mkdir -p "$stage"
