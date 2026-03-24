@@ -28,6 +28,13 @@ spec:
               PUID: ${media_puid}
               PGID: ${media_pgid}
               ARR_APP: sonarr
+            resources:
+              requests:
+                cpu: 100m
+                memory: 192Mi
+              limits:
+                cpu: 1000m
+                memory: 512Mi
     service:
       main:
         ports:

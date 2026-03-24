@@ -67,6 +67,13 @@ spec:
               TZ: ${media_timezone}
               PUID: ${media_puid}
               PGID: ${media_pgid}
+            resources:
+              requests:
+                cpu: 150m
+                memory: 256Mi
+              limits:
+                cpu: 1500m
+                memory: 1024Mi
     service:
       main:
         ports:

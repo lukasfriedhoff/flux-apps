@@ -20,6 +20,13 @@ spec:
       reloadOnCreate: true
       reloadOnDelete: true
       deployment:
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 192Mi
         pod:
           annotations:
             prometheus.io/scrape: "true"

@@ -43,3 +43,132 @@ spec:
               - op: add
                 path: /spec/template/metadata/annotations/reloader.stakater.com~1search
                 value: "true"
+              - op: add
+                path: /spec/template/spec/containers/0/resources
+                value:
+                  requests:
+                    cpu: "50m"
+                    memory: "96Mi"
+                  limits:
+                    cpu: "300m"
+                    memory: "256Mi"
+          - target:
+              kind: StatefulSet
+              name: k8s-monitoring-alloy-metrics
+              namespace: ${k8s_monitoring_namespace:=monitoring}
+            patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/resources
+                value:
+                  requests:
+                    cpu: "150m"
+                    memory: "256Mi"
+                  limits:
+                    cpu: "1000m"
+                    memory: "1024Mi"
+              - op: add
+                path: /spec/template/spec/containers/1/resources
+                value:
+                  requests:
+                    cpu: "25m"
+                    memory: "64Mi"
+                  limits:
+                    cpu: "100m"
+                    memory: "128Mi"
+          - target:
+              kind: DaemonSet
+              name: k8s-monitoring-alloy-logs
+              namespace: ${k8s_monitoring_namespace:=monitoring}
+            patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/resources
+                value:
+                  requests:
+                    cpu: "50m"
+                    memory: "96Mi"
+                  limits:
+                    cpu: "400m"
+                    memory: "384Mi"
+              - op: add
+                path: /spec/template/spec/containers/1/resources
+                value:
+                  requests:
+                    cpu: "25m"
+                    memory: "64Mi"
+                  limits:
+                    cpu: "100m"
+                    memory: "128Mi"
+          - target:
+              kind: DaemonSet
+              name: k8s-monitoring-alloy-receiver
+              namespace: ${k8s_monitoring_namespace:=monitoring}
+            patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/resources
+                value:
+                  requests:
+                    cpu: "50m"
+                    memory: "96Mi"
+                  limits:
+                    cpu: "400m"
+                    memory: "384Mi"
+              - op: add
+                path: /spec/template/spec/containers/1/resources
+                value:
+                  requests:
+                    cpu: "25m"
+                    memory: "64Mi"
+                  limits:
+                    cpu: "100m"
+                    memory: "128Mi"
+          - target:
+              kind: Deployment
+              name: k8s-monitoring-alloy-singleton
+              namespace: ${k8s_monitoring_namespace:=monitoring}
+            patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/resources
+                value:
+                  requests:
+                    cpu: "50m"
+                    memory: "96Mi"
+                  limits:
+                    cpu: "400m"
+                    memory: "384Mi"
+              - op: add
+                path: /spec/template/spec/containers/1/resources
+                value:
+                  requests:
+                    cpu: "25m"
+                    memory: "64Mi"
+                  limits:
+                    cpu: "100m"
+                    memory: "128Mi"
+          - target:
+              kind: Deployment
+              name: k8s-monitoring-alloy-operator
+              namespace: ${k8s_monitoring_namespace:=monitoring}
+            patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/resources
+                value:
+                  requests:
+                    cpu: "50m"
+                    memory: "96Mi"
+                  limits:
+                    cpu: "300m"
+                    memory: "256Mi"
+          - target:
+              kind: DaemonSet
+              name: k8s-monitoring-node-exporter
+              namespace: ${k8s_monitoring_namespace:=monitoring}
+            patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/resources
+                value:
+                  requests:
+                    cpu: "25m"
+                    memory: "64Mi"
+                  limits:
+                    cpu: "200m"
+                    memory: "192Mi"

@@ -52,6 +52,13 @@ spec:
             prometheus.io/scrape: "true"
             prometheus.io/port: "9100"
             prometheus.io/path: "/metrics"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 600m
+        memory: 384Mi
     tracing:
       serviceName: traefik
       otlp:

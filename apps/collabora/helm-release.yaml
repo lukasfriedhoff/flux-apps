@@ -23,6 +23,13 @@ spec:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9980"
       prometheus.io/path: "/cool/getMetrics"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2048Mi
     collabora:
       extra_params: --o:ssl.enable=false --o:ssl.termination=true
       server_name: collabora${public_host_suffix}.${delegating_domain}

@@ -11,6 +11,13 @@ spec:
       containers:
         - name: verify
           image: python:3.12.11-slim
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
           command:
             - /bin/sh
             - -c

@@ -18,6 +18,13 @@ spec:
           containers:
             - name: check
               image: alpine:3.20
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
               command:
                 - /bin/sh
                 - -c

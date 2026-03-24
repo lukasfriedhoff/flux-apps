@@ -31,6 +31,13 @@ spec:
       prometheus.io/scrape: "true"
       prometheus.io/port: "7979"
       prometheus.io/path: "/metrics"
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 192Mi
     env:
       - name: CF_API_TOKEN
         valueFrom:
