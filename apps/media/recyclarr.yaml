@@ -21,6 +21,8 @@ spec:
         type: cronjob
         cronjob:
           schedule: "0 4 * * *"
+          concurrencyPolicy: Forbid
+          backoffLimit: 1
           successfulJobsHistory: 1
           failedJobsHistory: 3
         containers:

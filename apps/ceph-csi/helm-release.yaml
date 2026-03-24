@@ -5,7 +5,13 @@ metadata:
   namespace: ${ceph_csi_namespace}
 spec:
   interval: 10m0s
-  timeout: 10m0s
+  timeout: 20m0s
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   chart:
     spec:
       chart: ceph-csi-rbd
@@ -27,6 +33,8 @@ spec:
           - "${ceph_mon_hosts}"
     provisioner:
       replicaCount: 1
+      strategy:
+        type: Recreate
       provisioner:
         resources:
           requests:
