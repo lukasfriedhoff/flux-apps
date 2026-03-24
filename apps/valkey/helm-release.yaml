@@ -33,6 +33,9 @@ spec:
         default:
           permissions: "~* &* +@all"
           passwordKey: redis-password
+    valkeyConfig: |
+      # Nextcloud should keep serving even when background snapshotting is temporarily unhealthy.
+      stop-writes-on-bgsave-error no
     replica:
       enabled: true
       replicas: ${valkey_replica_count}
