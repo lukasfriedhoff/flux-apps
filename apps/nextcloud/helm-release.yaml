@@ -253,11 +253,28 @@ spec:
               tmp_root=/tmp/app-downloads
               mkdir -p "$target" "$tmp_root"
               lockdir="$target/.seed-lock"
+              lock_max_age=900
               acquired=0
               for _ in $(seq 1 60); do
                 if mkdir "$lockdir" 2>/dev/null; then
+                  date +%s > "$lockdir/created_at"
                   acquired=1
                   break
+                fi
+                if [ -d "$lockdir" ] && [ ! -f "$lockdir/created_at" ]; then
+                  echo "Removing stale custom app seed lock without metadata: $lockdir" >&2
+                  rm -rf "$lockdir"
+                  continue
+                fi
+                if [ -f "$lockdir/created_at" ]; then
+                  now="$(date +%s)"
+                  created="$(cat "$lockdir/created_at" 2>/dev/null || echo 0)"
+                  age="$((now - created))"
+                  if [ "$age" -gt "$lock_max_age" ]; then
+                    echo "Removing stale custom app seed lock older than ${lock_max_age}s: $lockdir" >&2
+                    rm -rf "$lockdir"
+                    continue
+                  fi
                 fi
                 sleep 2
               done
@@ -266,7 +283,7 @@ spec:
                 exit 1
               fi
               cleanup() {
-                rmdir "$lockdir" 2>/dev/null || true
+                rm -rf "$lockdir" 2>/dev/null || true
               }
               trap cleanup EXIT
               fetch_app() {
