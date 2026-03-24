@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: nextcloud-verify-custom-apps-v2
   namespace: nextcloud
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 spec:
   backoffLimit: 0
   template:
