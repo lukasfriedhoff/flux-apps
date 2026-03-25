@@ -619,11 +619,11 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-           "custom": {
-              "fillOpacity": 8,
-              "showPoints": "never"
-           },
-           "unit": "short"
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "short"
         }
       },
       "fill": 0,
@@ -784,11 +784,11 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-           "custom": {
-              "fillOpacity": 8,
-              "showPoints": "never"
-           },
-           "unit": "ms"
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "ms"
         }
       },
       "fill": 0,
@@ -899,11 +899,11 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-           "custom": {
-              "fillOpacity": 8,
-              "showPoints": "never"
-           },
-           "unit": "Bps"
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "Bps"
         }
       },
       "fill": 1,
@@ -1000,11 +1000,11 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-           "custom": {
-              "fillOpacity": 8,
-              "showPoints": "never"
-           },
-           "unit": "Bps"
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "Bps"
         }
       },
       "fill": 1,
@@ -1211,11 +1211,11 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-           "custom": {
-              "fillOpacity": 8,
-              "showPoints": "never"
-           },
-           "unit": "ops"
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "ops"
         }
       },
       "fill": 0,
@@ -1310,7 +1310,12 @@
         "query": "prometheus",
         "refresh": 1,
         "regex": "",
-        "type": "datasource"
+        "type": "datasource",
+        "current": {
+          "selected": true,
+          "text": "Mimir",
+          "value": "mimir"
+        }
       },
       {
         "datasource": {
@@ -1332,7 +1337,12 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "type": "query",
+        "current": {
+          "selected": true,
+          "text": "testing-srv3",
+          "value": "testing-srv3"
+        }
       },
       {
         "auto": true,
