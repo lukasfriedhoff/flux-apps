@@ -91,9 +91,7 @@ spec:
             readOnly: true
       config:
         enabled: true
-        accessMode: ReadWriteOnce
-        storageClass: ${arr_config_storage_class_name}
-        size: ${arr_config_size}
+        existingClaim: radarr-config-rbd
         globalMounts:
           - path: /config
       downloads:
