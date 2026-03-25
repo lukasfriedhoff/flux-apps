@@ -17,7 +17,7 @@ spec:
           serviceAccountName: nextcloud-upgrade-check
           containers:
             - name: check
-              image: alpine:3.20
+              image: registry.k8s.io/kubectl:v1.34.3
               resources:
                 requests:
                   cpu: 25m
@@ -30,7 +30,6 @@ spec:
                 - -c
                 - |
                   set -eu
-                  apk add --no-cache kubectl >/dev/null
                   kubectl -n nextcloud get pods -l app.kubernetes.io/name=nextcloud -o jsonpath='{.items[0].metadata.name}' \
                     | xargs -r -I{} kubectl -n nextcloud exec {} -- /bin/sh -c "php /var/www/html/occ status --output=json" \
                     | tee /tmp/occ-status.json
