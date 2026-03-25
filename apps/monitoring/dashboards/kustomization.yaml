@@ -99,7 +99,5 @@ configMapGenerator:
       - ceph/ceph-cluster.json
       - ceph/ceph-cluster-advanced.json
       - ceph/cephfsdashboard.json
-      - ceph/rbd-overview.json
       - ceph/osds-overview.json
       - ceph/pool-overview.json
-      - ceph/radosgw-overview.json
