@@ -12,6 +12,7 @@ resources:
   - prowlarr-bootstrap.yaml
   - arr-api-key-init.yaml
   - sonarr.yaml
+  - pvc-radarr-config-rbd.yaml
   - radarr.yaml
   - lidarr.yaml
   - readarr.yaml
