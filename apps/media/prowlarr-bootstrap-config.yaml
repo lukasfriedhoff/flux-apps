@@ -9,6 +9,7 @@ data:
     set -eu
 
     PROWLARR_URL="${PROWLARR_URL:-http://prowlarr:9696}"
+    PROWLARR_APP_URL="${PROWLARR_APP_URL:-http://prowlarr:9696}"
 
     log() {
       printf '[prowlarr-bootstrap] %s\n' "$*"
@@ -103,7 +104,7 @@ data:
         fi
         app_json="$(printf '%s' "$app_json" | jq -c \
           --arg name "$name" \
-          --arg prowlarrUrl "$PROWLARR_URL" \
+          --arg prowlarrUrl "$PROWLARR_APP_URL" \
           --arg baseUrl "$base_url" \
           --arg apiKey "$app_key" '
             .name = $name
@@ -122,7 +123,7 @@ data:
         app_id="$(printf '%s' "$app_json" | jq -r '.id')"
         app_json="$(printf '%s' "$app_json" | jq -c \
           --arg name "$name" \
-          --arg prowlarrUrl "$PROWLARR_URL" \
+          --arg prowlarrUrl "$PROWLARR_APP_URL" \
           --arg baseUrl "$base_url" \
           --arg apiKey "$app_key" '
             .name = $name

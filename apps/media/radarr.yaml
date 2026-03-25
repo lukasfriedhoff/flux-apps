@@ -22,6 +22,11 @@ spec:
         namespace: media
       interval: 10m0s
   values:
+    defaultPodOptions:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
     controllers:
       main:
         containers:
@@ -34,6 +39,7 @@ spec:
               PUID: ${media_puid}
               PGID: ${media_pgid}
               ARR_APP: radarr
+              DOTNET_SYSTEM_NET_DISABLEIPV6: "1"
             resources:
               requests:
                 cpu: 100m
