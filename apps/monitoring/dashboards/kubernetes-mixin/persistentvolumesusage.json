@@ -311,8 +311,8 @@
         "type": "query",
         "current": {
           "selected": true,
-          "text": ".*",
-          "value": ".*"
+          "text": "grafana",
+          "value": "grafana"
         }
       }
     ]
