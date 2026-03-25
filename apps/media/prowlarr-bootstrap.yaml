@@ -74,7 +74,7 @@ spec:
             readOnly: true
       radarr:
         enabled: true
-        existingClaim: radarr
+        existingClaim: radarr-config-rbd
         globalMounts:
           - path: /mnt/radarr
             readOnly: true
