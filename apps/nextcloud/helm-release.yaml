@@ -21,12 +21,33 @@ spec:
         namespace: nextcloud
       interval: 10m0s
   values:
-    replicaCount: ${nextcloud_hpa_min_pods}
+    replicaCount: 1
     hpa:
-      enabled: true
+      enabled: false
       cputhreshold: ${nextcloud_hpa_cpu_threshold}
-      minPods: ${nextcloud_hpa_min_pods}
-      maxPods: ${nextcloud_hpa_max_pods}
+      minPods: 1
+      maxPods: 1
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 20
+      timeoutSeconds: 20
+      failureThreshold: 6
+      successThreshold: 1
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 20
+      failureThreshold: 6
+      successThreshold: 1
+    startupProbe:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 20
+      failureThreshold: 180
+      successThreshold: 1
     ingress:
       enabled: true
       className: traefik
@@ -92,6 +113,12 @@ spec:
           $CONFIG = array (
             'appstoreenabled' => false,
             'appstore.experimental.enabled' => false,
+          );
+        logging.config.php: |-
+          <?php
+          $CONFIG = array (
+            // 0=Debug, 1=Info, 2=Warning, 3=Error, 4=Fatal
+            'loglevel' => 2,
           );
         apps-paths.config.php: |-
           <?php
