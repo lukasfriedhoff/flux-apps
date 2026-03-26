@@ -41,13 +41,6 @@ spec:
       timeoutSeconds: 20
       failureThreshold: 6
       successThreshold: 1
-    startupProbe:
-      enabled: true
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 20
-      failureThreshold: 180
-      successThreshold: 1
     ingress:
       enabled: true
       className: traefik
@@ -445,5 +438,5 @@ spec:
       enabled: true
       initialDelaySeconds: 30
       periodSeconds: 10
-      timeoutSeconds: 5
+      timeoutSeconds: 20
       failureThreshold: 2160
