@@ -418,13 +418,13 @@ spec:
       enabled: false
     persistence:
       enabled: true
-      existingClaim: nextcloud-app
+      existingClaim: ${nextcloud_app_claim_name}
       storageClass: ${nextcloud_app_storage_class_name}
       accessMode: ReadWriteMany
       size: ${nextcloud_app_size}
       nextcloudData:
         enabled: true
-        existingClaim: nextcloud-nextcloud-data
+        existingClaim: ${nextcloud_data_claim_name}
         storageClass: ${nextcloud_data_storage_class_name}
         size: ${nextcloud_data_size}
         accessMode: ReadWriteMany
