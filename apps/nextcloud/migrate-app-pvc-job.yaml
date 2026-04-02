@@ -61,4 +61,4 @@ spec:
           emptyDir: {}
         - name: nextcloud-app
           persistentVolumeClaim:
-            claimName: nextcloud-app
+            claimName: ${nextcloud_app_claim_name}

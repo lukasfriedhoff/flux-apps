@@ -59,3 +59,24 @@ parameters:
 reclaimPolicy: Delete
 allowVolumeExpansion: true
 volumeBindingMode: Immediate
+---
+# Optional CephFS kernel-mounter class (useful for latency-sensitive workloads).
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "${ceph_cephfs_storage_class_2r_kernel_name:=ssd-cephfs-2r-kernel}"
+provisioner: cephfs.csi.ceph.com
+parameters:
+  clusterID: "${ceph_cluster_id}"
+  fsName: "${ceph_cephfs_fs_name:=ssd-cephfs}"
+  pool: "${ceph_cephfs_storage_class_2r_pool:=ssd-cephfs-2r}"
+  mounter: kernel
+  csi.storage.k8s.io/provisioner-secret-name: csi-cephfs-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: ${ceph_csi_namespace}
+  csi.storage.k8s.io/controller-expand-secret-name: csi-cephfs-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: ${ceph_csi_namespace}
+  csi.storage.k8s.io/node-stage-secret-name: csi-cephfs-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: ${ceph_csi_namespace}
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
