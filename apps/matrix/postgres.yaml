@@ -51,6 +51,8 @@ spec:
                   key: SYNAPSE_DB_NAME
             - name: POSTGRES_INITDB_ARGS
               value: "--encoding=UTF8 --locale=C"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           resources:
             requests:
               cpu: ${matrix_postgres_requests_cpu}
@@ -135,6 +137,8 @@ spec:
                   key: WHATSAPP_DB_NAME
             - name: POSTGRES_INITDB_ARGS
               value: "--encoding=UTF8 --locale=C"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           resources:
             requests:
               cpu: ${matrix_postgres_requests_cpu}
@@ -219,6 +223,8 @@ spec:
                   key: WA_DB_NAME
             - name: POSTGRES_INITDB_ARGS
               value: "--encoding=UTF8 --locale=C"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           resources:
             requests:
               cpu: ${matrix_postgres_requests_cpu}
@@ -303,6 +309,8 @@ spec:
                   key: TELEGRAM_DB_NAME
             - name: POSTGRES_INITDB_ARGS
               value: "--encoding=UTF8 --locale=C"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           resources:
             requests:
               cpu: ${matrix_postgres_requests_cpu}
@@ -387,6 +395,8 @@ spec:
                   key: SIGNAL_DB_NAME
             - name: POSTGRES_INITDB_ARGS
               value: "--encoding=UTF8 --locale=C"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           resources:
             requests:
               cpu: ${matrix_postgres_requests_cpu}
