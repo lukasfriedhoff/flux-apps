@@ -146,6 +146,27 @@ spec:
     spec:
       securityContext:
         fsGroup: 1337
+      initContainers:
+        - name: telegram-config-bootstrap
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              if [ ! -s /data/config.yaml ]; then
+                cp /seed/config.yaml /data/config.yaml
+              fi
+              if [ ! -s /data/registration.yaml ]; then
+                cp /seed/registration.yaml /data/registration.yaml
+              fi
+              sed -i "s/relaybot/user/g" /data/config.yaml
+              chown 1337:1337 /data/config.yaml /data/registration.yaml || true
+          volumeMounts:
+            - name: telegram-data
+              mountPath: /data
+            - name: telegram-config
+              mountPath: /seed
+              readOnly: true
       containers:
         - name: telegram
           image: dock.mau.dev/mautrix/telegram:${matrix_telegram_image_tag}
@@ -159,14 +180,6 @@ spec:
           volumeMounts:
             - name: telegram-data
               mountPath: /data
-            - name: telegram-config
-              mountPath: /data/config.yaml
-              subPath: config.yaml
-              readOnly: true
-            - name: telegram-config
-              mountPath: /data/registration.yaml
-              subPath: registration.yaml
-              readOnly: true
       volumes:
         - name: telegram-data
           persistentVolumeClaim:
