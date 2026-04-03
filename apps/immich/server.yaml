@@ -77,13 +77,13 @@ spec:
               memory: ${immich_server_limits_memory}
           readinessProbe:
             httpGet:
-              path: /api/server-info/ping
+              path: /api/server/ping
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /api/server-info/ping
+              path: /api/server/ping
               port: http
             initialDelaySeconds: 30
             periodSeconds: 20

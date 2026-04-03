@@ -28,6 +28,21 @@ spec:
     spec:
       securityContext:
         fsGroup: 0
+      initContainers:
+        - name: synapse-config-bootstrap
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              cp /seed/server.yaml /config/server.yaml
+              cp /seed/homeserver.log.config /config/homeserver.log.config
+          volumeMounts:
+            - name: synapse-config
+              mountPath: /seed
+              readOnly: true
+            - name: synapse-config-dir
+              mountPath: /config
       containers:
         - name: synapse
           image: matrixdotorg/synapse:${matrix_synapse_image_tag}
@@ -69,9 +84,8 @@ spec:
               mountPath: /data
             - name: synapse-media
               mountPath: /media_store
-            - name: synapse-config
+            - name: synapse-config-dir
               mountPath: /config
-              readOnly: true
             - name: telegram-config
               mountPath: /telegramdata/registration.yaml
               subPath: registration.yaml
@@ -98,6 +112,8 @@ spec:
         - name: synapse-config
           secret:
             secretName: matrix-synapse-config
+        - name: synapse-config-dir
+          emptyDir: {}
         - name: telegram-config
           secret:
             secretName: matrix-telegram-config
