@@ -25,6 +25,10 @@ spec:
     - kind: Secret
       name: mimir-values
       valuesKey: values.yaml
+    - kind: Secret
+      name: ${monitoring_s3_values_secret_name}
+      valuesKey: mimir.yaml
+      optional: true
   values:
     fullnameOverride: mimir
     mimir:
@@ -33,31 +37,31 @@ spec:
           storage:
             backend: s3
             s3:
-              endpoint: ${monitoring_s3_endpoint}
-              region: ${monitoring_s3_region}
+              endpoint: ${object_storage_endpoint}
+              region: ${object_storage_region}
               bucket_name: ${monitoring_mimir_blocks_bucket}
-              insecure: ${monitoring_s3_insecure}
+              insecure: ${object_storage_insecure}
         blocks_storage:
           backend: s3
           s3:
-            endpoint: ${monitoring_s3_endpoint}
-            region: ${monitoring_s3_region}
+            endpoint: ${object_storage_endpoint}
+            region: ${object_storage_region}
             bucket_name: ${monitoring_mimir_blocks_bucket}
-            insecure: ${monitoring_s3_insecure}
+            insecure: ${object_storage_insecure}
         alertmanager_storage:
           backend: s3
           s3:
-            endpoint: ${monitoring_s3_endpoint}
-            region: ${monitoring_s3_region}
+            endpoint: ${object_storage_endpoint}
+            region: ${object_storage_region}
             bucket_name: ${monitoring_mimir_alertmanager_bucket}
-            insecure: ${monitoring_s3_insecure}
+            insecure: ${object_storage_insecure}
         ruler_storage:
           backend: s3
           s3:
-            endpoint: ${monitoring_s3_endpoint}
-            region: ${monitoring_s3_region}
+            endpoint: ${object_storage_endpoint}
+            region: ${object_storage_region}
             bucket_name: ${monitoring_mimir_ruler_bucket}
-            insecure: ${monitoring_s3_insecure}
+            insecure: ${object_storage_insecure}
         ingest_storage:
           enabled: false
         ingester:

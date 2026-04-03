@@ -1,0 +1,80 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "${longhorn_rwo_storage_class_1r_name:=longhorn-rwo-1r}"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "${longhorn_rwo_storage_class_1r_replicas:=1}"
+  staleReplicaTimeout: "30"
+  fsType: ext4
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "${longhorn_rwo_storage_class_2r_name:=longhorn-rwo-2r}"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "${longhorn_rwo_storage_class_2r_replicas:=2}"
+  staleReplicaTimeout: "30"
+  fsType: ext4
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "${longhorn_rwo_storage_class_3r_name:=longhorn-rwo-3r}"
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "${longhorn_rwo_storage_class_3r_is_default:=false}"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "${longhorn_rwo_storage_class_3r_replicas:=3}"
+  staleReplicaTimeout: "30"
+  fsType: ext4
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "${longhorn_rwx_storage_class_1r_name:=longhorn-rwx-1r}"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "${longhorn_rwx_storage_class_1r_replicas:=1}"
+  staleReplicaTimeout: "30"
+  fsType: ext4
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "${longhorn_rwx_storage_class_2r_name:=longhorn-rwx-2r}"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "${longhorn_rwx_storage_class_2r_replicas:=2}"
+  staleReplicaTimeout: "30"
+  fsType: ext4
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "${longhorn_rwx_storage_class_3r_name:=longhorn-rwx-3r}"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "${longhorn_rwx_storage_class_3r_replicas:=3}"
+  staleReplicaTimeout: "30"
+  fsType: ext4

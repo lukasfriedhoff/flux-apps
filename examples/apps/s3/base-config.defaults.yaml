@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  s3_namespace: "object-storage"
+  s3_service_name: "s3"
+  s3_storage_class_name: "longhorn-rwo-2r"
+  s3_data_size: "100Gi"
+  s3_root_secret_name: "s3-root"
+  s3_monitoring_credentials_secret_name: "s3-monitoring-credentials"
+  s3_requests_cpu: "100m"
+  s3_requests_memory: "256Mi"
+  s3_limits_cpu: "1000m"
+  s3_limits_memory: "1Gi"
+  object_storage_endpoint: "s3.object-storage.svc.cluster.local:9000"
+  object_storage_region: "us-east-1"
+  object_storage_insecure: "true"
+  object_storage_force_path_style: "true"
+  monitoring_s3_values_secret_name: "monitoring-s3-values"

@@ -1,0 +1,109 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: s3-bootstrap
+  namespace: ${s3_namespace}
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: quay.io/minio/mc:latest
+          env:
+            - name: S3_ENDPOINT
+              value: http://${s3_service_name}.${s3_namespace}.svc.cluster.local:9000
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ${s3_root_secret_name}
+                  key: rootUser
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${s3_root_secret_name}
+                  key: rootPassword
+            - name: MONITORING_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${s3_monitoring_credentials_secret_name}
+                  key: accessKey
+            - name: MONITORING_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${s3_monitoring_credentials_secret_name}
+                  key: secretKey
+            - name: LOKI_BUCKET
+              value: ${monitoring_loki_bucket}
+            - name: MIMIR_BLOCKS_BUCKET
+              value: ${monitoring_mimir_blocks_bucket}
+            - name: MIMIR_ALERTMANAGER_BUCKET
+              value: ${monitoring_mimir_alertmanager_bucket}
+            - name: MIMIR_RULER_BUCKET
+              value: ${monitoring_mimir_ruler_bucket}
+            - name: TEMPO_BUCKET
+              value: ${monitoring_tempo_bucket}
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              until mc alias set local "${S3_ENDPOINT}" "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" >/dev/null 2>&1; do
+                sleep 2
+              done
+
+              for bucket in \
+                "${LOKI_BUCKET}" \
+                "${MIMIR_BLOCKS_BUCKET}" \
+                "${MIMIR_ALERTMANAGER_BUCKET}" \
+                "${MIMIR_RULER_BUCKET}" \
+                "${TEMPO_BUCKET}"; do
+                mc mb --ignore-existing "local/${bucket}" >/dev/null 2>&1 || true
+              done
+
+              if ! mc admin user info local "${MONITORING_ACCESS_KEY}" >/dev/null 2>&1; then
+                mc admin user add local "${MONITORING_ACCESS_KEY}" "${MONITORING_SECRET_KEY}" >/dev/null
+              fi
+
+              cat > /tmp/monitoring-rw-policy.json <<EOF
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "s3:ListBucket",
+                      "s3:GetBucketLocation"
+                    ],
+                    "Resource": [
+                      "arn:aws:s3:::${LOKI_BUCKET}",
+                      "arn:aws:s3:::${MIMIR_BLOCKS_BUCKET}",
+                      "arn:aws:s3:::${MIMIR_ALERTMANAGER_BUCKET}",
+                      "arn:aws:s3:::${MIMIR_RULER_BUCKET}",
+                      "arn:aws:s3:::${TEMPO_BUCKET}"
+                    ]
+                  },
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "s3:PutObject",
+                      "s3:GetObject",
+                      "s3:DeleteObject",
+                      "s3:AbortMultipartUpload",
+                      "s3:ListBucketMultipartUploads",
+                      "s3:ListMultipartUploadParts"
+                    ],
+                    "Resource": [
+                      "arn:aws:s3:::${LOKI_BUCKET}/*",
+                      "arn:aws:s3:::${MIMIR_BLOCKS_BUCKET}/*",
+                      "arn:aws:s3:::${MIMIR_ALERTMANAGER_BUCKET}/*",
+                      "arn:aws:s3:::${MIMIR_RULER_BUCKET}/*",
+                      "arn:aws:s3:::${TEMPO_BUCKET}/*"
+                    ]
+                  }
+                ]
+              }
+              EOF
+
+              mc admin policy create local monitoring-rw /tmp/monitoring-rw-policy.json >/dev/null 2>&1 || true
+              mc admin policy attach local monitoring-rw --user "${MONITORING_ACCESS_KEY}" >/dev/null

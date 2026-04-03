@@ -19,6 +19,10 @@ spec:
     - kind: Secret
       name: loki-values
       valuesKey: values.yaml
+    - kind: Secret
+      name: ${monitoring_s3_values_secret_name}
+      valuesKey: loki.yaml
+      optional: true
   values:
     fullnameOverride: loki
     deploymentMode: Distributed
@@ -42,10 +46,10 @@ spec:
           ruler: ${monitoring_loki_bucket}
           admin: ${monitoring_loki_bucket}
         s3:
-          endpoint: ${monitoring_s3_endpoint}
-          region: ${monitoring_s3_region}
-          s3ForcePathStyle: ${monitoring_s3_force_path_style}
-          insecure: ${monitoring_s3_insecure}
+          endpoint: ${object_storage_endpoint}
+          region: ${object_storage_region}
+          s3ForcePathStyle: ${object_storage_force_path_style}
+          insecure: ${object_storage_insecure}
     gateway:
       replicas: ${loki_read_replicas}
       affinity: null
