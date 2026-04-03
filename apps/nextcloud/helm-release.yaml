@@ -270,6 +270,9 @@ spec:
               mkdir -p /var/www-data
               chown 33:33 /var/www-data
               chmod 0770 /var/www-data
+              mkdir -p /var/www/html/custom_apps /var/www/html/themes /var/www/tmp
+              chown 33:33 /var/www/html/custom_apps /var/www/html/themes /var/www/tmp
+              chmod 0770 /var/www/html/custom_apps /var/www/html/themes /var/www/tmp
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www
@@ -290,6 +293,8 @@ spec:
               target=/var/www/html/custom_apps
               tmp_root=/tmp/app-downloads
               mkdir -p "$target" "$tmp_root"
+              chown 33:33 "$target"
+              chmod 0770 "$target"
               lockdir="$target/.seed-lock"
               lock_max_age=900
               acquired=0
@@ -400,6 +405,7 @@ spec:
               if [ ! -f /dest/.ncdata ]; then
                 echo "# Nextcloud data directory" > /dest/.ncdata
               fi
+              chown 33:33 /dest
               chmod 0770 /dest
           volumeMounts:
             - name: nextcloud-main
