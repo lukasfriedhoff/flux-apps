@@ -77,6 +77,8 @@ spec:
         secretName: nextcloud-admin
         usernameKey: username
         passwordKey: password
+      defaultConfigs:
+        upgrade-disable-web.config.php: false
       configs:
         oidc-login.config.php: |-
           <?php
@@ -112,11 +114,6 @@ spec:
           $CONFIG = array (
             // 0=Debug, 1=Info, 2=Warning, 3=Error, 4=Fatal
             'loglevel' => 2,
-          );
-        upgrade-disable-web.config.php: |-
-          <?php
-          $CONFIG = array (
-            'upgrade.disable-web' => false,
           );
         apps-paths.config.php: |-
           <?php
