@@ -58,13 +58,13 @@ spec:
                     echo "OIDC route /apps/oidc_login/oidc is missing." >&2
                     exit 1
                   fi
+                  if ! kubectl -n nextcloud exec "$pod" -- /bin/sh -c "command -v curl >/dev/null 2>&1"; then
+                    echo "curl is required in the Nextcloud container for OIDC smoke checks." >&2
+                    exit 1
+                  fi
                   oidc_code="$(
-                    kubectl -n nextcloud exec "$pod" -- /bin/sh -c "\
-                      if command -v curl >/dev/null 2>&1; then \
-                        curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/index.php/apps/oidc_login/oidc; \
-                      else \
-                        php -r '\$h=@get_headers(\"http://127.0.0.1/index.php/apps/oidc_login/oidc\",1); if(!\$h){echo \"000\"; exit(0);} if(preg_match(\"/^HTTP\\\\/[0-9.]+ ([0-9]{3})/\", \$h[0], \$m)){echo \$m[1];} else {echo \"000\";}'; \
-                      fi\" \
+                    kubectl -n nextcloud exec "$pod" -- /bin/sh -c \
+                      "curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/index.php/apps/oidc_login/oidc" \
                   )"
                   case "$oidc_code" in
                     302|303|307|308)
