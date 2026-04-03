@@ -17,7 +17,7 @@ spec:
           serviceAccountName: nextcloud-upgrade-check
           containers:
             - name: check
-              image: bitnami/kubectl:latest
+              image: rancher/kubectl:v1.34.1
               resources:
                 requests:
                   cpu: 25m
@@ -26,12 +26,21 @@ spec:
                   cpu: 200m
                   memory: 192Mi
               command:
-                - /bin/bash
+                - /bin/sh
                 - -c
                 - |
                   set -eu
-                  kubectl -n nextcloud get pods -l app.kubernetes.io/name=nextcloud -o jsonpath='{.items[0].metadata.name}' \
-                    | xargs -r -I{} kubectl -n nextcloud exec {} -- /bin/sh -c "php /var/www/html/occ status --output=json" \
+                  pod="$(
+                    kubectl -n nextcloud get pods \
+                      -l app.kubernetes.io/instance=nextcloud,app.kubernetes.io/component=app \
+                      --no-headers \
+                      | awk '$3 == "Running" { print $1; exit }'
+                  )"
+                  if [ -z "$pod" ]; then
+                    echo "No running Nextcloud app pod found." >&2
+                    exit 1
+                  fi
+                  kubectl -n nextcloud exec "$pod" -- /bin/sh -c "php /var/www/html/occ status --output=json" \
                     | tee /tmp/occ-status.json
                   if grep -q '"needsDbUpgrade":true' /tmp/occ-status.json; then
                     echo "Nextcloud requires a database upgrade." >&2
@@ -41,3 +50,27 @@ spec:
                     echo "Nextcloud is in maintenance mode." >&2
                     exit 1
                   fi
+                  if ! kubectl -n nextcloud exec "$pod" -- /bin/sh -c "php /var/www/html/occ app:list | grep -q ' - oidc_login:'"; then
+                    echo "OIDC app oidc_login is not enabled." >&2
+                    exit 1
+                  fi
+                  if ! kubectl -n nextcloud exec "$pod" -- /bin/sh -c "php /var/www/html/occ route:list | grep -q '/apps/oidc_login/oidc'"; then
+                    echo "OIDC route /apps/oidc_login/oidc is missing." >&2
+                    exit 1
+                  fi
+                  oidc_code="$(
+                    kubectl -n nextcloud exec "$pod" -- /bin/sh -c "\
+                      if command -v curl >/dev/null 2>&1; then \
+                        curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/index.php/apps/oidc_login/oidc; \
+                      else \
+                        php -r '\$h=@get_headers(\"http://127.0.0.1/index.php/apps/oidc_login/oidc\",1); if(!\$h){echo \"000\"; exit(0);} if(preg_match(\"/^HTTP\\\\/[0-9.]+ ([0-9]{3})/\", \$h[0], \$m)){echo \$m[1];} else {echo \"000\";}'; \
+                      fi\" \
+                  )"
+                  case "$oidc_code" in
+                    302|303|307|308)
+                      ;;
+                    *)
+                      echo "Unexpected OIDC route status from Nextcloud pod: $oidc_code" >&2
+                      exit 1
+                      ;;
+                  esac

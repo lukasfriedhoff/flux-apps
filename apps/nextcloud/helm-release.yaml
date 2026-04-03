@@ -179,6 +179,20 @@ spec:
             app="$1"
             occ_safe app:enable -n "$app"
           }
+          wait_for_file() {
+            file="$1"
+            attempts="${2:-30}"
+            delay="${3:-2}"
+            i=1
+            while [ "$i" -le "$attempts" ]; do
+              if [ -f "$file" ]; then
+                return 0
+              fi
+              sleep "$delay"
+              i=$((i + 1))
+            done
+            return 1
+          }
           enable_custom_app_if_present() {
             app="$1"
             marker="$2"
@@ -200,11 +214,13 @@ spec:
                 if [ -z "$OIDC_LOGIN_CLIENT_SECRET" ]; then
                   echo "NEXTCLOUD_OIDC_PROVIDER=authelia but OIDC secret is missing; disabling oidc_login."
                   occ_safe app:disable -n oidc_login
-                elif [ ! -f /var/www/html/custom_apps/oidc_login/appinfo/info.xml ]; then
-                  echo "OIDC app payload missing; disabling oidc_login."
-                  occ_safe app:disable -n oidc_login
                 else
-                  ensure_app_enabled oidc_login
+                  oidc_marker="/var/www/html/custom_apps/oidc_login/appinfo/info.xml"
+                  if wait_for_file "$oidc_marker" 30 2; then
+                    ensure_app_enabled oidc_login
+                  else
+                    echo "OIDC app payload missing after startup wait; keeping current oidc_login state."
+                  fi
                 fi
                 ;;
               none|disabled|false|"")
