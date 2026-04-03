@@ -3,6 +3,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_rwo_storage_class_1r_name:=longhorn-rwo-1r}"
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "${longhorn_rwo_storage_class_1r_is_default:=false}"
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -30,7 +32,7 @@ kind: StorageClass
 metadata:
   name: "${longhorn_rwo_storage_class_3r_name:=longhorn-rwo-3r}"
   annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
+    storageclass.kubernetes.io/is-default-class: "${longhorn_rwo_storage_class_3r_is_default:=true}"
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
