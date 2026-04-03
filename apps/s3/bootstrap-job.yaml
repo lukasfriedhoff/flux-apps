@@ -48,21 +48,21 @@ spec:
             - /bin/sh
             - -ceu
             - |
-              until mc alias set local "${S3_ENDPOINT}" "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" >/dev/null 2>&1; do
+              until mc alias set local "$${S3_ENDPOINT}" "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" >/dev/null 2>&1; do
                 sleep 2
               done
 
               for bucket in \
-                "${LOKI_BUCKET}" \
-                "${MIMIR_BLOCKS_BUCKET}" \
-                "${MIMIR_ALERTMANAGER_BUCKET}" \
-                "${MIMIR_RULER_BUCKET}" \
-                "${TEMPO_BUCKET}"; do
-                mc mb --ignore-existing "local/${bucket}" >/dev/null 2>&1 || true
+                "$${LOKI_BUCKET}" \
+                "$${MIMIR_BLOCKS_BUCKET}" \
+                "$${MIMIR_ALERTMANAGER_BUCKET}" \
+                "$${MIMIR_RULER_BUCKET}" \
+                "$${TEMPO_BUCKET}"; do
+                mc mb --ignore-existing "local/$${bucket}" >/dev/null 2>&1 || true
               done
 
-              if ! mc admin user info local "${MONITORING_ACCESS_KEY}" >/dev/null 2>&1; then
-                mc admin user add local "${MONITORING_ACCESS_KEY}" "${MONITORING_SECRET_KEY}" >/dev/null
+              if ! mc admin user info local "$${MONITORING_ACCESS_KEY}" >/dev/null 2>&1; then
+                mc admin user add local "$${MONITORING_ACCESS_KEY}" "$${MONITORING_SECRET_KEY}" >/dev/null
               fi
 
               cat > /tmp/monitoring-rw-policy.json <<EOF
@@ -76,11 +76,11 @@ spec:
                       "s3:GetBucketLocation"
                     ],
                     "Resource": [
-                      "arn:aws:s3:::${LOKI_BUCKET}",
-                      "arn:aws:s3:::${MIMIR_BLOCKS_BUCKET}",
-                      "arn:aws:s3:::${MIMIR_ALERTMANAGER_BUCKET}",
-                      "arn:aws:s3:::${MIMIR_RULER_BUCKET}",
-                      "arn:aws:s3:::${TEMPO_BUCKET}"
+                      "arn:aws:s3:::$${LOKI_BUCKET}",
+                      "arn:aws:s3:::$${MIMIR_BLOCKS_BUCKET}",
+                      "arn:aws:s3:::$${MIMIR_ALERTMANAGER_BUCKET}",
+                      "arn:aws:s3:::$${MIMIR_RULER_BUCKET}",
+                      "arn:aws:s3:::$${TEMPO_BUCKET}"
                     ]
                   },
                   {
@@ -94,11 +94,11 @@ spec:
                       "s3:ListMultipartUploadParts"
                     ],
                     "Resource": [
-                      "arn:aws:s3:::${LOKI_BUCKET}/*",
-                      "arn:aws:s3:::${MIMIR_BLOCKS_BUCKET}/*",
-                      "arn:aws:s3:::${MIMIR_ALERTMANAGER_BUCKET}/*",
-                      "arn:aws:s3:::${MIMIR_RULER_BUCKET}/*",
-                      "arn:aws:s3:::${TEMPO_BUCKET}/*"
+                      "arn:aws:s3:::$${LOKI_BUCKET}/*",
+                      "arn:aws:s3:::$${MIMIR_BLOCKS_BUCKET}/*",
+                      "arn:aws:s3:::$${MIMIR_ALERTMANAGER_BUCKET}/*",
+                      "arn:aws:s3:::$${MIMIR_RULER_BUCKET}/*",
+                      "arn:aws:s3:::$${TEMPO_BUCKET}/*"
                     ]
                   }
                 ]
@@ -106,4 +106,4 @@ spec:
               EOF
 
               mc admin policy create local monitoring-rw /tmp/monitoring-rw-policy.json >/dev/null 2>&1 || true
-              mc admin policy attach local monitoring-rw --user "${MONITORING_ACCESS_KEY}" >/dev/null
+              mc admin policy attach local monitoring-rw --user "$${MONITORING_ACCESS_KEY}" >/dev/null
