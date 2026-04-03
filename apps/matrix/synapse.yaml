@@ -37,6 +37,9 @@ spec:
             - |
               cp /seed/server.yaml /config/server.yaml
               cp /seed/homeserver.log.config /config/homeserver.log.config
+              # Synapse may append generated key settings to server.yaml on first boot.
+              # Ensure the file ends with a newline so appended content remains valid YAML.
+              printf '\n' >> /config/server.yaml
           volumeMounts:
             - name: synapse-config
               mountPath: /seed

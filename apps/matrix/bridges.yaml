@@ -159,7 +159,9 @@ spec:
               if [ ! -s /data/registration.yaml ]; then
                 cp /seed/registration.yaml /data/registration.yaml
               fi
-              sed -i "s/relaybot/user/g" /data/config.yaml
+              # Normalize legacy permission values for current mautrix-telegram releases.
+              sed -i "s/relaybot/relay/g" /data/config.yaml
+              sed -E -i "s/^([[:space:]]*[^#].*:[[:space:]]*)full$/\\1admin/" /data/config.yaml
               chown 1337:1337 /data/config.yaml /data/registration.yaml || true
           volumeMounts:
             - name: telegram-data
