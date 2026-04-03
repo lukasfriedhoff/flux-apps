@@ -8,7 +8,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: !!str ${longhorn_rwo_storage_class_1r_replicas:=1}
+  numberOfReplicas: "1"
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -21,7 +21,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: !!str ${longhorn_rwo_storage_class_2r_replicas:=2}
+  numberOfReplicas: "2"
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -36,7 +36,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: !!str ${longhorn_rwo_storage_class_3r_replicas:=3}
+  numberOfReplicas: "3"
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -49,7 +49,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: !!str ${longhorn_rwx_storage_class_1r_replicas:=1}
+  numberOfReplicas: "1"
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -62,7 +62,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: !!str ${longhorn_rwx_storage_class_2r_replicas:=2}
+  numberOfReplicas: "2"
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -75,6 +75,6 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: !!str ${longhorn_rwx_storage_class_3r_replicas:=3}
+  numberOfReplicas: "3"
   staleReplicaTimeout: "30"
   fsType: ext4
