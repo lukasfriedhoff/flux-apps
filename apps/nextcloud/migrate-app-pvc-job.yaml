@@ -37,6 +37,7 @@ spec:
                 echo "No legacy app data found, initializing empty app volume."
                 mkdir -p /dest/config /dest/custom_apps /dest/themes
                 touch /dest/.nextcloud-app-migrated
+                chown 33:33 /dest /dest/config /dest/custom_apps /dest/themes
                 chmod 0770 /dest /dest/config /dest/custom_apps /dest/themes
                 exit 0
               fi
@@ -50,6 +51,7 @@ spec:
                 cp -a /src/themes/. /dest/themes/
               fi
               touch /dest/.nextcloud-app-migrated
+              chown 33:33 /dest /dest/config /dest/custom_apps /dest/themes
               chmod 0770 /dest /dest/config /dest/custom_apps /dest/themes
           volumeMounts:
             - name: legacy-app
