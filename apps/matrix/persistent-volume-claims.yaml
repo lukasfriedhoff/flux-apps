@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matrix-synapse-data
+  namespace: matrix
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${matrix_synapse_data_storage_class_name}
+  resources:
+    requests:
+      storage: ${matrix_synapse_data_size}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matrix-synapse-media
+  namespace: matrix
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${matrix_synapse_media_storage_class_name}
+  resources:
+    requests:
+      storage: ${matrix_synapse_media_size}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matrix-whatsapp-data
+  namespace: matrix
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${matrix_bridge_storage_class_name}
+  resources:
+    requests:
+      storage: ${matrix_bridge_data_size}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matrix-wa-data
+  namespace: matrix
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${matrix_bridge_storage_class_name}
+  resources:
+    requests:
+      storage: ${matrix_bridge_data_size}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matrix-telegram-data
+  namespace: matrix
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${matrix_bridge_storage_class_name}
+  resources:
+    requests:
+      storage: ${matrix_bridge_data_size}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matrix-signal-data
+  namespace: matrix
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${matrix_bridge_storage_class_name}
+  resources:
+    requests:
+      storage: ${matrix_bridge_data_size}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matrix-signald-data
+  namespace: matrix
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${matrix_bridge_storage_class_name}
+  resources:
+    requests:
+      storage: ${matrix_signald_data_size}
