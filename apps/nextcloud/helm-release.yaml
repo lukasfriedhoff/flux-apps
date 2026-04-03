@@ -144,21 +144,68 @@ spec:
             exit 0
           fi
           status_json="$(php /var/www/html/occ status --output=json 2>/dev/null || true)"
-          if ! echo "$status_json" | grep -q '"installed":true'; then
-            echo "Nextcloud is not installed yet, attempting maintenance:install."
-            php /var/www/html/occ maintenance:install \
-              --database pgsql \
-              --database-name "$POSTGRES_DB" \
-              --database-user "$POSTGRES_USER" \
-              --database-pass "$POSTGRES_PASSWORD" \
-              --database-host "$POSTGRES_HOST" \
-              --admin-user "$NEXTCLOUD_ADMIN_USER" \
-              --admin-pass "$NEXTCLOUD_ADMIN_PASSWORD" \
-              --data-dir "$NEXTCLOUD_DATA_DIR" || true
+          is_installed() {
+            echo "$status_json" | grep -q '"installed":true'
+          }
+          refresh_status() {
             status_json="$(php /var/www/html/occ status --output=json 2>/dev/null || true)"
+          }
+          if ! is_installed; then
+            lockdir="/var/www/html/config/.install-lock"
+            acquired=0
+            i=1
+            while [ "$i" -le 120 ]; do
+              if mkdir "$lockdir" 2>/dev/null; then
+                acquired=1
+                date +%s > "$lockdir/created_at"
+                trap 'rm -rf "$lockdir"' EXIT
+                break
+              fi
+              if [ -f "$lockdir/created_at" ]; then
+                now="$(date +%s)"
+                created="$(cat "$lockdir/created_at" 2>/dev/null || echo 0)"
+                age="$((now - created))"
+                if [ "$age" -gt 900 ]; then
+                  echo "Removing stale install lock older than 900s: $lockdir"
+                  rm -rf "$lockdir"
+                  continue
+                fi
+              fi
+              refresh_status
+              if is_installed; then
+                break
+              fi
+              sleep 2
+              i=$((i + 1))
+            done
+            if [ "$acquired" -eq 1 ] && ! is_installed; then
+              echo "Nextcloud is not installed yet, attempting maintenance:install."
+              php /var/www/html/occ maintenance:install \
+                --database pgsql \
+                --database-name "$POSTGRES_DB" \
+                --database-user "$POSTGRES_USER" \
+                --database-pass "$POSTGRES_PASSWORD" \
+                --database-host "$POSTGRES_HOST" \
+                --admin-user "$NEXTCLOUD_ADMIN_USER" \
+                --admin-pass "$NEXTCLOUD_ADMIN_PASSWORD" \
+                --data-dir "$NEXTCLOUD_DATA_DIR" || true
+              refresh_status
+            fi
           fi
-          if ! echo "$status_json" | grep -q '"installed":true'; then
-            echo "Nextcloud install not complete yet; skipping app configuration hook."
+          if ! is_installed; then
+            echo "Nextcloud install not complete yet; waiting for another pod to finish."
+            i=1
+            while [ "$i" -le 120 ]; do
+              refresh_status
+              if is_installed; then
+                break
+              fi
+              sleep 2
+              i=$((i + 1))
+            done
+          fi
+          if ! is_installed; then
+            echo "Nextcloud install still not complete; skipping app configuration hook."
             exit 0
           fi
           occ_safe() {
