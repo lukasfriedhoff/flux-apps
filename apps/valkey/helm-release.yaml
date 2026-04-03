@@ -37,7 +37,7 @@ spec:
       # Nextcloud should keep serving even when background snapshotting is temporarily unhealthy.
       stop-writes-on-bgsave-error no
     replica:
-      enabled: true
+      enabled: ${valkey_replica_enabled:=true}
       replicas: ${valkey_replica_count}
       minReplicasToWrite: ${valkey_min_replicas_to_write}
       persistence:
