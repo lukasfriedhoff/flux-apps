@@ -1,0 +1,32 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: ${longhorn_namespace}
+spec:
+  interval: 10m0s
+  timeout: 15m0s
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: longhorn
+      version: '>=1.7.0 <2.0.0'
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: ${longhorn_namespace}
+      interval: 10m0s
+  values:
+    defaultSettings:
+      defaultReplicaCount: ${longhorn_default_replica_count}
+    persistence:
+      defaultClass: false
+      defaultClassReplicaCount: ${longhorn_default_replica_count}
+      reclaimPolicy: Delete
+    ingress:
+      enabled: false

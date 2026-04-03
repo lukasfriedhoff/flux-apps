@@ -25,6 +25,10 @@ spec:
     - kind: Secret
       name: tempo-values
       valuesKey: values.yaml
+    - kind: Secret
+      name: ${monitoring_s3_values_secret_name}
+      valuesKey: tempo.yaml
+      optional: true
   values:
     fullnameOverride: tempo
     traces:
@@ -38,10 +42,10 @@ spec:
         backend: s3
         s3:
           bucket: ${monitoring_tempo_bucket}
-          endpoint: ${monitoring_s3_endpoint}
-          region: ${monitoring_s3_region}
-          insecure: ${monitoring_s3_insecure}
-          forcepathstyle: ${monitoring_s3_force_path_style}
+          endpoint: ${object_storage_endpoint}
+          region: ${object_storage_region}
+          insecure: ${object_storage_insecure}
+          forcepathstyle: ${object_storage_force_path_style}
     minio:
       enabled: false
     tempo:

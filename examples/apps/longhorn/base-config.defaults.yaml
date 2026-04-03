@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  longhorn_namespace: "longhorn-system"
+  longhorn_default_replica_count: "3"
+  longhorn_rwo_storage_class_1r_name: "longhorn-rwo-1r"
+  longhorn_rwo_storage_class_1r_replicas: "1"
+  longhorn_rwo_storage_class_2r_name: "longhorn-rwo-2r"
+  longhorn_rwo_storage_class_2r_replicas: "2"
+  longhorn_rwo_storage_class_3r_name: "longhorn-rwo-3r"
+  longhorn_rwo_storage_class_3r_replicas: "3"
+  longhorn_rwo_storage_class_3r_is_default: "false"
+  longhorn_rwx_storage_class_1r_name: "longhorn-rwx-1r"
+  longhorn_rwx_storage_class_1r_replicas: "1"
+  longhorn_rwx_storage_class_2r_name: "longhorn-rwx-2r"
+  longhorn_rwx_storage_class_2r_replicas: "2"
+  longhorn_rwx_storage_class_3r_name: "longhorn-rwx-3r"
+  longhorn_rwx_storage_class_3r_replicas: "3"
