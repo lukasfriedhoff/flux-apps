@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: matrix
+resources:
+  - persistent-volume-claims.yaml
+  - postgres.yaml
+  - synapse.yaml
+  - bridges.yaml
+  - ingress.yaml
