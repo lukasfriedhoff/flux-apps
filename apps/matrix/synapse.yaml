@@ -98,6 +98,19 @@ spec:
                   fi
                 fi
               fi
+          env:
+            - name: MATRIX_OIDC_PROVIDER
+              value: ${matrix_oidc:=none}
+            - name: MATRIX_OIDC_ISSUER_URL
+              value: https://auth${public_host_suffix}.${delegating_domain}
+            - name: MATRIX_OIDC_CLIENT_ID
+              value: ${matrix_oidc_client_id:=matrix-synapse}
+            - name: MATRIX_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-oidc
+                  key: MATRIX_OIDC_CLIENT_SECRET
+                  optional: true
           volumeMounts:
             - name: synapse-config
               mountPath: /seed
