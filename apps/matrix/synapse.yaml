@@ -36,7 +36,15 @@ spec:
             - -ceu
             - |
               cp /seed/server.yaml /config/server.yaml
-              cp /seed/homeserver.log.config /config/homeserver.log.config
+              # Some historical secret revisions contain signing-key spillover in
+              # homeserver.log.config. Keep only the expected logging config.
+              awk '
+                /^disable_existing_loggers:[[:space:]]*false/ {
+                  print "disable_existing_loggers: false"
+                  exit
+                }
+                { print }
+              ' /seed/homeserver.log.config > /config/homeserver.log.config
               # Synapse may append generated key settings to server.yaml on first boot.
               # Ensure the file ends with a newline so appended content remains valid YAML.
               printf '\n' >> /config/server.yaml
