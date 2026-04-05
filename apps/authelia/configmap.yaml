@@ -224,6 +224,28 @@ data:
             access_token_signed_response_alg: none
             userinfo_signed_response_alg: none
             token_endpoint_auth_method: client_secret_post
+          - client_id: ${immich_oidc_client_id:=immich}
+            client_name: Immich
+            client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.immich.secret" | msquote }}
+            public: false
+            authorization_policy: ${authelia_oidc_policy}
+            consent_mode: implicit
+            redirect_uris:
+              - https://meme${public_host_suffix}.${delegating_domain}/auth/login
+              - https://meme${public_host_suffix}.${delegating_domain}/user-settings
+              - app.immich:///oauth-callback
+            scopes:
+              - openid
+              - profile
+              - email
+            response_types:
+              - code
+            grant_types:
+              - authorization_code
+              - refresh_token
+            access_token_signed_response_alg: none
+            userinfo_signed_response_alg: RS256
+            token_endpoint_auth_method: client_secret_post
 
     notifier:
       smtp:
