@@ -17,7 +17,7 @@ data:
     }
 
     bool_json() {
-      case "${1:-}" in
+      case "$${1:-}" in
         1|true|TRUE|yes|YES|on|ON) printf 'true' ;;
         0|false|FALSE|no|NO|off|OFF|'') printf 'false' ;;
         *)
@@ -88,11 +88,11 @@ data:
     }
 
     resolve_admin_email() {
-      if [ -n "${IMMICH_ADMIN_EMAIL:-}" ]; then
+      if [ -n "$${IMMICH_ADMIN_EMAIL:-}" ]; then
         printf '%s' "$IMMICH_ADMIN_EMAIL"
         return 0
       fi
-      if [ -n "${IMMICH_DEFAULT_ADMIN_EMAIL:-}" ]; then
+      if [ -n "$${IMMICH_DEFAULT_ADMIN_EMAIL:-}" ]; then
         printf '%s' "$IMMICH_DEFAULT_ADMIN_EMAIL"
         return 0
       fi
@@ -100,11 +100,11 @@ data:
     }
 
     resolve_admin_password() {
-      if [ -n "${IMMICH_ADMIN_PASSWORD:-}" ]; then
+      if [ -n "$${IMMICH_ADMIN_PASSWORD:-}" ]; then
         printf '%s' "$IMMICH_ADMIN_PASSWORD"
         return 0
       fi
-      if [ -n "${DB_PASSWORD:-}" ]; then
+      if [ -n "$${DB_PASSWORD:-}" ]; then
         printf '%s' "$DB_PASSWORD"
         return 0
       fi
@@ -114,7 +114,7 @@ data:
     discover_immich_url() {
       attempt=0
       while [ "$attempt" -lt 20 ]; do
-        for candidate in "${IMMICH_URL:-}" "http://immich-server:2283" "http://immich-server.immich.svc.cluster.local:2283"; do
+        for candidate in "$${IMMICH_URL:-}" "http://immich-server:2283" "http://immich-server.immich.svc.cluster.local:2283"; do
           if [ -z "$candidate" ]; then
             continue
           fi
@@ -131,7 +131,7 @@ data:
 
     IMMICH_ADMIN_EMAIL="$(resolve_admin_email || true)"
     IMMICH_ADMIN_PASSWORD="$(resolve_admin_password || true)"
-    IMMICH_ADMIN_NAME="${IMMICH_ADMIN_NAME:-Immich Admin}"
+    IMMICH_ADMIN_NAME="$${IMMICH_ADMIN_NAME:-Immich Admin}"
 
     if [ -z "$IMMICH_ADMIN_EMAIL" ] || [ -z "$IMMICH_ADMIN_PASSWORD" ]; then
       log "No admin credentials available (IMMICH_ADMIN_* or DB_PASSWORD). Skipping."
@@ -223,28 +223,28 @@ data:
       exit 1
     fi
 
-    IMMICH_OIDC_PROVIDER="${IMMICH_OIDC_PROVIDER:-none}"
+    IMMICH_OIDC_PROVIDER="$${IMMICH_OIDC_PROVIDER:-none}"
     if [ "$IMMICH_OIDC_PROVIDER" != "authelia" ]; then
       log "OIDC provider is '$IMMICH_OIDC_PROVIDER'; skipping OIDC configuration."
       exit 0
     fi
 
-    IMMICH_OIDC_ISSUER_URL="${IMMICH_OIDC_ISSUER_URL:-}"
-    IMMICH_OIDC_CLIENT_ID="${IMMICH_OIDC_CLIENT_ID:-immich}"
-    IMMICH_OIDC_CLIENT_SECRET="${IMMICH_OIDC_CLIENT_SECRET:-}"
-    IMMICH_OIDC_SCOPE="${IMMICH_OIDC_SCOPE:-openid profile email}"
-    IMMICH_OIDC_BUTTON_TEXT="${IMMICH_OIDC_BUTTON_TEXT:-Sign in with Authelia}"
-    IMMICH_OIDC_AUTO_REGISTER_JSON="$(bool_json "${IMMICH_OIDC_AUTO_REGISTER:-true}")"
-    IMMICH_OIDC_AUTO_LAUNCH_JSON="$(bool_json "${IMMICH_OIDC_AUTO_LAUNCH:-false}")"
-    IMMICH_OIDC_MOBILE_OVERRIDE_JSON="$(bool_json "${IMMICH_OIDC_MOBILE_OVERRIDE_ENABLED:-false}")"
-    IMMICH_OIDC_MOBILE_REDIRECT_URI="${IMMICH_OIDC_MOBILE_REDIRECT_URI:-app.immich:///oauth-callback}"
-    IMMICH_OIDC_TIMEOUT="${IMMICH_OIDC_TIMEOUT:-30000}"
-    IMMICH_OIDC_SIGNING_ALGORITHM="${IMMICH_OIDC_SIGNING_ALGORITHM:-RS256}"
-    IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM="${IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM:-RS256}"
-    IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD="${IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD:-client_secret_post}"
-    IMMICH_OIDC_ROLE_CLAIM="${IMMICH_OIDC_ROLE_CLAIM:-}"
-    IMMICH_OIDC_STORAGE_LABEL_CLAIM="${IMMICH_OIDC_STORAGE_LABEL_CLAIM:-preferred_username}"
-    IMMICH_OIDC_STORAGE_QUOTA_CLAIM="${IMMICH_OIDC_STORAGE_QUOTA_CLAIM:-}"
+    IMMICH_OIDC_ISSUER_URL="$${IMMICH_OIDC_ISSUER_URL:-}"
+    IMMICH_OIDC_CLIENT_ID="$${IMMICH_OIDC_CLIENT_ID:-immich}"
+    IMMICH_OIDC_CLIENT_SECRET="$${IMMICH_OIDC_CLIENT_SECRET:-}"
+    IMMICH_OIDC_SCOPE="$${IMMICH_OIDC_SCOPE:-openid profile email}"
+    IMMICH_OIDC_BUTTON_TEXT="$${IMMICH_OIDC_BUTTON_TEXT:-Sign in with Authelia}"
+    IMMICH_OIDC_AUTO_REGISTER_JSON="$(bool_json "$${IMMICH_OIDC_AUTO_REGISTER:-true}")"
+    IMMICH_OIDC_AUTO_LAUNCH_JSON="$(bool_json "$${IMMICH_OIDC_AUTO_LAUNCH:-false}")"
+    IMMICH_OIDC_MOBILE_OVERRIDE_JSON="$(bool_json "$${IMMICH_OIDC_MOBILE_OVERRIDE_ENABLED:-false}")"
+    IMMICH_OIDC_MOBILE_REDIRECT_URI="$${IMMICH_OIDC_MOBILE_REDIRECT_URI:-app.immich:///oauth-callback}"
+    IMMICH_OIDC_TIMEOUT="$${IMMICH_OIDC_TIMEOUT:-30000}"
+    IMMICH_OIDC_SIGNING_ALGORITHM="$${IMMICH_OIDC_SIGNING_ALGORITHM:-RS256}"
+    IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM="$${IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM:-RS256}"
+    IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD="$${IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD:-client_secret_post}"
+    IMMICH_OIDC_ROLE_CLAIM="$${IMMICH_OIDC_ROLE_CLAIM:-}"
+    IMMICH_OIDC_STORAGE_LABEL_CLAIM="$${IMMICH_OIDC_STORAGE_LABEL_CLAIM:-preferred_username}"
+    IMMICH_OIDC_STORAGE_QUOTA_CLAIM="$${IMMICH_OIDC_STORAGE_QUOTA_CLAIM:-}"
     case "$IMMICH_OIDC_TIMEOUT" in
       ''|*[!0-9]*)
         log "IMMICH_OIDC_TIMEOUT must be an integer, got: $IMMICH_OIDC_TIMEOUT"
