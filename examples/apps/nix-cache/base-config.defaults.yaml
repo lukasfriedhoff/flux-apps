@@ -1,0 +1,6 @@
+data:
+  nix_cache_suspend: "true"
+  nix_cache_namespace: "nix-cache"
+  nix_cache_service_name: "nix-cache"
+  nix_cache_service_port: "5000"
+  nix_cache_upstream_ip: "127.0.0.1"
