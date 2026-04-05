@@ -64,6 +64,7 @@ spec:
       additionalSecrets:
         authelia-mail-credentials: {}
         authelia-oidc: {}
+        authelia-oidc-matrix: {}
     pod:
       annotations:
         reloader.stakater.com/auto: "true"

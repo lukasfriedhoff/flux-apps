@@ -33,7 +33,7 @@ spec:
           image: busybox:1.36
           command:
             - /bin/sh
-            - -ceu
+            - -ce
             - |
               cp /seed/server.yaml /config/server.yaml
               # Some historical secret revisions contain signing-key spillover in
@@ -48,6 +48,37 @@ spec:
               # Synapse may append generated key settings to server.yaml on first boot.
               # Ensure the file ends with a newline so appended content remains valid YAML.
               printf '\n' >> /config/server.yaml
+              if [ "$MATRIX_OIDC_PROVIDER" = "authelia" ]; then
+                if grep -q '^oidc_providers:' /config/server.yaml; then
+                  echo "Matrix OIDC: existing oidc_providers config found; skipping append."
+                else
+                  if [ -z "$MATRIX_OIDC_ISSUER_URL" ] || [ -z "$MATRIX_OIDC_CLIENT_ID" ] || [ -z "$MATRIX_OIDC_CLIENT_SECRET" ]; then
+                    echo "Matrix OIDC is enabled but issuer/client settings are missing." >&2
+                    exit 1
+                  fi
+                  cat >> /config/server.yaml <<EOF
+              oidc_providers:
+                - idp_id: authelia
+                  idp_name: Authelia
+                  discover: true
+                  issuer: "$MATRIX_OIDC_ISSUER_URL"
+                  client_id: "$MATRIX_OIDC_CLIENT_ID"
+                  client_secret: "$MATRIX_OIDC_CLIENT_SECRET"
+                  client_auth_method: client_secret_post
+                  scopes:
+                    - openid
+                    - profile
+                    - email
+                    - groups
+                  user_profile_method: userinfo_endpoint
+                  allow_existing_users: true
+                  user_mapping_provider:
+                    config:
+                      localpart_template: "{{ user.preferred_username or user.nickname or user.email.split('@')[0] }}"
+                      display_name_template: "{{ user.name or user.preferred_username }}"
+              EOF
+                fi
+              fi
           volumeMounts:
             - name: synapse-config
               mountPath: /seed
@@ -71,6 +102,18 @@ spec:
               value: "0"
             - name: GID
               value: "0"
+            - name: MATRIX_OIDC_PROVIDER
+              value: ${matrix_oidc:=none}
+            - name: MATRIX_OIDC_ISSUER_URL
+              value: https://auth${public_host_suffix}.${delegating_domain}
+            - name: MATRIX_OIDC_CLIENT_ID
+              value: ${matrix_oidc_client_id:=matrix-synapse}
+            - name: MATRIX_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-oidc
+                  key: MATRIX_OIDC_CLIENT_SECRET
+                  optional: true
           resources:
             requests:
               cpu: ${matrix_synapse_requests_cpu}
