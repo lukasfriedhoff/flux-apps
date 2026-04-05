@@ -27,6 +27,66 @@ data:
       esac
     }
 
+    json_access_token() {
+      node -e '
+        let input = "";
+        process.stdin.on("data", (chunk) => (input += chunk));
+        process.stdin.on("end", () => {
+          try {
+            const parsed = JSON.parse(input);
+            process.stdout.write(parsed.accessToken || "");
+          } catch {
+            process.stdout.write("");
+          }
+        });
+      '
+    }
+
+    json_oauth_compact() {
+      node -e '
+        let input = "";
+        process.stdin.on("data", (chunk) => (input += chunk));
+        process.stdin.on("end", () => {
+          try {
+            const parsed = JSON.parse(input);
+            process.stdout.write(JSON.stringify(parsed.oauth || {}));
+          } catch {
+            process.stdout.write("{}");
+          }
+        });
+      '
+    }
+
+    json_apply_oauth() {
+      node -e '
+        let input = "";
+        process.stdin.on("data", (chunk) => (input += chunk));
+        process.stdin.on("end", () => {
+          const cfg = JSON.parse(input);
+          cfg.oauth = cfg.oauth || {};
+          cfg.oauth.enabled = true;
+          cfg.oauth.issuerUrl = process.env.IMMICH_OIDC_ISSUER_URL;
+          cfg.oauth.clientId = process.env.IMMICH_OIDC_CLIENT_ID;
+          cfg.oauth.clientSecret = process.env.IMMICH_OIDC_CLIENT_SECRET;
+          cfg.oauth.scope = process.env.IMMICH_OIDC_SCOPE;
+          cfg.oauth.buttonText = process.env.IMMICH_OIDC_BUTTON_TEXT;
+          cfg.oauth.autoRegister = process.env.IMMICH_OIDC_AUTO_REGISTER_JSON === "true";
+          cfg.oauth.autoLaunch = process.env.IMMICH_OIDC_AUTO_LAUNCH_JSON === "true";
+          cfg.oauth.mobileOverrideEnabled = process.env.IMMICH_OIDC_MOBILE_OVERRIDE_JSON === "true";
+          cfg.oauth.mobileRedirectUri = process.env.IMMICH_OIDC_MOBILE_REDIRECT_URI;
+          cfg.oauth.timeout = Number(process.env.IMMICH_OIDC_TIMEOUT);
+          cfg.oauth.signingAlgorithm = process.env.IMMICH_OIDC_SIGNING_ALGORITHM;
+          cfg.oauth.profileSigningAlgorithm = process.env.IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM;
+          cfg.oauth.tokenEndpointAuthMethod = process.env.IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD;
+          cfg.oauth.defaultStorageQuota = null;
+          cfg.oauth.roleClaim = process.env.IMMICH_OIDC_ROLE_CLAIM;
+          cfg.oauth.storageLabelClaim = process.env.IMMICH_OIDC_STORAGE_LABEL_CLAIM;
+          cfg.oauth.storageQuotaClaim = process.env.IMMICH_OIDC_STORAGE_QUOTA_CLAIM;
+          process.stdout.write(JSON.stringify(cfg));
+        });
+      '
+    }
+
     resolve_admin_email() {
       if [ -n "${IMMICH_ADMIN_EMAIL:-}" ]; then
         printf '%s' "$IMMICH_ADMIN_EMAIL"
@@ -157,7 +217,7 @@ data:
         ;;
     esac
 
-    access_token="$(printf '%s' "$login_msg" | jq -r '.accessToken // empty' 2>/dev/null || true)"
+    access_token="$(printf '%s' "$login_msg" | json_access_token)"
     if [ -z "$access_token" ]; then
       log "Login response did not include an access token; cannot continue bootstrap."
       exit 1
@@ -185,6 +245,12 @@ data:
     IMMICH_OIDC_ROLE_CLAIM="${IMMICH_OIDC_ROLE_CLAIM:-}"
     IMMICH_OIDC_STORAGE_LABEL_CLAIM="${IMMICH_OIDC_STORAGE_LABEL_CLAIM:-preferred_username}"
     IMMICH_OIDC_STORAGE_QUOTA_CLAIM="${IMMICH_OIDC_STORAGE_QUOTA_CLAIM:-}"
+    case "$IMMICH_OIDC_TIMEOUT" in
+      ''|*[!0-9]*)
+        log "IMMICH_OIDC_TIMEOUT must be an integer, got: $IMMICH_OIDC_TIMEOUT"
+        exit 1
+        ;;
+    esac
 
     if [ -z "$IMMICH_OIDC_ISSUER_URL" ] || [ -z "$IMMICH_OIDC_CLIENT_SECRET" ]; then
       log "IMMICH_OIDC_PROVIDER=authelia requires IMMICH_OIDC_ISSUER_URL and IMMICH_OIDC_CLIENT_SECRET."
@@ -207,48 +273,10 @@ data:
     system_config="$(cat "$system_config_body")"
     rm -f "$system_config_body"
 
-    desired_config="$(
-      printf '%s' "$system_config" | jq \
-        --arg issuerUrl "$IMMICH_OIDC_ISSUER_URL" \
-        --arg clientId "$IMMICH_OIDC_CLIENT_ID" \
-        --arg clientSecret "$IMMICH_OIDC_CLIENT_SECRET" \
-        --arg scope "$IMMICH_OIDC_SCOPE" \
-        --arg buttonText "$IMMICH_OIDC_BUTTON_TEXT" \
-        --arg mobileRedirectUri "$IMMICH_OIDC_MOBILE_REDIRECT_URI" \
-        --arg signingAlgorithm "$IMMICH_OIDC_SIGNING_ALGORITHM" \
-        --arg profileSigningAlgorithm "$IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM" \
-        --arg tokenEndpointAuthMethod "$IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD" \
-        --arg roleClaim "$IMMICH_OIDC_ROLE_CLAIM" \
-        --arg storageLabelClaim "$IMMICH_OIDC_STORAGE_LABEL_CLAIM" \
-        --arg storageQuotaClaim "$IMMICH_OIDC_STORAGE_QUOTA_CLAIM" \
-        --argjson autoRegister "$IMMICH_OIDC_AUTO_REGISTER_JSON" \
-        --argjson autoLaunch "$IMMICH_OIDC_AUTO_LAUNCH_JSON" \
-        --argjson mobileOverrideEnabled "$IMMICH_OIDC_MOBILE_OVERRIDE_JSON" \
-        --argjson timeout "$IMMICH_OIDC_TIMEOUT" \
-        '
-          .oauth.enabled = true
-          | .oauth.issuerUrl = $issuerUrl
-          | .oauth.clientId = $clientId
-          | .oauth.clientSecret = $clientSecret
-          | .oauth.scope = $scope
-          | .oauth.buttonText = $buttonText
-          | .oauth.autoRegister = $autoRegister
-          | .oauth.autoLaunch = $autoLaunch
-          | .oauth.mobileOverrideEnabled = $mobileOverrideEnabled
-          | .oauth.mobileRedirectUri = $mobileRedirectUri
-          | .oauth.timeout = $timeout
-          | .oauth.signingAlgorithm = $signingAlgorithm
-          | .oauth.profileSigningAlgorithm = $profileSigningAlgorithm
-          | .oauth.tokenEndpointAuthMethod = $tokenEndpointAuthMethod
-          | .oauth.defaultStorageQuota = null
-          | .oauth.roleClaim = $roleClaim
-          | .oauth.storageLabelClaim = $storageLabelClaim
-          | .oauth.storageQuotaClaim = $storageQuotaClaim
-        '
-    )"
+    desired_config="$(printf '%s' "$system_config" | json_apply_oauth)"
 
-    current_oauth="$(printf '%s' "$system_config" | jq -c '.oauth')"
-    desired_oauth="$(printf '%s' "$desired_config" | jq -c '.oauth')"
+    current_oauth="$(printf '%s' "$system_config" | json_oauth_compact)"
+    desired_oauth="$(printf '%s' "$desired_config" | json_oauth_compact)"
     if [ "$current_oauth" = "$desired_oauth" ]; then
       log "OIDC configuration already converged."
       exit 0
