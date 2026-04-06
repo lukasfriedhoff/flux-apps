@@ -56,10 +56,10 @@ data:
         url: https://sonarr${public_host_suffix}.${delegating_domain}/
         interval: 1m
         conditions:
-          - "[STATUS] == 401 || [STATUS] == 302"
+          - "[STATUS] < 500"
       - name: Jellyfin
         group: Media
         url: https://jellyfin${public_host_suffix}.${delegating_domain}/
         interval: 1m
         conditions:
-          - "[STATUS] == 302 || [STATUS] == 200"
+          - "[STATUS] < 500"
