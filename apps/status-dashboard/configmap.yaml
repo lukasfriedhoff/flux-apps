@@ -51,15 +51,3 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-      - name: Sonarr
-        group: Media
-        url: https://sonarr${public_host_suffix}.${delegating_domain}/
-        interval: 1m
-        conditions:
-          - "[STATUS] < 500"
-      - name: Jellyfin
-        group: Media
-        url: https://jellyfin${public_host_suffix}.${delegating_domain}/
-        interval: 1m
-        conditions:
-          - "[STATUS] < 500"
