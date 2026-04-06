@@ -1,0 +1,6 @@
+data:
+  status_dashboard_suspend: "true"
+  status_dashboard_namespace: "status-dashboard"
+  status_dashboard_host: "status.h4xx.io"
+  status_dashboard_title: "Homelab Status"
+  status_dashboard_description: "Public service uptime overview"

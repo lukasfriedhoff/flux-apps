@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: status-dashboard-config
+  namespace: ${status_dashboard_namespace}
+data:
+  config.yaml: |
+    ui:
+      title: ${status_dashboard_title}
+      description: ${status_dashboard_description}
+    endpoints:
+      - name: Authelia
+        group: Core
+        url: https://auth${public_host_suffix}.${delegating_domain}/api/health
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Nextcloud
+        group: Core
+        url: https://nextcloud${public_host_suffix}.${delegating_domain}/status.php
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Immich
+        group: Core
+        url: https://meme${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Matrix
+        group: Core
+        url: https://matrix${public_host_suffix}.${delegating_domain}/_matrix/client/versions
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Collabora
+        group: Core
+        url: https://collabora${public_host_suffix}.${delegating_domain}/hosting/discovery
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Grafana
+        group: Core
+        url: https://grafana${public_host_suffix}.${delegating_domain}/api/health
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Nix Cache
+        group: Core
+        url: https://nix${public_host_suffix}.${delegating_domain}/nix-cache-info
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Sonarr
+        group: Media
+        url: https://sonarr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] == 401 || [STATUS] == 302"
+      - name: Jellyfin
+        group: Media
+        url: https://jellyfin${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] == 302 || [STATUS] == 200"
