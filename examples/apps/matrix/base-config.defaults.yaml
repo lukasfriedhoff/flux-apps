@@ -7,6 +7,7 @@ data:
   matrix_suspend: "true"
 
   matrix_synapse_image_tag: "latest"
+  matrix_element_image_tag: "latest"
   matrix_whatsapp_image_tag: "latest"
   matrix_telegram_image_tag: "latest"
   matrix_signal_image_tag: "latest"
