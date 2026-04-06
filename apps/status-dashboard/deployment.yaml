@@ -5,6 +5,8 @@ metadata:
   namespace: ${status_dashboard_namespace}
   labels:
     app.kubernetes.io/name: status-dashboard
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   selector:
