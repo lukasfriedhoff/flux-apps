@@ -52,6 +52,7 @@ spec:
       labels:
         app.kubernetes.io/name: element-web
     spec:
+      enableServiceLinks: false
       containers:
         - name: element-web
           image: vectorim/element-web:${matrix_element_image_tag}
