@@ -52,9 +52,7 @@ spec:
               if grep -Eq '^[[:space:]]*serve_server_wellknown:[[:space:]]*' /config/server.yaml; then
                 sed -i 's/^[[:space:]]*serve_server_wellknown:[[:space:]]*.*/serve_server_wellknown: true/' /config/server.yaml
               else
-                cat >> /config/server.yaml <<EOF
-serve_server_wellknown: true
-              EOF
+                printf '%s\n' 'serve_server_wellknown: true' >> /config/server.yaml
               fi
               if [ "$MATRIX_OIDC_PROVIDER" = "authelia" ]; then
                 if [ -z "$MATRIX_OIDC_ISSUER_URL" ] || [ -z "$MATRIX_OIDC_CLIENT_ID" ] || [ -z "$MATRIX_OIDC_CLIENT_SECRET" ]; then
