@@ -48,6 +48,14 @@ spec:
               # Synapse may append generated key settings to server.yaml on first boot.
               # Ensure the file ends with a newline so appended content remains valid YAML.
               printf '\n' >> /config/server.yaml
+              # Federation discovery from remote homeservers depends on this endpoint.
+              if grep -Eq '^[[:space:]]*serve_server_wellknown:[[:space:]]*' /config/server.yaml; then
+                sed -i 's/^[[:space:]]*serve_server_wellknown:[[:space:]]*.*/serve_server_wellknown: true/' /config/server.yaml
+              else
+                cat >> /config/server.yaml <<EOF
+serve_server_wellknown: true
+              EOF
+              fi
               if [ "$MATRIX_OIDC_PROVIDER" = "authelia" ]; then
                 if [ -z "$MATRIX_OIDC_ISSUER_URL" ] || [ -z "$MATRIX_OIDC_CLIENT_ID" ] || [ -z "$MATRIX_OIDC_CLIENT_SECRET" ]; then
                   echo "Matrix OIDC is enabled but issuer/client settings are missing." >&2
