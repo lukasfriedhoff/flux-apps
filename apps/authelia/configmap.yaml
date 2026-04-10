@@ -33,6 +33,10 @@ data:
       rules:
         - domain: 'auth${public_host_suffix}.${delegating_domain}'
           policy: bypass
+        - domain: 'meme${public_host_suffix}.${delegating_domain}'
+          subject:
+            - 'user:wooden'
+          policy: one_factor
         - domain: 'grafana${public_host_suffix}.${delegating_domain}'
           subject:
             - 'user:testuser'
@@ -126,6 +130,10 @@ data:
             - 'group:jellyfin-admins'
             - 'group:jellyfin-users'
           policy: ${authelia_access_policy}
+        - domain: '*.${delegating_domain}'
+          subject:
+            - 'user:wooden'
+          policy: deny
         - domain: '*.${delegating_domain}'
           policy: ${authelia_access_policy}
 
