@@ -618,13 +618,13 @@ data:
 
         payload="$(jq -n -c \
           --arg path "/media/books" \
-          --argjson qualityProfileId "$quality_profile_id" \
-          --argjson metadataProfileId "$metadata_profile_id" \
+          --arg qualityProfileId "$quality_profile_id" \
+          --arg metadataProfileId "$metadata_profile_id" \
           '{
             name: "Books",
             path: $path,
-            defaultQualityProfileId: $qualityProfileId,
-            defaultMetadataProfileId: $metadataProfileId
+            defaultQualityProfileId: ($qualityProfileId | tonumber),
+            defaultMetadataProfileId: ($metadataProfileId | tonumber)
           }'
         )"
 
