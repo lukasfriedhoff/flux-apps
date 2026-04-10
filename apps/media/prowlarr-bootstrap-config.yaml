@@ -14,6 +14,8 @@ data:
     RADARR_URL="${RADARR_URL:-http://radarr:7878}"
     LIDARR_URL="${LIDARR_URL:-http://lidarr:8686}"
     READARR_URL="${READARR_URL:-http://readarr:8787}"
+    MEDIA_PUID="${MEDIA_PUID:-1000}"
+    MEDIA_PGID="${MEDIA_PGID:-1000}"
 
     log() {
       printf '[prowlarr-bootstrap] %s\n' "$*"
@@ -271,11 +273,36 @@ data:
         "$LIDARR_URL$path"
     }
 
+    ensure_media_library_path() {
+      subpath="$1"
+      path="/mnt/arr-media/$subpath"
+
+      if [ ! -d /mnt/arr-media ]; then
+        log "arr-media PVC mount missing in bootstrap pod; skipping media path preparation."
+        return 0
+      fi
+
+      mkdir -p "$path"
+      chmod 0775 "$path" || true
+      chown "$MEDIA_PUID:$MEDIA_PGID" "$path" || true
+    }
+
+    ensure_media_library_layout() {
+      ensure_media_library_path music
+      ensure_media_library_path tv
+      ensure_media_library_path movies
+      ensure_media_library_path books
+    }
+
     ensure_lidarr_rootfolder() {
       root_json="$(lidarr_get /api/v1/rootfolder | jq -c 'map(select(.path == "/media/music"))[0]')"
       if [ "$root_json" = "null" ]; then
-        lidarr_post /api/v1/rootfolder '{"path":"/media/music"}' >/dev/null
-        log "Created Lidarr root folder /media/music."
+        if lidarr_post /api/v1/rootfolder '{"path":"/media/music"}' >/dev/null; then
+          log "Created Lidarr root folder /media/music."
+        else
+          log "Failed to create Lidarr root folder /media/music."
+          return 1
+        fi
       else
         log "Lidarr root folder /media/music already present."
       fi
@@ -317,6 +344,8 @@ data:
         log "Updated Lidarr download client qBittorrent."
       fi
     }
+
+    ensure_media_library_layout
 
     if [ -n "$LIDARR_API_KEY" ]; then
       LIDARR_URL="$(discover_lidarr_url || true)"
@@ -373,8 +402,12 @@ data:
     ensure_sonarr_rootfolder() {
       root_json="$(sonarr_get /api/v3/rootfolder | jq -c 'map(select(.path == "/media/tv"))[0]')"
       if [ "$root_json" = "null" ]; then
-        sonarr_post /api/v3/rootfolder '{"path":"/media/tv"}' >/dev/null
-        log "Created Sonarr root folder /media/tv."
+        if sonarr_post /api/v3/rootfolder '{"path":"/media/tv"}' >/dev/null; then
+          log "Created Sonarr root folder /media/tv."
+        else
+          log "Failed to create Sonarr root folder /media/tv."
+          return 1
+        fi
       else
         log "Sonarr root folder /media/tv already present."
       fi
@@ -472,8 +505,12 @@ data:
     ensure_radarr_rootfolder() {
       root_json="$(radarr_get /api/v3/rootfolder | jq -c 'map(select(.path == "/media/movies"))[0]')"
       if [ "$root_json" = "null" ]; then
-        radarr_post /api/v3/rootfolder '{"path":"/media/movies"}' >/dev/null
-        log "Created Radarr root folder /media/movies."
+        if radarr_post /api/v3/rootfolder '{"path":"/media/movies"}' >/dev/null; then
+          log "Created Radarr root folder /media/movies."
+        else
+          log "Failed to create Radarr root folder /media/movies."
+          return 1
+        fi
       else
         log "Radarr root folder /media/movies already present."
       fi
@@ -571,8 +608,32 @@ data:
     ensure_readarr_rootfolder() {
       root_json="$(readarr_get /api/v1/rootfolder | jq -c 'map(select(.path == "/media/books"))[0]')"
       if [ "$root_json" = "null" ]; then
-        readarr_post /api/v1/rootfolder '{"path":"/media/books"}' >/dev/null
-        log "Created Readarr root folder /media/books."
+        quality_profile_id="$(readarr_get /api/v1/qualityprofile | jq -r '.[0].id // empty')"
+        metadata_profile_id="$(readarr_get /api/v1/metadataprofile | jq -r '.[0].id // empty')"
+
+        if [ -z "$quality_profile_id" ] || [ -z "$metadata_profile_id" ]; then
+          log "Readarr quality/metadata profile discovery failed; cannot create root folder."
+          return 1
+        fi
+
+        payload="$(jq -nc \
+          --arg path "/media/books" \
+          --argjson qualityProfileId "$quality_profile_id" \
+          --argjson metadataProfileId "$metadata_profile_id" \
+          '{
+            name: "Books",
+            path: $path,
+            defaultQualityProfileId: $qualityProfileId,
+            defaultMetadataProfileId: $metadataProfileId
+          }'
+        )"
+
+        if readarr_post /api/v1/rootfolder "$payload" >/dev/null; then
+          log "Created Readarr root folder /media/books."
+        else
+          log "Failed to create Readarr root folder /media/books."
+          return 1
+        fi
       else
         log "Readarr root folder /media/books already present."
       fi
