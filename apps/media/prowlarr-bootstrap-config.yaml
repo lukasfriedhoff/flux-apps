@@ -10,6 +10,7 @@ data:
 
     PROWLARR_URL="${PROWLARR_URL:-http://prowlarr:9696}"
     PROWLARR_APP_URL="${PROWLARR_APP_URL:-http://prowlarr:9696}"
+    LIDARR_URL="${LIDARR_URL:-http://lidarr:8686}"
 
     log() {
       printf '[prowlarr-bootstrap] %s\n' "$*"
@@ -59,13 +60,13 @@ data:
 
     prowlarr_get() {
       path="$1"
-      curl -sS -m 20 -H "X-Api-Key: $PROWLARR_API_KEY" "$PROWLARR_URL$path"
+      curl -fsS -m 20 -H "X-Api-Key: $PROWLARR_API_KEY" "$PROWLARR_URL$path"
     }
 
     prowlarr_post() {
       path="$1"
       payload="$2"
-      curl -sS -m 30 -X POST \
+      curl -fsS -m 30 -X POST \
         -H "X-Api-Key: $PROWLARR_API_KEY" \
         -H 'Content-Type: application/json' \
         --data "$payload" \
@@ -75,12 +76,23 @@ data:
     prowlarr_put() {
       path="$1"
       payload="$2"
-      curl -sS -m 30 -X PUT \
+      curl -fsS -m 30 -X PUT \
         -H "X-Api-Key: $PROWLARR_API_KEY" \
         -H 'Content-Type: application/json' \
         --data "$payload" \
         "$PROWLARR_URL$path"
     }
+
+    APP_PROFILE_ID="$(
+      prowlarr_get /api/v1/appprofile 2>/dev/null \
+      | jq -r 'map(select(.name == "Standard"))[0].id // .[0].id // empty' 2>/dev/null \
+      || true
+    )"
+    case "$APP_PROFILE_ID" in
+      ''|*[!0-9]*)
+        APP_PROFILE_ID=1
+        ;;
+    esac
 
     ensure_app() {
       impl="$1"
@@ -155,9 +167,10 @@ data:
           log "No schema found for indexer implementation $impl; skipping."
           return 0
         fi
-        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" '
+        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --argjson appProfileId "$APP_PROFILE_ID" '
           .name = $name
           | .enable = ($enabled == "true")
+          | .appProfileId = $appProfileId
         ')"
         if [ -n "$api_key" ]; then
           idx_json="$(printf '%s' "$idx_json" | jq -c --arg apiKey "$api_key" '(.fields[]? | select(.name == "apiKey")).value = $apiKey')"
@@ -169,9 +182,10 @@ data:
         fi
       else
         idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
-        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" '
+        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --argjson appProfileId "$APP_PROFILE_ID" '
           .name = $name
           | .enable = ($enabled == "true")
+          | .appProfileId = $appProfileId
         ')"
         if [ -n "$api_key" ]; then
           idx_json="$(printf '%s' "$idx_json" | jq -c --arg apiKey "$api_key" '(.fields[]? | select(.name == "apiKey")).value = $apiKey')"
@@ -189,8 +203,12 @@ data:
     ensure_app "Lidarr" "lidarr" "http://lidarr:8686" "$LIDARR_API_KEY" || log "Failed to sync Lidarr app; will retry."
     ensure_app "Readarr" "readarr" "http://readarr:8787" "$READARR_API_KEY" || log "Failed to sync Readarr app; will retry."
 
+    # Public indexers.
     ensure_indexer "Knaben" "Knaben" true "" || log "Failed to sync Knaben indexer; will retry."
     ensure_indexer "TorrentsCSV" "TorrentsCSV" true "" || log "Failed to sync TorrentsCSV indexer; will retry."
+    ensure_indexer "SubsPlease" "SubsPlease" true "" || log "Failed to sync SubsPlease indexer; will retry."
+
+    # Private tracker (optional).
     if [ -n "${TORRENTSYNDIKAT_API_KEY:-}" ]; then
       ensure_indexer "TorrentSyndikat" "TorrentSyndikat" true "$TORRENTSYNDIKAT_API_KEY" || log "Failed to sync TorrentSyndikat indexer; will retry."
     else
@@ -199,5 +217,104 @@ data:
 
     # Push current indexer set into downstream Arr apps.
     prowlarr_post /api/v1/command '{"name":"ApplicationIndexerSync"}' >/dev/null || log "ApplicationIndexerSync command failed; will retry."
+
+    discover_lidarr_url() {
+      attempt=0
+      while [ "$attempt" -lt 20 ]; do
+        for candidate in "$LIDARR_URL" "http://lidarr:8686" "http://lidarr.media.svc.cluster.local:8686"; do
+          if curl -fsS -m 5 -H "X-Api-Key: $LIDARR_API_KEY" "$candidate/api/v1/system/status" >/dev/null 2>&1; then
+            printf '%s' "$candidate"
+            return 0
+          fi
+        done
+        attempt=$((attempt + 1))
+        sleep 3
+      done
+      return 1
+    }
+
+    lidarr_get() {
+      path="$1"
+      curl -fsS -m 20 -H "X-Api-Key: $LIDARR_API_KEY" "$LIDARR_URL$path"
+    }
+
+    lidarr_post() {
+      path="$1"
+      payload="$2"
+      curl -fsS -m 30 -X POST \
+        -H "X-Api-Key: $LIDARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$LIDARR_URL$path"
+    }
+
+    lidarr_put() {
+      path="$1"
+      payload="$2"
+      curl -fsS -m 30 -X PUT \
+        -H "X-Api-Key: $LIDARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$LIDARR_URL$path"
+    }
+
+    ensure_lidarr_rootfolder() {
+      root_json="$(lidarr_get /api/v1/rootfolder | jq -c 'map(select(.path == "/media/music"))[0]')"
+      if [ "$root_json" = "null" ]; then
+        lidarr_post /api/v1/rootfolder '{"path":"/media/music"}' >/dev/null
+        log "Created Lidarr root folder /media/music."
+      else
+        log "Lidarr root folder /media/music already present."
+      fi
+    }
+
+    ensure_lidarr_qbittorrent() {
+      dl_json="$(lidarr_get /api/v1/downloadclient | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
+      if [ "$dl_json" = "null" ]; then
+        dl_json="$(lidarr_get /api/v1/downloadclient/schema | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
+        if [ "$dl_json" = "null" ]; then
+          log "Lidarr qBittorrent schema missing; skipping download client bootstrap."
+          return 0
+        fi
+        dl_json="$(printf '%s' "$dl_json" | jq -c '
+          .name = "qBittorrent"
+          | .enable = true
+          | .priority = 1
+          | (.fields[]? | select(.name == "host")).value = "qbittorrent"
+          | (.fields[]? | select(.name == "port")).value = 8080
+          | (.fields[]? | select(.name == "useSsl")).value = false
+          | (.fields[]? | select(.name == "musicCategory")).value = "lidarr"
+          | (.fields[]? | select(.name == "musicImportedCategory")).value = "lidarr-imported"
+        ')"
+        lidarr_post /api/v1/downloadclient "$dl_json" >/dev/null
+        log "Created Lidarr download client qBittorrent."
+      else
+        dl_id="$(printf '%s' "$dl_json" | jq -r '.id')"
+        dl_json="$(printf '%s' "$dl_json" | jq -c '
+          .name = "qBittorrent"
+          | .enable = true
+          | .priority = 1
+          | (.fields[]? | select(.name == "host")).value = "qbittorrent"
+          | (.fields[]? | select(.name == "port")).value = 8080
+          | (.fields[]? | select(.name == "useSsl")).value = false
+          | (.fields[]? | select(.name == "musicCategory")).value = "lidarr"
+          | (.fields[]? | select(.name == "musicImportedCategory")).value = "lidarr-imported"
+        ')"
+        lidarr_put "/api/v1/downloadclient/$dl_id" "$dl_json" >/dev/null
+        log "Updated Lidarr download client qBittorrent."
+      fi
+    }
+
+    if [ -n "$LIDARR_API_KEY" ]; then
+      LIDARR_URL="$(discover_lidarr_url || true)"
+      if [ -z "$LIDARR_URL" ]; then
+        log "Unable to reach Lidarr API; deferring Lidarr bootstrap."
+      else
+        ensure_lidarr_rootfolder || log "Failed to ensure Lidarr root folder; will retry."
+        ensure_lidarr_qbittorrent || log "Failed to ensure Lidarr qBittorrent client; will retry."
+      fi
+    else
+      log "Lidarr API key missing; skipping Lidarr bootstrap."
+    fi
 
     log "Bootstrap run complete."
