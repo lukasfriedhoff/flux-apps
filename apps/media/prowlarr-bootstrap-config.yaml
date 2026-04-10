@@ -177,10 +177,10 @@ data:
           log "No schema found for indexer implementation $impl; skipping."
           return 0
         fi
-        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --argjson appProfileId "$APP_PROFILE_ID" '
+        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --arg appProfileId "$APP_PROFILE_ID" '
           .name = $name
           | .enable = ($enabled == "true")
-          | .appProfileId = $appProfileId
+          | .appProfileId = ($appProfileId | tonumber)
         ')"
         if [ -n "$api_key" ]; then
           idx_json="$(printf '%s' "$idx_json" | jq -c --arg apiKey "$api_key" '(.fields[]? | select(.name == "apiKey")).value = $apiKey')"
@@ -192,10 +192,10 @@ data:
         fi
       else
         idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
-        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --argjson appProfileId "$APP_PROFILE_ID" '
+        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --arg appProfileId "$APP_PROFILE_ID" '
           .name = $name
           | .enable = ($enabled == "true")
-          | .appProfileId = $appProfileId
+          | .appProfileId = ($appProfileId | tonumber)
         ')"
         if [ -n "$api_key" ]; then
           idx_json="$(printf '%s' "$idx_json" | jq -c --arg apiKey "$api_key" '(.fields[]? | select(.name == "apiKey")).value = $apiKey')"
