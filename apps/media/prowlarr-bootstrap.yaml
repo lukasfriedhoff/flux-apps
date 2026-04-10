@@ -44,6 +44,8 @@ spec:
             env:
               PROWLARR_URL: http://prowlarr:9696
               LIDARR_URL: http://lidarr:8686
+              MEDIA_PUID: ${media_puid}
+              MEDIA_PGID: ${media_pgid}
             resources:
               requests:
                 cpu: 25m
@@ -91,6 +93,11 @@ spec:
         globalMounts:
           - path: /mnt/readarr
             readOnly: true
+      media-library:
+        enabled: true
+        existingClaim: arr-media
+        globalMounts:
+          - path: /mnt/arr-media
       private-trackers:
         enabled: true
         type: secret
