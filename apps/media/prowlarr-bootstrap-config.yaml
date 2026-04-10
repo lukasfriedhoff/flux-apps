@@ -10,7 +10,10 @@ data:
 
     PROWLARR_URL="${PROWLARR_URL:-http://prowlarr:9696}"
     PROWLARR_APP_URL="${PROWLARR_APP_URL:-http://prowlarr:9696}"
+    SONARR_URL="${SONARR_URL:-http://sonarr:8989}"
+    RADARR_URL="${RADARR_URL:-http://radarr:7878}"
     LIDARR_URL="${LIDARR_URL:-http://lidarr:8686}"
+    READARR_URL="${READARR_URL:-http://readarr:8787}"
 
     log() {
       printf '[prowlarr-bootstrap] %s\n' "$*"
@@ -325,6 +328,307 @@ data:
       fi
     else
       log "Lidarr API key missing; skipping Lidarr bootstrap."
+    fi
+
+    discover_sonarr_url() {
+      attempt=0
+      while [ "$attempt" -lt 20 ]; do
+        for candidate in "$SONARR_URL" "http://sonarr:8989" "http://sonarr.media.svc.cluster.local:8989"; do
+          if curl -fsS -m 5 -H "X-Api-Key: $SONARR_API_KEY" "$candidate/api/v3/system/status" >/dev/null 2>&1; then
+            printf '%s' "$candidate"
+            return 0
+          fi
+        done
+        attempt=$((attempt + 1))
+        sleep 3
+      done
+      return 1
+    }
+
+    sonarr_get() {
+      path="$1"
+      curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "$SONARR_URL$path"
+    }
+
+    sonarr_post() {
+      path="$1"
+      payload="$2"
+      curl -fsS -m 30 -X POST \
+        -H "X-Api-Key: $SONARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$SONARR_URL$path"
+    }
+
+    sonarr_put() {
+      path="$1"
+      payload="$2"
+      curl -fsS -m 30 -X PUT \
+        -H "X-Api-Key: $SONARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$SONARR_URL$path"
+    }
+
+    ensure_sonarr_rootfolder() {
+      root_json="$(sonarr_get /api/v3/rootfolder | jq -c 'map(select(.path == "/media/tv"))[0]')"
+      if [ "$root_json" = "null" ]; then
+        sonarr_post /api/v3/rootfolder '{"path":"/media/tv"}' >/dev/null
+        log "Created Sonarr root folder /media/tv."
+      else
+        log "Sonarr root folder /media/tv already present."
+      fi
+    }
+
+    ensure_sonarr_qbittorrent() {
+      dl_json="$(sonarr_get /api/v3/downloadclient | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
+      if [ "$dl_json" = "null" ]; then
+        dl_json="$(sonarr_get /api/v3/downloadclient/schema | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
+        if [ "$dl_json" = "null" ]; then
+          log "Sonarr qBittorrent schema missing; skipping download client bootstrap."
+          return 0
+        fi
+        dl_json="$(printf '%s' "$dl_json" | jq -c '
+          .name = "qBittorrent"
+          | .enable = true
+          | .priority = 1
+          | (.fields[]? | select(.name == "host")).value = "qbittorrent"
+          | (.fields[]? | select(.name == "port")).value = 8080
+          | (.fields[]? | select(.name == "useSsl")).value = false
+          | (.fields[]? | select(.name == "tvCategory")).value = "sonarr"
+          | (.fields[]? | select(.name == "tvImportedCategory")).value = "sonarr-imported"
+        ')"
+        sonarr_post /api/v3/downloadclient "$dl_json" >/dev/null
+        log "Created Sonarr download client qBittorrent."
+      else
+        dl_id="$(printf '%s' "$dl_json" | jq -r '.id')"
+        dl_json="$(printf '%s' "$dl_json" | jq -c '
+          .name = "qBittorrent"
+          | .enable = true
+          | .priority = 1
+          | (.fields[]? | select(.name == "host")).value = "qbittorrent"
+          | (.fields[]? | select(.name == "port")).value = 8080
+          | (.fields[]? | select(.name == "useSsl")).value = false
+          | (.fields[]? | select(.name == "tvCategory")).value = "sonarr"
+          | (.fields[]? | select(.name == "tvImportedCategory")).value = "sonarr-imported"
+        ')"
+        sonarr_put "/api/v3/downloadclient/$dl_id" "$dl_json" >/dev/null
+        log "Updated Sonarr download client qBittorrent."
+      fi
+    }
+
+    if [ -n "$SONARR_API_KEY" ]; then
+      SONARR_URL="$(discover_sonarr_url || true)"
+      if [ -z "$SONARR_URL" ]; then
+        log "Unable to reach Sonarr API; deferring Sonarr bootstrap."
+      else
+        ensure_sonarr_rootfolder || log "Failed to ensure Sonarr root folder; will retry."
+        ensure_sonarr_qbittorrent || log "Failed to ensure Sonarr qBittorrent client; will retry."
+      fi
+    else
+      log "Sonarr API key missing; skipping Sonarr bootstrap."
+    fi
+
+    discover_radarr_url() {
+      attempt=0
+      while [ "$attempt" -lt 20 ]; do
+        for candidate in "$RADARR_URL" "http://radarr:7878" "http://radarr.media.svc.cluster.local:7878"; do
+          if curl -fsS -m 5 -H "X-Api-Key: $RADARR_API_KEY" "$candidate/api/v3/system/status" >/dev/null 2>&1; then
+            printf '%s' "$candidate"
+            return 0
+          fi
+        done
+        attempt=$((attempt + 1))
+        sleep 3
+      done
+      return 1
+    }
+
+    radarr_get() {
+      path="$1"
+      curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "$RADARR_URL$path"
+    }
+
+    radarr_post() {
+      path="$1"
+      payload="$2"
+      curl -fsS -m 30 -X POST \
+        -H "X-Api-Key: $RADARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$RADARR_URL$path"
+    }
+
+    radarr_put() {
+      path="$1"
+      payload="$2"
+      curl -fsS -m 30 -X PUT \
+        -H "X-Api-Key: $RADARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$RADARR_URL$path"
+    }
+
+    ensure_radarr_rootfolder() {
+      root_json="$(radarr_get /api/v3/rootfolder | jq -c 'map(select(.path == "/media/movies"))[0]')"
+      if [ "$root_json" = "null" ]; then
+        radarr_post /api/v3/rootfolder '{"path":"/media/movies"}' >/dev/null
+        log "Created Radarr root folder /media/movies."
+      else
+        log "Radarr root folder /media/movies already present."
+      fi
+    }
+
+    ensure_radarr_qbittorrent() {
+      dl_json="$(radarr_get /api/v3/downloadclient | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
+      if [ "$dl_json" = "null" ]; then
+        dl_json="$(radarr_get /api/v3/downloadclient/schema | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
+        if [ "$dl_json" = "null" ]; then
+          log "Radarr qBittorrent schema missing; skipping download client bootstrap."
+          return 0
+        fi
+        dl_json="$(printf '%s' "$dl_json" | jq -c '
+          .name = "qBittorrent"
+          | .enable = true
+          | .priority = 1
+          | (.fields[]? | select(.name == "host")).value = "qbittorrent"
+          | (.fields[]? | select(.name == "port")).value = 8080
+          | (.fields[]? | select(.name == "useSsl")).value = false
+          | (.fields[]? | select(.name == "movieCategory")).value = "radarr"
+          | (.fields[]? | select(.name == "movieImportedCategory")).value = "radarr-imported"
+        ')"
+        radarr_post /api/v3/downloadclient "$dl_json" >/dev/null
+        log "Created Radarr download client qBittorrent."
+      else
+        dl_id="$(printf '%s' "$dl_json" | jq -r '.id')"
+        dl_json="$(printf '%s' "$dl_json" | jq -c '
+          .name = "qBittorrent"
+          | .enable = true
+          | .priority = 1
+          | (.fields[]? | select(.name == "host")).value = "qbittorrent"
+          | (.fields[]? | select(.name == "port")).value = 8080
+          | (.fields[]? | select(.name == "useSsl")).value = false
+          | (.fields[]? | select(.name == "movieCategory")).value = "radarr"
+          | (.fields[]? | select(.name == "movieImportedCategory")).value = "radarr-imported"
+        ')"
+        radarr_put "/api/v3/downloadclient/$dl_id" "$dl_json" >/dev/null
+        log "Updated Radarr download client qBittorrent."
+      fi
+    }
+
+    if [ -n "$RADARR_API_KEY" ]; then
+      RADARR_URL="$(discover_radarr_url || true)"
+      if [ -z "$RADARR_URL" ]; then
+        log "Unable to reach Radarr API; deferring Radarr bootstrap."
+      else
+        ensure_radarr_rootfolder || log "Failed to ensure Radarr root folder; will retry."
+        ensure_radarr_qbittorrent || log "Failed to ensure Radarr qBittorrent client; will retry."
+      fi
+    else
+      log "Radarr API key missing; skipping Radarr bootstrap."
+    fi
+
+    discover_readarr_url() {
+      attempt=0
+      while [ "$attempt" -lt 20 ]; do
+        for candidate in "$READARR_URL" "http://readarr:8787" "http://readarr.media.svc.cluster.local:8787"; do
+          if curl -fsS -m 5 -H "X-Api-Key: $READARR_API_KEY" "$candidate/api/v1/system/status" >/dev/null 2>&1; then
+            printf '%s' "$candidate"
+            return 0
+          fi
+        done
+        attempt=$((attempt + 1))
+        sleep 3
+      done
+      return 1
+    }
+
+    readarr_get() {
+      path="$1"
+      curl -fsS -m 20 -H "X-Api-Key: $READARR_API_KEY" "$READARR_URL$path"
+    }
+
+    readarr_post() {
+      path="$1"
+      payload="$2"
+      curl -fsS -m 30 -X POST \
+        -H "X-Api-Key: $READARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$READARR_URL$path"
+    }
+
+    readarr_put() {
+      path="$1"
+      payload="$2"
+      curl -fsS -m 30 -X PUT \
+        -H "X-Api-Key: $READARR_API_KEY" \
+        -H 'Content-Type: application/json' \
+        --data "$payload" \
+        "$READARR_URL$path"
+    }
+
+    ensure_readarr_rootfolder() {
+      root_json="$(readarr_get /api/v1/rootfolder | jq -c 'map(select(.path == "/media/books"))[0]')"
+      if [ "$root_json" = "null" ]; then
+        readarr_post /api/v1/rootfolder '{"path":"/media/books"}' >/dev/null
+        log "Created Readarr root folder /media/books."
+      else
+        log "Readarr root folder /media/books already present."
+      fi
+    }
+
+    ensure_readarr_qbittorrent() {
+      dl_json="$(readarr_get /api/v1/downloadclient | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
+      if [ "$dl_json" = "null" ]; then
+        dl_json="$(readarr_get /api/v1/downloadclient/schema | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
+        if [ "$dl_json" = "null" ]; then
+          log "Readarr qBittorrent schema missing; skipping download client bootstrap."
+          return 0
+        fi
+        dl_json="$(printf '%s' "$dl_json" | jq -c '
+          .name = "qBittorrent"
+          | .enable = true
+          | .priority = 1
+          | (.fields[]? | select(.name == "host")).value = "qbittorrent"
+          | (.fields[]? | select(.name == "port")).value = 8080
+          | (.fields[]? | select(.name == "useSsl")).value = false
+          | (.fields[]? | select(.name == "bookCategory")).value = "readarr"
+          | (.fields[]? | select(.name == "bookImportedCategory")).value = "readarr-imported"
+          | (.fields[]? | select(.name == "musicCategory")).value = "readarr"
+          | (.fields[]? | select(.name == "musicImportedCategory")).value = "readarr-imported"
+        ')"
+        readarr_post /api/v1/downloadclient "$dl_json" >/dev/null
+        log "Created Readarr download client qBittorrent."
+      else
+        dl_id="$(printf '%s' "$dl_json" | jq -r '.id')"
+        dl_json="$(printf '%s' "$dl_json" | jq -c '
+          .name = "qBittorrent"
+          | .enable = true
+          | .priority = 1
+          | (.fields[]? | select(.name == "host")).value = "qbittorrent"
+          | (.fields[]? | select(.name == "port")).value = 8080
+          | (.fields[]? | select(.name == "useSsl")).value = false
+          | (.fields[]? | select(.name == "bookCategory")).value = "readarr"
+          | (.fields[]? | select(.name == "bookImportedCategory")).value = "readarr-imported"
+          | (.fields[]? | select(.name == "musicCategory")).value = "readarr"
+          | (.fields[]? | select(.name == "musicImportedCategory")).value = "readarr-imported"
+        ')"
+        readarr_put "/api/v1/downloadclient/$dl_id" "$dl_json" >/dev/null
+        log "Updated Readarr download client qBittorrent."
+      fi
+    }
+
+    if [ -n "$READARR_API_KEY" ]; then
+      READARR_URL="$(discover_readarr_url || true)"
+      if [ -z "$READARR_URL" ]; then
+        log "Unable to reach Readarr API; deferring Readarr bootstrap."
+      else
+        ensure_readarr_rootfolder || log "Failed to ensure Readarr root folder; will retry."
+        ensure_readarr_qbittorrent || log "Failed to ensure Readarr qBittorrent client; will retry."
+      fi
+    else
+      log "Readarr API key missing; skipping Readarr bootstrap."
     fi
 
     log "Bootstrap run complete."
