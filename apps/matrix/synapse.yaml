@@ -54,6 +54,17 @@ spec:
               else
                 printf '%s\n' 'serve_server_wellknown: true' >> /config/server.yaml
               fi
+              # Keep the signing key stable across restarts.
+              if [ -s /seed/homeserver.signing.key ]; then
+                cp /seed/homeserver.signing.key /config/homeserver.signing.key
+              elif [ -s /data/homeserver.signing.key ]; then
+                cp /data/homeserver.signing.key /config/homeserver.signing.key
+              fi
+              if [ -s /config/homeserver.signing.key ]; then
+                chmod 600 /config/homeserver.signing.key
+                cp /config/homeserver.signing.key /data/homeserver.signing.key
+                chmod 600 /data/homeserver.signing.key
+              fi
               if [ "$MATRIX_OIDC_PROVIDER" = "authelia" ]; then
                 if [ -z "$MATRIX_OIDC_ISSUER_URL" ] || [ -z "$MATRIX_OIDC_CLIENT_ID" ] || [ -z "$MATRIX_OIDC_CLIENT_SECRET" ]; then
                   echo "Matrix OIDC is enabled but issuer/client settings are missing." >&2
@@ -121,6 +132,8 @@ spec:
             - name: synapse-config
               mountPath: /seed
               readOnly: true
+            - name: synapse-data
+              mountPath: /data
             - name: synapse-config-dir
               mountPath: /config
       containers:
@@ -152,6 +165,24 @@ spec:
                   name: matrix-oidc
                   key: MATRIX_OIDC_CLIENT_SECRET
                   optional: true
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -ce
+                  - |
+                    # On first boot, Synapse may generate the key after startup.
+                    # Persist it into the data PVC for future pod restarts.
+                    for _ in $(seq 1 60); do
+                      if [ -s /config/homeserver.signing.key ]; then
+                        cp /config/homeserver.signing.key /data/homeserver.signing.key
+                        chmod 600 /data/homeserver.signing.key
+                        exit 0
+                      fi
+                      sleep 1
+                    done
+                    exit 0
           resources:
             requests:
               cpu: ${matrix_synapse_requests_cpu}
