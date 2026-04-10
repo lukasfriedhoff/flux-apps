@@ -24,11 +24,21 @@ data:
       sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' "$file" | head -n1
     }
 
+    read_secret_file() {
+      file="$1"
+      if [ ! -f "$file" ]; then
+        return 1
+      fi
+      tr -d '\r\n' < "$file"
+    }
+
     PROWLARR_API_KEY="${PROWLARR_API_KEY:-$(read_api_key /mnt/prowlarr/config.xml || true)}"
     SONARR_API_KEY="${SONARR_API_KEY:-$(read_api_key /mnt/sonarr/config.xml || true)}"
     RADARR_API_KEY="${RADARR_API_KEY:-$(read_api_key /mnt/radarr/config.xml || true)}"
     LIDARR_API_KEY="${LIDARR_API_KEY:-$(read_api_key /mnt/lidarr/config.xml || true)}"
     READARR_API_KEY="${READARR_API_KEY:-$(read_api_key /mnt/readarr/config.xml || true)}"
+    TORRENTSYNDIKAT_API_KEY="${TORRENTSYNDIKAT_API_KEY:-$(read_secret_file /run/secrets/prowlarr-private-trackers/torrentsyndikat_api_key || true)}"
+    FLOOD_API_KEY="${FLOOD_API_KEY:-$(read_secret_file /run/secrets/prowlarr-private-trackers/flood_api_key || true)}"
 
     if [ -z "$PROWLARR_API_KEY" ]; then
       log "Prowlarr API key missing; skipping."
