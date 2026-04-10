@@ -44,18 +44,6 @@ spec:
             env:
               PROWLARR_URL: http://prowlarr:9696
               LIDARR_URL: http://lidarr:8686
-              TORRENTSYNDIKAT_API_KEY:
-                valueFrom:
-                  secretKeyRef:
-                    name: prowlarr-private-trackers
-                    key: torrentsyndikat_api_key
-                    optional: true
-              FLOOD_API_KEY:
-                valueFrom:
-                  secretKeyRef:
-                    name: prowlarr-private-trackers
-                    key: flood_api_key
-                    optional: true
             resources:
               requests:
                 cpu: 25m
@@ -102,4 +90,12 @@ spec:
         existingClaim: readarr
         globalMounts:
           - path: /mnt/readarr
+            readOnly: true
+      private-trackers:
+        enabled: true
+        type: secret
+        name: prowlarr-private-trackers
+        defaultMode: 0440
+        globalMounts:
+          - path: /run/secrets/prowlarr-private-trackers
             readOnly: true
