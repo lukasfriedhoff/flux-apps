@@ -1,0 +1,92 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      ns="${NAMESPACE:-media}"
+
+      log() {
+        printf '[media-arr-e2e] %s\n' "$*"
+      }
+
+      fail() {
+        log "FAIL: $*"
+        exit 1
+      }
+
+      command -v jq >/dev/null 2>&1 || fail "jq is required for this test step"
+      command -v kubectl >/dev/null 2>&1 || fail "kubectl is required for this test step"
+
+      read_api_key() {
+        app="$1"
+        kubectl -n "$ns" exec "deploy/$app" -- sh -lc \
+          "sed -n 's:.*<ApiKey>\\(.*\\)</ApiKey>.*:\\1:p' /config/config.xml | head -n1"
+      }
+
+      arr_get() {
+        app="$1"
+        port="$2"
+        api_key="$3"
+        path="$4"
+        kubectl -n "$ns" exec "deploy/$app" -- sh -lc \
+          "curl -fsS -H 'X-Api-Key: $api_key' 'http://localhost:$port$path'"
+      }
+
+      arr_post() {
+        app="$1"
+        port="$2"
+        api_key="$3"
+        path="$4"
+        kubectl -n "$ns" exec "deploy/$app" -- sh -lc \
+          "curl -fsS -H 'X-Api-Key: $api_key' -H 'Content-Type: application/json' -X POST 'http://localhost:$port$path'"
+      }
+
+      run_arr_checks() {
+        app="$1"
+        port="$2"
+        api_version="$3"
+
+        log "$app: resolving API key"
+        api_key="$(read_api_key "$app")"
+        [ -n "$api_key" ] || fail "$app API key is empty"
+
+        log "$app: checking system status"
+        arr_get "$app" "$port" "$api_key" "/api/$api_version/system/status" >/dev/null
+
+        log "$app: checking root folders"
+        roots_json="$(arr_get "$app" "$port" "$api_key" "/api/$api_version/rootfolder")"
+        printf '%s' "$roots_json" | jq -e 'length > 0' >/dev/null || fail "$app has no root folders configured"
+
+        log "$app: checking indexers"
+        indexers_json="$(arr_get "$app" "$port" "$api_key" "/api/$api_version/indexer")"
+        printf '%s' "$indexers_json" | jq -e 'length > 0' >/dev/null || fail "$app has no indexers configured"
+
+        log "$app: testing all indexers"
+        indexer_test_json="$(arr_post "$app" "$port" "$api_key" "/api/$api_version/indexer/testall")"
+        printf '%s' "$indexer_test_json" | jq -e 'length > 0 and all(.[]; .isValid == true)' >/dev/null \
+          || fail "$app indexer testall reported invalid indexers: $indexer_test_json"
+
+        log "$app: checking download clients"
+        dls_json="$(arr_get "$app" "$port" "$api_key" "/api/$api_version/downloadclient")"
+        printf '%s' "$dls_json" | jq -e 'length > 0' >/dev/null || fail "$app has no download clients configured"
+
+        log "$app: testing all download clients"
+        dl_test_json="$(arr_post "$app" "$port" "$api_key" "/api/$api_version/downloadclient/testall")"
+        printf '%s' "$dl_test_json" | jq -e 'length > 0 and all(.[]; .isValid == true)' >/dev/null \
+          || fail "$app downloadclient testall reported invalid clients: $dl_test_json"
+
+        log "$app: checking queue status"
+        queue_json="$(arr_get "$app" "$port" "$api_key" "/api/$api_version/queue/status")"
+        printf '%s' "$queue_json" | jq -e '.errors == false' >/dev/null || fail "$app queue reports errors: $queue_json"
+
+        log "$app: PASS"
+      }
+
+      run_arr_checks sonarr 8989 v3
+      run_arr_checks radarr 7878 v3
+      run_arr_checks lidarr 8686 v1
+      run_arr_checks readarr 8787 v1
+
+      log "all media ARR checks passed"
