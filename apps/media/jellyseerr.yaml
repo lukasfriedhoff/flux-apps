@@ -33,7 +33,7 @@ spec:
           bootstrap-config:
             image:
               repository: alpine
-              tag: 3.20
+              tag: "3.20"
             env:
               JELLYSEERR_APP_TITLE: Jellyseerr
               JELLYSEERR_APP_URL: https://jellyseerr${public_host_suffix}.${delegating_domain}
@@ -87,7 +87,7 @@ spec:
                 settings_json="$(cat "$settings_file")"
                 settings_json="$(
                   printf '%s' "$settings_json" \
-                  | jq --arg appTitle "${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "${JELLYSEERR_APP_URL:-}" --arg jellyfinName "${JELLYFIN_SERVER_NAME:-Jellyfin}" --arg jellyfinIP "${JELLYFIN_SERVER_HOST:-jellyfin}" --arg jellyfinPort "${JELLYFIN_SERVER_PORT:-8096}" --arg jellyfinHost "${JELLYFIN_HOSTNAME:-http://jellyfin:8096}" --arg jellyfinExternal "${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "${JELLYFIN_FORGOT_PASSWORD_URL:-}" --argjson jellyfinUseSsl "${JELLYFIN_SERVER_USE_SSL:-false}" '
+                  | jq --arg appTitle "$${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "$${JELLYSEERR_APP_URL:-}" --arg jellyfinName "$${JELLYFIN_SERVER_NAME:-Jellyfin}" --arg jellyfinIP "$${JELLYFIN_SERVER_HOST:-jellyfin}" --arg jellyfinPort "$${JELLYFIN_SERVER_PORT:-8096}" --arg jellyfinHost "$${JELLYFIN_HOSTNAME:-http://jellyfin:8096}" --arg jellyfinExternal "$${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "$${JELLYFIN_FORGOT_PASSWORD_URL:-}" --argjson jellyfinUseSsl "$${JELLYFIN_SERVER_USE_SSL:-false}" '
                     .main.applicationTitle = $appTitle
                     | .main.applicationUrl = $appUrl
                     | .main.mediaServerType = 4
@@ -104,7 +104,7 @@ spec:
                   '
                 )"
 
-                if [ -n "${RADARR_API_KEY:-}" ] && wait_for_arr "http://radarr:7878/api/v3" "$RADARR_API_KEY"; then
+                if [ -n "$${RADARR_API_KEY:-}" ] && wait_for_arr "http://radarr:7878/api/v3" "$RADARR_API_KEY"; then
                   radarr_profile_json="$(curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "http://radarr:7878/api/v3/qualityprofile")"
                   radarr_root_json="$(curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "http://radarr:7878/api/v3/rootfolder")"
                   radarr_profile_id="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
@@ -115,7 +115,7 @@ spec:
                       --arg apiKey "$RADARR_API_KEY" \
                       --arg activeProfileName "$radarr_profile_name" \
                       --arg activeDirectory "$radarr_root_dir" \
-                      --arg externalUrl "${RADARR_EXTERNAL_URL:-}" \
+                      --arg externalUrl "$${RADARR_EXTERNAL_URL:-}" \
                       --argjson activeProfileId "$radarr_profile_id" \
                       '{
                         name: "radarr",
@@ -138,7 +138,7 @@ spec:
                   settings_json="$(printf '%s' "$settings_json" | jq --argjson svc "$radarr_service" '.radarr = [$svc]')"
                 fi
 
-                if [ -n "${SONARR_API_KEY:-}" ] && wait_for_arr "http://sonarr:8989/api/v3" "$SONARR_API_KEY"; then
+                if [ -n "$${SONARR_API_KEY:-}" ] && wait_for_arr "http://sonarr:8989/api/v3" "$SONARR_API_KEY"; then
                   sonarr_profile_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/qualityprofile")"
                   sonarr_language_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/languageprofile")"
                   sonarr_root_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/rootfolder")"
@@ -151,7 +151,7 @@ spec:
                       --arg apiKey "$SONARR_API_KEY" \
                       --arg activeProfileName "$sonarr_profile_name" \
                       --arg activeDirectory "$sonarr_root_dir" \
-                      --arg externalUrl "${SONARR_EXTERNAL_URL:-}" \
+                      --arg externalUrl "$${SONARR_EXTERNAL_URL:-}" \
                       --argjson activeProfileId "$sonarr_profile_id" \
                       --argjson activeLanguageProfileId "$sonarr_language_id" \
                       '{
