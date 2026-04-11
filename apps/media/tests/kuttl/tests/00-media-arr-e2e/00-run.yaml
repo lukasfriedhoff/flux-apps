@@ -43,6 +43,13 @@ commands:
           "curl -fsS -H 'X-Api-Key: $api_key' -H 'Content-Type: application/json' -X POST 'http://localhost:$port$path'"
       }
 
+      prowlarr_get() {
+        api_key="$1"
+        path="$2"
+        kubectl -n "$ns" exec deploy/prowlarr -- sh -lc \
+          "curl -fsS -H 'X-Api-Key: $api_key' 'http://localhost:9696$path'"
+      }
+
       run_arr_checks() {
         app="$1"
         port="$2"
@@ -88,5 +95,18 @@ commands:
       run_arr_checks radarr 7878 v3
       run_arr_checks lidarr 8686 v1
       run_arr_checks readarr 8787 v1
+
+      log "prowlarr: validating indexer set"
+      prowlarr_api_key="$(read_api_key prowlarr)"
+      [ -n "$prowlarr_api_key" ] || fail "prowlarr API key is empty"
+      prowlarr_indexers_json="$(prowlarr_get "$prowlarr_api_key" "/api/v1/indexer")"
+
+      if kubectl -n "$ns" get secret prowlarr-private-trackers >/dev/null 2>&1; then
+        flood_key="$(kubectl -n "$ns" get secret prowlarr-private-trackers -o jsonpath='{.data.flood_api_key}' 2>/dev/null | base64 -d 2>/dev/null || true)"
+        if [ -n "$flood_key" ]; then
+          printf '%s' "$prowlarr_indexers_json" | jq -e 'any(.[]?; .name == "Flood.st" and .enable == true)' >/dev/null \
+            || fail "Flood.st indexer not configured/enabled in Prowlarr"
+        fi
+      fi
 
       log "all media ARR checks passed"

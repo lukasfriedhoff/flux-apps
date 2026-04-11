@@ -18,4 +18,6 @@ data:
   media_pgid: "1000"
   media_puid: "1000"
   media_timezone: "Europe/Berlin"
+  arr_api_keys_secret_name: "arr-api-keys"
+  jellyfin_e2e_auth_secret_name: "jellyfin-e2e-auth"
   protonvpn_server_countries: "Switzerland"

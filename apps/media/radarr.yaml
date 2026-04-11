@@ -84,7 +84,7 @@ spec:
       api-keys:
         enabled: true
         type: secret
-        name: arr-api-keys
+        name: ${arr_api_keys_secret_name}
         defaultMode: 0440
         globalMounts:
           - path: /run/secrets/arr

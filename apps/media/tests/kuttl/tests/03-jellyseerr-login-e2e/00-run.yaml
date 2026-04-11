@@ -1,0 +1,225 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      ns="${NAMESPACE:-media}"
+      local_port="${JELLYSEERR_AUTH_E2E_LOCAL_PORT:-15056}"
+      auth_secret_name="${JELLYSEERR_E2E_SECRET_NAME:-jellyseerr-e2e-auth}"
+
+      log() {
+        printf '[jellyseerr-login-e2e] %s\n' "$*"
+      }
+
+      fail() {
+        log "FAIL: $*"
+        exit 1
+      }
+
+      command -v jq >/dev/null 2>&1 || fail "jq is required for this test step"
+      command -v kubectl >/dev/null 2>&1 || fail "kubectl is required for this test step"
+      command -v curl >/dev/null 2>&1 || fail "curl is required for this test step"
+
+      read_secret_key() {
+        secret_name="$1"
+        key="$2"
+        if ! kubectl -n "$ns" get secret "$secret_name" >/dev/null 2>&1; then
+          return 1
+        fi
+        kubectl -n "$ns" get secret "$secret_name" -o "jsonpath={.data.${key}}" 2>/dev/null | base64 -d 2>/dev/null || true
+      }
+
+      auth_mode="${JELLYSEERR_AUTH_MODE:-}"
+      local_email="${JELLYSEERR_LOCAL_EMAIL:-}"
+      local_username="${JELLYSEERR_LOCAL_USERNAME:-}"
+      jellyfin_username="${JELLYSEERR_JELLYFIN_USERNAME:-}"
+      auth_password="${JELLYSEERR_AUTH_PASSWORD:-}"
+
+      if [ -z "$auth_mode" ]; then
+        auth_mode="$(read_secret_key "$auth_secret_name" mode || true)"
+      fi
+      if [ -z "$local_email" ]; then
+        local_email="$(read_secret_key "$auth_secret_name" email || true)"
+      fi
+      if [ -z "$local_username" ]; then
+        local_username="$(read_secret_key "$auth_secret_name" username || true)"
+      fi
+      if [ -z "$jellyfin_username" ]; then
+        jellyfin_username="$(read_secret_key "$auth_secret_name" username || true)"
+      fi
+      if [ -z "$auth_password" ]; then
+        auth_password="$(read_secret_key "$auth_secret_name" password || true)"
+      fi
+
+      if [ -z "$auth_mode" ]; then
+        if [ -n "$jellyfin_username" ]; then
+          auth_mode="jellyfin"
+        elif [ -n "$local_email" ]; then
+          auth_mode="local"
+        fi
+      fi
+
+      if [ -z "$auth_mode" ] || [ -z "$auth_password" ]; then
+        if [ "${REQUIRE_JELLYSEERR_AUTH:-false}" = "true" ]; then
+          fail "Missing Jellyseerr auth data. Set env vars or secret ${auth_secret_name} (mode + credentials)."
+        fi
+        log "No Jellyseerr auth credentials available; skipping login test."
+        exit 0
+      fi
+
+      ensure_local_user() {
+        email="$1"
+        password="$2"
+        username="$3"
+
+        kubectl -n "$ns" exec -i deploy/jellyseerr -- env \
+          NODE_ENV=production \
+          JELLYSEERR_E2E_EMAIL="$email" \
+          JELLYSEERR_E2E_PASSWORD="$password" \
+          JELLYSEERR_E2E_USERNAME="$username" \
+          node - >/dev/null <<'NODE' || fail "Failed to ensure Jellyseerr local e2e user"
+      const datasource = require("/app/dist/datasource").default;
+      const { User } = require("/app/dist/entity/User");
+      const { UserType } = require("/app/dist/constants/user");
+      const { Permission } = require("/app/dist/lib/permissions");
+
+      const email = (process.env.JELLYSEERR_E2E_EMAIL || "").toLowerCase();
+      const password = process.env.JELLYSEERR_E2E_PASSWORD || "";
+      const username = process.env.JELLYSEERR_E2E_USERNAME || email.split("@")[0] || "jellyseerr-e2e";
+
+      if (!email || !password) {
+        console.error("missing local e2e credentials");
+        process.exit(1);
+      }
+
+      (async () => {
+        await datasource.initialize();
+        const repo = datasource.getRepository(User);
+        let user = await repo
+          .createQueryBuilder("user")
+          .addSelect("user.password")
+          .where("user.id = :id", { id: 1 })
+          .getOne();
+
+        if (!user) {
+          const existingByEmail = await repo
+            .createQueryBuilder("user")
+            .addSelect("user.password")
+            .where("user.email = :email", { email })
+            .getOne();
+
+          if (existingByEmail && existingByEmail.id !== 1) {
+            await repo.delete(existingByEmail.id);
+          }
+
+          user = new User({
+            id: 1,
+            email,
+            username,
+            permissions: Permission.ADMIN,
+            userType: UserType.LOCAL,
+            avatar: "/avatarproxy/default",
+          });
+          await user.setPassword(password);
+          await repo.save(user);
+          console.log("created local e2e user as id=1");
+        } else {
+          let changed = false;
+          if (user.email !== email) {
+            user.email = email;
+            changed = true;
+          }
+          if (!user.username || user.username !== username) {
+            user.username = username;
+            changed = true;
+          }
+          if (!user.avatar) {
+            user.avatar = "/avatarproxy/default";
+            changed = true;
+          }
+          if (((user.permissions || 0) & Permission.ADMIN) !== Permission.ADMIN) {
+            user.permissions = (user.permissions || 0) | Permission.ADMIN;
+            changed = true;
+          }
+          user.userType = UserType.LOCAL;
+          if (!user.password || !(await user.passwordMatch(password))) {
+            await user.setPassword(password);
+            changed = true;
+          }
+          if (changed) {
+            await repo.save(user);
+            console.log("updated local e2e user");
+          } else {
+            console.log("local e2e user already up to date");
+          }
+        }
+
+        await datasource.destroy();
+      })().catch((err) => {
+        console.error(err?.stack || err?.message || String(err));
+        process.exit(1);
+      });
+      NODE
+      }
+
+      if [ "$auth_mode" = "local" ]; then
+        [ -n "$local_email" ] || fail "auth_mode=local requires email"
+        if [ -z "$local_username" ]; then
+          local_username="${local_email%%@*}"
+        fi
+        ensure_local_user "$local_email" "$auth_password" "$local_username"
+      fi
+
+      kubectl -n "$ns" get deploy jellyseerr >/dev/null 2>&1 || fail "jellyseerr deployment not found in namespace '$ns'"
+
+      pf_log="$(mktemp)"
+      kubectl -n "$ns" port-forward svc/jellyseerr "${local_port}:5055" >"$pf_log" 2>&1 &
+      pf_pid="$!"
+      cookie_jar="$(mktemp)"
+
+      cleanup() {
+        kill "$pf_pid" >/dev/null 2>&1 || true
+        wait "$pf_pid" >/dev/null 2>&1 || true
+        rm -f "$pf_log" "$cookie_jar"
+      }
+      trap cleanup EXIT
+
+      base_url="http://127.0.0.1:${local_port}"
+      for _ in $(seq 1 30); do
+        if curl -fsS "${base_url}/api/v1/settings/public" >/dev/null 2>&1; then
+          break
+        fi
+        sleep 1
+      done
+
+      public_json="$(curl -fsS "${base_url}/api/v1/settings/public")" || fail "jellyseerr public endpoint not reachable"
+      printf '%s' "$public_json" | jq -e '.initialized == true' >/dev/null || fail "Jellyseerr not initialized"
+
+      case "$auth_mode" in
+        local)
+          [ -n "$local_email" ] || fail "auth_mode=local requires email"
+          payload="$(jq -cn --arg email "$local_email" --arg password "$auth_password" '{email:$email,password:$password}')"
+          curl -fsS -c "$cookie_jar" -b "$cookie_jar" \
+            -H 'Content-Type: application/json' \
+            -X POST "${base_url}/api/v1/auth/local" \
+            --data "$payload" >/dev/null || fail "Jellyseerr local login failed"
+          ;;
+        jellyfin)
+          [ -n "$jellyfin_username" ] || fail "auth_mode=jellyfin requires username"
+          payload="$(jq -cn --arg username "$jellyfin_username" --arg password "$auth_password" '{username:$username,password:$password}')"
+          curl -fsS -c "$cookie_jar" -b "$cookie_jar" \
+            -H 'Content-Type: application/json' \
+            -X POST "${base_url}/api/v1/auth/jellyfin" \
+            --data "$payload" >/dev/null || fail "Jellyseerr Jellyfin login failed"
+          ;;
+        *)
+          fail "Unsupported auth mode '$auth_mode' (expected: local|jellyfin)"
+          ;;
+      esac
+
+      me_json="$(curl -fsS -c "$cookie_jar" -b "$cookie_jar" "${base_url}/api/v1/auth/me")" || fail "Jellyseerr auth/me failed after login"
+      printf '%s' "$me_json" | jq -e '.id != null' >/dev/null || fail "Jellyseerr auth/me missing user id"
+
+      log "Jellyseerr login test passed (mode=${auth_mode})"
