@@ -213,6 +213,59 @@ data:
       fi
     }
 
+    ensure_flood_indexer() {
+      name="$1"
+      enabled="$2"
+      api_key="$5"
+
+      idx_json="$(
+        prowlarr_get /api/v1/indexer \
+          | jq -c 'map(select(.implementation == "Cardigann" and any(.fields[]?; .name == "definitionFile" and ((.value // "") | ascii_downcase) == "flood")))[0]'
+      )"
+
+      if [ "$idx_json" = "null" ]; then
+        idx_json="$(prowlarr_get /api/v1/indexer/schema | jq -c 'map(select(.implementation == "Cardigann" and ((.name // "") | ascii_downcase) == "flood"))[0]')"
+        if [ "$idx_json" = "null" ]; then
+          log "No schema found for Flood Cardigann indexer; skipping."
+          return 0
+        fi
+        idx_json="$(printf '%s' "$idx_json" | jq -c \
+          --arg name "$name" \
+          --arg enabled "$enabled" \
+          --arg appProfileId "$APP_PROFILE_ID" \
+          --arg apiKey "$api_key" '
+            .name = $name
+            | .enable = ($enabled == "true")
+            | .appProfileId = ($appProfileId | tonumber)
+            | (.fields[]? | select(.name == "baseUrl")).value = "https://flood.st/"
+            | (.fields[]? | select(.name == "apikey")).value = $apiKey
+          ')"
+        if prowlarr_post /api/v1/indexer "$idx_json" >/dev/null; then
+          log "Created Flood indexer $name."
+        else
+          log "Failed to create Flood indexer $name."
+        fi
+      else
+        idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
+        idx_json="$(printf '%s' "$idx_json" | jq -c \
+          --arg name "$name" \
+          --arg enabled "$enabled" \
+          --arg appProfileId "$APP_PROFILE_ID" \
+          --arg apiKey "$api_key" '
+            .name = $name
+            | .enable = ($enabled == "true")
+            | .appProfileId = ($appProfileId | tonumber)
+            | (.fields[]? | select(.name == "baseUrl")).value = "https://flood.st/"
+            | (.fields[]? | select(.name == "apikey")).value = $apiKey
+          ')"
+        if prowlarr_put "/api/v1/indexer/$idx_id" "$idx_json" >/dev/null; then
+          log "Updated Flood indexer $name."
+        else
+          log "Failed to update Flood indexer $name."
+        fi
+      fi
+    }
+
     ensure_app "Sonarr" "sonarr" "http://sonarr:8989" "$SONARR_API_KEY" || log "Failed to sync Sonarr app; will retry."
     ensure_app "Radarr" "radarr" "http://radarr:7878" "$RADARR_API_KEY" || log "Failed to sync Radarr app; will retry."
     ensure_app "Lidarr" "lidarr" "http://lidarr:8686" "$LIDARR_API_KEY" || log "Failed to sync Lidarr app; will retry."
@@ -228,6 +281,12 @@ data:
       ensure_indexer "TorrentSyndikat" "TorrentSyndikat" true "$TORRENTSYNDIKAT_API_KEY" || log "Failed to sync TorrentSyndikat indexer; will retry."
     else
       ensure_indexer "TorrentSyndikat" "TorrentSyndikat" false "" || log "Failed to disable TorrentSyndikat indexer; will retry."
+    fi
+
+    if [ -n "${FLOOD_API_KEY:-}" ]; then
+      ensure_flood_indexer "Flood.st" true "$FLOOD_API_KEY" || log "Failed to sync Flood.st indexer; will retry."
+    else
+      ensure_flood_indexer "Flood.st" false "" || log "Failed to disable Flood.st indexer; will retry."
     fi
 
     # Push current indexer set into downstream Arr apps.

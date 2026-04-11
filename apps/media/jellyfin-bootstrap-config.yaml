@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jellyfin-bootstrap-config
+  namespace: media
+data:
+  bootstrap.py: |-
+    import datetime
+    import pathlib
+    import sqlite3
+    import sys
+    import time
+
+    DB_PATH = pathlib.Path("/mnt/data/data/jellyfin.db")
+    SECRET_PATH = pathlib.Path("/run/secrets/jellyfin-e2e-auth/api_key")
+    KEY_NAME = "gitops-jellyfin-e2e"
+    MAX_RETRIES = 20
+
+
+    def read_api_key() -> str:
+      if not SECRET_PATH.exists():
+        return ""
+      return SECRET_PATH.read_text(encoding="utf-8").strip()
+
+
+    def now_utc() -> str:
+      return datetime.datetime.now(datetime.UTC).isoformat()
+
+
+    def bootstrap() -> int:
+      api_key = read_api_key()
+      if not api_key:
+        print("[jellyfin-bootstrap] api_key missing; skipping.")
+        return 0
+
+      if not DB_PATH.exists():
+        print(f"[jellyfin-bootstrap] db missing at {DB_PATH}; skipping.")
+        return 0
+
+      for attempt in range(1, MAX_RETRIES + 1):
+        try:
+          conn = sqlite3.connect(DB_PATH)
+          conn.execute("PRAGMA busy_timeout = 5000;")
+          cur = conn.cursor()
+
+          cur.execute("SELECT AccessToken FROM ApiKeys WHERE Name = ?", (KEY_NAME,))
+          row = cur.fetchone()
+          if row and row[0] == api_key:
+            print("[jellyfin-bootstrap] api key already up to date.")
+            conn.close()
+            return 0
+
+          timestamp = now_utc()
+          cur.execute("DELETE FROM ApiKeys WHERE Name = ?", (KEY_NAME,))
+          cur.execute(
+            """
+            INSERT INTO ApiKeys (DateCreated, DateLastActivity, Name, AccessToken)
+            VALUES (?, ?, ?, ?)
+            """,
+            (timestamp, timestamp, KEY_NAME, api_key),
+          )
+          conn.commit()
+          conn.close()
+          print("[jellyfin-bootstrap] api key upserted.")
+          return 0
+        except sqlite3.OperationalError as err:
+          if "locked" in str(err).lower() and attempt < MAX_RETRIES:
+            print(f"[jellyfin-bootstrap] db locked (attempt {attempt}/{MAX_RETRIES}); retrying.")
+            time.sleep(3)
+            continue
+          print(f"[jellyfin-bootstrap] sqlite error: {err}", file=sys.stderr)
+          return 1
+        except Exception as err:  # noqa: BLE001
+          print(f"[jellyfin-bootstrap] unexpected error: {err}", file=sys.stderr)
+          return 1
+
+      print("[jellyfin-bootstrap] retry budget exhausted.", file=sys.stderr)
+      return 1
+
+
+    if __name__ == "__main__":
+      raise SystemExit(bootstrap())
