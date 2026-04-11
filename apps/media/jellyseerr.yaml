@@ -37,6 +37,10 @@ spec:
             env:
               JELLYSEERR_APP_TITLE: Jellyseerr
               JELLYSEERR_APP_URL: https://jellyseerr${public_host_suffix}.${delegating_domain}
+              JELLYFIN_SERVER_NAME: Jellyfin
+              JELLYFIN_SERVER_HOST: jellyfin
+              JELLYFIN_SERVER_PORT: "8096"
+              JELLYFIN_SERVER_USE_SSL: "false"
               JELLYFIN_HOSTNAME: http://jellyfin:8096
               JELLYFIN_EXTERNAL_HOSTNAME: jellyfin${public_host_suffix}.${delegating_domain}
               JELLYFIN_FORGOT_PASSWORD_URL: https://jellyfin${public_host_suffix}.${delegating_domain}/web/index.html#!/forgotpassword.html
@@ -83,12 +87,16 @@ spec:
                 settings_json="$(cat "$settings_file")"
                 settings_json="$(
                   printf '%s' "$settings_json" \
-                  | jq --arg appTitle "${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "${JELLYSEERR_APP_URL:-}" --arg jellyfinHost "${JELLYFIN_HOSTNAME:-http://jellyfin:8096}" --arg jellyfinExternal "${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "${JELLYFIN_FORGOT_PASSWORD_URL:-}" '
+                  | jq --arg appTitle "${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "${JELLYSEERR_APP_URL:-}" --arg jellyfinName "${JELLYFIN_SERVER_NAME:-Jellyfin}" --arg jellyfinIP "${JELLYFIN_SERVER_HOST:-jellyfin}" --arg jellyfinPort "${JELLYFIN_SERVER_PORT:-8096}" --arg jellyfinHost "${JELLYFIN_HOSTNAME:-http://jellyfin:8096}" --arg jellyfinExternal "${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "${JELLYFIN_FORGOT_PASSWORD_URL:-}" --argjson jellyfinUseSsl "${JELLYFIN_SERVER_USE_SSL:-false}" '
                     .main.applicationTitle = $appTitle
                     | .main.applicationUrl = $appUrl
                     | .main.mediaServerType = 4
                     | .main.localLogin = true
                     | .main.mediaServerLogin = true
+                    | .jellyfin.name = $jellyfinName
+                    | .jellyfin.ip = $jellyfinIP
+                    | .jellyfin.port = $jellyfinPort
+                    | .jellyfin.useSsl = $jellyfinUseSsl
                     | .jellyfin.hostname = $jellyfinHost
                     | .jellyfin.externalHostname = $jellyfinExternal
                     | .jellyfin.jellyfinForgotPasswordUrl = $forgotPassword
@@ -168,8 +176,8 @@ spec:
                   settings_json="$(printf '%s' "$settings_json" | jq --argjson svc "$sonarr_service" '.sonarr = [$svc]')"
                 fi
 
-                printf '%s\n' "$settings_json" > "${settings_file}.tmp"
-                mv "${settings_file}.tmp" "$settings_file"
+                printf '%s\n' "$settings_json" > "$${settings_file}.tmp"
+                mv "$${settings_file}.tmp" "$settings_file"
                 echo "[jellyseerr-bootstrap] settings updated."
         containers:
           main:
