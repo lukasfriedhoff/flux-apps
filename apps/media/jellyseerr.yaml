@@ -69,6 +69,14 @@ spec:
 
                 apk add --no-cache curl jq >/dev/null
 
+                # seerr preview images run as uid/gid 1000; normalize existing PVC ownership.
+                if [ -d /app/config ]; then
+                  chown -R 1000:1000 /app/config
+                  chmod -R u+rwX /app/config
+                fi
+                mkdir -p /app/config/logs
+                chown -R 1000:1000 /app/config/logs
+
                 settings_file="/app/config/settings.json"
                 if [ ! -s "$settings_file" ]; then
                   echo "[jellyseerr-bootstrap] settings.json missing, skipping."
