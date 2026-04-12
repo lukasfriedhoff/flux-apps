@@ -43,8 +43,9 @@ The Jellyfin E2E step:
 The Jellyseerr E2E step verifies:
 
 1. `/app/config/settings.json` has `public.initialized == true`.
-2. Jellyseerr settings include non-empty `radarr` and `sonarr` service configuration.
-3. Live API (`/api/v1/settings/public`) reports `initialized == true`.
+2. Jellyseerr settings enable OIDC login and include an `authelia` OIDC provider.
+3. Jellyseerr settings include non-empty `radarr` and `sonarr` service configuration.
+4. Live API (`/api/v1/settings/public`) reports `initialized == true` and exposes OIDC providers.
 
 ### Jellyseerr login checks
 

@@ -6,11 +6,9 @@ AUTHELIA_USER="${AUTHELIA_USER:-testuser}"
 AUTHELIA_PASSWORD="${AUTHELIA_PASSWORD:-}"
 AUTHELIA_TARGET_URL="${AUTHELIA_TARGET_URL:-https://testing.h4xx.io/}"
 AUTHELIA_LOCAL_TIMEOUT="${AUTHELIA_LOCAL_TIMEOUT:-30}"
-
-if [ -z "${AUTHELIA_PASSWORD}" ]; then
-  echo "error: AUTHELIA_PASSWORD is required" >&2
-  exit 1
-fi
+AUTHELIA_REQUIRE_PASSWORD="${AUTHELIA_REQUIRE_PASSWORD:-false}"
+JELLYSEERR_PORT_FORWARD_NAMESPACE="${JELLYSEERR_PORT_FORWARD_NAMESPACE:-media}"
+JELLYSEERR_PORT_FORWARD_LOCAL_PORT="${JELLYSEERR_PORT_FORWARD_LOCAL_PORT:-15075}"
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -23,6 +21,7 @@ for cmd in curl jq sed rg; do
   need "$cmd"
 done
 
+AUTH_HOST="$(printf '%s' "$AUTHELIA_BASE" | sed -E 's#https?://([^/]+).*#\1#')"
 COOKIE_JAR="$(mktemp)"
 WORK_DIR="$(mktemp -d)"
 
@@ -49,6 +48,11 @@ query_param() {
   local url="$1"
   local key="$2"
   printf '%s' "$url" | sed -n "s#.*[?&]${key}=\\([^&]*\\).*#\\1#p"
+}
+
+location_from_headers() {
+  local headers_file="$1"
+  awk 'tolower($1)=="location:"{print $2}' "$headers_file" | tr -d '\r' | head -n1
 }
 
 curl_follow() {
@@ -87,6 +91,64 @@ authelia_login() {
   jq -e '.status == "OK"' "${WORK_DIR}/state.json" >/dev/null || fail "state endpoint returned non-OK status"
   jq -e '.data.username == "'"${AUTHELIA_USER}"'"' "${WORK_DIR}/state.json" >/dev/null || fail "state user mismatch"
   jq -e '.data.authentication_level >= 1' "${WORK_DIR}/state.json" >/dev/null || fail "authentication level is not one_factor"
+}
+
+assert_auth_gate() {
+  local name="$1"
+  local url="$2"
+  local headers_file code location location_host
+
+  headers_file="$(mktemp)"
+  code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -o /dev/null -D "$headers_file" -w '%{http_code}' "$url")"
+  location="$(location_from_headers "$headers_file")"
+  rm -f "$headers_file"
+
+  case "$code" in
+    401|302) ;;
+    *) fail "${name}: expected auth gate status 401/302 from ${url}, got ${code}" ;;
+  esac
+
+  if [ -n "$location" ]; then
+    location_host="$(host_from_url "$location")"
+    [ "$location_host" = "$AUTH_HOST" ] || fail "${name}: expected redirect to ${AUTH_HOST}, got ${location}"
+  fi
+
+  log "${name}: auth gate status=${code}"
+}
+
+assert_redirect_to_auth() {
+  local name="$1"
+  local url="$2"
+  local expected_client_id="$3"
+  local headers_file code location location_host
+
+  headers_file="$(mktemp)"
+  code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -o /dev/null -D "$headers_file" -w '%{http_code}' "$url")"
+  location="$(location_from_headers "$headers_file")"
+  rm -f "$headers_file"
+
+  [ "$code" = "302" ] || fail "${name}: expected HTTP 302 from ${url}, got ${code}"
+  [ -n "$location" ] || fail "${name}: missing Location header from ${url}"
+
+  location_host="$(host_from_url "$location")"
+  [ "$location_host" = "$AUTH_HOST" ] || fail "${name}: expected redirect host ${AUTH_HOST}, got ${location}"
+  printf '%s' "$location" | rg -q "client_id=${expected_client_id}" || \
+    fail "${name}: redirect does not contain client_id=${expected_client_id}: ${location}"
+
+  log "${name}: redirect to auth with ${expected_client_id}"
+}
+
+assert_public_http_200() {
+  local name="$1"
+  local url="$2"
+  local code
+
+  code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -o "${WORK_DIR}/${name}.html" -w '%{http_code}' "$url")"
+  [ "$code" = "200" ] || fail "${name}: expected HTTP 200 from ${url}, got ${code}"
+  log "${name}: HTTP 200"
 }
 
 complete_oidc_consent() {
@@ -139,6 +201,22 @@ complete_oidc_consent() {
   log "${app_name}: OIDC consent complete (${final_url})"
 }
 
+complete_oidc_consent_from_json_start() {
+  local start_url="$1"
+  local expected_host="$2"
+  local app_name="$3"
+  local start_json redirect_url
+
+  start_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    "$start_url")"
+
+  redirect_url="$(printf '%s' "$start_json" | jq -r '.redirectUrl // .redirect_uri // .redirect // empty')"
+  [ -n "$redirect_url" ] || fail "${app_name}: start endpoint did not return redirect URL"
+
+  complete_oidc_consent "$redirect_url" "$expected_host" "$app_name"
+}
+
 assert_http_200() {
   local name="$1"
   local url="$2"
@@ -150,13 +228,100 @@ assert_http_200() {
   log "${name}: HTTP 200"
 }
 
+check_jellyseerr_oidc_public_settings() {
+  if ! command -v kubectl >/dev/null 2>&1; then
+    log "kubectl not found; skipping jellyseerr public settings check."
+    return 0
+  fi
+
+  if ! kubectl -n "$JELLYSEERR_PORT_FORWARD_NAMESPACE" get svc jellyseerr >/dev/null 2>&1; then
+    log "service jellyseerr not found in namespace ${JELLYSEERR_PORT_FORWARD_NAMESPACE}; skipping."
+    return 0
+  fi
+
+  (
+    set -euo pipefail
+    local pf_log pf_pid public_json base_url
+
+    pf_log="$(mktemp)"
+    kubectl -n "$JELLYSEERR_PORT_FORWARD_NAMESPACE" \
+      port-forward svc/jellyseerr "${JELLYSEERR_PORT_FORWARD_LOCAL_PORT}:5055" >"$pf_log" 2>&1 &
+    pf_pid=$!
+    trap 'kill "$pf_pid" >/dev/null 2>&1 || true; wait "$pf_pid" >/dev/null 2>&1 || true; rm -f "$pf_log"' EXIT
+
+    base_url="http://127.0.0.1:${JELLYSEERR_PORT_FORWARD_LOCAL_PORT}"
+    for _ in $(seq 1 30); do
+      if curl -fsS "${base_url}/api/v1/settings/public" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 1
+    done
+
+    public_json="$(curl -fsS "${base_url}/api/v1/settings/public")"
+    printf '%s' "$public_json" | jq -e '.initialized == true' >/dev/null || fail "jellyseerr: initialized=false"
+    printf '%s' "$public_json" | jq -e '((.openIdProviders // [])[] | select(.slug == "authelia"))' >/dev/null || \
+      fail "jellyseerr: missing authelia OIDC provider in public settings"
+  )
+
+  log "jellyseerr: public OIDC provider check passed"
+}
+
+log "Running unauthenticated login-surface checks"
+
+assert_public_http_200 authelia_home "${AUTHELIA_BASE}/"
+
+for host in \
+  dashboard-testing.h4xx.io \
+  moonlight-testing.h4xx.io \
+  logs-testing.h4xx.io \
+  metrics-testing.h4xx.io \
+  traces-testing.h4xx.io \
+  jellyfin-testing.h4xx.io \
+  jellyseerr-testing.h4xx.io \
+  sonarr-testing.h4xx.io \
+  radarr-testing.h4xx.io \
+  lidarr-testing.h4xx.io \
+  readarr-testing.h4xx.io \
+  prowlarr-testing.h4xx.io \
+  bazarr-testing.h4xx.io \
+  qbittorrent-testing.h4xx.io \
+  profilarr-testing.h4xx.io
+do
+  assert_auth_gate "$host" "https://${host}/"
+done
+
+assert_redirect_to_auth nextcloud_oidc_entry "https://nextcloud-testing.h4xx.io/index.php/apps/oidc_login/oidc" "nextcloud"
+assert_redirect_to_auth grafana_oidc_entry "https://grafana-testing.h4xx.io/login/generic_oauth" "grafana"
+assert_redirect_to_auth matrix_oidc_entry \
+  "https://matrix-testing.h4xx.io/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2Fchat-testing.h4xx.io%2F" \
+  "matrix-synapse"
+
+matrix_login_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" "https://matrix-testing.h4xx.io/_matrix/client/v3/login")"
+printf '%s' "$matrix_login_json" | jq -e '.flows[] | select(.type=="m.login.sso") | .identity_providers[] | select(.id=="oidc-authelia")' >/dev/null || \
+  fail "matrix: missing oidc-authelia provider in login flows"
+log "matrix: login flows expose oidc-authelia provider"
+
+assert_public_http_200 status_dashboard "https://testing.h4xx.io/"
+assert_public_http_200 element_web "https://chat-testing.h4xx.io/"
+assert_public_http_200 immich_login "https://meme-testing.h4xx.io/auth/login"
+assert_public_http_200 collabora_public "https://collabora-testing.h4xx.io/"
+check_jellyseerr_oidc_public_settings
+
+if [ -z "${AUTHELIA_PASSWORD}" ]; then
+  if [ "${AUTHELIA_REQUIRE_PASSWORD}" = "true" ]; then
+    fail "AUTHELIA_PASSWORD is required when AUTHELIA_REQUIRE_PASSWORD=true"
+  fi
+  log "AUTHELIA_PASSWORD not set; skipping authenticated checks after validating all login surfaces."
+  exit 0
+fi
+
 log "Authenticating to Authelia as ${AUTHELIA_USER}"
 authelia_login
 log "Authelia session established"
 
-# ForwardAuth-protected ingresses.
+# Session-backed checks across protected ingress hosts.
+assert_http_200 traefik_dashboard "https://dashboard-testing.h4xx.io/"
 assert_http_200 grafana "https://grafana-testing.h4xx.io/"
-assert_http_200 status_dashboard "https://testing.h4xx.io/"
 assert_http_200 jellyseerr "https://jellyseerr-testing.h4xx.io/"
 assert_http_200 sonarr "https://sonarr-testing.h4xx.io/"
 assert_http_200 radarr "https://radarr-testing.h4xx.io/"
@@ -165,11 +330,18 @@ assert_http_200 readarr "https://readarr-testing.h4xx.io/"
 assert_http_200 prowlarr "https://prowlarr-testing.h4xx.io/"
 assert_http_200 bazarr "https://bazarr-testing.h4xx.io/"
 assert_http_200 qbittorrent "https://qbittorrent-testing.h4xx.io/"
+assert_http_200 profilarr "https://profilarr-testing.h4xx.io/"
+assert_http_200 moonlight_web "https://moonlight-testing.h4xx.io/"
 assert_http_200 collabora "https://collabora-testing.h4xx.io/"
-assert_http_200 immich_login "https://meme-testing.h4xx.io/auth/login"
-assert_http_200 element_web "https://chat-testing.h4xx.io/"
+assert_http_200 immich_login_authed "https://meme-testing.h4xx.io/auth/login"
+assert_http_200 element_web_authed "https://chat-testing.h4xx.io/"
+assert_http_200 status_dashboard_authed "https://testing.h4xx.io/"
 
-# OIDC app logins.
+assert_http_200 logs_ready "https://logs-testing.h4xx.io/ready"
+assert_http_200 metrics_ready "https://metrics-testing.h4xx.io/ready"
+assert_http_200 traces_ready "https://traces-testing.h4xx.io/ready"
+
+# OIDC login flows.
 complete_oidc_consent \
   "https://nextcloud-testing.h4xx.io/index.php/apps/oidc_login/oidc" \
   "nextcloud-testing.h4xx.io" \
@@ -179,6 +351,21 @@ complete_oidc_consent \
   "https://jellyfin-testing.h4xx.io/sso/OID/start/authelia" \
   "jellyfin-testing.h4xx.io" \
   "jellyfin"
+
+complete_oidc_consent \
+  "https://grafana-testing.h4xx.io/login/generic_oauth" \
+  "grafana-testing.h4xx.io" \
+  "grafana"
+
+complete_oidc_consent \
+  "https://matrix-testing.h4xx.io/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2Fchat-testing.h4xx.io%2F" \
+  "chat-testing.h4xx.io" \
+  "matrix"
+
+complete_oidc_consent_from_json_start \
+  "https://jellyseerr-testing.h4xx.io/api/v1/auth/oidc/login/authelia?returnUrl=%2F" \
+  "jellyseerr-testing.h4xx.io" \
+  "jellyseerr"
 
 # Application-specific smoke checks after auth.
 grafana_health_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
@@ -206,6 +393,14 @@ jellyfin_info_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
 [ "$jellyfin_info_code" = "200" ] || fail "jellyfin: System/Info/Public returned ${jellyfin_info_code}"
 jq -e '.ProductName | contains("Jellyfin")' "${WORK_DIR}/jellyfin-info.json" >/dev/null || fail "jellyfin: unexpected System/Info/Public payload"
 log "jellyfin: public info API check passed"
+
+jellyseerr_me_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+  -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+  -o "${WORK_DIR}/jellyseerr-me.json" -w '%{http_code}' \
+  "https://jellyseerr-testing.h4xx.io/api/v1/auth/me")"
+[ "$jellyseerr_me_code" = "200" ] || fail "jellyseerr: /api/v1/auth/me returned ${jellyseerr_me_code}"
+jq -e '.id != null' "${WORK_DIR}/jellyseerr-me.json" >/dev/null || fail "jellyseerr: auth/me missing user id"
+log "jellyseerr: auth/me check passed"
 
 matrix_versions_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -o "${WORK_DIR}/matrix-versions.json" -w '%{http_code}' \
