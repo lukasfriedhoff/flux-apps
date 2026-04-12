@@ -1,0 +1,68 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      ns="${NAMESPACE:-media}"
+      local_port="${MOONLIGHT_E2E_LOCAL_PORT:-18080}"
+
+      log() {
+        printf '[moonlight-web-e2e] %s\n' "$*"
+      }
+
+      fail() {
+        log "FAIL: $*"
+        exit 1
+      }
+
+      cleanup() {
+        if [ -n "${pf_pid:-}" ]; then
+          kill "${pf_pid}" >/dev/null 2>&1 || true
+        fi
+      }
+      trap cleanup EXIT
+
+      command -v kubectl >/dev/null 2>&1 || fail "kubectl is required"
+      command -v curl >/dev/null 2>&1 || fail "curl is required"
+
+      log "waiting for deployment availability"
+      kubectl -n "${ns}" wait deploy/moonlight-web --for=condition=Available --timeout=300s >/dev/null
+
+      log "checking ingress middleware annotation"
+      middleware_annotation="$(
+        kubectl -n "${ns}" get ingress moonlight-web \
+          -o jsonpath='{.metadata.annotations.traefik\.ingress\.kubernetes\.io/router\.middlewares}'
+      )"
+      case "${middleware_annotation}" in
+        *traefik-authelia-forwardauth@kubernetescrd*) ;;
+        *) fail "ingress middleware missing authelia forwardauth: ${middleware_annotation}" ;;
+      esac
+
+      log "checking forwarded header env"
+      forwarded_header="$(
+        kubectl -n "${ns}" get deployment moonlight-web \
+          -o jsonpath="{.spec.template.spec.containers[0].env[?(@.name=='FORWARDED_HEADER')].value}"
+      )"
+      [ "${forwarded_header}" = "X-Forwarded-User" ] || \
+        fail "FORWARDED_HEADER is '${forwarded_header}', expected 'X-Forwarded-User'"
+
+      log "port-forwarding service for HTTP smoke test"
+      kubectl -n "${ns}" port-forward service/moonlight-web "${local_port}:8080" >/tmp/moonlight-web-port-forward.log 2>&1 &
+      pf_pid=$!
+
+      for _ in $(seq 1 30); do
+        if curl -fsS "http://127.0.0.1:${local_port}/" >/tmp/moonlight-web-homepage.html; then
+          break
+        fi
+        sleep 1
+      done
+
+      curl -fsS "http://127.0.0.1:${local_port}/" >/tmp/moonlight-web-homepage.html || \
+        fail "moonlight-web root endpoint not reachable"
+      grep -qi "moonlight" /tmp/moonlight-web-homepage.html || \
+        fail "moonlight-web homepage did not contain expected marker text"
+
+      log "PASS"
+

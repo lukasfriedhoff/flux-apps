@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moonlight-web
+  namespace: media
+  labels:
+    app.kubernetes.io/name: moonlight-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: moonlight-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: moonlight-web
+    spec:
+      containers:
+        - name: moonlight-web
+          image: mrcreativ3001/moonlight-web-stream:${moonlight_image_tag}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: BIND_ADDRESS
+              value: 0.0.0.0:8080
+            - name: FORWARDED_HEADER
+              value: X-Forwarded-User
+            - name: WEBRTC_PORT_RANGE
+              value: ${moonlight_webrtc_port_range}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${moonlight_requests_cpu}
+              memory: ${moonlight_requests_memory}
+            limits:
+              cpu: ${moonlight_limits_cpu}
+              memory: ${moonlight_limits_memory}
+          volumeMounts:
+            - name: server-data
+              mountPath: /moonlight-web/server
+      volumes:
+        - name: server-data
+          persistentVolumeClaim:
+            claimName: moonlight-web-server
+
