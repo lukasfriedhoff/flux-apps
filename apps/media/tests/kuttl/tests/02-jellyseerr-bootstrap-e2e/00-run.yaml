@@ -27,6 +27,9 @@ commands:
       settings_json="$(kubectl -n "$ns" exec deploy/jellyseerr -- sh -lc 'cat /app/config/settings.json')"
       printf '%s' "$settings_json" | jq -e '.public.initialized == true' >/dev/null || fail "settings.json still reports initialized=false"
       printf '%s' "$settings_json" | jq -e '.main.mediaServerType == 4' >/dev/null || fail "settings.json main.mediaServerType is not Jellyfin (4)"
+      printf '%s' "$settings_json" | jq -e '.main.oidcLogin == true' >/dev/null || fail "settings.json main.oidcLogin is not enabled"
+      printf '%s' "$settings_json" | jq -e '(.oidc.providers | type) == "array" and (.oidc.providers | length) > 0' >/dev/null || fail "settings.json oidc providers missing"
+      printf '%s' "$settings_json" | jq -e '.oidc.providers[] | select(.slug == "authelia")' >/dev/null || fail "settings.json missing authelia oidc provider"
       printf '%s' "$settings_json" | jq -e '(.radarr | type) == "array" and (.radarr | length) > 0' >/dev/null || fail "settings.json radarr config missing"
       printf '%s' "$settings_json" | jq -e '(.sonarr | type) == "array" and (.sonarr | length) > 0' >/dev/null || fail "settings.json sonarr config missing"
 
@@ -51,5 +54,7 @@ commands:
 
       public_json="$(curl -fsS "${base_url}/api/v1/settings/public")" || fail "jellyseerr public settings endpoint not reachable"
       printf '%s' "$public_json" | jq -e '.initialized == true' >/dev/null || fail "live API still reports initialized=false"
+      printf '%s' "$public_json" | jq -e '(.openIdProviders | type) == "array" and (.openIdProviders | length) > 0' >/dev/null || fail "public settings missing OIDC providers"
+      printf '%s' "$public_json" | jq -e '((.openIdProviders // [])[] | select(.slug == "authelia"))' >/dev/null || fail "public settings missing authelia OIDC provider"
 
       log "Jellyseerr bootstrap checks passed"

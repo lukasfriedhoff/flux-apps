@@ -232,6 +232,25 @@ data:
             access_token_signed_response_alg: none
             userinfo_signed_response_alg: none
             token_endpoint_auth_method: client_secret_post
+          - client_id: jellyseerr
+            client_name: Jellyseerr
+            public: true
+            authorization_policy: ${authelia_oidc_policy}
+            consent_mode: implicit
+            require_pkce: true
+            pkce_challenge_method: 'S256'
+            redirect_uris:
+              - https://jellyseerr${public_host_suffix}.${delegating_domain}/login
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+            response_types:
+              - code
+            grant_types:
+              - authorization_code
+            token_endpoint_auth_method: none
           - client_id: ${immich_oidc_client_id:=immich}
             client_name: Immich
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.immich.secret" | msquote }}
