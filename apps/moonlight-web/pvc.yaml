@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: moonlight-web-server
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${moonlight_config_storage_class_name}
+  resources:
+    requests:
+      storage: ${moonlight_config_size}
+
