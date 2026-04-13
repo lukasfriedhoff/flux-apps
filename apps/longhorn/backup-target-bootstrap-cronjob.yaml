@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: longhorn-backup-target-bootstrap
+  namespace: ${longhorn_namespace}
+spec:
+  schedule: "${longhorn_backup_bootstrap_cron:=0,30 * * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: bootstrap
+              image: quay.io/minio/mc:latest
+              env:
+                - name: LONGHORN_BACKUP_TARGET
+                  value: ${longhorn_backup_target:=}
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${longhorn_backup_target_credential_secret_name:=longhorn-backup-target}
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${longhorn_backup_target_credential_secret_name:=longhorn-backup-target}
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_ENDPOINTS
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${longhorn_backup_target_credential_secret_name:=longhorn-backup-target}
+                      key: AWS_ENDPOINTS
+              command:
+                - /bin/sh
+                - -ceu
+                - |
+                  if [ -z "${LONGHORN_BACKUP_TARGET:-}" ]; then
+                    echo "[longhorn-backup-bootstrap] longhorn_backup_target is empty; skipping."
+                    exit 0
+                  fi
+
+                  target="${LONGHORN_BACKUP_TARGET#s3://}"
+                  target="${target%%/*}"
+                  bucket="${target%%@*}"
+
+                  if [ -z "${bucket}" ]; then
+                    echo "[longhorn-backup-bootstrap] failed to parse bucket from LONGHORN_BACKUP_TARGET=${LONGHORN_BACKUP_TARGET}"
+                    exit 1
+                  fi
+
+                  if [ -z "${AWS_ENDPOINTS:-}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+                    echo "[longhorn-backup-bootstrap] missing S3 credentials or endpoint"
+                    exit 1
+                  fi
+
+                  mc alias set external "${AWS_ENDPOINTS}" "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}" >/dev/null
+                  mc mb --ignore-existing "external/${bucket}" >/dev/null
+                  echo "[longhorn-backup-bootstrap] ensured bucket external/${bucket}"
