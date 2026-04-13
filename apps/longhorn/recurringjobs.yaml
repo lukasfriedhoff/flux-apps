@@ -14,4 +14,4 @@ spec:
   labels:
     backup-target: external-minio
   parameters:
-    full-backup-interval: "${longhorn_recurring_full_backup_interval:=7}"
+    full-backup-interval: "7"
