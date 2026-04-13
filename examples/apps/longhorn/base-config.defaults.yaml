@@ -23,6 +23,7 @@ data:
   longhorn_backup_target: ""
   longhorn_backup_target_credential_secret_name: ""
   longhorn_backup_poll_interval: "300"
+  longhorn_backup_bootstrap_cron: "0,30 * * * *"
   longhorn_recurring_backup_cron: "15 3 * * *"
   longhorn_recurring_backup_retain: "14"
   longhorn_recurring_full_backup_interval: "7"
