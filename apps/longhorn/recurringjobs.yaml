@@ -1,0 +1,17 @@
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-daily
+  namespace: ${longhorn_namespace}
+spec:
+  name: backup-daily
+  cron: "${longhorn_recurring_backup_cron:=15 3 * * *}"
+  task: backup
+  groups:
+    - default
+  retain: ${longhorn_recurring_backup_retain:=14}
+  concurrency: 1
+  labels:
+    backup-target: external-minio
+  parameters:
+    full-backup-interval: "${longhorn_recurring_full_backup_interval:=7}"
