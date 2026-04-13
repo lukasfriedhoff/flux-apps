@@ -4,4 +4,5 @@ namespace: ${longhorn_namespace}
 resources:
   - helm-repo.yaml
   - helm-release.yaml
+  - recurringjobs.yaml
   - storageclasses.yaml
