@@ -23,3 +23,10 @@ data:
   nextcloud_resources_requests_memory: "512Mi"
   trusted_proxies_cidr: "10.42.0.0/16"
   valkey_auth_secret_name: "nextcloud-valkey"
+  # CNPG backup — external S3 endpoint URL with scheme (e.g. https://s3.provider.com)
+  # Set in the cluster overlay; leave empty to disable backup.
+  nextcloud_postgres_backup_endpoint_url: ""
+  nextcloud_postgres_backup_bucket: "nextcloud-postgres-backup"
+  # Secret must exist in the nextcloud namespace with keys AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+  # (same key names as the longhorn-backup-target secret)
+  nextcloud_postgres_backup_credential_secret_name: "nextcloud-postgres-backup-credentials"
