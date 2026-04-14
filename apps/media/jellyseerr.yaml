@@ -132,8 +132,8 @@ spec:
                 if [ -n "$${RADARR_API_KEY:-}" ] && wait_for_arr "http://radarr:7878/api/v3" "$RADARR_API_KEY"; then
                   radarr_profile_json="$(curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "http://radarr:7878/api/v3/qualityprofile")"
                   radarr_root_json="$(curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "http://radarr:7878/api/v3/rootfolder")"
-                  radarr_profile_id="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
-                  radarr_profile_name="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
+                  radarr_profile_id="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].id // map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
+                  radarr_profile_name="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].name // map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
                   radarr_root_dir="$(printf '%s' "$radarr_root_json" | jq -r '.[0].path // "/media/movies"')"
                   radarr_service="$(
                     jq -cn \
@@ -167,9 +167,9 @@ spec:
                   sonarr_profile_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/qualityprofile")"
                   sonarr_language_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/languageprofile")"
                   sonarr_root_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/rootfolder")"
-                  sonarr_profile_id="$(printf '%s' "$sonarr_profile_json" | jq -r 'map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
-                  sonarr_profile_name="$(printf '%s' "$sonarr_profile_json" | jq -r 'map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
-                  sonarr_language_id="$(printf '%s' "$sonarr_language_json" | jq -r '.[0].id // 1')"
+                  sonarr_profile_id="$(printf '%s' "$sonarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].id // map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
+                  sonarr_profile_name="$(printf '%s' "$sonarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].name // map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
+                  sonarr_language_id="$(printf '%s' "$sonarr_language_json" | jq -r 'map(select(.name == "German + English"))[0].id // .[0].id // 1')"
                   sonarr_root_dir="$(printf '%s' "$sonarr_root_json" | jq -r '.[0].path // "/media/tv"')"
                   sonarr_service="$(
                     jq -cn \

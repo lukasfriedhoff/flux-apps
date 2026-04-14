@@ -216,7 +216,7 @@ data:
     ensure_flood_indexer() {
       name="$1"
       enabled="$2"
-      api_key="$5"
+      api_key="$3"
 
       idx_json="$(
         prowlarr_get /api/v1/indexer \
@@ -266,6 +266,56 @@ data:
       fi
     }
 
+    ensure_cardigann_indexer() {
+      schema_name="$1"
+      name="$2"
+      enabled="$3"
+
+      idx_json="$(
+        prowlarr_get /api/v1/indexer \
+          | jq -c --arg name "$name" 'map(select(.implementation == "Cardigann" and .name == $name))[0]'
+      )"
+
+      if [ "$idx_json" = "null" ]; then
+        idx_json="$(
+          prowlarr_get /api/v1/indexer/schema \
+            | jq -c --arg schemaName "$schema_name" 'map(select(.implementation == "Cardigann" and .name == $schemaName))[0]'
+        )"
+        if [ "$idx_json" = "null" ]; then
+          log "No schema found for Cardigann indexer $schema_name; skipping."
+          return 0
+        fi
+        idx_json="$(printf '%s' "$idx_json" | jq -c \
+          --arg name "$name" \
+          --arg enabled "$enabled" \
+          --arg appProfileId "$APP_PROFILE_ID" '
+            .name = $name
+            | .enable = ($enabled == "true")
+            | .appProfileId = ($appProfileId | tonumber)
+          ')"
+        if prowlarr_post /api/v1/indexer "$idx_json" >/dev/null; then
+          log "Created Cardigann indexer $name."
+        else
+          log "Failed to create Cardigann indexer $name."
+        fi
+      else
+        idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
+        idx_json="$(printf '%s' "$idx_json" | jq -c \
+          --arg name "$name" \
+          --arg enabled "$enabled" \
+          --arg appProfileId "$APP_PROFILE_ID" '
+            .name = $name
+            | .enable = ($enabled == "true")
+            | .appProfileId = ($appProfileId | tonumber)
+          ')"
+        if prowlarr_put "/api/v1/indexer/$idx_id" "$idx_json" >/dev/null; then
+          log "Updated Cardigann indexer $name."
+        else
+          log "Failed to update Cardigann indexer $name."
+        fi
+      fi
+    }
+
     ensure_app "Sonarr" "sonarr" "http://sonarr:8989" "$SONARR_API_KEY" || log "Failed to sync Sonarr app; will retry."
     ensure_app "Radarr" "radarr" "http://radarr:7878" "$RADARR_API_KEY" || log "Failed to sync Radarr app; will retry."
     ensure_app "Lidarr" "lidarr" "http://lidarr:8686" "$LIDARR_API_KEY" || log "Failed to sync Lidarr app; will retry."
@@ -274,7 +324,12 @@ data:
     # Public indexers.
     ensure_indexer "Knaben" "Knaben" true "" || log "Failed to sync Knaben indexer; will retry."
     ensure_indexer "TorrentsCSV" "TorrentsCSV" true "" || log "Failed to sync TorrentsCSV indexer; will retry."
-    ensure_indexer "SubsPlease" "SubsPlease" true "" || log "Failed to sync SubsPlease indexer; will retry."
+    # SubsPlease is TV/anime-only and causes repeated Radarr category mapping errors.
+    ensure_indexer "SubsPlease" "SubsPlease" false "" || log "Failed to sync SubsPlease indexer; will retry."
+    ensure_cardigann_indexer "The Pirate Bay" "The Pirate Bay" true || log "Failed to sync The Pirate Bay indexer; will retry."
+    ensure_cardigann_indexer "YTS" "YTS" true || log "Failed to sync YTS indexer; will retry."
+    ensure_cardigann_indexer "Nyaa.si" "Nyaa.si" true || log "Failed to sync Nyaa.si indexer; will retry."
+    ensure_cardigann_indexer "Internet Archive" "Internet Archive" true || log "Failed to sync Internet Archive indexer; will retry."
 
     # Private tracker (optional).
     if [ -n "${TORRENTSYNDIKAT_API_KEY:-}" ]; then
@@ -509,6 +564,108 @@ data:
       fi
     }
 
+    ensure_sonarr_dual_audio_policy() {
+      dual_cf_name="German + English Dual Audio"
+
+      lang_schema="$(sonarr_get /api/v3/customformat/schema | jq -c 'map(select(.implementation == "LanguageSpecification"))[0]')"
+      title_schema="$(sonarr_get /api/v3/customformat/schema | jq -c 'map(select(.implementation == "ReleaseTitleSpecification"))[0]')"
+      if [ "$lang_schema" = "null" ] || [ "$title_schema" = "null" ]; then
+        log "Sonarr custom format schema missing; skipping dual-audio policy."
+        return 0
+      fi
+
+      cf_payload="$(jq -n -c \
+        --arg name "$dual_cf_name" \
+        --argjson lang "$lang_schema" \
+        --argjson title "$title_schema" '
+          {
+            name: $name,
+            includeCustomFormatWhenRenaming: false,
+            specifications: [
+              ($lang | {implementation, implementationName, infoLink, negate, required, fields}
+                | .required = true
+                | (.fields[]? | select(.name == "value")).value = 4
+                | (.fields[]? | select(.name == "exceptLanguage")).value = false
+              ),
+              ($lang | {implementation, implementationName, infoLink, negate, required, fields}
+                | .required = true
+                | (.fields[]? | select(.name == "value")).value = 1
+                | (.fields[]? | select(.name == "exceptLanguage")).value = false
+              ),
+              ($title | {implementation, implementationName, infoLink, negate, required, fields}
+                | .required = true
+                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|MULTI)\\b"
+              )
+            ]
+          }
+        '
+      )"
+
+      cf_json="$(sonarr_get /api/v3/customformat | jq -c --arg name "$dual_cf_name" 'map(select(.name == $name))[0]')"
+      if [ "$cf_json" = "null" ]; then
+        cf_id="$(sonarr_post /api/v3/customformat "$cf_payload" | jq -r '.id // empty')"
+        if [ -z "$cf_id" ]; then
+          log "Failed to create Sonarr custom format $dual_cf_name."
+          return 1
+        fi
+        log "Created Sonarr custom format $dual_cf_name."
+      else
+        cf_id="$(printf '%s' "$cf_json" | jq -r '.id')"
+        cf_payload="$(printf '%s' "$cf_payload" | jq -c --argjson id "$cf_id" '.id = $id')"
+        sonarr_put "/api/v3/customformat/$cf_id" "$cf_payload" >/dev/null
+        log "Updated Sonarr custom format $dual_cf_name."
+      fi
+
+      qp_json="$(sonarr_get /api/v3/qualityprofile | jq -c 'map(select(.name == "HD - 720p/1080p"))[0] // .[0]')"
+      if [ "$qp_json" = "null" ]; then
+        log "Sonarr quality profile not found; skipping dual-audio quality gate."
+        return 0
+      fi
+      qp_id="$(printf '%s' "$qp_json" | jq -r '.id')"
+      qp_payload="$(printf '%s' "$qp_json" | jq -c --argjson cfId "$cf_id" --arg cfName "$dual_cf_name" '
+        .minFormatScore = 100
+        | .minUpgradeFormatScore = 100
+        | .formatItems = (((.formatItems // []) | map(select(.format != $cfId))) + [{format: $cfId, name: $cfName, score: 100}])
+      ')"
+      sonarr_put "/api/v3/qualityprofile/$qp_id" "$qp_payload" >/dev/null
+      log "Applied Sonarr dual-audio gate to quality profile $(printf '%s' "$qp_json" | jq -r '.name')."
+
+      lp_name="German + English"
+      lp_json="$(sonarr_get /api/v3/languageprofile | jq -c --arg name "$lp_name" 'map(select(.name == $name))[0]')"
+      if [ "$lp_json" = "null" ]; then
+        base_lp="$(sonarr_get /api/v3/languageprofile | jq -c '.[0]')"
+        if [ "$base_lp" = "null" ]; then
+          log "Sonarr language profile list empty; skipping language default."
+          return 0
+        fi
+        lp_payload="$(printf '%s' "$base_lp" | jq -c '
+          del(.id)
+          | .name = "German + English"
+          | .upgradeAllowed = true
+          | .cutoff = {id: 4, name: "German"}
+          | .languages = [
+              {language: {id: 4, name: "German"}, allowed: true},
+              {language: {id: 1, name: "English"}, allowed: true}
+            ]
+        ')"
+        sonarr_post /api/v3/languageprofile "$lp_payload" >/dev/null
+        log "Created Sonarr language profile $lp_name."
+      else
+        lp_id="$(printf '%s' "$lp_json" | jq -r '.id')"
+        lp_payload="$(printf '%s' "$lp_json" | jq -c '
+          .name = "German + English"
+          | .upgradeAllowed = true
+          | .cutoff = {id: 4, name: "German"}
+          | .languages = [
+              {language: {id: 4, name: "German"}, allowed: true},
+              {language: {id: 1, name: "English"}, allowed: true}
+            ]
+        ')"
+        sonarr_put "/api/v3/languageprofile/$lp_id" "$lp_payload" >/dev/null
+        log "Updated Sonarr language profile $lp_name."
+      fi
+    }
+
     if [ -n "$SONARR_API_KEY" ]; then
       SONARR_URL="$(discover_sonarr_url || true)"
       if [ -z "$SONARR_URL" ]; then
@@ -516,6 +673,7 @@ data:
       else
         ensure_sonarr_rootfolder || log "Failed to ensure Sonarr root folder; will retry."
         ensure_sonarr_qbittorrent || log "Failed to ensure Sonarr qBittorrent client; will retry."
+        ensure_sonarr_dual_audio_policy || log "Failed to apply Sonarr dual-audio policy; will retry."
       fi
     else
       log "Sonarr API key missing; skipping Sonarr bootstrap."
@@ -612,6 +770,74 @@ data:
       fi
     }
 
+    ensure_radarr_dual_audio_policy() {
+      dual_cf_name="German + English Dual Audio"
+
+      lang_schema="$(radarr_get /api/v3/customformat/schema | jq -c 'map(select(.implementation == "LanguageSpecification"))[0]')"
+      title_schema="$(radarr_get /api/v3/customformat/schema | jq -c 'map(select(.implementation == "ReleaseTitleSpecification"))[0]')"
+      if [ "$lang_schema" = "null" ] || [ "$title_schema" = "null" ]; then
+        log "Radarr custom format schema missing; skipping dual-audio policy."
+        return 0
+      fi
+
+      cf_payload="$(jq -n -c \
+        --arg name "$dual_cf_name" \
+        --argjson lang "$lang_schema" \
+        --argjson title "$title_schema" '
+          {
+            name: $name,
+            includeCustomFormatWhenRenaming: false,
+            specifications: [
+              ($lang | {implementation, implementationName, infoLink, negate, required, fields}
+                | .required = true
+                | (.fields[]? | select(.name == "value")).value = 4
+                | (.fields[]? | select(.name == "exceptLanguage")).value = false
+              ),
+              ($lang | {implementation, implementationName, infoLink, negate, required, fields}
+                | .required = true
+                | (.fields[]? | select(.name == "value")).value = 1
+                | (.fields[]? | select(.name == "exceptLanguage")).value = false
+              ),
+              ($title | {implementation, implementationName, infoLink, negate, required, fields}
+                | .required = true
+                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|MULTI)\\b"
+              )
+            ]
+          }
+        '
+      )"
+
+      cf_json="$(radarr_get /api/v3/customformat | jq -c --arg name "$dual_cf_name" 'map(select(.name == $name))[0]')"
+      if [ "$cf_json" = "null" ]; then
+        cf_id="$(radarr_post /api/v3/customformat "$cf_payload" | jq -r '.id // empty')"
+        if [ -z "$cf_id" ]; then
+          log "Failed to create Radarr custom format $dual_cf_name."
+          return 1
+        fi
+        log "Created Radarr custom format $dual_cf_name."
+      else
+        cf_id="$(printf '%s' "$cf_json" | jq -r '.id')"
+        cf_payload="$(printf '%s' "$cf_payload" | jq -c --argjson id "$cf_id" '.id = $id')"
+        radarr_put "/api/v3/customformat/$cf_id" "$cf_payload" >/dev/null
+        log "Updated Radarr custom format $dual_cf_name."
+      fi
+
+      qp_json="$(radarr_get /api/v3/qualityprofile | jq -c 'map(select(.name == "HD - 720p/1080p"))[0] // .[0]')"
+      if [ "$qp_json" = "null" ]; then
+        log "Radarr quality profile not found; skipping dual-audio quality gate."
+        return 0
+      fi
+      qp_id="$(printf '%s' "$qp_json" | jq -r '.id')"
+      qp_payload="$(printf '%s' "$qp_json" | jq -c --argjson cfId "$cf_id" --arg cfName "$dual_cf_name" '
+        .language = {id: 4, name: "German"}
+        | .minFormatScore = 100
+        | .minUpgradeFormatScore = 100
+        | .formatItems = (((.formatItems // []) | map(select(.format != $cfId))) + [{format: $cfId, name: $cfName, score: 100}])
+      ')"
+      radarr_put "/api/v3/qualityprofile/$qp_id" "$qp_payload" >/dev/null
+      log "Applied Radarr dual-audio gate to quality profile $(printf '%s' "$qp_json" | jq -r '.name')."
+    }
+
     if [ -n "$RADARR_API_KEY" ]; then
       RADARR_URL="$(discover_radarr_url || true)"
       if [ -z "$RADARR_URL" ]; then
@@ -619,6 +845,7 @@ data:
       else
         ensure_radarr_rootfolder || log "Failed to ensure Radarr root folder; will retry."
         ensure_radarr_qbittorrent || log "Failed to ensure Radarr qBittorrent client; will retry."
+        ensure_radarr_dual_audio_policy || log "Failed to apply Radarr dual-audio policy; will retry."
       fi
     else
       log "Radarr API key missing; skipping Radarr bootstrap."
