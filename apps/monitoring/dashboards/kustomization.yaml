@@ -85,6 +85,7 @@ configMapGenerator:
         grafana_folder: Databases
     files:
       - cloudnative-pg/cloudnative-pg.json
+      - cnpg/cnpg-backup.json
   - name: grafana-dashboard-valkey
     options:
       annotations:
