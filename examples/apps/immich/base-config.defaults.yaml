@@ -46,4 +46,3 @@ data:
   immich_postgres_backup_bucket: "immich-postgres-backup"
   # Secret in the immich namespace with keys AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINTS
   immich_postgres_backup_credential_secret_name: "immich-postgres-backup-credentials"
-  immich_postgres_backup_retain_days: "30"

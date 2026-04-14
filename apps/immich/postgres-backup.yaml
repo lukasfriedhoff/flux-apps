@@ -55,7 +55,7 @@ spec:
                 - name: BUCKET
                   value: ${immich_postgres_backup_bucket}
                 - name: RETAIN_DAYS
-                  value: "${immich_postgres_backup_retain_days:=30}"
+                  value: "30"
               command:
                 - /bin/sh
                 - -ceu

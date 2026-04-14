@@ -111,7 +111,7 @@ spec:
                 - name: BUCKET
                   value: ${matrix_postgres_backup_bucket}
                 - name: RETAIN_DAYS
-                  value: "${matrix_postgres_backup_retain_days:=30}"
+                  value: "30"
               command:
                 - /bin/sh
                 - -ceu
