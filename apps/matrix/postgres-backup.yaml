@@ -1,0 +1,145 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: matrix-postgres-backup
+  namespace: matrix
+spec:
+  schedule: "${matrix_postgres_backup_cron:=0 2 * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: quay.io/minio/mc:latest
+              env:
+                - name: SYNAPSE_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: SYNAPSE_DB_USER
+                - name: SYNAPSE_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: SYNAPSE_DB_PASSWORD
+                - name: SYNAPSE_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: SYNAPSE_DB_NAME
+                - name: WHATSAPP_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: WHATSAPP_DB_USER
+                - name: WHATSAPP_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: WHATSAPP_DB_PASSWORD
+                - name: WHATSAPP_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: WHATSAPP_DB_NAME
+                - name: WA_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: WA_DB_USER
+                - name: WA_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: WA_DB_PASSWORD
+                - name: WA_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: WA_DB_NAME
+                - name: TELEGRAM_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: TELEGRAM_DB_USER
+                - name: TELEGRAM_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: TELEGRAM_DB_PASSWORD
+                - name: TELEGRAM_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: TELEGRAM_DB_NAME
+                - name: SIGNAL_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: SIGNAL_DB_USER
+                - name: SIGNAL_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: SIGNAL_DB_PASSWORD
+                - name: SIGNAL_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: matrix-db
+                      key: SIGNAL_DB_NAME
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${matrix_postgres_backup_credential_secret_name}
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${matrix_postgres_backup_credential_secret_name}
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_ENDPOINTS
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${matrix_postgres_backup_credential_secret_name}
+                      key: AWS_ENDPOINTS
+                - name: BUCKET
+                  value: ${matrix_postgres_backup_bucket}
+                - name: RETAIN_DAYS
+                  value: "${matrix_postgres_backup_retain_days:=30}"
+              command:
+                - /bin/sh
+                - -ceu
+                - |
+                  apk add --no-cache postgresql-client >/dev/null 2>&1
+
+                  mc alias set backup "$${AWS_ENDPOINTS}" "$${AWS_ACCESS_KEY_ID}" "$${AWS_SECRET_ACCESS_KEY}" >/dev/null
+                  mc mb --ignore-existing "backup/$${BUCKET}" >/dev/null 2>&1 || true
+
+                  TIMESTAMP="$(date +%Y%m%dT%H%M%SZ)"
+
+                  dump_db() {
+                    host="$1" user="$2" password="$3" dbname="$4"
+                    OBJECT="$${host}-$${TIMESTAMP}.dump"
+                    echo "[pg-backup] dumping $${dbname} on $${host} -> $${BUCKET}/$${OBJECT}"
+                    PGPASSWORD="$${password}" pg_dump -Fc -h "$${host}" -p 5432 -U "$${user}" -d "$${dbname}" \
+                      | mc pipe "backup/$${BUCKET}/$${OBJECT}"
+                  }
+
+                  dump_db synapsedb     "$${SYNAPSE_DB_USER}"   "$${SYNAPSE_DB_PASSWORD}"   "$${SYNAPSE_DB_NAME}"
+                  dump_db whatsappdb    "$${WHATSAPP_DB_USER}"  "$${WHATSAPP_DB_PASSWORD}"  "$${WHATSAPP_DB_NAME}"
+                  dump_db wadb          "$${WA_DB_USER}"        "$${WA_DB_PASSWORD}"        "$${WA_DB_NAME}"
+                  dump_db telegramdb    "$${TELEGRAM_DB_USER}"  "$${TELEGRAM_DB_PASSWORD}"  "$${TELEGRAM_DB_NAME}"
+                  dump_db signaldbprivate "$${SIGNAL_DB_USER}"  "$${SIGNAL_DB_PASSWORD}"    "$${SIGNAL_DB_NAME}"
+
+                  echo "[pg-backup] all dumps complete"
+
+                  echo "[pg-backup] pruning dumps older than $${RETAIN_DAYS} days"
+                  mc find "backup/$${BUCKET}" --name "*.dump" --older-than "$${RETAIN_DAYS}d" \
+                    | xargs -r -I{} mc rm {}
+                  echo "[pg-backup] done"

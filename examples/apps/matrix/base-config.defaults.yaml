@@ -44,3 +44,9 @@ data:
   matrix_bridge_storage_class_name: "longhorn-rwo-1r"
   matrix_bridge_data_size: "20Gi"
   matrix_signald_data_size: "20Gi"
+
+  # pg_dump backup — endpoint URL and credentials all come from the secret (same key names as longhorn-backup-target)
+  matrix_postgres_backup_bucket: "matrix-postgres-backup"
+  # Secret in the matrix namespace with keys AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINTS
+  matrix_postgres_backup_credential_secret_name: "matrix-postgres-backup-credentials"
+  matrix_postgres_backup_retain_days: "30"
