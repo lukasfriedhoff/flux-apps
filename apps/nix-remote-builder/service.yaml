@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${nix_remote_builder_service_name}
+  namespace: ${nix_remote_builder_namespace}
+  labels:
+    app.kubernetes.io/name: nix-remote-builder
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: nix-builder${public_host_suffix}.${delegating_domain}
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: nix-remote-builder
+  ports:
+    - name: ssh
+      port: ${nix_remote_builder_ssh_port}
+      targetPort: ssh
+      protocol: TCP
