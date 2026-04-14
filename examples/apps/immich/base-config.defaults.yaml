@@ -41,3 +41,9 @@ data:
   immich_redis_requests_memory: "128Mi"
   immich_redis_limits_cpu: "500m"
   immich_redis_limits_memory: "512Mi"
+
+  # pg_dump backup — endpoint URL and credentials all come from the secret (same key names as longhorn-backup-target)
+  immich_postgres_backup_bucket: "immich-postgres-backup"
+  # Secret in the immich namespace with keys AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINTS
+  immich_postgres_backup_credential_secret_name: "immich-postgres-backup-credentials"
+  immich_postgres_backup_retain_days: "30"
