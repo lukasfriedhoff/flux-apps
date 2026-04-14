@@ -49,4 +49,3 @@ data:
   matrix_postgres_backup_bucket: "matrix-postgres-backup"
   # Secret in the matrix namespace with keys AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINTS
   matrix_postgres_backup_credential_secret_name: "matrix-postgres-backup-credentials"
-  matrix_postgres_backup_retain_days: "30"

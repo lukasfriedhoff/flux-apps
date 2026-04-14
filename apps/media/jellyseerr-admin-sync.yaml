@@ -116,14 +116,14 @@ spec:
                   }
 
                   function fetchSecret() {
-                    const path = `/api/v1/namespaces/${secretNamespace}/secrets/${secretName}`;
+                    const path = `/api/v1/namespaces/$${secretNamespace}/secrets/$${secretName}`;
                     const options = {
                       host: process.env.KUBERNETES_SERVICE_HOST,
                       port: Number(process.env.KUBERNETES_SERVICE_PORT_HTTPS || "443"),
                       method: "GET",
                       path,
                       headers: {
-                        Authorization: `Bearer ${token}`,
+                        Authorization: `Bearer $${token}`,
                       },
                       ca,
                     };
@@ -143,7 +143,7 @@ spec:
                             }
                             return;
                           }
-                          reject(new Error(`Secret fetch failed with HTTP ${res.statusCode}: ${body}`));
+                          reject(new Error(`Secret fetch failed with HTTP $${res.statusCode}: $${body}`));
                         });
                       });
                       req.on("error", reject);
@@ -191,7 +191,7 @@ spec:
 
                     await datasource.destroy();
                     console.log(
-                      `[jellyseerr-admin-sync] group=${adminGroup} admin_users=${adminUsernames.size} db_users=${users.length} updates=${updates} grants=${grants} revokes=${revokes}`
+                      `[jellyseerr-admin-sync] group=$${adminGroup} admin_users=$${adminUsernames.size} db_users=$${users.length} updates=$${updates} grants=$${grants} revokes=$${revokes}`
                     );
                   })().catch((err) => {
                     console.error(err?.stack || err?.message || String(err));

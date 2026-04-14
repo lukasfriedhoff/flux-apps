@@ -25,7 +25,7 @@ spec:
               protocol: TCP
           env:
             - name: NIX_REMOTE_BUILDER_SSH_PORT
-              value: "${nix_remote_builder_ssh_port}"
+              value: "22"
             - name: NIX_REMOTE_BUILDER_AUTHORIZED_KEY
               value: "${nix_remote_builder_authorized_key}"
           command:
