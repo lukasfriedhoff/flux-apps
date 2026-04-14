@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  nix_remote_builder_suspend: "true"
+  nix_remote_builder_namespace: "nix-cache"
+  nix_remote_builder_service_name: "nix-remote-builder"
+  nix_remote_builder_image_tag: "2.28.3"
+  nix_remote_builder_ssh_port: "22"
+  nix_remote_builder_hostkey_secret_name: "nix-remote-builder-hostkey"
+  nix_remote_builder_storage_class_name: "longhorn-rwo-1r"
+  nix_remote_builder_storage_size: "100Gi"
+  nix_remote_builder_requests_cpu: "500m"
+  nix_remote_builder_requests_memory: "2Gi"
+  nix_remote_builder_limits_cpu: "4000m"
+  nix_remote_builder_limits_memory: "8Gi"
+  nix_remote_builder_authorized_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP25mCZBT7RZ9+kzI57K7+VzU+nPl4YIM0KY4drH1jgQ srv3 mgmt 20260301T131611Z"

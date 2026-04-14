@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${nix_remote_builder_service_name}-state
+  namespace: ${nix_remote_builder_namespace}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${nix_remote_builder_storage_class_name}
+  resources:
+    requests:
+      storage: ${nix_remote_builder_storage_size}
