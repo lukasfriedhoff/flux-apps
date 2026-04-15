@@ -143,6 +143,50 @@ spec:
             echo "Nextcloud occ is not available yet, skipping before-starting hook."
             exit 0
           fi
+          # --- DB PASSWORD SYNC ---
+          # Sync the database password from the injected CNPG secret into
+          # config.php on every pod start. This prevents CNPG password rotations
+          # (e.g. after cluster recreation) from silently breaking Nextcloud.
+          if [ -f /var/www/html/config/config.php ] && [ -n "$POSTGRES_PASSWORD" ]; then
+            php -r "
+              \$cfg = file_get_contents('/var/www/html/config/config.php');
+              \$pw  = getenv('POSTGRES_PASSWORD');
+              \$cfg = preg_replace(
+                \"/'dbpassword' => '.*?'/s\",
+                \"'dbpassword' => '\" . str_replace(\"'\", \"\\\\'\", \$pw) . \"'\",
+                \$cfg
+              );
+              file_put_contents('/var/www/html/config/config.php', \$cfg);
+            " 2>/dev/null && echo "DB password synced from secret into config.php."
+          fi
+          # --- EMPTY DB RECOVERY ---
+          # If config.php says installed=true but the DB schema is gone (e.g.
+          # CNPG cluster was recreated and the PVC was wiped), reset the
+          # installed flag and remove the admin data dir so the install block
+          # below can run maintenance:install cleanly.
+          if [ -f /var/www/html/config/config.php ] && grep -q "'installed' => true" /var/www/html/config/config.php; then
+            schema_check=$(php -r "
+              try {
+                \$pdo = new PDO(
+                  'pgsql:host=' . getenv('POSTGRES_HOST') . ';dbname=' . getenv('POSTGRES_DB'),
+                  getenv('POSTGRES_USER'),
+                  getenv('POSTGRES_PASSWORD')
+                );
+                \$s = \$pdo->query(\"SELECT 1 FROM information_schema.tables WHERE table_name='oc_appconfig' LIMIT 1\");
+                echo (\$s && \$s->rowCount() > 0) ? 'ok' : 'empty';
+              } catch (Exception \$e) { echo 'err'; }
+            " 2>/dev/null)
+            echo "DB schema check: $schema_check"
+            if [ "$schema_check" = "empty" ]; then
+              echo "DB schema missing; resetting installed flag for fresh install."
+              sed -i "s/'installed' => true/'installed' => false/" /var/www/html/config/config.php
+              admin_dir="$NEXTCLOUD_DATA_DIR/$NEXTCLOUD_ADMIN_USER"
+              if [ -n "$NEXTCLOUD_ADMIN_USER" ] && [ -d "$admin_dir" ]; then
+                echo "Removing admin data dir to allow re-install: $admin_dir"
+                rm -rf "${NEXTCLOUD_DATA_DIR:?}/${NEXTCLOUD_ADMIN_USER:?}"
+              fi
+            fi
+          fi
           status_json="$(php /var/www/html/occ status --output=json 2>/dev/null || true)"
           is_installed() {
             echo "$status_json" | grep -q '"installed":true'
