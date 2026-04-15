@@ -35,7 +35,7 @@ spec:
               set -euo pipefail
               export PATH="/nix/var/nix/profiles/default/bin:/root/.nix-profile/bin:${PATH}"
 
-              mkdir -p /run/sshd /root/.ssh /state/ssh /state/tmp
+              mkdir -p /run/sshd /root/.ssh /state/ssh /state/tmp /etc/ssh
               chmod 0700 /root/.ssh
 
               if ! command -v sshd >/dev/null 2>&1; then
