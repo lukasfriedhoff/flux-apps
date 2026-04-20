@@ -31,7 +31,7 @@ spec:
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/synapsedb/"
-      endpointURL: ${matrix_postgres_backup_endpoint_url:=}
+      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
           name: ${matrix_postgres_backup_credential_secret_name}
@@ -85,7 +85,7 @@ spec:
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/whatsappdb/"
-      endpointURL: ${matrix_postgres_backup_endpoint_url:=}
+      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
           name: ${matrix_postgres_backup_credential_secret_name}
@@ -139,7 +139,7 @@ spec:
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/wadb/"
-      endpointURL: ${matrix_postgres_backup_endpoint_url:=}
+      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
           name: ${matrix_postgres_backup_credential_secret_name}
@@ -193,7 +193,7 @@ spec:
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/telegramdb/"
-      endpointURL: ${matrix_postgres_backup_endpoint_url:=}
+      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
           name: ${matrix_postgres_backup_credential_secret_name}
@@ -247,7 +247,7 @@ spec:
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/signaldbprivate/"
-      endpointURL: ${matrix_postgres_backup_endpoint_url:=}
+      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
           name: ${matrix_postgres_backup_credential_secret_name}

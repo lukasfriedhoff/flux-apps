@@ -31,7 +31,7 @@ spec:
   backup:
     barmanObjectStore:
       destinationPath: "s3://${immich_postgres_backup_bucket}/immich-postgres/"
-      endpointURL: ${immich_postgres_backup_endpoint_url:=}
+      endpointURL: "${immich_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
           name: ${immich_postgres_backup_credential_secret_name}
