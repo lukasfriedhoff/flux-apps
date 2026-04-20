@@ -35,6 +35,17 @@ data:
   matrix_postgres_limits_memory: "1Gi"
   matrix_postgres_storage_class_name: "longhorn-rwo-1r"
   matrix_postgres_size: "20Gi"
+  # Used only for one-time CNPG import from the legacy per-service StatefulSets.
+  matrix_synapse_postgres_source_user: "synapse"
+  matrix_synapse_postgres_source_dbname: "synapse"
+  matrix_whatsapp_postgres_source_user: "mautrixwhatsapp"
+  matrix_whatsapp_postgres_source_dbname: "mautrixwhatsapp"
+  matrix_wa_postgres_source_user: "mautrixwhatsapp"
+  matrix_wa_postgres_source_dbname: "mautrixwhatsapp"
+  matrix_telegram_postgres_source_user: "mautrixtelegram"
+  matrix_telegram_postgres_source_dbname: "mautrixtelegram"
+  matrix_signal_postgres_source_user: "mautrixsignal"
+  matrix_signal_postgres_source_dbname: "mautrixsignal"
 
   matrix_synapse_data_storage_class_name: "longhorn-rwo-1r"
   matrix_synapse_data_size: "20Gi"

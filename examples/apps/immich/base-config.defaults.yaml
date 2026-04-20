@@ -34,6 +34,9 @@ data:
   immich_postgres_requests_memory: "512Mi"
   immich_postgres_limits_cpu: "1000m"
   immich_postgres_limits_memory: "1Gi"
+  # Used only for one-time CNPG import from a legacy StatefulSet-backed PostgreSQL.
+  immich_postgres_source_user: "immich"
+  immich_postgres_source_dbname: "immich"
 
   immich_redis_storage_class_name: "longhorn-rwo-1r"
   immich_redis_size: "5Gi"
