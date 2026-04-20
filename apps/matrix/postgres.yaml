@@ -1,8 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: synapsedb
+  name: synapsedb-source
   namespace: matrix
+  annotations:
+    lukasf.io/migration-temporary: "true"
 spec:
   selector:
     app.kubernetes.io/name: synapsedb
@@ -11,84 +13,72 @@ spec:
       port: 5432
       targetPort: 5432
 ---
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: v1
+kind: Service
 metadata:
   name: synapsedb
   namespace: matrix
 spec:
-  serviceName: synapsedb
-  replicas: 1
+  # Keep the historical service name stable for app-side config.
   selector:
-    matchLabels:
-      app.kubernetes.io/name: synapsedb
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: synapsedb
-    spec:
-      containers:
-        - name: postgres
-          image: postgres:16-alpine
-          ports:
-            - name: postgres
-              containerPort: 5432
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: SYNAPSE_DB_USER
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: SYNAPSE_DB_PASSWORD
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: SYNAPSE_DB_NAME
-            - name: POSTGRES_INITDB_ARGS
-              value: "--encoding=UTF8 --locale=C"
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          resources:
-            requests:
-              cpu: ${matrix_postgres_requests_cpu}
-              memory: ${matrix_postgres_requests_memory}
-            limits:
-              cpu: ${matrix_postgres_limits_cpu}
-              memory: ${matrix_postgres_limits_memory}
-          readinessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 20
-            periodSeconds: 20
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: ${matrix_postgres_storage_class_name}
-        resources:
-          requests:
-            storage: ${matrix_postgres_size}
+    cnpg.io/cluster: synapsedb
+    cnpg.io/instanceRole: primary
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: synapsedb
+  namespace: matrix
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: ${matrix_synapse_postgres_source_dbname:=synapse}
+      owner: ${matrix_synapse_postgres_source_user:=synapse}
+      import:
+        type: microservice
+        databases:
+          - ${matrix_synapse_postgres_source_dbname:=synapse}
+        source:
+          externalCluster: synapsedb-source
+  externalClusters:
+    - name: synapsedb-source
+      connectionParameters:
+        host: synapsedb-source
+        user: ${matrix_synapse_postgres_source_user:=synapse}
+        dbname: ${matrix_synapse_postgres_source_dbname:=synapse}
+      password:
+        name: matrix-db
+        key: SYNAPSE_DB_PASSWORD
+  storage:
+    storageClass: ${matrix_postgres_storage_class_name}
+    size: ${matrix_postgres_size}
+  resources:
+    requests:
+      cpu: ${matrix_postgres_requests_cpu}
+      memory: ${matrix_postgres_requests_memory}
+    limits:
+      cpu: ${matrix_postgres_limits_cpu}
+      memory: ${matrix_postgres_limits_memory}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: whatsappdb
+  name: whatsappdb-source
   namespace: matrix
+  annotations:
+    lukasf.io/migration-temporary: "true"
 spec:
   selector:
     app.kubernetes.io/name: whatsappdb
@@ -97,84 +87,71 @@ spec:
       port: 5432
       targetPort: 5432
 ---
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: v1
+kind: Service
 metadata:
   name: whatsappdb
   namespace: matrix
 spec:
-  serviceName: whatsappdb
-  replicas: 1
   selector:
-    matchLabels:
-      app.kubernetes.io/name: whatsappdb
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: whatsappdb
-    spec:
-      containers:
-        - name: postgres
-          image: postgres:16-alpine
-          ports:
-            - name: postgres
-              containerPort: 5432
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: WHATSAPP_DB_USER
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: WHATSAPP_DB_PASSWORD
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: WHATSAPP_DB_NAME
-            - name: POSTGRES_INITDB_ARGS
-              value: "--encoding=UTF8 --locale=C"
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          resources:
-            requests:
-              cpu: ${matrix_postgres_requests_cpu}
-              memory: ${matrix_postgres_requests_memory}
-            limits:
-              cpu: ${matrix_postgres_limits_cpu}
-              memory: ${matrix_postgres_limits_memory}
-          readinessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 20
-            periodSeconds: 20
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: ${matrix_postgres_storage_class_name}
-        resources:
-          requests:
-            storage: ${matrix_postgres_size}
+    cnpg.io/cluster: whatsappdb
+    cnpg.io/instanceRole: primary
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: whatsappdb
+  namespace: matrix
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: ${matrix_whatsapp_postgres_source_dbname:=mautrixwhatsapp}
+      owner: ${matrix_whatsapp_postgres_source_user:=mautrixwhatsapp}
+      import:
+        type: microservice
+        databases:
+          - ${matrix_whatsapp_postgres_source_dbname:=mautrixwhatsapp}
+        source:
+          externalCluster: whatsappdb-source
+  externalClusters:
+    - name: whatsappdb-source
+      connectionParameters:
+        host: whatsappdb-source
+        user: ${matrix_whatsapp_postgres_source_user:=mautrixwhatsapp}
+        dbname: ${matrix_whatsapp_postgres_source_dbname:=mautrixwhatsapp}
+      password:
+        name: matrix-db
+        key: WHATSAPP_DB_PASSWORD
+  storage:
+    storageClass: ${matrix_postgres_storage_class_name}
+    size: ${matrix_postgres_size}
+  resources:
+    requests:
+      cpu: ${matrix_postgres_requests_cpu}
+      memory: ${matrix_postgres_requests_memory}
+    limits:
+      cpu: ${matrix_postgres_limits_cpu}
+      memory: ${matrix_postgres_limits_memory}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: wadb
+  name: wadb-source
   namespace: matrix
+  annotations:
+    lukasf.io/migration-temporary: "true"
 spec:
   selector:
     app.kubernetes.io/name: wadb
@@ -183,84 +160,71 @@ spec:
       port: 5432
       targetPort: 5432
 ---
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: v1
+kind: Service
 metadata:
   name: wadb
   namespace: matrix
 spec:
-  serviceName: wadb
-  replicas: 1
   selector:
-    matchLabels:
-      app.kubernetes.io/name: wadb
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: wadb
-    spec:
-      containers:
-        - name: postgres
-          image: postgres:16-alpine
-          ports:
-            - name: postgres
-              containerPort: 5432
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: WA_DB_USER
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: WA_DB_PASSWORD
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: WA_DB_NAME
-            - name: POSTGRES_INITDB_ARGS
-              value: "--encoding=UTF8 --locale=C"
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          resources:
-            requests:
-              cpu: ${matrix_postgres_requests_cpu}
-              memory: ${matrix_postgres_requests_memory}
-            limits:
-              cpu: ${matrix_postgres_limits_cpu}
-              memory: ${matrix_postgres_limits_memory}
-          readinessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 20
-            periodSeconds: 20
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: ${matrix_postgres_storage_class_name}
-        resources:
-          requests:
-            storage: ${matrix_postgres_size}
+    cnpg.io/cluster: wadb
+    cnpg.io/instanceRole: primary
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: wadb
+  namespace: matrix
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: ${matrix_wa_postgres_source_dbname:=mautrixwhatsapp}
+      owner: ${matrix_wa_postgres_source_user:=mautrixwhatsapp}
+      import:
+        type: microservice
+        databases:
+          - ${matrix_wa_postgres_source_dbname:=mautrixwhatsapp}
+        source:
+          externalCluster: wadb-source
+  externalClusters:
+    - name: wadb-source
+      connectionParameters:
+        host: wadb-source
+        user: ${matrix_wa_postgres_source_user:=mautrixwhatsapp}
+        dbname: ${matrix_wa_postgres_source_dbname:=mautrixwhatsapp}
+      password:
+        name: matrix-db
+        key: WA_DB_PASSWORD
+  storage:
+    storageClass: ${matrix_postgres_storage_class_name}
+    size: ${matrix_postgres_size}
+  resources:
+    requests:
+      cpu: ${matrix_postgres_requests_cpu}
+      memory: ${matrix_postgres_requests_memory}
+    limits:
+      cpu: ${matrix_postgres_limits_cpu}
+      memory: ${matrix_postgres_limits_memory}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: telegramdb
+  name: telegramdb-source
   namespace: matrix
+  annotations:
+    lukasf.io/migration-temporary: "true"
 spec:
   selector:
     app.kubernetes.io/name: telegramdb
@@ -269,84 +233,71 @@ spec:
       port: 5432
       targetPort: 5432
 ---
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: v1
+kind: Service
 metadata:
   name: telegramdb
   namespace: matrix
 spec:
-  serviceName: telegramdb
-  replicas: 1
   selector:
-    matchLabels:
-      app.kubernetes.io/name: telegramdb
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: telegramdb
-    spec:
-      containers:
-        - name: postgres
-          image: postgres:16-alpine
-          ports:
-            - name: postgres
-              containerPort: 5432
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: TELEGRAM_DB_USER
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: TELEGRAM_DB_PASSWORD
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: TELEGRAM_DB_NAME
-            - name: POSTGRES_INITDB_ARGS
-              value: "--encoding=UTF8 --locale=C"
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          resources:
-            requests:
-              cpu: ${matrix_postgres_requests_cpu}
-              memory: ${matrix_postgres_requests_memory}
-            limits:
-              cpu: ${matrix_postgres_limits_cpu}
-              memory: ${matrix_postgres_limits_memory}
-          readinessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 20
-            periodSeconds: 20
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: ${matrix_postgres_storage_class_name}
-        resources:
-          requests:
-            storage: ${matrix_postgres_size}
+    cnpg.io/cluster: telegramdb
+    cnpg.io/instanceRole: primary
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: telegramdb
+  namespace: matrix
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: ${matrix_telegram_postgres_source_dbname:=mautrixtelegram}
+      owner: ${matrix_telegram_postgres_source_user:=mautrixtelegram}
+      import:
+        type: microservice
+        databases:
+          - ${matrix_telegram_postgres_source_dbname:=mautrixtelegram}
+        source:
+          externalCluster: telegramdb-source
+  externalClusters:
+    - name: telegramdb-source
+      connectionParameters:
+        host: telegramdb-source
+        user: ${matrix_telegram_postgres_source_user:=mautrixtelegram}
+        dbname: ${matrix_telegram_postgres_source_dbname:=mautrixtelegram}
+      password:
+        name: matrix-db
+        key: TELEGRAM_DB_PASSWORD
+  storage:
+    storageClass: ${matrix_postgres_storage_class_name}
+    size: ${matrix_postgres_size}
+  resources:
+    requests:
+      cpu: ${matrix_postgres_requests_cpu}
+      memory: ${matrix_postgres_requests_memory}
+    limits:
+      cpu: ${matrix_postgres_limits_cpu}
+      memory: ${matrix_postgres_limits_memory}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: signaldbprivate
+  name: signaldbprivate-source
   namespace: matrix
+  annotations:
+    lukasf.io/migration-temporary: "true"
 spec:
   selector:
     app.kubernetes.io/name: signaldbprivate
@@ -355,75 +306,60 @@ spec:
       port: 5432
       targetPort: 5432
 ---
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: v1
+kind: Service
 metadata:
   name: signaldbprivate
   namespace: matrix
 spec:
-  serviceName: signaldbprivate
-  replicas: 1
   selector:
-    matchLabels:
-      app.kubernetes.io/name: signaldbprivate
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: signaldbprivate
-    spec:
-      containers:
-        - name: postgres
-          image: postgres:16-alpine
-          ports:
-            - name: postgres
-              containerPort: 5432
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: SIGNAL_DB_USER
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: SIGNAL_DB_PASSWORD
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: matrix-db
-                  key: SIGNAL_DB_NAME
-            - name: POSTGRES_INITDB_ARGS
-              value: "--encoding=UTF8 --locale=C"
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          resources:
-            requests:
-              cpu: ${matrix_postgres_requests_cpu}
-              memory: ${matrix_postgres_requests_memory}
-            limits:
-              cpu: ${matrix_postgres_limits_cpu}
-              memory: ${matrix_postgres_limits_memory}
-          readinessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 5432
-            initialDelaySeconds: 20
-            periodSeconds: 20
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: ${matrix_postgres_storage_class_name}
-        resources:
-          requests:
-            storage: ${matrix_postgres_size}
+    cnpg.io/cluster: signaldbprivate
+    cnpg.io/instanceRole: primary
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: signaldbprivate
+  namespace: matrix
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: ${matrix_signal_postgres_source_dbname:=mautrixsignal}
+      owner: ${matrix_signal_postgres_source_user:=mautrixsignal}
+      import:
+        type: microservice
+        databases:
+          - ${matrix_signal_postgres_source_dbname:=mautrixsignal}
+        source:
+          externalCluster: signaldbprivate-source
+  externalClusters:
+    - name: signaldbprivate-source
+      connectionParameters:
+        host: signaldbprivate-source
+        user: ${matrix_signal_postgres_source_user:=mautrixsignal}
+        dbname: ${matrix_signal_postgres_source_dbname:=mautrixsignal}
+      password:
+        name: matrix-db
+        key: SIGNAL_DB_PASSWORD
+  storage:
+    storageClass: ${matrix_postgres_storage_class_name}
+    size: ${matrix_postgres_size}
+  resources:
+    requests:
+      cpu: ${matrix_postgres_requests_cpu}
+      memory: ${matrix_postgres_requests_memory}
+    limits:
+      cpu: ${matrix_postgres_limits_cpu}
+      memory: ${matrix_postgres_limits_memory}
