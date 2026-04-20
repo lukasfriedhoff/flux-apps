@@ -46,12 +46,21 @@ spec:
     initdb:
       database: ${matrix_synapse_postgres_source_dbname:=synapse}
       owner: ${matrix_synapse_postgres_source_user:=synapse}
+      secret:
+        name: synapsedb-app
       import:
         type: microservice
         databases:
           - ${matrix_synapse_postgres_source_dbname:=synapse}
         source:
           externalCluster: synapsedb-source
+  managed:
+    roles:
+      - name: ${matrix_synapse_postgres_source_user:=synapse}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: synapsedb-app
   externalClusters:
     - name: synapsedb-source
       connectionParameters:
@@ -119,12 +128,21 @@ spec:
     initdb:
       database: ${matrix_whatsapp_postgres_source_dbname:=mautrixwhatsapp}
       owner: ${matrix_whatsapp_postgres_source_user:=mautrixwhatsapp}
+      secret:
+        name: whatsappdb-app
       import:
         type: microservice
         databases:
           - ${matrix_whatsapp_postgres_source_dbname:=mautrixwhatsapp}
         source:
           externalCluster: whatsappdb-source
+  managed:
+    roles:
+      - name: ${matrix_whatsapp_postgres_source_user:=mautrixwhatsapp}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: whatsappdb-app
   externalClusters:
     - name: whatsappdb-source
       connectionParameters:
@@ -192,12 +210,21 @@ spec:
     initdb:
       database: ${matrix_wa_postgres_source_dbname:=mautrixwhatsapp}
       owner: ${matrix_wa_postgres_source_user:=mautrixwhatsapp}
+      secret:
+        name: wadb-app
       import:
         type: microservice
         databases:
           - ${matrix_wa_postgres_source_dbname:=mautrixwhatsapp}
         source:
           externalCluster: wadb-source
+  managed:
+    roles:
+      - name: ${matrix_wa_postgres_source_user:=mautrixwhatsapp}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: wadb-app
   externalClusters:
     - name: wadb-source
       connectionParameters:
@@ -265,12 +292,21 @@ spec:
     initdb:
       database: ${matrix_telegram_postgres_source_dbname:=mautrixtelegram}
       owner: ${matrix_telegram_postgres_source_user:=mautrixtelegram}
+      secret:
+        name: telegramdb-app
       import:
         type: microservice
         databases:
           - ${matrix_telegram_postgres_source_dbname:=mautrixtelegram}
         source:
           externalCluster: telegramdb-source
+  managed:
+    roles:
+      - name: ${matrix_telegram_postgres_source_user:=mautrixtelegram}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: telegramdb-app
   externalClusters:
     - name: telegramdb-source
       connectionParameters:
@@ -338,12 +374,21 @@ spec:
     initdb:
       database: ${matrix_signal_postgres_source_dbname:=mautrixsignal}
       owner: ${matrix_signal_postgres_source_user:=mautrixsignal}
+      secret:
+        name: signaldbprivate-app
       import:
         type: microservice
         databases:
           - ${matrix_signal_postgres_source_dbname:=mautrixsignal}
         source:
           externalCluster: signaldbprivate-source
+  managed:
+    roles:
+      - name: ${matrix_signal_postgres_source_user:=mautrixsignal}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: signaldbprivate-app
   externalClusters:
     - name: signaldbprivate-source
       connectionParameters:

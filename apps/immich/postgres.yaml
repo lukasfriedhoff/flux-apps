@@ -46,12 +46,21 @@ spec:
     initdb:
       database: ${immich_postgres_source_dbname:=immich}
       owner: ${immich_postgres_source_user:=immich}
+      secret:
+        name: immich-postgres-app
       import:
         type: microservice
         databases:
           - ${immich_postgres_source_dbname:=immich}
         source:
           externalCluster: immich-postgres-source
+  managed:
+    roles:
+      - name: ${immich_postgres_source_user:=immich}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: immich-postgres-app
   externalClusters:
     - name: immich-postgres-source
       connectionParameters:
