@@ -14,9 +14,21 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          initContainers:
+            - name: install-mc
+              image: quay.io/minio/mc:latest
+              command:
+                - /bin/sh
+                - -ceu
+                - |
+                  cp /usr/bin/mc /tools/mc
+                  chmod +x /tools/mc
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
           containers:
             - name: backup
-              image: quay.io/minio/mc:latest
+              image: postgres:17-alpine
               env:
                 - name: SYNAPSE_DB_USER
                   valueFrom:
@@ -116,10 +128,8 @@ spec:
                 - /bin/sh
                 - -ceu
                 - |
-                  apk add --no-cache postgresql-client >/dev/null 2>&1
-
-                  mc alias set backup "$${AWS_ENDPOINTS}" "$${AWS_ACCESS_KEY_ID}" "$${AWS_SECRET_ACCESS_KEY}" >/dev/null
-                  mc mb --ignore-existing "backup/$${BUCKET}" >/dev/null 2>&1 || true
+                  /tools/mc alias set backup "$${AWS_ENDPOINTS}" "$${AWS_ACCESS_KEY_ID}" "$${AWS_SECRET_ACCESS_KEY}" >/dev/null
+                  /tools/mc mb --ignore-existing "backup/$${BUCKET}" >/dev/null 2>&1 || true
 
                   TIMESTAMP="$(date +%Y%m%dT%H%M%SZ)"
 
@@ -128,18 +138,24 @@ spec:
                     OBJECT="$${host}-$${TIMESTAMP}.dump"
                     echo "[pg-backup] dumping $${dbname} on $${host} -> $${BUCKET}/$${OBJECT}"
                     PGPASSWORD="$${password}" pg_dump -Fc -h "$${host}" -p 5432 -U "$${user}" -d "$${dbname}" \
-                      | mc pipe "backup/$${BUCKET}/$${OBJECT}"
+                      | /tools/mc pipe "backup/$${BUCKET}/$${OBJECT}"
                   }
 
-                  dump_db synapsedb     "$${SYNAPSE_DB_USER}"   "$${SYNAPSE_DB_PASSWORD}"   "$${SYNAPSE_DB_NAME}"
-                  dump_db whatsappdb    "$${WHATSAPP_DB_USER}"  "$${WHATSAPP_DB_PASSWORD}"  "$${WHATSAPP_DB_NAME}"
-                  dump_db wadb          "$${WA_DB_USER}"        "$${WA_DB_PASSWORD}"        "$${WA_DB_NAME}"
-                  dump_db telegramdb    "$${TELEGRAM_DB_USER}"  "$${TELEGRAM_DB_PASSWORD}"  "$${TELEGRAM_DB_NAME}"
-                  dump_db signaldbprivate "$${SIGNAL_DB_USER}"  "$${SIGNAL_DB_PASSWORD}"    "$${SIGNAL_DB_NAME}"
+                  dump_db synapsedb "$${SYNAPSE_DB_USER}" "$${SYNAPSE_DB_PASSWORD}" "$${SYNAPSE_DB_NAME}"
+                  dump_db whatsappdb "$${WHATSAPP_DB_USER}" "$${WHATSAPP_DB_PASSWORD}" "$${WHATSAPP_DB_NAME}"
+                  dump_db wadb "$${WA_DB_USER}" "$${WA_DB_PASSWORD}" "$${WA_DB_NAME}"
+                  dump_db telegramdb "$${TELEGRAM_DB_USER}" "$${TELEGRAM_DB_PASSWORD}" "$${TELEGRAM_DB_NAME}"
+                  dump_db signaldbprivate "$${SIGNAL_DB_USER}" "$${SIGNAL_DB_PASSWORD}" "$${SIGNAL_DB_NAME}"
 
                   echo "[pg-backup] all dumps complete"
 
                   echo "[pg-backup] pruning dumps older than $${RETAIN_DAYS} days"
-                  mc find "backup/$${BUCKET}" --name "*.dump" --older-than "$${RETAIN_DAYS}d" \
-                    | xargs -r -I{} mc rm {}
+                  /tools/mc find "backup/$${BUCKET}" --name "*.dump" --older-than "$${RETAIN_DAYS}d" \
+                    | xargs -r -I{} /tools/mc rm {}
                   echo "[pg-backup] done"
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
+          volumes:
+            - name: tools
+              emptyDir: {}
