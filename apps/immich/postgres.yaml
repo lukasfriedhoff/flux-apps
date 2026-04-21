@@ -4,7 +4,7 @@ metadata:
   name: immich-postgres
   namespace: immich
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.13-system-trixie
   instances: 1
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
