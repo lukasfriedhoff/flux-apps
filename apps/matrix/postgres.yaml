@@ -4,7 +4,7 @@ metadata:
   name: synapsedb
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.13-system-trixie
   instances: 1
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
@@ -58,7 +58,7 @@ metadata:
   name: whatsappdb
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.13-system-trixie
   instances: 1
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
@@ -112,7 +112,7 @@ metadata:
   name: wadb
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.13-system-trixie
   instances: 1
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
@@ -166,7 +166,7 @@ metadata:
   name: telegramdb
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.13-system-trixie
   instances: 1
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
@@ -220,7 +220,7 @@ metadata:
   name: signaldbprivate
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.13-system-trixie
   instances: 1
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
