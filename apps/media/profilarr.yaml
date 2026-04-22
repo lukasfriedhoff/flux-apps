@@ -52,6 +52,10 @@ spec:
                   fi
                 fi
 
+                # The init container runs as root while the repo is owned by PUID/PGID.
+                # Mark it as safe to avoid "detected dubious ownership" errors.
+                git config --global --add safe.directory "$repo_dir"
+
                 git -C "$repo_dir" config user.name "${GIT_USER_NAME:-Profilarr}"
                 git -C "$repo_dir" config user.email "${GIT_USER_EMAIL:-profilarr@local}"
 
