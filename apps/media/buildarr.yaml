@@ -27,7 +27,7 @@ spec:
         type: cronjob
         cronjob:
           schedule: "0 3 * * *"
-          suspend: true
+          suspend: false
           concurrencyPolicy: Forbid
           backoffLimit: 1
           successfulJobsHistory: 1

@@ -220,11 +220,11 @@ data:
 
       idx_json="$(
         prowlarr_get /api/v1/indexer \
-          | jq -c 'map(select(.implementation == "Cardigann" and any(.fields[]?; .name == "definitionFile" and ((.value // "") | ascii_downcase) == "flood")))[0]'
+          | jq -c 'map(select(.implementation == "Cardigann" and ((.fields // []) | map(select(.name == "definitionFile" and ((.value // "") | test("(?i)^flood$")))) | length > 0)))[0]'
       )"
 
       if [ "$idx_json" = "null" ]; then
-        idx_json="$(prowlarr_get /api/v1/indexer/schema | jq -c 'map(select(.implementation == "Cardigann" and ((.name // "") | ascii_downcase) == "flood"))[0]')"
+        idx_json="$(prowlarr_get /api/v1/indexer/schema | jq -c 'map(select(.implementation == "Cardigann" and (((.name // "") | test("(?i)^flood$")) or ((.implementationName // "") | test("(?i)^flood$")))))[0]')"
         if [ "$idx_json" = "null" ]; then
           log "No schema found for Flood Cardigann indexer; skipping."
           return 0
@@ -576,23 +576,23 @@ data:
 
       cf_payload="$(jq -n -c \
         --arg name "$dual_cf_name" \
-        --argjson lang "$lang_schema" \
-        --argjson title "$title_schema" '
+        --arg lang "$lang_schema" \
+        --arg title "$title_schema" '
           {
             name: $name,
             includeCustomFormatWhenRenaming: false,
             specifications: [
-              ($lang | {implementation, implementationName, infoLink, negate, required, fields}
+              (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = 4
                 | (.fields[]? | select(.name == "exceptLanguage")).value = false
               ),
-              ($lang | {implementation, implementationName, infoLink, negate, required, fields}
+              (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = 1
                 | (.fields[]? | select(.name == "exceptLanguage")).value = false
               ),
-              ($title | {implementation, implementationName, infoLink, negate, required, fields}
+              (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|MULTI)\\b"
               )
@@ -611,7 +611,7 @@ data:
         log "Created Sonarr custom format $dual_cf_name."
       else
         cf_id="$(printf '%s' "$cf_json" | jq -r '.id')"
-        cf_payload="$(printf '%s' "$cf_payload" | jq -c --argjson id "$cf_id" '.id = $id')"
+        cf_payload="$(printf '%s' "$cf_payload" | jq -c --arg id "$cf_id" '.id = ($id | tonumber)')"
         sonarr_put "/api/v3/customformat/$cf_id" "$cf_payload" >/dev/null
         log "Updated Sonarr custom format $dual_cf_name."
       fi
@@ -622,10 +622,10 @@ data:
         return 0
       fi
       qp_id="$(printf '%s' "$qp_json" | jq -r '.id')"
-      qp_payload="$(printf '%s' "$qp_json" | jq -c --argjson cfId "$cf_id" --arg cfName "$dual_cf_name" '
+      qp_payload="$(printf '%s' "$qp_json" | jq -c --arg cfId "$cf_id" --arg cfName "$dual_cf_name" '
         .minFormatScore = 100
         | .minUpgradeFormatScore = 100
-        | .formatItems = (((.formatItems // []) | map(select(.format != $cfId))) + [{format: $cfId, name: $cfName, score: 100}])
+        | .formatItems = (((.formatItems // []) | map(select(.format != ($cfId | tonumber)))) + [{format: ($cfId | tonumber), name: $cfName, score: 100}])
       ')"
       sonarr_put "/api/v3/qualityprofile/$qp_id" "$qp_payload" >/dev/null
       log "Applied Sonarr dual-audio gate to quality profile $(printf '%s' "$qp_json" | jq -r '.name')."
@@ -782,23 +782,23 @@ data:
 
       cf_payload="$(jq -n -c \
         --arg name "$dual_cf_name" \
-        --argjson lang "$lang_schema" \
-        --argjson title "$title_schema" '
+        --arg lang "$lang_schema" \
+        --arg title "$title_schema" '
           {
             name: $name,
             includeCustomFormatWhenRenaming: false,
             specifications: [
-              ($lang | {implementation, implementationName, infoLink, negate, required, fields}
+              (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = 4
                 | (.fields[]? | select(.name == "exceptLanguage")).value = false
               ),
-              ($lang | {implementation, implementationName, infoLink, negate, required, fields}
+              (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = 1
                 | (.fields[]? | select(.name == "exceptLanguage")).value = false
               ),
-              ($title | {implementation, implementationName, infoLink, negate, required, fields}
+              (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|MULTI)\\b"
               )
@@ -817,7 +817,7 @@ data:
         log "Created Radarr custom format $dual_cf_name."
       else
         cf_id="$(printf '%s' "$cf_json" | jq -r '.id')"
-        cf_payload="$(printf '%s' "$cf_payload" | jq -c --argjson id "$cf_id" '.id = $id')"
+        cf_payload="$(printf '%s' "$cf_payload" | jq -c --arg id "$cf_id" '.id = ($id | tonumber)')"
         radarr_put "/api/v3/customformat/$cf_id" "$cf_payload" >/dev/null
         log "Updated Radarr custom format $dual_cf_name."
       fi
@@ -828,11 +828,11 @@ data:
         return 0
       fi
       qp_id="$(printf '%s' "$qp_json" | jq -r '.id')"
-      qp_payload="$(printf '%s' "$qp_json" | jq -c --argjson cfId "$cf_id" --arg cfName "$dual_cf_name" '
+      qp_payload="$(printf '%s' "$qp_json" | jq -c --arg cfId "$cf_id" --arg cfName "$dual_cf_name" '
         .language = {id: 4, name: "German"}
         | .minFormatScore = 100
         | .minUpgradeFormatScore = 100
-        | .formatItems = (((.formatItems // []) | map(select(.format != $cfId))) + [{format: $cfId, name: $cfName, score: 100}])
+        | .formatItems = (((.formatItems // []) | map(select(.format != ($cfId | tonumber)))) + [{format: ($cfId | tonumber), name: $cfName, score: 100}])
       ')"
       radarr_put "/api/v3/qualityprofile/$qp_id" "$qp_payload" >/dev/null
       log "Applied Radarr dual-audio gate to quality profile $(printf '%s' "$qp_json" | jq -r '.name')."
