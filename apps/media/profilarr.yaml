@@ -24,6 +24,51 @@ spec:
   values:
     controllers:
       main:
+        initContainers:
+          git-bootstrap:
+            image:
+              repository: alpine/git
+              tag: "2.49.1"
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -eu
+
+                repo_dir=/config/db
+                origin_dir=/config/repo-origin.git
+
+                mkdir -p "${repo_dir}"
+
+                if [ ! -d "${origin_dir}" ]; then
+                  git init --bare "${origin_dir}"
+                fi
+
+                if [ ! -d "${repo_dir}/.git" ]; then
+                  git init "${repo_dir}"
+                  mkdir -p "${repo_dir}/regex_patterns" "${repo_dir}/custom_formats" "${repo_dir}/profiles" "${repo_dir}/media_management"
+                  if [ ! -f "${repo_dir}/README.md" ]; then
+                    printf "# Profilarr Data Repository\n" > "${repo_dir}/README.md"
+                  fi
+                fi
+
+                git -C "${repo_dir}" config user.name "${GIT_USER_NAME:-Profilarr}"
+                git -C "${repo_dir}" config user.email "${GIT_USER_EMAIL:-profilarr@local}"
+
+                if ! git -C "${repo_dir}" remote get-url origin >/dev/null 2>&1; then
+                  git -C "${repo_dir}" remote add origin "${origin_dir}"
+                fi
+
+                if ! git -C "${repo_dir}" rev-parse --verify HEAD >/dev/null 2>&1; then
+                  git -C "${repo_dir}" add -A
+                  git -C "${repo_dir}" commit -m "Initialize Profilarr local repository"
+                  git -C "${repo_dir}" branch -M main
+                  git -C "${repo_dir}" push -u origin main
+                else
+                  git -C "${repo_dir}" fetch origin >/dev/null 2>&1 || true
+                fi
+
+                chown -R 1000:1000 "${repo_dir}" "${origin_dir}" || true
         containers:
           main:
             image:
