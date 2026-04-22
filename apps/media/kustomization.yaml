@@ -24,8 +24,4 @@ resources:
   - jellyfin-bootstrap.yaml
   - jellyfin-branding.yaml
   - flaresolverr.yaml
-  - buildarr-config.yaml
-  - buildarr.yaml
   - profilarr.yaml
-  - recyclarr-config.yaml
-  - recyclarr.yaml
