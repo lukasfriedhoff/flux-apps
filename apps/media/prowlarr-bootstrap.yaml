@@ -34,13 +34,13 @@ spec:
         containers:
           main:
             image:
-              repository: alpine
-              tag: "3.20"
+              repository: lscr.io/linuxserver/qbittorrent
+              tag: 5.1.4
             command:
               - /bin/sh
               - -c
             args:
-              - apk add --no-cache curl jq >/dev/null && /scripts/bootstrap.sh || { echo '[prowlarr-bootstrap] bootstrap failed; will retry next run.'; exit 0; }
+              - /scripts/bootstrap.sh || { echo '[prowlarr-bootstrap] bootstrap failed; will retry next run.'; exit 0; }
             env:
               PROWLARR_URL: http://prowlarr:9696
               LIDARR_URL: http://lidarr:8686
