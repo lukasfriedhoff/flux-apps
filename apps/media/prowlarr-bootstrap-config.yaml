@@ -16,6 +16,7 @@ data:
     READARR_URL="${READARR_URL:-http://readarr:8787}"
     MEDIA_PUID="${MEDIA_PUID:-1000}"
     MEDIA_PGID="${MEDIA_PGID:-1000}"
+    ENABLE_DUAL_AUDIO_POLICY="${ENABLE_DUAL_AUDIO_POLICY:-false}"
 
     log() {
       printf '[prowlarr-bootstrap] %s\n' "$*"
@@ -673,7 +674,9 @@ data:
       else
         ensure_sonarr_rootfolder || log "Failed to ensure Sonarr root folder; will retry."
         ensure_sonarr_qbittorrent || log "Failed to ensure Sonarr qBittorrent client; will retry."
-        ensure_sonarr_dual_audio_policy || log "Failed to apply Sonarr dual-audio policy; will retry."
+        if [ "$ENABLE_DUAL_AUDIO_POLICY" = "true" ]; then
+          ensure_sonarr_dual_audio_policy || log "Failed to apply Sonarr dual-audio policy; will retry."
+        fi
       fi
     else
       log "Sonarr API key missing; skipping Sonarr bootstrap."
@@ -845,7 +848,9 @@ data:
       else
         ensure_radarr_rootfolder || log "Failed to ensure Radarr root folder; will retry."
         ensure_radarr_qbittorrent || log "Failed to ensure Radarr qBittorrent client; will retry."
-        ensure_radarr_dual_audio_policy || log "Failed to apply Radarr dual-audio policy; will retry."
+        if [ "$ENABLE_DUAL_AUDIO_POLICY" = "true" ]; then
+          ensure_radarr_dual_audio_policy || log "Failed to apply Radarr dual-audio policy; will retry."
+        fi
       fi
     else
       log "Radarr API key missing; skipping Radarr bootstrap."
