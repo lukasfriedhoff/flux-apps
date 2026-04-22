@@ -33,7 +33,7 @@ spec:
           seed-config:
             image:
               repository: alpine
-              tag: 3.20
+              tag: "3.20"
             command:
               - /bin/sh
               - -c
@@ -99,11 +99,17 @@ spec:
                   secretKeyRef:
                     name: media-protonvpn
                     key: wireguard_allowed_ips
+              WIREGUARD_PERSISTENT_KEEPALIVE_INTERVAL: "25s"
               DNS_ADDRESS:
                 valueFrom:
                   secretKeyRef:
                     name: media-protonvpn
                     key: wireguard_dns
+              DOT: "off"
+              HEALTH_TARGET_ADDRESS: "1.1.1.1:443"
+              HEALTH_VPN_DURATION_INITIAL: "25s"
+              HEALTH_VPN_DURATION_ADDITION: "10s"
+              HEALTH_SUCCESS_WAIT_DURATION: "10s"
               FIREWALL_INPUT_PORTS: "8080,6881"
               FIREWALL_OUTBOUND_SUBNETS: "${k8s_pod_cidr},${k8s_service_cidr}"
             resources:
