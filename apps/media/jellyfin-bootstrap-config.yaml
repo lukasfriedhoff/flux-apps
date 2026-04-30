@@ -19,7 +19,7 @@ data:
     SECRET_PATH = pathlib.Path("/run/secrets/jellyfin-e2e-auth/api_key")
     KEY_NAME = "gitops-jellyfin-e2e"
     MAX_RETRIES = 20
-    JELLYFIN_BASE_URL = "http://jellyfin.media.svc.cluster.local:8096"
+    JELLYFIN_BASE_URL = "http://jellyfin:8096"
     LIBRARIES = [
       ("movies", "Movies", "/media/movies"),
       ("tvshows", "TV Shows", "/media/tv"),
