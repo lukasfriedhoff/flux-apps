@@ -23,11 +23,11 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 18080
               protocol: TCP
           env:
             - name: BIND_ADDRESS
-              value: 0.0.0.0:8080
+              value: 0.0.0.0:18080
             - name: FORWARDED_HEADER
               value: X-Forwarded-User
             - name: WEBRTC_PORT_RANGE
