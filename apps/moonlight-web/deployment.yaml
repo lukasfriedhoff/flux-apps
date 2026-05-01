@@ -28,8 +28,6 @@ spec:
           env:
             - name: BIND_ADDRESS
               value: 0.0.0.0:18080
-            - name: FORWARDED_HEADER
-              value: X-Forwarded-User
             - name: WEBRTC_PORT_RANGE
               value: ${moonlight_webrtc_port_range}
           readinessProbe:
