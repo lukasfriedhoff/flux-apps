@@ -584,16 +584,19 @@ data:
             includeCustomFormatWhenRenaming: false,
             specifications: [
               (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
+                | .name = "Language German"
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = 4
                 | (.fields[]? | select(.name == "exceptLanguage")).value = false
               ),
               (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
+                | .name = "Language English"
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = 1
                 | (.fields[]? | select(.name == "exceptLanguage")).value = false
               ),
               (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
+                | .name = "Dual Title Token"
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|MULTI)\\b"
               )
@@ -792,16 +795,19 @@ data:
             includeCustomFormatWhenRenaming: false,
             specifications: [
               (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
+                | .name = "Language German"
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = 4
                 | (.fields[]? | select(.name == "exceptLanguage")).value = false
               ),
               (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
+                | .name = "Language English"
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = 1
                 | (.fields[]? | select(.name == "exceptLanguage")).value = false
               ),
               (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
+                | .name = "Dual Title Token"
                 | .required = true
                 | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|MULTI)\\b"
               )
