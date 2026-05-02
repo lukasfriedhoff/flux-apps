@@ -13,7 +13,7 @@ spec:
       prometheus.io/path: "/metrics"
   storage:
     storageClass: ${default_sts_storage_class_name}
-    size: 10Gi
+    size: ${nextcloud_postgres_size}
   bootstrap:
     initdb:
       database: nextcloud
