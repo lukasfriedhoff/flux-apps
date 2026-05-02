@@ -46,6 +46,7 @@ spec:
               LIDARR_URL: http://lidarr:8686
               MEDIA_PUID: ${media_puid}
               MEDIA_PGID: ${media_pgid}
+              ENABLE_DUAL_AUDIO_POLICY: ${media_enable_dual_audio_policy:=false}
             resources:
               requests:
                 cpu: 25m
