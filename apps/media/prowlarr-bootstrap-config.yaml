@@ -8,15 +8,15 @@ data:
     #!/bin/sh
     set -eu
 
-    PROWLARR_URL="${PROWLARR_URL:-http://prowlarr:9696}"
-    PROWLARR_APP_URL="${PROWLARR_APP_URL:-http://prowlarr:9696}"
-    SONARR_URL="${SONARR_URL:-http://sonarr:8989}"
-    RADARR_URL="${RADARR_URL:-http://radarr:7878}"
-    LIDARR_URL="${LIDARR_URL:-http://lidarr:8686}"
-    READARR_URL="${READARR_URL:-http://readarr:8787}"
-    MEDIA_PUID="${MEDIA_PUID:-1000}"
-    MEDIA_PGID="${MEDIA_PGID:-1000}"
-    ENABLE_DUAL_AUDIO_POLICY="${ENABLE_DUAL_AUDIO_POLICY:-false}"
+    PROWLARR_URL="$${PROWLARR_URL:-http://prowlarr:9696}"
+    PROWLARR_APP_URL="$${PROWLARR_APP_URL:-http://prowlarr:9696}"
+    SONARR_URL="$${SONARR_URL:-http://sonarr:8989}"
+    RADARR_URL="$${RADARR_URL:-http://radarr:7878}"
+    LIDARR_URL="$${LIDARR_URL:-http://lidarr:8686}"
+    READARR_URL="$${READARR_URL:-http://readarr:8787}"
+    MEDIA_PUID="$${MEDIA_PUID:-1000}"
+    MEDIA_PGID="$${MEDIA_PGID:-1000}"
+    ENABLE_DUAL_AUDIO_POLICY="$${ENABLE_DUAL_AUDIO_POLICY:-false}"
 
     log() {
       printf '[prowlarr-bootstrap] %s\n' "$*"
@@ -38,13 +38,13 @@ data:
       tr -d '\r\n' < "$file"
     }
 
-    PROWLARR_API_KEY="${PROWLARR_API_KEY:-$(read_api_key /mnt/prowlarr/config.xml || true)}"
-    SONARR_API_KEY="${SONARR_API_KEY:-$(read_api_key /mnt/sonarr/config.xml || true)}"
-    RADARR_API_KEY="${RADARR_API_KEY:-$(read_api_key /mnt/radarr/config.xml || true)}"
-    LIDARR_API_KEY="${LIDARR_API_KEY:-$(read_api_key /mnt/lidarr/config.xml || true)}"
-    READARR_API_KEY="${READARR_API_KEY:-$(read_api_key /mnt/readarr/config.xml || true)}"
-    TORRENTSYNDIKAT_API_KEY="${TORRENTSYNDIKAT_API_KEY:-$(read_secret_file /run/secrets/prowlarr-private-trackers/torrentsyndikat_api_key || true)}"
-    FLOOD_API_KEY="${FLOOD_API_KEY:-$(read_secret_file /run/secrets/prowlarr-private-trackers/flood_api_key || true)}"
+    PROWLARR_API_KEY="$${PROWLARR_API_KEY:-$$(read_api_key /mnt/prowlarr/config.xml || true)}"
+    SONARR_API_KEY="$${SONARR_API_KEY:-$$(read_api_key /mnt/sonarr/config.xml || true)}"
+    RADARR_API_KEY="$${RADARR_API_KEY:-$$(read_api_key /mnt/radarr/config.xml || true)}"
+    LIDARR_API_KEY="$${LIDARR_API_KEY:-$$(read_api_key /mnt/lidarr/config.xml || true)}"
+    READARR_API_KEY="$${READARR_API_KEY:-$$(read_api_key /mnt/readarr/config.xml || true)}"
+    TORRENTSYNDIKAT_API_KEY="$${TORRENTSYNDIKAT_API_KEY:-$$(read_secret_file /run/secrets/prowlarr-private-trackers/torrentsyndikat_api_key || true)}"
+    FLOOD_API_KEY="$${FLOOD_API_KEY:-$$(read_secret_file /run/secrets/prowlarr-private-trackers/flood_api_key || true)}"
 
     if [ -z "$PROWLARR_API_KEY" ]; then
       log "Prowlarr API key missing; skipping."
@@ -333,13 +333,13 @@ data:
     ensure_cardigann_indexer "Internet Archive" "Internet Archive" true || log "Failed to sync Internet Archive indexer; will retry."
 
     # Private tracker (optional).
-    if [ -n "${TORRENTSYNDIKAT_API_KEY:-}" ]; then
+    if [ -n "$${TORRENTSYNDIKAT_API_KEY:-}" ]; then
       ensure_indexer "TorrentSyndikat" "TorrentSyndikat" true "$TORRENTSYNDIKAT_API_KEY" || log "Failed to sync TorrentSyndikat indexer; will retry."
     else
       ensure_indexer "TorrentSyndikat" "TorrentSyndikat" false "" || log "Failed to disable TorrentSyndikat indexer; will retry."
     fi
 
-    if [ -n "${FLOOD_API_KEY:-}" ]; then
+    if [ -n "$${FLOOD_API_KEY:-}" ]; then
       ensure_flood_indexer "Flood.st" true "$FLOOD_API_KEY" || log "Failed to sync Flood.st indexer; will retry."
     else
       ensure_flood_indexer "Flood.st" false "" || log "Failed to disable Flood.st indexer; will retry."
