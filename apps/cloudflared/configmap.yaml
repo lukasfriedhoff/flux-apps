@@ -8,6 +8,8 @@ data:
     tunnel: ${cloudflare_tunnel_id}
     credentials-file: /etc/cloudflared/credentials.json
     ingress:
+      - hostname: nix-builder${public_host_suffix}.${delegating_domain}
+        service: ssh://${nix_remote_builder_service_name}.${nix_remote_builder_namespace}.svc.cluster.local:${nix_remote_builder_ssh_port}
       - hostname: "*.${delegating_domain}"
         service: https://traefik.traefik.svc.cluster.local:443
         originRequest:

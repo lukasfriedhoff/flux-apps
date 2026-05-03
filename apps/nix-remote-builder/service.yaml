@@ -7,7 +7,8 @@ metadata:
     app.kubernetes.io/name: nix-remote-builder
   annotations:
     external-dns.alpha.kubernetes.io/hostname: nix-builder${public_host_suffix}.${delegating_domain}
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   type: LoadBalancer
   selector:
