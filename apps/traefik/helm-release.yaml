@@ -38,7 +38,8 @@ spec:
         protocol: TCP
     # No external LoadBalancer needed - cloudflared handles external traffic
     service:
-      type: ClusterIP
+      spec:
+        type: ClusterIP
     # Enable Kubernetes Ingress provider
     providers:
       kubernetesIngress:
