@@ -66,6 +66,8 @@ spec:
         authelia-oidc: {}
         authelia-oidc-matrix: {}
     pod:
+      kind: Deployment
+      replicas: 1
       annotations:
         reloader.stakater.com/auto: "true"
         prometheus.io/scrape: "true"
