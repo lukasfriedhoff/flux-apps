@@ -5,7 +5,7 @@ metadata:
   namespace: monitoring
 spec:
   interval: 10m0s
-  timeout: 15m0s
+  timeout: 30m0s
   chart:
     spec:
       chart: grafana
@@ -16,6 +16,8 @@ spec:
         namespace: monitoring
       interval: 10m0s
   values:
+    deploymentStrategy:
+      type: Recreate
     fullnameOverride: grafana
     admin:
       existingSecret: grafana-admin

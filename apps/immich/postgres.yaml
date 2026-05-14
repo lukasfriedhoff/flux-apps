@@ -18,11 +18,14 @@ spec:
       owner: ${immich_postgres_source_user:=immich}
       secret:
         name: immich-postgres-app
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
   managed:
     roles:
       - name: ${immich_postgres_source_user:=immich}
         ensure: present
         login: true
+        superuser: true
         passwordSecret:
           name: immich-postgres-app
   storage:

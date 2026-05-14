@@ -263,6 +263,8 @@ metadata:
   namespace: matrix
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: signaldprivate
@@ -271,6 +273,13 @@ spec:
       labels:
         app.kubernetes.io/name: signaldprivate
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: signalbridgeprivate
+              topologyKey: kubernetes.io/hostname
       securityContext:
         fsGroup: 1337
       containers:
