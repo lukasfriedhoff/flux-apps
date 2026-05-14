@@ -35,13 +35,26 @@ metadata:
 spec:
   schedule: '*/5 * * * *'
   concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       backoffLimit: 1
+      activeDeadlineSeconds: 240
+      ttlSecondsAfterFinished: 300
       template:
         spec:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                          - jellyseerr
+                  topologyKey: kubernetes.io/hostname
           serviceAccountName: jellyseerr-admin-sync
           restartPolicy: Never
           containers:

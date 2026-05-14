@@ -25,10 +25,23 @@ spec:
     controllers:
       main:
         type: cronjob
+        pod:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                          - jellyfin
+                  topologyKey: kubernetes.io/hostname
         cronjob:
           schedule: "*/5 * * * *"
           concurrencyPolicy: Forbid
           backoffLimit: 1
+          activeDeadlineSeconds: 240
+          ttlSecondsAfterFinished: 300
           successfulJobsHistory: 1
           failedJobsHistory: 3
         containers:
