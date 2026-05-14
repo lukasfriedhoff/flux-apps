@@ -18,6 +18,8 @@ metadata:
   namespace: matrix
 spec:
   replicas: ${matrix_synapse_replicas}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: synapse
