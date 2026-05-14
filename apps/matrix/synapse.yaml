@@ -20,6 +20,7 @@ spec:
   replicas: ${matrix_synapse_replicas}
   strategy:
     type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       app.kubernetes.io/name: synapse
