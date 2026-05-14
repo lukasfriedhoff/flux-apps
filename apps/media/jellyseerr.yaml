@@ -36,17 +36,17 @@ spec:
               tag: "3.20.0"
             env:
               JELLYSEERR_APP_TITLE: Jellyseerr
-              JELLYSEERR_APP_URL: https://jellyseerr${public_host_suffix}.${delegating_domain}
+              JELLYSEERR_APP_URL: ${jellyseerr_app_url}
               JELLYFIN_SERVER_NAME: Jellyfin
               JELLYFIN_SERVER_HOST: jellyfin
               JELLYFIN_SERVER_PORT: "8096"
               JELLYFIN_SERVER_USE_SSL: "false"
               JELLYFIN_HOSTNAME: http://jellyfin:8096
-              JELLYFIN_EXTERNAL_HOSTNAME: jellyfin${public_host_suffix}.${delegating_domain}
-              JELLYFIN_FORGOT_PASSWORD_URL: https://jellyfin${public_host_suffix}.${delegating_domain}/web/index.html#!/forgotpassword.html
+              JELLYFIN_EXTERNAL_HOSTNAME: ${jellyfin_external_hostname}
+              JELLYFIN_FORGOT_PASSWORD_URL: ${jellyfin_forgot_password_url}
               OIDC_PROVIDER_NAME: Authelia
               OIDC_PROVIDER_SLUG: authelia
-              OIDC_ISSUER_URL: https://auth${public_host_suffix}.${delegating_domain}
+              OIDC_ISSUER_URL: ${media_auth_issuer_url}
               OIDC_CLIENT_ID: jellyseerr
               OIDC_SCOPES: openid profile email groups
               RADARR_EXTERNAL_URL: https://radarr${public_host_suffix}.${delegating_domain}
@@ -78,9 +78,11 @@ spec:
                 chown -R 1000:1000 /app/config/logs
 
                 settings_file="/app/config/settings.json"
-                if [ ! -s "$settings_file" ]; then
-                  echo "[jellyseerr-bootstrap] settings.json missing, skipping."
-                  exit 0
+                settings_json='{}'
+                if [ -s "$settings_file" ]; then
+                  settings_json="$(cat "$settings_file")"
+                else
+                  echo "[jellyseerr-bootstrap] settings.json missing; bootstrapping from empty config."
                 fi
 
                 wait_for_arr() {
@@ -97,7 +99,6 @@ spec:
                   return 1
                 }
 
-                settings_json="$(cat "$settings_file")"
                 settings_json="$(
                   printf '%s' "$settings_json" \
                   | jq --arg appTitle "$${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "$${JELLYSEERR_APP_URL:-}" --arg jellyfinName "$${JELLYFIN_SERVER_NAME:-Jellyfin}" --arg jellyfinIP "$${JELLYFIN_SERVER_HOST:-jellyfin}" --arg jellyfinPort "$${JELLYFIN_SERVER_PORT:-8096}" --arg jellyfinHost "$${JELLYFIN_HOSTNAME:-http://jellyfin:8096}" --arg jellyfinExternal "$${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "$${JELLYFIN_FORGOT_PASSWORD_URL:-}" --arg oidcName "$${OIDC_PROVIDER_NAME:-Authelia}" --arg oidcSlug "$${OIDC_PROVIDER_SLUG:-authelia}" --arg oidcIssuer "$${OIDC_ISSUER_URL:-}" --arg oidcClientId "$${OIDC_CLIENT_ID:-jellyseerr}" --arg oidcScopes "$${OIDC_SCOPES:-openid profile email groups}" --argjson jellyfinUseSsl "$${JELLYFIN_SERVER_USE_SSL:-false}" '

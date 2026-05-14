@@ -49,6 +49,9 @@ spec:
             image:
               repository: python
               tag: 3.12.11-alpine
+            env:
+              JELLYFIN_BASE_URL: ${jellyfin_internal_base_url}
+              JELLYFIN_SERVER_NAME: ${jellyfin_server_name}
             command:
               - /bin/sh
               - -c

@@ -56,10 +56,13 @@ spec:
                   rm -rf "$tmp_dir"
                 fi
 
-                if [ -f "$config_seed" ] && [ ! -s "$config_target" ]; then
+                if [ -f "$config_seed" ]; then
                   mkdir -p "$(dirname "$config_target")"
-                  cp -f "$config_seed" "$config_target"
-                  chown "$PUID:$PGID" "$config_target"
+                  if [ ! -s "$config_target" ] || ! cmp -s "$config_seed" "$config_target"; then
+                    cp -f "$config_seed" "$config_target"
+                    chown "$PUID:$PGID" "$config_target"
+                    echo "SSO seed config synchronized"
+                  fi
                 fi
             env:
               PUID: ${media_puid}
