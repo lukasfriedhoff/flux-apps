@@ -25,10 +25,23 @@ spec:
     controllers:
       main:
         type: cronjob
+        pod:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                          - prowlarr
+                  topologyKey: kubernetes.io/hostname
         cronjob:
           schedule: "*/30 * * * *"
           concurrencyPolicy: Forbid
           backoffLimit: 1
+          activeDeadlineSeconds: 240
+          ttlSecondsAfterFinished: 300
           successfulJobsHistory: 1
           failedJobsHistory: 3
         containers:
@@ -47,6 +60,26 @@ spec:
               MEDIA_PUID: ${media_puid}
               MEDIA_PGID: ${media_pgid}
               ENABLE_DUAL_AUDIO_POLICY: ${media_enable_dual_audio_policy:=false}
+              SONARR_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${arr_api_keys_secret_name}
+                    key: sonarr_api_key
+              RADARR_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${arr_api_keys_secret_name}
+                    key: radarr_api_key
+              LIDARR_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${arr_api_keys_secret_name}
+                    key: lidarr_api_key
+              READARR_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${arr_api_keys_secret_name}
+                    key: readarr_api_key
             resources:
               requests:
                 cpu: 25m
@@ -69,30 +102,6 @@ spec:
         existingClaim: prowlarr
         globalMounts:
           - path: /mnt/prowlarr
-            readOnly: true
-      sonarr:
-        enabled: true
-        existingClaim: sonarr
-        globalMounts:
-          - path: /mnt/sonarr
-            readOnly: true
-      radarr:
-        enabled: true
-        existingClaim: radarr-config-rbd
-        globalMounts:
-          - path: /mnt/radarr
-            readOnly: true
-      lidarr:
-        enabled: true
-        existingClaim: lidarr
-        globalMounts:
-          - path: /mnt/lidarr
-            readOnly: true
-      readarr:
-        enabled: true
-        existingClaim: readarr
-        globalMounts:
-          - path: /mnt/readarr
             readOnly: true
       media-library:
         enabled: true
