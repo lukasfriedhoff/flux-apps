@@ -64,9 +64,15 @@ spec:
                     echo "SSO seed config synchronized"
                   fi
                 fi
+
+                if [ -s "$config_target" ] && [ -n "${OIDC_ISSUER_URL:-}" ]; then
+                  escaped_issuer=$(printf '%s' "$OIDC_ISSUER_URL" | sed 's/[\/&]/\\&/g')
+                  sed -i -E "s#<OidEndpoint>[^<]+</OidEndpoint>#<OidEndpoint>${escaped_issuer}</OidEndpoint>#" "$config_target"
+                fi
             env:
               PUID: ${media_puid}
               PGID: ${media_pgid}
+              OIDC_ISSUER_URL: ${media_auth_issuer_url}
         containers:
           main:
             image:
