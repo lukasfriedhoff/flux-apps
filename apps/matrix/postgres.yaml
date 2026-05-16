@@ -30,7 +30,7 @@ spec:
     size: ${matrix_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${backup_cluster_prefix}/synapsedb/"
+      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/synapsedb/"
       endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
@@ -84,7 +84,7 @@ spec:
     size: ${matrix_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${backup_cluster_prefix}/whatsappdb/"
+      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/whatsappdb/"
       endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
@@ -138,7 +138,7 @@ spec:
     size: ${matrix_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${backup_cluster_prefix}/wadb/"
+      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/wadb/"
       endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
@@ -192,7 +192,7 @@ spec:
     size: ${matrix_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${backup_cluster_prefix}/telegramdb/"
+      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/telegramdb/"
       endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
@@ -246,7 +246,7 @@ spec:
     size: ${matrix_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${backup_cluster_prefix}/signaldbprivate/"
+      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/signaldbprivate/"
       endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
