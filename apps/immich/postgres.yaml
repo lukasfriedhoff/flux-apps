@@ -33,7 +33,7 @@ spec:
     size: ${immich_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${immich_postgres_backup_bucket}/immich-postgres/"
+      destinationPath: "s3://${immich_postgres_backup_bucket}/${backup_cluster_prefix}/immich-postgres/"
       endpointURL: "${immich_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
