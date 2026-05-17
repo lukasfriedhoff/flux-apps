@@ -46,6 +46,9 @@ apps/authelia/tests/run-authelia-e2e.sh
 
 Optional environment overrides:
 
+- `PUBLIC_HOST_SUFFIX` (default: `-testing`; e.g. `-staging`)
+- `DELEGATING_DOMAIN` (default: `h4xx.io`)
+- `STATUS_HOST` (default derived from suffix, e.g. `testing.h4xx.io`)
 - `AUTHELIA_BASE` (default: `https://auth-testing.h4xx.io`)
 - `AUTHELIA_USER` (default: `testuser`)
 - `AUTHELIA_TARGET_URL` (default: `https://testing.h4xx.io/`)

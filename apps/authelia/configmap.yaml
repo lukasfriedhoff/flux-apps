@@ -130,11 +130,11 @@ data:
             - 'group:jellyfin-admins'
             - 'group:jellyfin-users'
           policy: ${authelia_access_policy}
-        - domain: '*${public_host_suffix}.${delegating_domain}'
+        - domain_regex: '^.*${public_host_suffix}\\.${delegating_domain}$'
           subject:
             - 'user:wooden'
           policy: deny
-        - domain: '*${public_host_suffix}.${delegating_domain}'
+        - domain_regex: '^.*${public_host_suffix}\\.${delegating_domain}$'
           policy: ${authelia_access_policy}
 
     session:

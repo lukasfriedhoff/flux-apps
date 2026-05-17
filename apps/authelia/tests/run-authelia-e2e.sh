@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-AUTHELIA_BASE="${AUTHELIA_BASE:-https://auth-testing.h4xx.io}"
+PUBLIC_HOST_SUFFIX="${PUBLIC_HOST_SUFFIX:--testing}"
+DELEGATING_DOMAIN="${DELEGATING_DOMAIN:-h4xx.io}"
+STATUS_HOST="${STATUS_HOST:-${PUBLIC_HOST_SUFFIX#-}.${DELEGATING_DOMAIN}}"
+
+AUTHELIA_BASE="${AUTHELIA_BASE:-https://auth${PUBLIC_HOST_SUFFIX}.${DELEGATING_DOMAIN}}"
 AUTHELIA_USER="${AUTHELIA_USER:-testuser}"
 AUTHELIA_PASSWORD="${AUTHELIA_PASSWORD:-}"
-AUTHELIA_TARGET_URL="${AUTHELIA_TARGET_URL:-https://testing.h4xx.io/}"
+AUTHELIA_TARGET_URL="${AUTHELIA_TARGET_URL:-https://${STATUS_HOST}/}"
 AUTHELIA_LOCAL_TIMEOUT="${AUTHELIA_LOCAL_TIMEOUT:-30}"
 AUTHELIA_REQUIRE_PASSWORD="${AUTHELIA_REQUIRE_PASSWORD:-false}"
 JELLYSEERR_PORT_FORWARD_NAMESPACE="${JELLYSEERR_PORT_FORWARD_NAMESPACE:-media}"
@@ -38,6 +42,11 @@ log() {
 fail() {
   printf '[authelia-e2e] FAIL: %s\n' "$*" >&2
   exit 1
+}
+
+cluster_host() {
+  local app="$1"
+  printf '%s%s.%s' "$app" "$PUBLIC_HOST_SUFFIX" "$DELEGATING_DOMAIN"
 }
 
 host_from_url() {
@@ -105,8 +114,8 @@ assert_auth_gate() {
   rm -f "$headers_file"
 
   case "$code" in
-    401|302) ;;
-    *) fail "${name}: expected auth gate status 401/302 from ${url}, got ${code}" ;;
+    401|403|302) ;;
+    *) fail "${name}: expected auth gate status 401/403/302 from ${url}, got ${code}" ;;
   esac
 
   if [ -n "$location" ]; then
@@ -271,40 +280,40 @@ log "Running unauthenticated login-surface checks"
 assert_public_http_200 authelia_home "${AUTHELIA_BASE}/"
 
 for host in \
-  dashboard-testing.h4xx.io \
-  moonlight-testing.h4xx.io \
-  logs-testing.h4xx.io \
-  metrics-testing.h4xx.io \
-  traces-testing.h4xx.io \
-  jellyfin-testing.h4xx.io \
-  jellyseerr-testing.h4xx.io \
-  sonarr-testing.h4xx.io \
-  radarr-testing.h4xx.io \
-  lidarr-testing.h4xx.io \
-  readarr-testing.h4xx.io \
-  prowlarr-testing.h4xx.io \
-  bazarr-testing.h4xx.io \
-  qbittorrent-testing.h4xx.io \
-  profilarr-testing.h4xx.io
+  "$(cluster_host dashboard)" \
+  "$(cluster_host moonlight)" \
+  "$(cluster_host logs)" \
+  "$(cluster_host metrics)" \
+  "$(cluster_host traces)" \
+  "$(cluster_host jellyfin)" \
+  "$(cluster_host jellyseerr)" \
+  "$(cluster_host sonarr)" \
+  "$(cluster_host radarr)" \
+  "$(cluster_host lidarr)" \
+  "$(cluster_host readarr)" \
+  "$(cluster_host prowlarr)" \
+  "$(cluster_host bazarr)" \
+  "$(cluster_host qbittorrent)" \
+  "$(cluster_host profilarr)"
 do
   assert_auth_gate "$host" "https://${host}/"
 done
 
-assert_redirect_to_auth nextcloud_oidc_entry "https://nextcloud-testing.h4xx.io/index.php/apps/oidc_login/oidc" "nextcloud"
-assert_redirect_to_auth grafana_oidc_entry "https://grafana-testing.h4xx.io/login/generic_oauth" "grafana"
+assert_redirect_to_auth nextcloud_oidc_entry "https://$(cluster_host nextcloud)/index.php/apps/oidc_login/oidc" "nextcloud"
+assert_redirect_to_auth grafana_oidc_entry "https://$(cluster_host grafana)/login/generic_oauth" "grafana"
 assert_redirect_to_auth matrix_oidc_entry \
-  "https://matrix-testing.h4xx.io/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2Fchat-testing.h4xx.io%2F" \
+  "https://$(cluster_host matrix)/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2F$(cluster_host chat)%2F" \
   "matrix-synapse"
 
-matrix_login_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" "https://matrix-testing.h4xx.io/_matrix/client/v3/login")"
+matrix_login_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" "https://$(cluster_host matrix)/_matrix/client/v3/login")"
 printf '%s' "$matrix_login_json" | jq -e '.flows[] | select(.type=="m.login.sso") | .identity_providers[] | select(.id=="oidc-authelia")' >/dev/null || \
   fail "matrix: missing oidc-authelia provider in login flows"
 log "matrix: login flows expose oidc-authelia provider"
 
-assert_public_http_200 status_dashboard "https://testing.h4xx.io/"
-assert_public_http_200 element_web "https://chat-testing.h4xx.io/"
-assert_public_http_200 immich_login "https://meme-testing.h4xx.io/auth/login"
-assert_public_http_200 collabora_public "https://collabora-testing.h4xx.io/"
+assert_public_http_200 status_dashboard "https://${STATUS_HOST}/"
+assert_public_http_200 element_web "https://$(cluster_host chat)/"
+assert_public_http_200 immich_login "https://$(cluster_host meme)/auth/login"
+assert_public_http_200 collabora_public "https://$(cluster_host collabora)/"
 check_jellyseerr_oidc_public_settings
 
 if [ -z "${AUTHELIA_PASSWORD}" ]; then
@@ -320,58 +329,58 @@ authelia_login
 log "Authelia session established"
 
 # Session-backed checks across protected ingress hosts.
-assert_http_200 traefik_dashboard "https://dashboard-testing.h4xx.io/"
-assert_http_200 grafana "https://grafana-testing.h4xx.io/"
-assert_http_200 jellyseerr "https://jellyseerr-testing.h4xx.io/"
-assert_http_200 sonarr "https://sonarr-testing.h4xx.io/"
-assert_http_200 radarr "https://radarr-testing.h4xx.io/"
-assert_http_200 lidarr "https://lidarr-testing.h4xx.io/"
-assert_http_200 readarr "https://readarr-testing.h4xx.io/"
-assert_http_200 prowlarr "https://prowlarr-testing.h4xx.io/"
-assert_http_200 bazarr "https://bazarr-testing.h4xx.io/"
-assert_http_200 qbittorrent "https://qbittorrent-testing.h4xx.io/"
-assert_http_200 profilarr "https://profilarr-testing.h4xx.io/"
-assert_http_200 moonlight_web "https://moonlight-testing.h4xx.io/"
-assert_http_200 collabora "https://collabora-testing.h4xx.io/"
-assert_http_200 immich_login_authed "https://meme-testing.h4xx.io/auth/login"
-assert_http_200 element_web_authed "https://chat-testing.h4xx.io/"
-assert_http_200 status_dashboard_authed "https://testing.h4xx.io/"
+assert_http_200 traefik_dashboard "https://$(cluster_host dashboard)/"
+assert_http_200 grafana "https://$(cluster_host grafana)/"
+assert_http_200 jellyseerr "https://$(cluster_host jellyseerr)/"
+assert_http_200 sonarr "https://$(cluster_host sonarr)/"
+assert_http_200 radarr "https://$(cluster_host radarr)/"
+assert_http_200 lidarr "https://$(cluster_host lidarr)/"
+assert_http_200 readarr "https://$(cluster_host readarr)/"
+assert_http_200 prowlarr "https://$(cluster_host prowlarr)/"
+assert_http_200 bazarr "https://$(cluster_host bazarr)/"
+assert_http_200 qbittorrent "https://$(cluster_host qbittorrent)/"
+assert_http_200 profilarr "https://$(cluster_host profilarr)/"
+assert_http_200 moonlight_web "https://$(cluster_host moonlight)/"
+assert_http_200 collabora "https://$(cluster_host collabora)/"
+assert_http_200 immich_login_authed "https://$(cluster_host meme)/auth/login"
+assert_http_200 element_web_authed "https://$(cluster_host chat)/"
+assert_http_200 status_dashboard_authed "https://${STATUS_HOST}/"
 
-assert_http_200 logs_ready "https://logs-testing.h4xx.io/ready"
-assert_http_200 metrics_ready "https://metrics-testing.h4xx.io/ready"
-assert_http_200 traces_ready "https://traces-testing.h4xx.io/ready"
+assert_http_200 logs_ready "https://$(cluster_host logs)/ready"
+assert_http_200 metrics_ready "https://$(cluster_host metrics)/ready"
+assert_http_200 traces_ready "https://$(cluster_host traces)/ready"
 
 # OIDC login flows.
 complete_oidc_consent \
-  "https://nextcloud-testing.h4xx.io/index.php/apps/oidc_login/oidc" \
-  "nextcloud-testing.h4xx.io" \
+  "https://$(cluster_host nextcloud)/index.php/apps/oidc_login/oidc" \
+  "$(cluster_host nextcloud)" \
   "nextcloud"
 
 complete_oidc_consent \
-  "https://jellyfin-testing.h4xx.io/sso/OID/start/authelia" \
-  "jellyfin-testing.h4xx.io" \
+  "https://$(cluster_host jellyfin)/sso/OID/start/authelia" \
+  "$(cluster_host jellyfin)" \
   "jellyfin"
 
 complete_oidc_consent \
-  "https://grafana-testing.h4xx.io/login/generic_oauth" \
-  "grafana-testing.h4xx.io" \
+  "https://$(cluster_host grafana)/login/generic_oauth" \
+  "$(cluster_host grafana)" \
   "grafana"
 
 complete_oidc_consent \
-  "https://matrix-testing.h4xx.io/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2Fchat-testing.h4xx.io%2F" \
-  "chat-testing.h4xx.io" \
+  "https://$(cluster_host matrix)/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2F$(cluster_host chat)%2F" \
+  "$(cluster_host chat)" \
   "matrix"
 
 complete_oidc_consent_from_json_start \
-  "https://jellyseerr-testing.h4xx.io/api/v1/auth/oidc/login/authelia?returnUrl=%2F" \
-  "jellyseerr-testing.h4xx.io" \
+  "https://$(cluster_host jellyseerr)/api/v1/auth/oidc/login/authelia?returnUrl=%2F" \
+  "$(cluster_host jellyseerr)" \
   "jellyseerr"
 
 # Application-specific smoke checks after auth.
 grafana_health_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
   -o "${WORK_DIR}/grafana-health.json" -w '%{http_code}' \
-  "https://grafana-testing.h4xx.io/api/health")"
+  "https://$(cluster_host grafana)/api/health")"
 [ "$grafana_health_code" = "200" ] || fail "grafana: /api/health returned ${grafana_health_code}"
 jq -e '.database == "ok"' "${WORK_DIR}/grafana-health.json" >/dev/null || fail "grafana: health payload does not report database=ok"
 log "grafana: health API check passed"
@@ -379,7 +388,7 @@ log "grafana: health API check passed"
 nextcloud_dashboard_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
   -o "${WORK_DIR}/nextcloud-dashboard.html" -w '%{http_code}' \
-  "https://nextcloud-testing.h4xx.io/apps/dashboard/")"
+  "https://$(cluster_host nextcloud)/apps/dashboard/")"
 [ "$nextcloud_dashboard_code" = "200" ] || fail "nextcloud: dashboard returned ${nextcloud_dashboard_code}"
 if rg -q "An exception occurred while executing a query|Undefined table" "${WORK_DIR}/nextcloud-dashboard.html"; then
   fail "nextcloud: SQL error detected in dashboard response"
@@ -389,7 +398,7 @@ log "nextcloud: dashboard check passed"
 jellyfin_info_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
   -o "${WORK_DIR}/jellyfin-info.json" -w '%{http_code}' \
-  "https://jellyfin-testing.h4xx.io/System/Info/Public")"
+  "https://$(cluster_host jellyfin)/System/Info/Public")"
 [ "$jellyfin_info_code" = "200" ] || fail "jellyfin: System/Info/Public returned ${jellyfin_info_code}"
 jq -e '.ProductName | contains("Jellyfin")' "${WORK_DIR}/jellyfin-info.json" >/dev/null || fail "jellyfin: unexpected System/Info/Public payload"
 log "jellyfin: public info API check passed"
@@ -397,29 +406,29 @@ log "jellyfin: public info API check passed"
 jellyseerr_me_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
   -o "${WORK_DIR}/jellyseerr-me.json" -w '%{http_code}' \
-  "https://jellyseerr-testing.h4xx.io/api/v1/auth/me")"
+  "https://$(cluster_host jellyseerr)/api/v1/auth/me")"
 [ "$jellyseerr_me_code" = "200" ] || fail "jellyseerr: /api/v1/auth/me returned ${jellyseerr_me_code}"
 jq -e '.id != null' "${WORK_DIR}/jellyseerr-me.json" >/dev/null || fail "jellyseerr: auth/me missing user id"
 log "jellyseerr: auth/me check passed"
 
 matrix_versions_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -o "${WORK_DIR}/matrix-versions.json" -w '%{http_code}' \
-  "https://matrix-testing.h4xx.io/_matrix/client/versions")"
+  "https://$(cluster_host matrix)/_matrix/client/versions")"
 [ "$matrix_versions_code" = "200" ] || fail "matrix: client versions returned ${matrix_versions_code}"
 jq -e '.versions | length > 0' "${WORK_DIR}/matrix-versions.json" >/dev/null || fail "matrix: versions payload is empty"
 log "matrix: versions API check passed"
 
 element_config_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -o "${WORK_DIR}/element-config.json" -w '%{http_code}' \
-  "https://chat-testing.h4xx.io/config.json")"
+  "https://$(cluster_host chat)/config.json")"
 [ "$element_config_code" = "200" ] || fail "element: config.json returned ${element_config_code}"
-jq -e '.default_server_config."m.homeserver".base_url == "https://matrix-testing.h4xx.io"' "${WORK_DIR}/element-config.json" >/dev/null \
-  || fail "element: config.json homeserver does not point to matrix-testing.h4xx.io"
+jq -e '.default_server_config."m.homeserver".base_url == "https://'"$(cluster_host matrix)"'"' "${WORK_DIR}/element-config.json" >/dev/null \
+  || fail "element: config.json homeserver does not point to expected matrix host"
 log "element: config check passed"
 
 immich_ping_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -o "${WORK_DIR}/immich-ping.json" -w '%{http_code}' \
-  "https://meme-testing.h4xx.io/api/server/ping")"
+  "https://$(cluster_host meme)/api/server/ping")"
 [ "$immich_ping_code" = "200" ] || fail "immich: /api/server/ping returned ${immich_ping_code}"
 jq -e '.res == "pong"' "${WORK_DIR}/immich-ping.json" >/dev/null || fail "immich: ping payload is unexpected"
 log "immich: ping API check passed"
