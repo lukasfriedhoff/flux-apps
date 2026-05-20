@@ -255,6 +255,37 @@ spec:
           occ_safe() {
             timeout 60 php /var/www/html/occ "$@" || true
           }
+          quarantine_orphan_uuid_homes() {
+            data_dir="$(php /var/www/html/occ config:system:get datadirectory 2>/dev/null || true)"
+            if [ -z "$data_dir" ]; then
+              data_dir="/var/www/html/data"
+            fi
+            if [ ! -d "$data_dir" ]; then
+              return 0
+            fi
+            quarantine_dir="$data_dir/_orphaned_oidc"
+            mkdir -p "$quarantine_dir"
+            find "$data_dir" -mindepth 1 -maxdepth 1 -type d | while read -r user_dir; do
+              user_id="$(basename "$user_dir")"
+              case "$user_id" in
+                _orphaned_oidc|appdata_*|updater-*|files_external|avatars|audit|cache|preview|tmp|uploads)
+                  continue
+                  ;;
+              esac
+              if echo "$user_id" | grep -Eq '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then
+                if ! php /var/www/html/occ user:info "$user_id" >/dev/null 2>&1; then
+                  ts="$(date +%s)"
+                  target="$quarantine_dir/${user_id}-${ts}"
+                  echo "Quarantining orphan OIDC home directory '$user_id' to '$target'."
+                  mv "$user_dir" "$target" || true
+                fi
+              fi
+            done
+          }
+          disable_problematic_apps() {
+            # Circles can throw hard failures on group-assignment events and break OIDC callbacks.
+            occ_safe app:disable -n circles
+          }
           if [ ! -e /var/www/html/public ] && [ -d /var/www/html/lib/public ]; then
             ln -s lib/public /var/www/html/public
           fi
@@ -266,6 +297,8 @@ spec:
             echo "Disabling maintenance mode."
             occ_safe maintenance:mode --off
           fi
+          quarantine_orphan_uuid_homes
+          disable_problematic_apps
           ensure_app_enabled() {
             app="$1"
             occ_safe app:enable -n "$app"
