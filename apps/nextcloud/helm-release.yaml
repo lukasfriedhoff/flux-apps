@@ -275,9 +275,11 @@ spec:
               if echo "$user_id" | grep -Eq '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then
                 if ! php /var/www/html/occ user:info "$user_id" >/dev/null 2>&1; then
                   ts="$(date +%s)"
-                  target="$quarantine_dir/${user_id}-${ts}"
+                  target="$quarantine_dir/$user_id-$ts"
                   echo "Quarantining orphan OIDC home directory '$user_id' to '$target'."
-                  mv "$user_dir" "$target" || true
+                  if [ -d "$user_dir" ]; then
+                    mv "$user_dir" "$target" || true
+                  fi
                 fi
               fi
             done
