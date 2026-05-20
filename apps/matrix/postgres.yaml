@@ -30,7 +30,7 @@ spec:
     size: ${matrix_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/synapsedb/"
+      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_synapsedb_backup_path:=synapsedb}/"
       endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
       s3Credentials:
         accessKeyId:
@@ -274,7 +274,7 @@ metadata:
   name: synapsedb
   namespace: matrix
 spec:
-  schedule: "${matrix_postgres_backup_cron:=0 2 * * *}"
+  schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: true
   cluster:
@@ -286,7 +286,7 @@ metadata:
   name: whatsappdb
   namespace: matrix
 spec:
-  schedule: "${matrix_postgres_backup_cron:=0 2 * * *}"
+  schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: true
   cluster:
@@ -298,7 +298,7 @@ metadata:
   name: wadb
   namespace: matrix
 spec:
-  schedule: "${matrix_postgres_backup_cron:=0 2 * * *}"
+  schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: true
   cluster:
@@ -310,7 +310,7 @@ metadata:
   name: telegramdb
   namespace: matrix
 spec:
-  schedule: "${matrix_postgres_backup_cron:=0 2 * * *}"
+  schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: true
   cluster:
@@ -322,7 +322,7 @@ metadata:
   name: signaldbprivate
   namespace: matrix
 spec:
-  schedule: "${matrix_postgres_backup_cron:=0 2 * * *}"
+  schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: true
   cluster:

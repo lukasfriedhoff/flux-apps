@@ -4,7 +4,7 @@ metadata:
   name: nextcloud-postgres
   namespace: nextcloud
 spec:
-  schedule: "0 3 * * *"
+  schedule: "${nextcloud_postgres_backup_cron:=0 0 3 * * *}"
   backupOwnerReference: self
   immediate: true
   cluster:

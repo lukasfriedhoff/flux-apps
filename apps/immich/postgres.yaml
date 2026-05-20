@@ -61,7 +61,7 @@ metadata:
   name: immich-postgres
   namespace: immich
 spec:
-  schedule: "${immich_postgres_backup_cron:=0 2 * * *}"
+  schedule: "${immich_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: true
   cluster:
