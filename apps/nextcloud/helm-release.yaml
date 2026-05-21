@@ -66,6 +66,12 @@ spec:
           value: ${trusted_proxies_cidr}
         - name: NEXTCLOUD_OIDC_PROVIDER
           value: ${nextcloud_oidc}
+        - name: NEXTCLOUD_EXTERNAL_PHOTOS_ENABLED
+          value: ${nextcloud_external_photos_enabled:=false}
+        - name: NEXTCLOUD_EXTERNAL_PHOTOS_URL
+          value: ${nextcloud_external_photos_url:=}
+        - name: NEXTCLOUD_EXTERNAL_PHOTOS_LABEL
+          value: ${nextcloud_external_photos_label:=Photos}
         - name: OIDC_LOGIN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
@@ -359,7 +365,100 @@ spec:
                 ;;
             esac
           }
+          configure_external_photos_link() {
+            enabled="$(printf '%s' "$${NEXTCLOUD_EXTERNAL_PHOTOS_ENABLED:-false}" | tr '[:upper:]' '[:lower:]')"
+            case "$enabled" in
+              true|1|yes|on)
+                ;;
+              *)
+                echo "External photos link disabled."
+                return 0
+                ;;
+            esac
+
+            url="$${NEXTCLOUD_EXTERNAL_PHOTOS_URL:-}"
+            label="$${NEXTCLOUD_EXTERNAL_PHOTOS_LABEL:-Photos}"
+            if [ -z "$url" ]; then
+              echo "External photos link enabled but NEXTCLOUD_EXTERNAL_PHOTOS_URL is empty; skipping."
+              return 0
+            fi
+
+            if ! enable_custom_app_if_present external /var/www/html/custom_apps/external/appinfo/info.xml; then
+              return 0
+            fi
+
+            existing_sites="$(timeout 30 php /var/www/html/occ config:app:get external sites 2>/dev/null || true)"
+            if [ -z "$existing_sites" ]; then
+              existing_sites='{}'
+            fi
+
+            merged_sites="$(
+              EXTERNAL_SITES_JSON="$existing_sites" \
+              EXTERNAL_SITE_NAME="$label" \
+              EXTERNAL_SITE_URL="$url" \
+              php -r '
+                $raw = getenv("EXTERNAL_SITES_JSON");
+                $name = getenv("EXTERNAL_SITE_NAME");
+                $url = getenv("EXTERNAL_SITE_URL");
+                $sites = json_decode($raw ?: "{}", true);
+                if (!is_array($sites)) {
+                  $sites = [];
+                }
+                $maxId = 0;
+                $targetId = null;
+                foreach ($sites as $id => $site) {
+                  if (is_numeric((string) $id)) {
+                    $maxId = max($maxId, (int) $id);
+                  }
+                  if (is_array($site) && (
+                    (isset($site["name"]) && $site["name"] === $name) ||
+                    (isset($site["url"]) && $site["url"] === $url)
+                  )) {
+                    $targetId = (string) $id;
+                  }
+                }
+                if ($targetId === null || $targetId === "") {
+                  $targetId = (string) ($maxId + 1);
+                }
+                $sites[$targetId] = [
+                  "id" => $targetId,
+                  "name" => $name,
+                  "url" => $url,
+                  "lang" => "",
+                  "type" => "link",
+                  "device" => "0",
+                  "icon" => "",
+                  "groups" => [],
+                  "redirect" => false,
+                ];
+                echo json_encode($sites, JSON_UNESCAPED_SLASHES);
+              '
+            )"
+
+            max_site="$(
+              MERGED_SITES_JSON="$merged_sites" \
+              php -r '
+                $raw = getenv("MERGED_SITES_JSON");
+                $sites = json_decode($raw ?: "{}", true);
+                if (!is_array($sites)) {
+                  echo "1";
+                  exit;
+                }
+                $max = 1;
+                foreach ($sites as $id => $_) {
+                  if (is_numeric((string) $id)) {
+                    $max = max($max, (int) $id);
+                  }
+                }
+                echo (string) $max;
+              '
+            )"
+
+            occ_safe config:app:set external sites --value="$merged_sites"
+            occ_safe config:app:set external max_site --value="$max_site"
+          }
           configure_oidc_login
+          configure_external_photos_link
           enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
           ensure_app_enabled serverinfo
           if enable_custom_app_if_present richdocuments /var/www/html/custom_apps/richdocuments/appinfo/info.xml; then
@@ -491,6 +590,11 @@ spec:
                 https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
                 014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912 \
                 oidc_login/appinfo/info.xml
+              fetch_app \
+                external \
+                https://github.com/nextcloud-releases/external/releases/download/v8.0.1/external-v8.0.1.tar.gz \
+                aaa517f17bb412e69f70cd6e3017b229b38b4d2a91fe38dbf334ead83a252129 \
+                external/appinfo/info.xml
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www/html/custom_apps

@@ -1,0 +1,68 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: immich-photos-postgres
+  namespace: immich-photos
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.13-system-trixie
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: ${immich_photos_postgres_source_dbname:=immich}
+      owner: ${immich_photos_postgres_source_user:=immich}
+      secret:
+        name: immich-photos-postgres-app
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
+  managed:
+    roles:
+      - name: ${immich_photos_postgres_source_user:=immich}
+        ensure: present
+        login: true
+        superuser: true
+        passwordSecret:
+          name: immich-photos-postgres-app
+  storage:
+    storageClass: ${immich_photos_postgres_storage_class_name}
+    size: ${immich_photos_postgres_size}
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${immich_photos_postgres_backup_bucket}/${cluster_environment}/immich-photos-postgres/"
+      endpointURL: "${immich_photos_postgres_backup_endpoint_url:=}"
+      s3Credentials:
+        accessKeyId:
+          name: ${immich_photos_postgres_backup_credential_secret_name}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${immich_photos_postgres_backup_credential_secret_name}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "30d"
+  resources:
+    requests:
+      cpu: ${immich_photos_postgres_requests_cpu}
+      memory: ${immich_photos_postgres_requests_memory}
+    limits:
+      cpu: ${immich_photos_postgres_limits_cpu}
+      memory: ${immich_photos_postgres_limits_memory}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: immich-photos-postgres
+  namespace: immich-photos
+spec:
+  schedule: "${immich_photos_postgres_backup_cron:=0 0 2 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: immich-photos-postgres

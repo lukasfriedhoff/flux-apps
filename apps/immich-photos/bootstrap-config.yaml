@@ -1,0 +1,311 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: immich-photos-bootstrap-config
+  namespace: immich-photos
+data:
+  bootstrap.sh: |-
+    #!/bin/sh
+    set -eu
+
+    log() {
+      printf '[immich-photos-bootstrap] %s\n' "$*"
+    }
+
+    json_escape() {
+      printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+    }
+
+    bool_json() {
+      case "$${1:-}" in
+        1|true|TRUE|yes|YES|on|ON) printf 'true' ;;
+        0|false|FALSE|no|NO|off|OFF|'') printf 'false' ;;
+        *)
+          log "Invalid boolean value: $1"
+          return 1
+          ;;
+      esac
+    }
+
+    json_access_token() {
+      node -e '
+        let input = "";
+        process.stdin.on("data", (chunk) => (input += chunk));
+        process.stdin.on("end", () => {
+          try {
+            const parsed = JSON.parse(input);
+            process.stdout.write(parsed.accessToken || "");
+          } catch {
+            process.stdout.write("");
+          }
+        });
+      '
+    }
+
+    json_oauth_compact() {
+      node -e '
+        let input = "";
+        process.stdin.on("data", (chunk) => (input += chunk));
+        process.stdin.on("end", () => {
+          try {
+            const parsed = JSON.parse(input);
+            process.stdout.write(JSON.stringify(parsed.oauth || {}));
+          } catch {
+            process.stdout.write("{}");
+          }
+        });
+      '
+    }
+
+    json_apply_oauth() {
+      node -e '
+        let input = "";
+        process.stdin.on("data", (chunk) => (input += chunk));
+        process.stdin.on("end", () => {
+          const cfg = JSON.parse(input);
+          cfg.oauth = cfg.oauth || {};
+          cfg.oauth.enabled = true;
+          cfg.oauth.issuerUrl = process.env.IMMICH_OIDC_ISSUER_URL;
+          cfg.oauth.clientId = process.env.IMMICH_OIDC_CLIENT_ID;
+          cfg.oauth.clientSecret = process.env.IMMICH_OIDC_CLIENT_SECRET;
+          cfg.oauth.scope = process.env.IMMICH_OIDC_SCOPE;
+          cfg.oauth.buttonText = process.env.IMMICH_OIDC_BUTTON_TEXT;
+          cfg.oauth.autoRegister = process.env.IMMICH_OIDC_AUTO_REGISTER_JSON === "true";
+          cfg.oauth.autoLaunch = process.env.IMMICH_OIDC_AUTO_LAUNCH_JSON === "true";
+          cfg.oauth.mobileOverrideEnabled = process.env.IMMICH_OIDC_MOBILE_OVERRIDE_JSON === "true";
+          cfg.oauth.mobileRedirectUri = process.env.IMMICH_OIDC_MOBILE_REDIRECT_URI;
+          cfg.oauth.timeout = Number(process.env.IMMICH_OIDC_TIMEOUT);
+          cfg.oauth.signingAlgorithm = process.env.IMMICH_OIDC_SIGNING_ALGORITHM;
+          cfg.oauth.profileSigningAlgorithm = process.env.IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM;
+          cfg.oauth.tokenEndpointAuthMethod = process.env.IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD;
+          cfg.oauth.defaultStorageQuota = null;
+          cfg.oauth.roleClaim = process.env.IMMICH_OIDC_ROLE_CLAIM;
+          cfg.oauth.storageLabelClaim = process.env.IMMICH_OIDC_STORAGE_LABEL_CLAIM;
+          cfg.oauth.storageQuotaClaim = process.env.IMMICH_OIDC_STORAGE_QUOTA_CLAIM;
+          process.stdout.write(JSON.stringify(cfg));
+        });
+      '
+    }
+
+    resolve_admin_email() {
+      if [ -n "$${IMMICH_ADMIN_EMAIL:-}" ]; then
+        printf '%s' "$IMMICH_ADMIN_EMAIL"
+        return 0
+      fi
+      if [ -n "$${IMMICH_DEFAULT_ADMIN_EMAIL:-}" ]; then
+        printf '%s' "$IMMICH_DEFAULT_ADMIN_EMAIL"
+        return 0
+      fi
+      printf '%s' "admin@immich.local"
+    }
+
+    resolve_admin_password() {
+      if [ -n "$${IMMICH_ADMIN_PASSWORD:-}" ]; then
+        printf '%s' "$IMMICH_ADMIN_PASSWORD"
+        return 0
+      fi
+      if [ -n "$${DB_PASSWORD:-}" ]; then
+        printf '%s' "$DB_PASSWORD"
+        return 0
+      fi
+      return 1
+    }
+
+    discover_immich_url() {
+      attempt=0
+      while [ "$attempt" -lt 20 ]; do
+        for candidate in "$${IMMICH_URL:-}" "http://immich-photos-server:2283" "http://immich-photos-server.immich-photos.svc.cluster.local:2283"; do
+          if [ -z "$candidate" ]; then
+            continue
+          fi
+          if curl -fsS -m 5 "$candidate/api/server/ping" >/dev/null 2>&1; then
+            printf '%s' "$candidate"
+            return 0
+          fi
+        done
+        attempt=$((attempt + 1))
+        sleep 3
+      done
+      return 1
+    }
+
+    IMMICH_ADMIN_EMAIL="$(resolve_admin_email || true)"
+    IMMICH_ADMIN_PASSWORD="$(resolve_admin_password || true)"
+    IMMICH_ADMIN_NAME="$${IMMICH_ADMIN_NAME:-Immich Admin}"
+
+    if [ -z "$IMMICH_ADMIN_EMAIL" ] || [ -z "$IMMICH_ADMIN_PASSWORD" ]; then
+      log "No admin credentials available (IMMICH_ADMIN_* or DB_PASSWORD). Skipping."
+      exit 0
+    fi
+
+    IMMICH_URL="$(discover_immich_url || true)"
+    if [ -z "$IMMICH_URL" ]; then
+      log "Immich API not reachable yet; deferring bootstrap."
+      exit 0
+    fi
+
+    sign_up_payload="$(
+      cat <<EOF
+    {"email":"$(json_escape "$IMMICH_ADMIN_EMAIL")","name":"$(json_escape "$IMMICH_ADMIN_NAME")","password":"$(json_escape "$IMMICH_ADMIN_PASSWORD")"}
+    EOF
+    )"
+
+    signup_body="$(mktemp)"
+    signup_code="$(
+      curl -sS \
+        -o "$signup_body" \
+        -w '%{http_code}' \
+        -X POST \
+        -H 'Content-Type: application/json' \
+        --data "$sign_up_payload" \
+        "$IMMICH_URL/api/auth/admin-sign-up" || true
+    )"
+    signup_msg="$(cat "$signup_body" 2>/dev/null || true)"
+    rm -f "$signup_body"
+
+    admin_created=0
+    case "$signup_code" in
+      200|201)
+        admin_created=1
+        log "Admin bootstrap user created."
+        ;;
+      400|409)
+        if printf '%s' "$signup_msg" | grep -qi "already has an admin"; then
+          log "Admin already exists; continuing."
+        else
+          log "Admin signup returned $signup_code: $signup_msg"
+          exit 1
+        fi
+        ;;
+      *)
+        log "Unexpected admin signup response $signup_code: $signup_msg"
+        exit 1
+        ;;
+    esac
+
+    login_payload="$(
+      cat <<EOF
+    {"email":"$(json_escape "$IMMICH_ADMIN_EMAIL")","password":"$(json_escape "$IMMICH_ADMIN_PASSWORD")"}
+    EOF
+    )"
+
+    login_body="$(mktemp)"
+    login_code="$(
+      curl -sS \
+        -o "$login_body" \
+        -w '%{http_code}' \
+        -X POST \
+        -H 'Content-Type: application/json' \
+        --data "$login_payload" \
+        "$IMMICH_URL/api/auth/login" || true
+    )"
+    login_msg="$(cat "$login_body" 2>/dev/null || true)"
+    rm -f "$login_body"
+
+    case "$login_code" in
+      200|201)
+        log "Admin login check succeeded."
+        ;;
+      *)
+        if [ "$admin_created" -eq 1 ]; then
+          log "Admin login check failed after creating admin ($login_code): $login_msg"
+          exit 1
+        fi
+        log "Admin exists but provided bootstrap credentials do not match ($login_code)."
+        log "Set IMMICH_ADMIN_EMAIL and IMMICH_ADMIN_PASSWORD in the Immich secret to take ownership."
+        exit 0
+        ;;
+    esac
+
+    access_token="$(printf '%s' "$login_msg" | json_access_token)"
+    if [ -z "$access_token" ]; then
+      log "Login response did not include an access token; cannot continue bootstrap."
+      exit 1
+    fi
+
+    IMMICH_OIDC_PROVIDER="$${IMMICH_OIDC_PROVIDER:-none}"
+    if [ "$IMMICH_OIDC_PROVIDER" != "authelia" ]; then
+      log "OIDC provider is '$IMMICH_OIDC_PROVIDER'; skipping OIDC configuration."
+      exit 0
+    fi
+
+    IMMICH_OIDC_ISSUER_URL="$${IMMICH_OIDC_ISSUER_URL:-}"
+    IMMICH_OIDC_CLIENT_ID="$${IMMICH_OIDC_CLIENT_ID:-immich}"
+    IMMICH_OIDC_CLIENT_SECRET="$${IMMICH_OIDC_CLIENT_SECRET:-}"
+    IMMICH_OIDC_SCOPE="$${IMMICH_OIDC_SCOPE:-openid profile email}"
+    IMMICH_OIDC_BUTTON_TEXT="$${IMMICH_OIDC_BUTTON_TEXT:-Sign in with Authelia}"
+    IMMICH_OIDC_AUTO_REGISTER_JSON="$(bool_json "$${IMMICH_OIDC_AUTO_REGISTER:-true}")"
+    IMMICH_OIDC_AUTO_LAUNCH_JSON="$(bool_json "$${IMMICH_OIDC_AUTO_LAUNCH:-false}")"
+    IMMICH_OIDC_MOBILE_OVERRIDE_JSON="$(bool_json "$${IMMICH_OIDC_MOBILE_OVERRIDE_ENABLED:-false}")"
+    IMMICH_OIDC_MOBILE_REDIRECT_URI="$${IMMICH_OIDC_MOBILE_REDIRECT_URI:-app.immich:///oauth-callback}"
+    IMMICH_OIDC_TIMEOUT="$${IMMICH_OIDC_TIMEOUT:-30000}"
+    IMMICH_OIDC_SIGNING_ALGORITHM="$${IMMICH_OIDC_SIGNING_ALGORITHM:-RS256}"
+    IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM="$${IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM:-RS256}"
+    IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD="$${IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD:-client_secret_post}"
+    IMMICH_OIDC_ROLE_CLAIM="$${IMMICH_OIDC_ROLE_CLAIM:-}"
+    IMMICH_OIDC_STORAGE_LABEL_CLAIM="$${IMMICH_OIDC_STORAGE_LABEL_CLAIM:-preferred_username}"
+    IMMICH_OIDC_STORAGE_QUOTA_CLAIM="$${IMMICH_OIDC_STORAGE_QUOTA_CLAIM:-}"
+    case "$IMMICH_OIDC_TIMEOUT" in
+      ''|*[!0-9]*)
+        log "IMMICH_OIDC_TIMEOUT must be an integer, got: $IMMICH_OIDC_TIMEOUT"
+        exit 1
+        ;;
+    esac
+    export IMMICH_OIDC_ISSUER_URL IMMICH_OIDC_CLIENT_ID IMMICH_OIDC_CLIENT_SECRET
+    export IMMICH_OIDC_SCOPE IMMICH_OIDC_BUTTON_TEXT IMMICH_OIDC_TIMEOUT
+    export IMMICH_OIDC_SIGNING_ALGORITHM IMMICH_OIDC_PROFILE_SIGNING_ALGORITHM
+    export IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD IMMICH_OIDC_ROLE_CLAIM
+    export IMMICH_OIDC_STORAGE_LABEL_CLAIM IMMICH_OIDC_STORAGE_QUOTA_CLAIM
+    export IMMICH_OIDC_AUTO_REGISTER_JSON IMMICH_OIDC_AUTO_LAUNCH_JSON
+    export IMMICH_OIDC_MOBILE_OVERRIDE_JSON IMMICH_OIDC_MOBILE_REDIRECT_URI
+
+    if [ -z "$IMMICH_OIDC_ISSUER_URL" ] || [ -z "$IMMICH_OIDC_CLIENT_SECRET" ]; then
+      log "IMMICH_OIDC_PROVIDER=authelia requires IMMICH_OIDC_ISSUER_URL and IMMICH_OIDC_CLIENT_SECRET."
+      exit 1
+    fi
+
+    system_config_body="$(mktemp)"
+    system_config_code="$(
+      curl -sS \
+        -o "$system_config_body" \
+        -w '%{http_code}' \
+        -H "Authorization: Bearer $access_token" \
+        "$IMMICH_URL/api/system-config" || true
+    )"
+    if [ "$system_config_code" != "200" ]; then
+      log "Failed to read system config ($system_config_code): $(cat "$system_config_body" 2>/dev/null || true)"
+      rm -f "$system_config_body"
+      exit 1
+    fi
+    system_config="$(cat "$system_config_body")"
+    rm -f "$system_config_body"
+
+    desired_config="$(printf '%s' "$system_config" | json_apply_oauth)"
+
+    current_oauth="$(printf '%s' "$system_config" | json_oauth_compact)"
+    desired_oauth="$(printf '%s' "$desired_config" | json_oauth_compact)"
+    if [ "$current_oauth" = "$desired_oauth" ]; then
+      log "OIDC configuration already converged."
+      exit 0
+    fi
+
+    update_body="$(mktemp)"
+    update_code="$(
+      curl -sS \
+        -o "$update_body" \
+        -w '%{http_code}' \
+        -X PUT \
+        -H "Authorization: Bearer $access_token" \
+        -H 'Content-Type: application/json' \
+        --data "$desired_config" \
+        "$IMMICH_URL/api/system-config" || true
+    )"
+    if [ "$update_code" = "200" ]; then
+      log "OIDC configuration updated for provider authelia."
+      rm -f "$update_body"
+      exit 0
+    fi
+
+    log "Failed to update OIDC config ($update_code): $(cat "$update_body" 2>/dev/null || true)"
+    rm -f "$update_body"
+    exit 1
