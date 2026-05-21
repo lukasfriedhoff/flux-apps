@@ -43,6 +43,24 @@ commands:
           "curl -fsS -H 'X-Api-Key: $api_key' -H 'Content-Type: application/json' -X POST 'http://localhost:$port$path'"
       }
 
+      arr_post_with_status() {
+        app="$1"
+        port="$2"
+        api_key="$3"
+        path="$4"
+        kubectl -n "$ns" exec "deploy/$app" -- sh -lc '
+          status="$(
+            curl -sS -o /tmp/arr-post-response.json -w "%{http_code}" \
+              -H "X-Api-Key: '"$api_key"'" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              "http://localhost:'"$port$path"'"
+          )"
+          printf "%s\n" "$status"
+          cat /tmp/arr-post-response.json
+        '
+      }
+
       prowlarr_get() {
         api_key="$1"
         path="$2"
@@ -71,9 +89,33 @@ commands:
         printf '%s' "$indexers_json" | jq -e 'length > 0' >/dev/null || fail "$app has no indexers configured"
 
         log "$app: testing all indexers"
-        indexer_test_json="$(arr_post "$app" "$port" "$api_key" "/api/$api_version/indexer/testall")"
-        printf '%s' "$indexer_test_json" | jq -e 'length > 0 and all(.[]; .isValid == true)' >/dev/null \
-          || fail "$app indexer testall reported invalid indexers: $indexer_test_json"
+        indexer_test_result="$(arr_post_with_status "$app" "$port" "$api_key" "/api/$api_version/indexer/testall")"
+        indexer_test_http_code="$(printf '%s\n' "$indexer_test_result" | head -n1)"
+        indexer_test_json="$(printf '%s\n' "$indexer_test_result" | tail -n +2)"
+        case "$indexer_test_http_code" in
+          2*|400) ;;
+          *) fail "$app indexer testall returned HTTP $indexer_test_http_code: $indexer_test_json" ;;
+        esac
+        # Some public trackers are intermittently rate-limited (429) or return category
+        # mismatches for a specific ARR app. Keep the test strict on overall health by
+        # requiring at least one valid indexer and only allowing known transient messages.
+        printf '%s' "$indexer_test_json" | jq -e '
+          (length > 0)
+          and (map(select(.isValid == true)) | length > 0)
+          and (
+            all(
+              .[];
+              (.isValid == true)
+              or (
+                (.validationFailures // [])
+                | all(
+                    (.errorMessage // "")
+                    | test("no results in the configured categories|TooManyRequests|429"; "i")
+                  )
+              )
+            )
+          )
+        ' >/dev/null || fail "$app indexer testall reported unexpected failures (HTTP $indexer_test_http_code): $indexer_test_json"
 
         log "$app: checking download clients"
         dls_json="$(arr_get "$app" "$port" "$api_key" "/api/$api_version/downloadclient")"

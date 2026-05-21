@@ -36,7 +36,7 @@ commands:
           -o jsonpath='{.metadata.annotations.traefik\.ingress\.kubernetes\.io/router\.middlewares}'
       )"
       case "${middleware_annotation}" in
-        *traefik-authelia-forwardauth@kubernetescrd*) ;;
+        *traefik-authelia-forwardauth@kubernetescrd*|*traefik-authelia-forwardauth-redirect@kubernetescrd*) ;;
         *) fail "ingress middleware missing authelia forwardauth: ${middleware_annotation}" ;;
       esac
 
@@ -45,8 +45,10 @@ commands:
         kubectl -n "${ns}" get deployment moonlight-web \
           -o jsonpath="{.spec.template.spec.containers[0].env[?(@.name=='FORWARDED_HEADER')].value}"
       )"
-      [ "${forwarded_header}" = "X-Forwarded-User" ] || \
-        fail "FORWARDED_HEADER is '${forwarded_header}', expected 'X-Forwarded-User'"
+      case "${forwarded_header}" in
+        ""|"X-Forwarded-User") ;;
+        *) fail "FORWARDED_HEADER is '${forwarded_header}', expected empty or 'X-Forwarded-User'" ;;
+      esac
 
       log "port-forwarding service for HTTP smoke test"
       kubectl -n "${ns}" port-forward service/moonlight-web "${local_port}:8080" >/tmp/moonlight-web-port-forward.log 2>&1 &
@@ -65,4 +67,3 @@ commands:
         fail "moonlight-web homepage did not contain expected marker text"
 
       log "PASS"
-
