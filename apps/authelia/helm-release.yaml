@@ -68,6 +68,8 @@ spec:
     pod:
       kind: Deployment
       replicas: 1
+      strategy:
+        type: Recreate
       annotations:
         reloader.stakater.com/auto: "true"
         prometheus.io/scrape: "true"
