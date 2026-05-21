@@ -23,5 +23,6 @@ resources:
   - jellyfin-bootstrap-config.yaml
   - jellyfin-bootstrap.yaml
   - jellyfin-branding.yaml
+  - download-promotion.yaml
   - flaresolverr.yaml
   - profilarr.yaml

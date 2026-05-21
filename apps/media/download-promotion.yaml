@@ -1,0 +1,112 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: qbittorrent-download-promoter
+  namespace: media
+spec:
+  schedule: "${media_download_promotion_cron}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: promote
+              image: alpine:3.20
+              env:
+                - name: ENABLED
+                  value: "${media_download_promotion_enabled}"
+                - name: DRY_RUN
+                  value: "${media_download_promotion_dry_run}"
+                - name: MIN_AGE_HOURS
+                  value: "${media_download_promotion_min_age_hours}"
+                - name: CATEGORY_REGEX
+                  value: "${media_download_promotion_category_regex}"
+                - name: TARGET_BASE
+                  value: "${media_download_promotion_target_base}"
+                - name: QB_URL
+                  value: "http://qbittorrent:8080"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  apk add --no-cache curl jq >/dev/null
+
+                  lower_enabled="$(printf '%s' "${ENABLED:-disabled}" | tr '[:upper:]' '[:lower:]')"
+                  case "$lower_enabled" in
+                    true|1|yes|on|enabled) ;;
+                    *)
+                      echo "[download-promoter] disabled"
+                      exit 0
+                      ;;
+                  esac
+
+                  lower_dry_run="$(printf '%s' "${DRY_RUN:-true}" | tr '[:upper:]' '[:lower:]')"
+                  min_age_hours="${MIN_AGE_HOURS:-72}"
+                  case "$min_age_hours" in
+                    ''|*[!0-9]*)
+                      echo "[download-promoter] MIN_AGE_HOURS must be numeric, got: $min_age_hours" >&2
+                      exit 1
+                      ;;
+                  esac
+                  min_age_seconds="$((min_age_hours * 3600))"
+                  now="$(date +%s)"
+                  category_re="${CATEGORY_REGEX:-^(radarr|sonarr|lidarr|readarr)-imported$}"
+                  target_base="${TARGET_BASE:-/media/staged}"
+
+                  torrents_json="$(curl -fsS "${QB_URL}/api/v2/torrents/info?filter=completed")"
+                  candidates="$(printf '%s' "$torrents_json" | jq -rc \
+                    --arg re "$category_re" \
+                    --argjson now "$now" \
+                    --argjson min_age "$min_age_seconds" \
+                    '.[] | select((.category | test($re)) and (.completion_on > 0) and (($now - .completion_on) >= $min_age))')"
+
+                  if [ -z "$candidates" ]; then
+                    echo "[download-promoter] no torrents matched category/age policy"
+                    exit 0
+                  fi
+
+                  promoted=0
+                  skipped=0
+                  tmp_candidates="$(mktemp)"
+                  trap 'rm -f "$tmp_candidates"' EXIT
+                  printf '%s\n' "$candidates" >"$tmp_candidates"
+
+                  while IFS= read -r item; do
+                    [ -n "$item" ] || continue
+                    hash="$(printf '%s' "$item" | jq -r '.hash')"
+                    name="$(printf '%s' "$item" | jq -r '.name')"
+                    category="$(printf '%s' "$item" | jq -r '.category')"
+                    completed_on="$(printf '%s' "$item" | jq -r '.completion_on')"
+                    age_seconds="$((now - completed_on))"
+                    age_hours="$((age_seconds / 3600))"
+
+                    bucket="other"
+                    case "$category" in
+                      radarr-imported) bucket="movies" ;;
+                      sonarr-imported) bucket="tv" ;;
+                      lidarr-imported) bucket="music" ;;
+                      readarr-imported) bucket="books" ;;
+                    esac
+                    target_dir="${target_base%/}/${bucket}"
+                    mkdir -p "$target_dir"
+
+                    if [ "$lower_dry_run" = "true" ] || [ "$lower_dry_run" = "1" ] || [ "$lower_dry_run" = "yes" ] || [ "$lower_dry_run" = "on" ]; then
+                      echo "[download-promoter] DRY-RUN would move hash=${hash} name='${name}' category='${category}' age_h=${age_hours} target='${target_dir}'"
+                      skipped=$((skipped + 1))
+                      continue
+                    fi
+
+                    curl -fsS -X POST \
+                      --data-urlencode "hashes=${hash}" \
+                      --data-urlencode "location=${target_dir}" \
+                      "${QB_URL}/api/v2/torrents/setLocation" >/dev/null
+                    echo "[download-promoter] moved hash=${hash} name='${name}' category='${category}' age_h=${age_hours} target='${target_dir}'"
+                    promoted=$((promoted + 1))
+                  done <"$tmp_candidates"
+
+                  echo "[download-promoter] finished (promoted=${promoted}, dry_run_skipped=${skipped})"
