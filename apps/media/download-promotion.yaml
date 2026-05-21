@@ -45,14 +45,13 @@ spec:
                       ;;
                   esac
 
-                  lower_dry_run="$(printf '%s' "${DRY_RUN:-true}" | tr '[:upper:]' '[:lower:]')"
-                  min_age_hours="${MIN_AGE_HOURS:-72}"
-                  case "$min_age_hours" in
-                    ''|*[!0-9]*)
-                      echo "[download-promoter] MIN_AGE_HOURS must be numeric, got: $min_age_hours" >&2
-                      exit 1
-                      ;;
-                  esac
+                  lower_dry_run="$(printf '%s' "${DRY_RUN:-enabled}" | tr '[:upper:]' '[:lower:]')"
+                  min_age_raw="${MIN_AGE_HOURS:-72h}"
+                  min_age_hours="$(printf '%s' "$min_age_raw" | sed -E 's/[^0-9].*$//')"
+                  if [ -z "$min_age_hours" ]; then
+                    echo "[download-promoter] MIN_AGE_HOURS must start with a number, got: $min_age_raw" >&2
+                    exit 1
+                  fi
                   min_age_seconds="$((min_age_hours * 3600))"
                   now="$(date +%s)"
                   category_re="${CATEGORY_REGEX:-^(radarr|sonarr|lidarr|readarr)-imported$}"
@@ -95,7 +94,7 @@ spec:
                     target_dir="${target_base%/}/${bucket}"
                     mkdir -p "$target_dir"
 
-                    if [ "$lower_dry_run" = "true" ] || [ "$lower_dry_run" = "1" ] || [ "$lower_dry_run" = "yes" ] || [ "$lower_dry_run" = "on" ]; then
+                    if [ "$lower_dry_run" = "true" ] || [ "$lower_dry_run" = "1" ] || [ "$lower_dry_run" = "yes" ] || [ "$lower_dry_run" = "on" ] || [ "$lower_dry_run" = "enabled" ]; then
                       echo "[download-promoter] DRY-RUN would move hash=${hash} name='${name}' category='${category}' age_h=${age_hours} target='${target_dir}'"
                       skipped=$((skipped + 1))
                       continue
