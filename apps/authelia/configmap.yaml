@@ -120,6 +120,13 @@ data:
             - 'group:bazarr-admins'
             - 'group:bazarr-users'
           policy: ${authelia_access_policy}
+        - domain: 'profilarr${public_host_suffix}.${delegating_domain}'
+          subject:
+            - 'group:traefik-admins'
+            - 'group:traefik-users'
+            - 'group:profilarr-admins'
+            - 'group:profilarr-users'
+          policy: ${authelia_access_policy}
         - domain: 'jellyseerr${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:jellyseerr-admins'
