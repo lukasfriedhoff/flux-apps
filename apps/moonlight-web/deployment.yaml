@@ -20,8 +20,6 @@ spec:
       labels:
         app.kubernetes.io/name: moonlight-web
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: moonlight-web
           image: mrcreativ3001/moonlight-web-stream:${moonlight_image_tag}
