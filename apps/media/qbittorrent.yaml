@@ -175,6 +175,11 @@ spec:
         existingClaim: arr-downloads
         globalMounts:
           - path: /downloads
+      media:
+        enabled: true
+        existingClaim: arr-media
+        globalMounts:
+          - path: /media
       config-template:
         enabled: true
         type: configMap

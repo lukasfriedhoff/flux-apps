@@ -13,6 +13,9 @@ data:
         Sign in with Authelia
       </button>
     </form>
+    <a class="raised block emby-button button-submit" href="https://jellyseerr${public_host_suffix}.${delegating_domain}">
+      Open Requests (Jellyseerr)
+    </a>
       ]]></LoginDisclaimer>
       <CustomCss><![CDATA[
     a.raised.emby-button {
