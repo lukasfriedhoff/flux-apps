@@ -67,7 +67,7 @@ spec:
         - name: NEXTCLOUD_OIDC_PROVIDER
           value: ${nextcloud_oidc}
         - name: NEXTCLOUD_EXTERNAL_PHOTOS_ENABLED
-          value: "${nextcloud_external_photos_enabled:=false}"
+          value: ${nextcloud_external_photos_enabled:=disabled}
         - name: NEXTCLOUD_EXTERNAL_PHOTOS_URL
           value: ${nextcloud_external_photos_url:=}
         - name: NEXTCLOUD_EXTERNAL_PHOTOS_LABEL
@@ -366,9 +366,9 @@ spec:
             esac
           }
           configure_external_photos_link() {
-            enabled="$(printf '%s' "$${NEXTCLOUD_EXTERNAL_PHOTOS_ENABLED:-false}" | tr '[:upper:]' '[:lower:]')"
+            enabled="$(printf '%s' "$${NEXTCLOUD_EXTERNAL_PHOTOS_ENABLED:-disabled}" | tr '[:upper:]' '[:lower:]')"
             case "$enabled" in
-              true|1|yes|on)
+              true|1|yes|on|enabled)
                 ;;
               *)
                 echo "External photos link disabled."
