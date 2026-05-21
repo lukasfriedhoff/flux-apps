@@ -28,6 +28,8 @@ spec:
       app.kubernetes.io/name: synapse
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
       labels:
         app.kubernetes.io/name: synapse
     spec:
