@@ -137,11 +137,16 @@ data:
             - 'group:jellyfin-admins'
             - 'group:jellyfin-users'
           policy: ${authelia_access_policy}
-        - domain_regex: '^.*${public_host_suffix}\\.${delegating_domain}$'
+        - domain: 'moonlight${public_host_suffix}.${delegating_domain}'
+          subject:
+            - 'group:traefik-admins'
+            - 'group:traefik-users'
+          policy: ${authelia_access_policy}
+        - domain_regex: '^.*${public_host_suffix}\.${delegating_domain}$'
           subject:
             - 'user:wooden'
           policy: deny
-        - domain_regex: '^.*${public_host_suffix}\\.${delegating_domain}$'
+        - domain_regex: '^.*${public_host_suffix}\.${delegating_domain}$'
           policy: ${authelia_access_policy}
 
     session:
