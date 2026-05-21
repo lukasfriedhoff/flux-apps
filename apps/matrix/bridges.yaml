@@ -23,6 +23,8 @@ spec:
       app.kubernetes.io/name: whatsapp
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
       labels:
         app.kubernetes.io/name: whatsapp
     spec:
@@ -82,6 +84,8 @@ spec:
       app.kubernetes.io/name: wa
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
       labels:
         app.kubernetes.io/name: wa
     spec:
@@ -141,6 +145,8 @@ spec:
       app.kubernetes.io/name: telegram
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
       labels:
         app.kubernetes.io/name: telegram
     spec:
@@ -217,6 +223,8 @@ spec:
       app.kubernetes.io/name: signalbridgeprivate
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
       labels:
         app.kubernetes.io/name: signalbridgeprivate
     spec:
@@ -273,6 +281,8 @@ spec:
       app.kubernetes.io/name: signaldprivate
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
       labels:
         app.kubernetes.io/name: signaldprivate
     spec:
