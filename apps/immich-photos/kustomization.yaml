@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: immich-photos
+resources:
+  - bootstrap-config.yaml
+  - bootstrap-cronjob.yaml
+  - postgres.yaml
+  - redis.yaml
+  - machine-learning.yaml
+  - server.yaml
+  - ingress.yaml

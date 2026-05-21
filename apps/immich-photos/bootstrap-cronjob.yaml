@@ -1,0 +1,96 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: immich-photos-bootstrap
+  namespace: immich-photos
+  labels:
+    app.kubernetes.io/name: immich-photos-bootstrap
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: immich-photos-bootstrap
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: bootstrap
+              image: ghcr.io/immich-app/immich-server:${immich_photos_image_tag}
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - /scripts/bootstrap.sh
+              env:
+                - name: IMMICH_URL
+                  value: http://immich-photos-server:2283
+                - name: IMMICH_OIDC_PROVIDER
+                  value: ${immich_photos_oidc:=none}
+                - name: IMMICH_OIDC_ISSUER_URL
+                  value: https://auth${public_host_suffix}.${delegating_domain}
+                - name: IMMICH_OIDC_CLIENT_ID
+                  value: ${immich_photos_oidc_client_id:=immich-photos}
+                - name: IMMICH_OIDC_SCOPE
+                  value: openid profile email
+                - name: IMMICH_OIDC_BUTTON_TEXT
+                  value: Sign in with Authelia
+                - name: IMMICH_OIDC_AUTO_REGISTER
+                  value: "true"
+                - name: IMMICH_OIDC_AUTO_LAUNCH
+                  value: "false"
+                - name: IMMICH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD
+                  value: client_secret_post
+                - name: IMMICH_DEFAULT_ADMIN_EMAIL
+                  value: admin@immich.local
+                - name: IMMICH_ADMIN_EMAIL
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${immich_photos_secret_name}
+                      key: IMMICH_ADMIN_EMAIL
+                      optional: true
+                - name: IMMICH_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${immich_photos_secret_name}
+                      key: IMMICH_ADMIN_PASSWORD
+                      optional: true
+                - name: IMMICH_ADMIN_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${immich_photos_secret_name}
+                      key: IMMICH_ADMIN_NAME
+                      optional: true
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${immich_photos_secret_name}
+                      key: DB_PASSWORD
+                - name: IMMICH_OIDC_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${immich_photos_secret_name}
+                      key: IMMICH_OIDC_CLIENT_SECRET
+                      optional: true
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts/bootstrap.sh
+                  subPath: bootstrap.sh
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: immich-photos-bootstrap-config
+                defaultMode: 0555

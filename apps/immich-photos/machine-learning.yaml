@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-photos-machine-learning
+  namespace: immich-photos
+spec:
+  selector:
+    app.kubernetes.io/name: immich-photos-machine-learning
+  ports:
+    - name: http
+      port: 3003
+      targetPort: 3003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-photos-machine-learning
+  namespace: immich-photos
+spec:
+  replicas: ${immich_photos_ml_replicas}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: immich-photos-machine-learning
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich-photos-machine-learning
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: machine-learning
+          image: ghcr.io/immich-app/immich-machine-learning:${immich_photos_image_tag}
+          ports:
+            - name: http
+              containerPort: 3003
+          env:
+            - name: TZ
+              value: ${immich_photos_timezone}
+            - name: MACHINE_LEARNING_CACHE_FOLDER
+              value: /cache
+          resources:
+            requests:
+              cpu: ${immich_photos_ml_requests_cpu}
+              memory: ${immich_photos_ml_requests_memory}
+            limits:
+              cpu: ${immich_photos_ml_limits_cpu}
+              memory: ${immich_photos_ml_limits_memory}
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          volumeMounts:
+            - name: model-cache
+              mountPath: /cache
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: immich-photos-ml-cache
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-photos-ml-cache
+  namespace: immich-photos
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${immich_photos_ml_cache_storage_class_name}
+  resources:
+    requests:
+      storage: ${immich_photos_ml_cache_size}
