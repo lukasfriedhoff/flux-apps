@@ -18,6 +18,11 @@ metadata:
   namespace: matrix
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 100%
   selector:
     matchLabels:
       app.kubernetes.io/name: whatsapp
@@ -79,6 +84,11 @@ metadata:
   namespace: matrix
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 100%
   selector:
     matchLabels:
       app.kubernetes.io/name: wa
@@ -140,6 +150,11 @@ metadata:
   namespace: matrix
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 100%
   selector:
     matchLabels:
       app.kubernetes.io/name: telegram
@@ -218,6 +233,11 @@ metadata:
   namespace: matrix
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 100%
   selector:
     matchLabels:
       app.kubernetes.io/name: signalbridgeprivate
