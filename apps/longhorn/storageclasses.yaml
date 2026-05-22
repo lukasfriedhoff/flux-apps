@@ -30,7 +30,7 @@ kind: StorageClass
 metadata:
   name: "${longhorn_rwo_storage_class_3r_name:=longhorn-rwo-3r}"
   annotations:
-    storageclass.kubernetes.io/is-default-class: "${longhorn_rwo_storage_class_3r_is_default:=false}"
+    storageclass.kubernetes.io/is-default-class: ${quote}${longhorn_rwo_storage_class_3r_is_default:=false}${quote}
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
