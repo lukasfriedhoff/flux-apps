@@ -8,7 +8,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_rwo_storage_class_1r_replicas:=1}"
+  numberOfReplicas: ${quote}${longhorn_rwo_storage_class_1r_replicas:=1}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -21,7 +21,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_rwo_storage_class_2r_replicas:=2}"
+  numberOfReplicas: ${quote}${longhorn_rwo_storage_class_2r_replicas:=2}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -36,7 +36,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_rwo_storage_class_3r_replicas:=3}"
+  numberOfReplicas: ${quote}${longhorn_rwo_storage_class_3r_replicas:=3}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -49,7 +49,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_rwx_storage_class_1r_replicas:=1}"
+  numberOfReplicas: ${quote}${longhorn_rwx_storage_class_1r_replicas:=1}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -62,7 +62,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_rwx_storage_class_2r_replicas:=2}"
+  numberOfReplicas: ${quote}${longhorn_rwx_storage_class_2r_replicas:=2}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -75,7 +75,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_rwx_storage_class_3r_replicas:=3}"
+  numberOfReplicas: ${quote}${longhorn_rwx_storage_class_3r_replicas:=3}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -88,7 +88,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_nvme_rwo_storage_class_1r_replicas:=1}"
+  numberOfReplicas: ${quote}${longhorn_nvme_rwo_storage_class_1r_replicas:=1}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_nvme_disk_selector:=nvme}"
@@ -102,7 +102,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_nvme_rwo_storage_class_2r_replicas:=2}"
+  numberOfReplicas: ${quote}${longhorn_nvme_rwo_storage_class_2r_replicas:=2}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_nvme_disk_selector:=nvme}"
@@ -116,7 +116,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_nvme_rwo_storage_class_3r_replicas:=3}"
+  numberOfReplicas: ${quote}${longhorn_nvme_rwo_storage_class_3r_replicas:=3}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_nvme_disk_selector:=nvme}"
@@ -130,7 +130,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_nvme_rwx_storage_class_1r_replicas:=1}"
+  numberOfReplicas: ${quote}${longhorn_nvme_rwx_storage_class_1r_replicas:=1}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_nvme_disk_selector:=nvme}"
@@ -144,7 +144,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_nvme_rwx_storage_class_2r_replicas:=2}"
+  numberOfReplicas: ${quote}${longhorn_nvme_rwx_storage_class_2r_replicas:=2}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_nvme_disk_selector:=nvme}"
@@ -158,7 +158,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_nvme_rwx_storage_class_3r_replicas:=3}"
+  numberOfReplicas: ${quote}${longhorn_nvme_rwx_storage_class_3r_replicas:=3}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_nvme_disk_selector:=nvme}"
@@ -172,7 +172,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_ssd_rwo_storage_class_1r_replicas:=1}"
+  numberOfReplicas: ${quote}${longhorn_ssd_rwo_storage_class_1r_replicas:=1}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_ssd_disk_selector:=ssd}"
@@ -186,7 +186,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_ssd_rwo_storage_class_2r_replicas:=2}"
+  numberOfReplicas: ${quote}${longhorn_ssd_rwo_storage_class_2r_replicas:=2}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_ssd_disk_selector:=ssd}"
@@ -200,7 +200,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_ssd_rwo_storage_class_3r_replicas:=3}"
+  numberOfReplicas: ${quote}${longhorn_ssd_rwo_storage_class_3r_replicas:=3}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_ssd_disk_selector:=ssd}"
@@ -214,7 +214,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_ssd_rwx_storage_class_1r_replicas:=1}"
+  numberOfReplicas: ${quote}${longhorn_ssd_rwx_storage_class_1r_replicas:=1}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_ssd_disk_selector:=ssd}"
@@ -228,7 +228,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_ssd_rwx_storage_class_2r_replicas:=2}"
+  numberOfReplicas: ${quote}${longhorn_ssd_rwx_storage_class_2r_replicas:=2}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_ssd_disk_selector:=ssd}"
@@ -242,7 +242,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "${longhorn_ssd_rwx_storage_class_3r_replicas:=3}"
+  numberOfReplicas: ${quote}${longhorn_ssd_rwx_storage_class_3r_replicas:=3}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_ssd_disk_selector:=ssd}"
