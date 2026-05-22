@@ -285,6 +285,28 @@ data:
             access_token_signed_response_alg: none
             userinfo_signed_response_alg: RS256
             token_endpoint_auth_method: client_secret_post
+          - client_id: ${immich_photos_oidc_client_id:=immich-photos}
+            client_name: Immich Photos
+            client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.immich_photos.secret" | msquote }}
+            public: false
+            authorization_policy: ${authelia_oidc_policy}
+            consent_mode: implicit
+            redirect_uris:
+              - https://photos${public_host_suffix}.${delegating_domain}/auth/login
+              - https://photos${public_host_suffix}.${delegating_domain}/user-settings
+              - app.immich:///oauth-callback
+            scopes:
+              - openid
+              - profile
+              - email
+            response_types:
+              - code
+            grant_types:
+              - authorization_code
+              - refresh_token
+            access_token_signed_response_alg: none
+            userinfo_signed_response_alg: RS256
+            token_endpoint_auth_method: client_secret_post
           - client_id: ${matrix_oidc_client_id:=matrix-synapse}
             client_name: Matrix Synapse
             client_secret: {{ secret "/secrets/authelia-oidc-matrix/client_secret_digest" | msquote }}
