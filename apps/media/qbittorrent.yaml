@@ -109,6 +109,18 @@ spec:
               HEALTH_VPN_DURATION_ADDITION: "30s"
               HEALTH_SUCCESS_WAIT_DURATION: "20s"
               PUBLICIP_ENABLED: "off"
+              VPN_PORT_FORWARDING: "on"
+              VPN_PORT_FORWARDING_PROVIDER: "protonvpn"
+              VPN_PORT_FORWARDING_UP_COMMAND:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_pf_up_command
+              VPN_PORT_FORWARDING_DOWN_COMMAND:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_pf_down_command
               FIREWALL_INPUT_PORTS: "8080,6881"
               FIREWALL_OUTBOUND_SUBNETS: "${k8s_pod_cidr},${k8s_service_cidr}"
             resources:
