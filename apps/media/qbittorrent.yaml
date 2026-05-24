@@ -64,7 +64,7 @@ spec:
           gluetun:
             image:
               repository: qmcgaw/gluetun
-              tag: v3.40.0
+              tag: v3.41.1
             env:
               TZ: ${media_timezone}
               VPN_SERVICE_PROVIDER: protonvpn
@@ -89,7 +89,7 @@ spec:
                   configMapKeyRef:
                     name: qbittorrent-port-forwarding-config
                     key: down_command
-              HEALTH_TARGET_ADDRESSES: "1.1.1.1:443,8.8.8.8:443,9.9.9.9:443"
+              HEALTH_TARGET_ADDRESS: "1.1.1.1:443"
               HEALTH_ICMP_TARGET_IPS: "1.1.1.1,8.8.8.8,9.9.9.9"
               HEALTH_VPN_DURATION_INITIAL: "120s"
               HEALTH_VPN_DURATION_ADDITION: "30s"
