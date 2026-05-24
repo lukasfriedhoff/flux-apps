@@ -100,14 +100,10 @@ spec:
                     name: media-protonvpn
                     key: wireguard_allowed_ips
               WIREGUARD_PERSISTENT_KEEPALIVE_INTERVAL: "25s"
-              DNS_ADDRESS:
-                valueFrom:
-                  secretKeyRef:
-                    name: media-protonvpn
-                    key: wireguard_dns
-              DOT: "off"
-              HEALTH_TARGET_ADDRESS: "10.2.0.1:53"
-              HEALTH_ICMP_TARGET_IPS: "10.2.0.1,95.173.205.162,1.1.1.1"
+              DNS_ADDRESS: "127.0.0.1"
+              DOT: "on"
+              HEALTH_TARGET_ADDRESSES: "cloudflare.com:443,github.com:443"
+              HEALTH_ICMP_TARGET_IPS: "10.2.0.1,1.1.1.1,8.8.8.8"
               HEALTH_RESTART_VPN: "on"
               HEALTH_VPN_DURATION_INITIAL: "120s"
               HEALTH_VPN_DURATION_ADDITION: "30s"
