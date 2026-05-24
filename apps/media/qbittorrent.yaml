@@ -100,6 +100,8 @@ spec:
                     name: media-protonvpn
                     key: wireguard_allowed_ips
               WIREGUARD_PERSISTENT_KEEPALIVE_INTERVAL: "25s"
+              DNS_ADDRESS: "1.1.1.1"
+              DOT: "off"
               HEALTH_TARGET_ADDRESS: "1.1.1.1:443"
               HEALTH_ICMP_TARGET_IPS: "1.1.1.1,8.8.8.8,9.9.9.9"
               HEALTH_RESTART_VPN: "on"
