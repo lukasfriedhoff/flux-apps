@@ -6,7 +6,6 @@ resources:
   - pvc-downloads.yaml
   - pvc-media.yaml
   - qbittorrent-config.yaml
-  - qbittorrent-port-forwarding-config.yaml
   - qbittorrent.yaml
   - prowlarr.yaml
   - prowlarr-bootstrap-config.yaml
