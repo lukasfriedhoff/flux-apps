@@ -64,33 +64,47 @@ spec:
           gluetun:
             image:
               repository: qmcgaw/gluetun
-              tag: v3.41.1
+              tag: v3.40.0
             env:
               TZ: ${media_timezone}
-              VPN_SERVICE_PROVIDER: protonvpn
+              VPN_SERVICE_PROVIDER: custom
               VPN_TYPE: wireguard
-              SERVER_COUNTRIES: ${protonvpn_server_countries}
-              PORT_FORWARD_ONLY: "on"
               WIREGUARD_PRIVATE_KEY:
                 valueFrom:
                   secretKeyRef:
                     name: media-protonvpn
                     key: wireguard_private_key
+              WIREGUARD_ADDRESSES:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_addresses
+              WIREGUARD_PUBLIC_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_public_key
+              WIREGUARD_ENDPOINT_IP:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_endpoint_ip
+              WIREGUARD_ENDPOINT_PORT:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_endpoint_port
+              WIREGUARD_ALLOWED_IPS:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_allowed_ips
               WIREGUARD_PERSISTENT_KEEPALIVE_INTERVAL: "25s"
-              VPN_PORT_FORWARDING: "on"
-              VPN_PORT_FORWARDING_PORTS_COUNT: "1"
-              VPN_PORT_FORWARDING_UP_COMMAND:
-                valueFrom:
-                  configMapKeyRef:
-                    name: qbittorrent-port-forwarding-config
-                    key: up_command
-              VPN_PORT_FORWARDING_DOWN_COMMAND:
-                valueFrom:
-                  configMapKeyRef:
-                    name: qbittorrent-port-forwarding-config
-                    key: down_command
+              DOT: "off"
+              DNS_ADDRESS: "10.2.0.1"
               HEALTH_TARGET_ADDRESS: "1.1.1.1:443"
               HEALTH_ICMP_TARGET_IPS: "1.1.1.1,8.8.8.8,9.9.9.9"
+              HEALTH_RESTART_VPN: "off"
               HEALTH_VPN_DURATION_INITIAL: "120s"
               HEALTH_VPN_DURATION_ADDITION: "30s"
               HEALTH_SUCCESS_WAIT_DURATION: "20s"
