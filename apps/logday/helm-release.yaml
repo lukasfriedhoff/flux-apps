@@ -67,7 +67,7 @@ spec:
         cert-manager.io/cluster-issuer: ${default_cluster_issuer}
         external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
-        traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
+        traefik.ingress.kubernetes.io/router.middlewares: ${logday_traefik_middlewares:=logday-logday-nuxt-rewrite@kubernetescrd,traefik-authelia-forwardauth-redirect@kubernetescrd}
         traefik.ingress.kubernetes.io/router.tls: "true"
       host: logday${public_host_suffix}.${delegating_domain}
       path: /
