@@ -15,6 +15,7 @@ spec:
   chart:
     spec:
       chart: ./charts/logday
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: logday
