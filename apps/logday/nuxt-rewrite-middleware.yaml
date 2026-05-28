@@ -1,0 +1,9 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: logday-nuxt-rewrite
+  namespace: logday
+spec:
+  replacePathRegex:
+    regex: ^/_nuxt/(.*)
+    replacement: /static/_nuxt/$1
