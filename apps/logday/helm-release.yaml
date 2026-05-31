@@ -26,7 +26,7 @@ spec:
     image:
       repository: ${logday_image_repository:=ghcr.io/lukasfriedhoff/logday}
       tag: ${logday_image_tag:=latest}
-      pullPolicy: IfNotPresent
+      pullPolicy: ${logday_image_pull_policy:=IfNotPresent}
       pullSecrets:
         - name: ${logday_image_pull_secret_name:=logday-ghcr-pull}
     service:
