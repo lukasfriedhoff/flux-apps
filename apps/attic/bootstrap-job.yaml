@@ -60,7 +60,7 @@ spec:
               ATTIC_CACHE_PRIORITY="${attic_cache_priority}"
               export HOME=/tmp/attic-home
               export XDG_CONFIG_HOME=/tmp/attic-config
-              mkdir -p "$${HOME}" "$${XDG_CONFIG_HOME}"
+              mkdir -p /tmp "$${HOME}" "$${XDG_CONFIG_HOME}"
 
               cat > /tmp/attic-server.toml <<EOF_CONFIG
               listen = "0.0.0.0:8080"
