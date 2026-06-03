@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${attic_service_name}-storage
+  namespace: ${attic_namespace}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${attic_storage_class_name}
+  resources:
+    requests:
+      storage: ${attic_storage_size}
