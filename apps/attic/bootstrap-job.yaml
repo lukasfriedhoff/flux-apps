@@ -4,13 +4,15 @@ metadata:
   name: ${attic_service_name}-bootstrap
   namespace: ${attic_namespace}
   labels:
-    app.kubernetes.io/name: attic
+    app.kubernetes.io/name: attic-bootstrap
+    app.kubernetes.io/part-of: attic
 spec:
   backoffLimit: 6
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: attic
+        app.kubernetes.io/name: attic-bootstrap
+        app.kubernetes.io/part-of: attic
     spec:
       restartPolicy: OnFailure
       containers:
@@ -80,18 +82,10 @@ spec:
               path = "/var/lib/atticd/storage"
               EOF_CONFIG
 
-              token="$(atticadm -f /tmp/attic-server.toml make-token \
+              atticadm -f /tmp/attic-server.toml make-token \
                 --sub bootstrap \
                 --validity 10y \
                 --pull "$${ATTIC_CACHE_NAME}" \
                 --push "$${ATTIC_CACHE_NAME}" \
                 --create-cache "$${ATTIC_CACHE_NAME}" \
-                --configure-cache "$${ATTIC_CACHE_NAME}")"
-
-              until attic login bootstrap "$${ATTIC_INTERNAL_URL}" "$${token}" >/dev/null 2>&1; do
-                sleep 5
-              done
-
-              attic cache create "bootstrap:$${ATTIC_CACHE_NAME}" \
-                --public \
-                --priority "$${ATTIC_CACHE_PRIORITY}" || true
+                --configure-cache "$${ATTIC_CACHE_NAME}" >/dev/null
