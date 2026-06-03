@@ -28,7 +28,7 @@ spec:
             - name: ATTIC_CACHE_NAME
               value: ${attic_cache_name}
             - name: ATTIC_CACHE_PRIORITY
-              value: "${attic_cache_priority}"
+              value: !!str ${attic_cache_priority}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
