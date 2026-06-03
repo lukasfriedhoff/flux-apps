@@ -27,8 +27,6 @@ spec:
               value: http://${attic_service_name}.${attic_namespace}.svc.cluster.local:${attic_service_port}
             - name: ATTIC_CACHE_NAME
               value: ${attic_cache_name}
-            - name: ATTIC_CACHE_PRIORITY
-              value: !!str ${attic_cache_priority}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -59,6 +57,7 @@ spec:
             - -ec
             - |
               set -euo pipefail
+              ATTIC_CACHE_PRIORITY="${attic_cache_priority}"
               export HOME=/tmp/attic-home
               export XDG_CONFIG_HOME=/tmp/attic-config
               mkdir -p "$${HOME}" "$${XDG_CONFIG_HOME}"
