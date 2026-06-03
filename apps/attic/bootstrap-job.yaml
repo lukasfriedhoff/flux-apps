@@ -99,7 +99,27 @@ spec:
                 --create-cache "$${ATTIC_CACHE_NAME}" \
                 --configure-cache "$${ATTIC_CACHE_NAME}")
 
-              # Login and create the cache (idempotent — safe to re-run)
-              attic login bootstrap "$${ATTIC_INTERNAL_URL}" "$${BOOTSTRAP_TOKEN}"
-              attic cache create "bootstrap:$${ATTIC_CACHE_NAME}" \
-                || echo "Cache already exists, continuing"
+              echo "Bootstrap token generated"
+
+              # Verify the cache exists via PATCH (idempotent, no keypair needed).
+              # Cache creation requires a keypair that must be set up via 'attic cache create'
+              # before initial deployment. The bootstrap job only ensures the cache is configured.
+              ATTIC_HOST=$(echo "$${ATTIC_INTERNAL_URL}" | sed 's|http://||' | cut -d: -f1)
+              ATTIC_PORT=$(echo "$${ATTIC_INTERNAL_URL}" | sed 's|.*:||')
+              PATCH_BODY="{\"priority\":$${ATTIC_CACHE_PRIORITY},\"is_public\":true}"
+              PATCH_LEN=$(printf '%s' "$${PATCH_BODY}" | wc -c)
+
+              HTTP_RESPONSE=$({ printf 'PATCH /_api/v1/cache-config/%s HTTP/1.0\r\nHost: %s:%s\r\nAuthorization: Bearer %s\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n%s' \
+                "$${ATTIC_CACHE_NAME}" "$${ATTIC_HOST}" "$${ATTIC_PORT}" \
+                "$${BOOTSTRAP_TOKEN}" "$${PATCH_LEN}" "$${PATCH_BODY}"; sleep 3; \
+                } | nc "$${ATTIC_HOST}" "$${ATTIC_PORT}")
+
+              HTTP_STATUS=$(printf '%s\n' "$${HTTP_RESPONSE}" | head -1 | awk '{print $2}')
+              echo "Cache config response: HTTP $${HTTP_STATUS}"
+              [ "$${HTTP_STATUS}" = "200" ] || {
+                echo "Cache '$${ATTIC_CACHE_NAME}' does not exist or config update failed."
+                echo "Create the cache first: attic cache create <server>:$${ATTIC_CACHE_NAME}"
+                printf '%s\n' "$${HTTP_RESPONSE}"
+                exit 1
+              }
+              echo "Cache '$${ATTIC_CACHE_NAME}' is ready (priority=$${ATTIC_CACHE_PRIORITY}, public=true)"
