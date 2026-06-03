@@ -33,7 +33,7 @@ spec:
                 name: ${attic_server_secret_name}
           env:
             - name: ATTIC_API_ENDPOINT
-              value: ${attic_public_url}
+              value: ${attic_api_endpoint}
             - name: ATTIC_LISTEN
               value: 0.0.0.0:8080
             - name: ATTIC_STORAGE_PATH
