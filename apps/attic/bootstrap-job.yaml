@@ -82,10 +82,24 @@ spec:
               path = "/var/lib/atticd/storage"
               EOF_CONFIG
 
-              atticadm -f /tmp/attic-server.toml make-token \
+              # Wait for the attic server to accept connections (up to 90s per attempt)
+              for i in $(seq 1 18); do
+                wget -q -O/dev/null "$${ATTIC_INTERNAL_URL}/" 2>/dev/null && break
+                echo "Waiting for attic server ($${i}/18)..."
+                [ "$${i}" -eq 18 ] && { echo "Attic server not available, will retry"; exit 1; }
+                sleep 5
+              done
+
+              # Generate a short-lived bootstrap admin token with cache-creation permission
+              BOOTSTRAP_TOKEN=$(atticadm -f /tmp/attic-server.toml make-token \
                 --sub bootstrap \
-                --validity 10y \
+                --validity 1h \
                 --pull "$${ATTIC_CACHE_NAME}" \
                 --push "$${ATTIC_CACHE_NAME}" \
                 --create-cache "$${ATTIC_CACHE_NAME}" \
-                --configure-cache "$${ATTIC_CACHE_NAME}" >/dev/null
+                --configure-cache "$${ATTIC_CACHE_NAME}")
+
+              # Login and create the cache (idempotent — safe to re-run)
+              attic login bootstrap "$${ATTIC_INTERNAL_URL}" "$${BOOTSTRAP_TOKEN}"
+              attic cache create "bootstrap:$${ATTIC_CACHE_NAME}" \
+                || echo "Cache already exists, continuing"
