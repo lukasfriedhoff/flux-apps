@@ -68,6 +68,7 @@ spec:
             - -ec
             - |
               set -euo pipefail
+              mkdir -p /tmp
               cat > /tmp/attic-server.toml <<EOF_CONFIG
               listen = "$${ATTIC_LISTEN}"
               api-endpoint = "$${ATTIC_API_ENDPOINT}"
