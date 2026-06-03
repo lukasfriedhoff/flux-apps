@@ -1,0 +1,28 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ${attic_postgres_cluster_name}
+  namespace: ${attic_namespace}
+spec:
+  imageName: ${attic_postgres_image}
+  instances: ${attic_postgres_instances}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: /metrics
+  bootstrap:
+    initdb:
+      database: ${attic_postgres_db_name}
+      owner: ${attic_postgres_user}
+  storage:
+    storageClass: ${attic_postgres_storage_class_name}
+    size: ${attic_postgres_size}
+  resources:
+    requests:
+      cpu: ${attic_postgres_requests_cpu}
+      memory: ${attic_postgres_requests_memory}
+    limits:
+      cpu: ${attic_postgres_limits_cpu}
+      memory: ${attic_postgres_limits_memory}

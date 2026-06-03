@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${attic_service_name}
+  namespace: ${attic_namespace}
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: attic${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ${attic_service_name}
+                port:
+                  number: ${attic_service_port}
+  tls:
+    - secretName: attic-tls
+      hosts:
+        - attic${public_host_suffix}.${delegating_domain}
