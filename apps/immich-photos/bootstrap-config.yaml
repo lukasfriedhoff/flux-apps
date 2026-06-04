@@ -300,7 +300,65 @@ data:
       rm -f "$create_body"
     }
 
+    configure_library_scan() {
+      scan_cfg_body="$(mktemp)"
+      scan_cfg_code="$(
+        curl -sS \
+          -o "$scan_cfg_body" \
+          -w '%{http_code}' \
+          -H "Authorization: Bearer $access_token" \
+          "$IMMICH_URL/api/system-config" || true
+      )"
+      if [ "$scan_cfg_code" != "200" ]; then
+        log "Could not read system config for library scan ($scan_cfg_code); skipping."
+        rm -f "$scan_cfg_body"
+        return 0
+      fi
+      desired_scan_cfg="$(node -e '
+        const cfg = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+        cfg.library = cfg.library || {};
+        cfg.library.scan = cfg.library.scan || {};
+        cfg.library.scan.enabled = true;
+        cfg.library.scan.cronExpression = "*/15 * * * *";
+        cfg.library.watch = cfg.library.watch || {};
+        cfg.library.watch.enabled = false;
+        process.stdout.write(JSON.stringify(cfg));
+      ' "$scan_cfg_body" || true)"
+      current_scan="$(node -e '
+        const cfg = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+        const s = (cfg.library || {}).scan || {};
+        process.stdout.write(JSON.stringify({enabled: s.enabled, cronExpression: s.cronExpression}));
+      ' "$scan_cfg_body" || echo '{}')"
+      rm -f "$scan_cfg_body"
+      if [ "$current_scan" = '{"enabled":true,"cronExpression":"*/15 * * * *"}' ]; then
+        log "Library scan schedule already configured."
+        return 0
+      fi
+      if [ -z "$desired_scan_cfg" ]; then
+        log "Failed to build desired scan config; skipping."
+        return 0
+      fi
+      scan_update_body="$(mktemp)"
+      scan_update_code="$(
+        curl -sS \
+          -o "$scan_update_body" \
+          -w '%{http_code}' \
+          -X PUT \
+          -H "Authorization: Bearer $access_token" \
+          -H 'Content-Type: application/json' \
+          --data "$desired_scan_cfg" \
+          "$IMMICH_URL/api/system-config" || true
+      )"
+      if [ "$scan_update_code" = "200" ]; then
+        log "Library scan schedule set to every 15 minutes."
+      else
+        log "Failed to set library scan schedule ($scan_update_code): $(cat "$scan_update_body" 2>/dev/null || true)"
+      fi
+      rm -f "$scan_update_body"
+    }
+
     configure_external_library
+    configure_library_scan
 
     IMMICH_OIDC_PROVIDER="$${IMMICH_OIDC_PROVIDER:-none}"
     if [ "$IMMICH_OIDC_PROVIDER" != "authelia" ]; then
