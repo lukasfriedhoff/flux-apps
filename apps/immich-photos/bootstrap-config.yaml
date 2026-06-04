@@ -224,6 +224,33 @@ data:
     fi
 
     configure_external_library() {
+      me_body="$(mktemp)"
+      me_code="$(
+        curl -sS \
+          -o "$me_body" \
+          -w '%{http_code}' \
+          -H "Authorization: Bearer $access_token" \
+          "$IMMICH_URL/api/users/me" || true
+      )"
+      if [ "$me_code" != "200" ]; then
+        log "Could not fetch admin user info ($me_code); skipping external library setup."
+        rm -f "$me_body"
+        return 0
+      fi
+      admin_id="$(node -e '
+        let input = "";
+        process.stdin.on("data", (chunk) => (input += chunk));
+        process.stdin.on("end", () => {
+          try { process.stdout.write(JSON.parse(input).id || ""); }
+          catch { process.stdout.write(""); }
+        });
+      ' < "$me_body" || true)"
+      rm -f "$me_body"
+      if [ -z "$admin_id" ]; then
+        log "Could not extract admin user ID; skipping external library setup."
+        return 0
+      fi
+
       libraries_body="$(mktemp)"
       libraries_code="$(
         curl -sS \
@@ -262,7 +289,7 @@ data:
           -X POST \
           -H "Authorization: Bearer $access_token" \
           -H 'Content-Type: application/json' \
-          --data '{"type":"EXTERNAL","name":"Nextcloud Photos","importPaths":["/usr/src/app/external"]}' \
+          --data "{\"type\":\"EXTERNAL\",\"name\":\"Nextcloud Photos\",\"ownerId\":\"$admin_id\",\"importPaths\":[\"/usr/src/app/external\"]}" \
           "$IMMICH_URL/api/libraries" || true
       )"
       if [ "$create_code" = "200" ] || [ "$create_code" = "201" ]; then
