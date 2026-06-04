@@ -27,6 +27,8 @@ data:
       user_attributes:
         nextcloud_is_admin:
           expression: '"nextcloud-admins" in groups'
+        immich_role:
+          expression: '"immich-admins" in groups ? "admin" : ""'
 
     access_control:
       default_policy: deny
