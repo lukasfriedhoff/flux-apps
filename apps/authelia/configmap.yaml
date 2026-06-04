@@ -175,11 +175,16 @@ data:
               - groups
               - preferred_username
           immich:
+            custom_claims:
+              immich_role_claim:
+                name: role
+                attribute: immich_role
             id_token:
               - email
               - name
               - groups
               - preferred_username
+              - role
         scopes:
           nextcloud_admin:
             claims:
