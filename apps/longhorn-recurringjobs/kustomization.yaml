@@ -2,7 +2,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: ${longhorn_namespace}
 resources:
-  - helm-repo.yaml
-  - helm-release.yaml
-  - backup-target-bootstrap-cronjob.yaml
-  - storageclasses.yaml
+  - recurringjobs.yaml
