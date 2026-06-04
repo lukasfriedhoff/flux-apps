@@ -11,7 +11,7 @@ spec:
   storageClassName: ""
   nfs:
     server: ${photos_shared_nfs_server}
-    path: /
+    path: ${photos_shared_nfs_path:=/export}
   claimRef:
     namespace: immich-photos
     name: immich-photos-shared

@@ -271,7 +271,7 @@ data:
           process.stdin.on("end", () => {
             try {
               const libs = JSON.parse(input);
-              process.stdout.write(Array.isArray(libs) && libs.some(l => l.type === "EXTERNAL") ? "true" : "false");
+              process.stdout.write(Array.isArray(libs) && libs.some(l => l.name === "Nextcloud Photos") ? "true" : "false");
             } catch { process.stdout.write("false"); }
           });
         ' < "$libraries_body" || echo 'false'
