@@ -39,7 +39,7 @@ spec:
                 - name: IMMICH_OIDC_SCOPE
                   value: openid profile email groups
                 - name: IMMICH_OIDC_ROLE_CLAIM
-                  value: groups
+                  value: role
                 - name: IMMICH_OIDC_BUTTON_TEXT
                   value: Sign in with Authelia
                 - name: IMMICH_OIDC_AUTO_REGISTER
