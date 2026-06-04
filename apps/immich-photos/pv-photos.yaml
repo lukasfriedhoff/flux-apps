@@ -4,7 +4,7 @@ metadata:
   name: immich-photos-shared-pv
 spec:
   capacity:
-    storage: ${nextcloud_photos_size}
+    storage: ${nextcloud_photos_size:=50Gi}
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain

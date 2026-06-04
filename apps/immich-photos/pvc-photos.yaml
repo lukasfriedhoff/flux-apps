@@ -10,4 +10,4 @@ spec:
   volumeName: immich-photos-shared-pv
   resources:
     requests:
-      storage: ${nextcloud_photos_size}
+      storage: ${nextcloud_photos_size:=50Gi}
