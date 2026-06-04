@@ -103,9 +103,11 @@ spec:
             requests:
               cpu: ${attic_requests_cpu}
               memory: ${attic_requests_memory}
+              ephemeral-storage: ${attic_requests_ephemeral_storage}
             limits:
               cpu: ${attic_limits_cpu}
               memory: ${attic_limits_memory}
+              ephemeral-storage: ${attic_limits_ephemeral_storage}
           volumeMounts:
             - name: storage
               mountPath: /var/lib/atticd/storage
