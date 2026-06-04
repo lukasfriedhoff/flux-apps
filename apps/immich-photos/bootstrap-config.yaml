@@ -223,6 +223,58 @@ data:
       exit 1
     fi
 
+    configure_external_library() {
+      libraries_body="$(mktemp)"
+      libraries_code="$(
+        curl -sS \
+          -o "$libraries_body" \
+          -w '%{http_code}' \
+          -H "Authorization: Bearer $access_token" \
+          "$IMMICH_URL/api/libraries" || true
+      )"
+      if [ "$libraries_code" != "200" ]; then
+        log "Could not read libraries ($libraries_code); skipping external library setup."
+        rm -f "$libraries_body"
+        return 0
+      fi
+      has_external="$(
+        node -e '
+          let input = "";
+          process.stdin.on("data", (chunk) => (input += chunk));
+          process.stdin.on("end", () => {
+            try {
+              const libs = JSON.parse(input);
+              process.stdout.write(Array.isArray(libs) && libs.some(l => l.type === "EXTERNAL") ? "true" : "false");
+            } catch { process.stdout.write("false"); }
+          });
+        ' < "$libraries_body" || echo 'false'
+      )"
+      rm -f "$libraries_body"
+      if [ "$has_external" = "true" ]; then
+        log "External library already configured."
+        return 0
+      fi
+      create_body="$(mktemp)"
+      create_code="$(
+        curl -sS \
+          -o "$create_body" \
+          -w '%{http_code}' \
+          -X POST \
+          -H "Authorization: Bearer $access_token" \
+          -H 'Content-Type: application/json' \
+          --data '{"type":"EXTERNAL","name":"Nextcloud Photos","importPaths":["/usr/src/app/external"]}' \
+          "$IMMICH_URL/api/libraries" || true
+      )"
+      if [ "$create_code" = "200" ] || [ "$create_code" = "201" ]; then
+        log "External library 'Nextcloud Photos' created."
+      else
+        log "Failed to create external library ($create_code): $(cat "$create_body" 2>/dev/null || true)"
+      fi
+      rm -f "$create_body"
+    }
+
+    configure_external_library
+
     IMMICH_OIDC_PROVIDER="$${IMMICH_OIDC_PROVIDER:-none}"
     if [ "$IMMICH_OIDC_PROVIDER" != "authelia" ]; then
       log "OIDC provider is '$IMMICH_OIDC_PROVIDER'; skipping OIDC configuration."
