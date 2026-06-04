@@ -90,10 +90,16 @@ spec:
           volumeMounts:
             - name: uploads
               mountPath: /usr/src/app/upload
+            - name: photos-shared
+              mountPath: /usr/src/app/external
+              readOnly: true
       volumes:
         - name: uploads
           persistentVolumeClaim:
             claimName: immich-photos-uploads
+        - name: photos-shared
+          persistentVolumeClaim:
+            claimName: immich-photos-shared
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
