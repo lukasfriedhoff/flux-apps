@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${nextcloud_photos_claim_name}
+  namespace: nextcloud
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: ${nextcloud_photos_size}
+  storageClassName: ${nextcloud_photos_storage_class_name}

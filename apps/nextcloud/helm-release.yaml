@@ -457,7 +457,26 @@ spec:
             occ_safe config:app:set external sites --value="$merged_sites"
             occ_safe config:app:set external max_site --value="$max_site"
           }
+          configure_shared_photos_storage() {
+            if ! enable_custom_app_if_present files_external \
+              /var/www/html/apps/files_external/appinfo/info.xml; then
+              return 0
+            fi
+            existing="$(timeout 30 php /var/www/html/occ files_external:list \
+              --output=json 2>/dev/null \
+              | php -r 'foreach(json_decode(file_get_contents("php://stdin"),true) as $m){if($m["mount_point"]=="/Photos"){echo "found";break;}}')"
+            if [ "$existing" = "found" ]; then
+              echo "Shared Photos external storage already configured."
+              return 0
+            fi
+            echo "Creating Shared Photos external storage at /shared-photos..."
+            occ_safe files_external:create \
+              "Photos" local null::null \
+              -c datadir=/shared-photos \
+              --applicable-to-all-users
+          }
           configure_oidc_login
+          configure_shared_photos_storage
           configure_external_photos_link
           enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
           ensure_app_enabled serverinfo
@@ -644,10 +663,13 @@ spec:
             - name: nextcloud-data
               mountPath: /dest
               subPath: data
-      # Explicitly clear chart defaults to avoid rendering an invalid mount
-      # entry with an empty `name` when no extra mounts are required.
-      extraVolumeMounts: []
-      extraVolumes: []
+      extraVolumeMounts:
+        - name: photos-shared
+          mountPath: /shared-photos
+      extraVolumes:
+        - name: photos-shared
+          persistentVolumeClaim:
+            claimName: ${nextcloud_photos_claim_name}
     internalDatabase:
       enabled: false
     externalDatabase:
