@@ -37,7 +37,9 @@ spec:
                 - name: IMMICH_OIDC_CLIENT_ID
                   value: ${immich_photos_oidc_client_id:=immich-photos}
                 - name: IMMICH_OIDC_SCOPE
-                  value: openid profile email
+                  value: openid profile email groups
+                - name: IMMICH_OIDC_ROLE_CLAIM
+                  value: groups
                 - name: IMMICH_OIDC_BUTTON_TEXT
                   value: Sign in with Authelia
                 - name: IMMICH_OIDC_AUTO_REGISTER
