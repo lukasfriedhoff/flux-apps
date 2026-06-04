@@ -80,6 +80,8 @@ spec:
       replicas: ${mimir_ingester_replicas}
       zoneAwareReplication:
         enabled: ${mimir_ingester_zone_aware_replication}
+      persistentVolume:
+        storageClass: ${monitoring_storage_class_name}
       resources:
         requests:
           cpu: 100m
@@ -91,6 +93,8 @@ spec:
       replicas: ${mimir_store_gateway_replicas}
       zoneAwareReplication:
         enabled: ${mimir_store_gateway_zone_aware_replication}
+      persistentVolume:
+        storageClass: ${monitoring_storage_class_name}
       resources:
         requests:
           cpu: 100m
@@ -133,6 +137,8 @@ spec:
           cpu: 300m
           memory: 768Mi
     compactor:
+      persistentVolume:
+        storageClass: ${monitoring_storage_class_name}
       resources:
         requests:
           cpu: 100m
@@ -141,6 +147,8 @@ spec:
           cpu: 600m
           memory: 512Mi
     alertmanager:
+      persistentVolume:
+        storageClass: ${monitoring_storage_class_name}
       resources:
         requests:
           cpu: 50m
