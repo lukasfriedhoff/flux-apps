@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: immich-photos-shared
+  name: ${immich_photos_shared_claim_name:=immich-photos-shared}
   namespace: immich-photos
 spec:
   accessModes:
     - ReadWriteMany
   storageClassName: ""
-  volumeName: immich-photos-shared-pv
+  volumeName: ${immich_photos_shared_pv_name:=immich-photos-shared-pv}
   resources:
     requests:
       storage: ${nextcloud_photos_size:=50Gi}

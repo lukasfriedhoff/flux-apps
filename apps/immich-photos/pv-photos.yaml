@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: immich-photos-shared-pv
+  name: ${immich_photos_shared_pv_name:=immich-photos-shared-pv}
 spec:
   capacity:
     storage: ${nextcloud_photos_size:=50Gi}
@@ -14,4 +14,4 @@ spec:
     path: ${photos_shared_nfs_path:=/export}
   claimRef:
     namespace: immich-photos
-    name: immich-photos-shared
+    name: ${immich_photos_shared_claim_name:=immich-photos-shared}

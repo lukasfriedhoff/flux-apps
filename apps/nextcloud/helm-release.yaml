@@ -462,18 +462,37 @@ spec:
               /var/www/html/apps/files_external/appinfo/info.xml; then
               return 0
             fi
+            lock_dir=/var/www/html/config/.shared-photos-storage.lock
+            lock_acquired=false
+            for _ in $(seq 1 60); do
+              if mkdir "$lock_dir" 2>/dev/null; then
+                lock_acquired=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$lock_acquired" != "true" ]; then
+              echo "Timed out waiting for Shared Photos external storage lock; skipping."
+              return 0
+            fi
             existing="$(timeout 30 php /var/www/html/occ files_external:list \
               --output=json 2>/dev/null \
               | php -r 'foreach(json_decode(file_get_contents("php://stdin"),true) as $m){if($m["mount_point"]=="/Photos"){echo "found";break;}}')"
             if [ "$existing" = "found" ]; then
               echo "Shared Photos external storage already configured."
+              rmdir "$lock_dir"
               return 0
             fi
             echo "Creating Shared Photos external storage at /shared-photos..."
-            occ_safe files_external:create \
+            if occ_safe files_external:create \
               "Photos" local null::null \
-              -c datadir=/shared-photos \
-              --applicable-to-all-users
+              -c datadir=/shared-photos; then
+              rmdir "$lock_dir"
+              return 0
+            fi
+            status="$?"
+            rmdir "$lock_dir"
+            return "$status"
           }
           configure_oidc_login
           configure_shared_photos_storage
@@ -669,7 +688,7 @@ spec:
       extraVolumes:
         - name: photos-shared
           persistentVolumeClaim:
-            claimName: ${nextcloud_photos_claim_name}
+            claimName: ${nextcloud_photos_claim_name:=nextcloud-photos-shared}
     internalDatabase:
       enabled: false
     externalDatabase:
