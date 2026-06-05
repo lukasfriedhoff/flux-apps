@@ -35,6 +35,23 @@ spec:
     spec:
       securityContext:
         fsGroup: 1337
+      initContainers:
+        - name: seed-whatsapp-config
+          image: busybox:1.37.0
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              cp /config-src/config.yaml /data/config.yaml
+              cp /config-src/registration.yaml /data/registration.yaml
+              chown 1337:1337 /data/config.yaml /data/registration.yaml
+              chmod 0600 /data/config.yaml /data/registration.yaml
+          volumeMounts:
+            - name: whatsapp-data
+              mountPath: /data
+            - name: whatsapp-config
+              mountPath: /config-src
+              readOnly: true
       containers:
         - name: whatsapp
           image: dock.mau.dev/mautrix/whatsapp:${matrix_whatsapp_image_tag}
@@ -48,14 +65,6 @@ spec:
           volumeMounts:
             - name: whatsapp-data
               mountPath: /data
-            - name: whatsapp-config
-              mountPath: /data/config.yaml
-              subPath: config.yaml
-              readOnly: true
-            - name: whatsapp-config
-              mountPath: /data/registration.yaml
-              subPath: registration.yaml
-              readOnly: true
       volumes:
         - name: whatsapp-data
           persistentVolumeClaim:
@@ -101,6 +110,23 @@ spec:
     spec:
       securityContext:
         fsGroup: 1337
+      initContainers:
+        - name: seed-wa-config
+          image: busybox:1.37.0
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              cp /config-src/config.yaml /data/config.yaml
+              cp /config-src/registration.yaml /data/registration.yaml
+              chown 1337:1337 /data/config.yaml /data/registration.yaml
+              chmod 0600 /data/config.yaml /data/registration.yaml
+          volumeMounts:
+            - name: wa-data
+              mountPath: /data
+            - name: wa-config
+              mountPath: /config-src
+              readOnly: true
       containers:
         - name: wa
           image: dock.mau.dev/mautrix/whatsapp:${matrix_whatsapp_image_tag}
@@ -114,14 +140,6 @@ spec:
           volumeMounts:
             - name: wa-data
               mountPath: /data
-            - name: wa-config
-              mountPath: /data/config.yaml
-              subPath: config.yaml
-              readOnly: true
-            - name: wa-config
-              mountPath: /data/registration.yaml
-              subPath: registration.yaml
-              readOnly: true
       volumes:
         - name: wa-data
           persistentVolumeClaim:
