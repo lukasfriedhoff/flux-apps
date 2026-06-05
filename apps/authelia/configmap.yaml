@@ -27,8 +27,10 @@ data:
       user_attributes:
         nextcloud_is_admin:
           expression: '"nextcloud-admins" in groups'
-        immich_role:
-          expression: '"immich-admins" in groups ? "admin" : ""'
+        immich_meme_role:
+          expression: '"meme-admins" in groups ? "admin" : ""'
+        immich_photos_role:
+          expression: '"photos-admins" in groups ? "admin" : ""'
 
     access_control:
       default_policy: deny
@@ -176,11 +178,22 @@ data:
               - name
               - groups
               - preferred_username
-          immich:
+          immich_meme:
             custom_claims:
               immich_role_claim:
                 name: role
-                attribute: immich_role
+                attribute: immich_meme_role
+            id_token:
+              - email
+              - name
+              - groups
+              - preferred_username
+              - role
+          immich_photos:
+            custom_claims:
+              immich_role_claim:
+                name: role
+                attribute: immich_photos_role
             id_token:
               - email
               - name
@@ -282,7 +295,7 @@ data:
             public: false
             authorization_policy: ${authelia_oidc_policy}
             consent_mode: implicit
-            claims_policy: immich
+            claims_policy: immich_meme
             redirect_uris:
               - https://meme${public_host_suffix}.${delegating_domain}/auth/login
               - https://meme${public_host_suffix}.${delegating_domain}/user-settings
@@ -306,7 +319,7 @@ data:
             public: false
             authorization_policy: ${authelia_oidc_policy}
             consent_mode: implicit
-            claims_policy: immich
+            claims_policy: immich_photos
             redirect_uris:
               - https://photos${public_host_suffix}.${delegating_domain}/auth/login
               - https://photos${public_host_suffix}.${delegating_domain}/user-settings

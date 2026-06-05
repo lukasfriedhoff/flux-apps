@@ -99,7 +99,7 @@ spec:
             claimName: immich-photos-uploads
         - name: photos-shared
           persistentVolumeClaim:
-            claimName: immich-photos-shared
+            claimName: ${immich_photos_shared_claim_name:=immich-photos-shared}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

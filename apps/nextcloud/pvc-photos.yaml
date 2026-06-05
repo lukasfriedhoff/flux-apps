@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nextcloud-photos-shared
+  name: ${nextcloud_photos_claim_name:=nextcloud-photos-shared}
   namespace: nextcloud
 spec:
   accessModes:
