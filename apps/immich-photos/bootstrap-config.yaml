@@ -77,7 +77,7 @@ data:
           if (!user.oauthId) {
             continue;
           }
-          const importPath = `/usr/src/app/external/${user.oauthId}`;
+          const importPath = "/usr/src/app/external/" + user.oauthId;
           const existing = libraryByOwner.get(user.id);
           if (existing) {
             const paths = Array.isArray(existing.importPaths) ? existing.importPaths : [];
