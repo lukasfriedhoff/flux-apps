@@ -570,37 +570,28 @@ data:
     ensure_sonarr_dual_audio_policy() {
       dual_cf_name="German + English Dual Audio"
 
-      lang_schema="$(sonarr_get /api/v3/customformat/schema | jq -c 'map(select(.implementation == "LanguageSpecification"))[0]')"
       title_schema="$(sonarr_get /api/v3/customformat/schema | jq -c 'map(select(.implementation == "ReleaseTitleSpecification"))[0]')"
-      if [ "$lang_schema" = "null" ] || [ "$title_schema" = "null" ]; then
+      if [ "$title_schema" = "null" ]; then
         log "Sonarr custom format schema missing; skipping dual-audio policy."
         return 0
       fi
 
       cf_payload="$(jq -n -c \
         --arg name "$dual_cf_name" \
-        --arg lang "$lang_schema" \
         --arg title "$title_schema" '
           {
             name: $name,
             includeCustomFormatWhenRenaming: false,
             specifications: [
-              (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
-                | .name = "Language German"
+              (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
+                | .name = "German Title Token"
                 | .required = true
-                | (.fields[]? | select(.name == "value")).value = 4
-                | (.fields[]? | select(.name == "exceptLanguage")).value = false
-              ),
-              (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
-                | .name = "Language English"
-                | .required = true
-                | (.fields[]? | select(.name == "value")).value = 1
-                | (.fields[]? | select(.name == "exceptLanguage")).value = false
+                | (.fields[]? | select(.name == "value")).value = "\\b(German|Deutsch|GER)\\b"
               ),
               (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
-                | .name = "Dual Title Token"
+                | .name = "Dual Audio Title Token"
                 | .required = true
-                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|MULTI)\\b"
+                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|DUAL[-_. ]?AUDIO|MULTI|Dubbed)\\b"
               )
             ]
           }
@@ -629,7 +620,9 @@ data:
       fi
       qp_id="$(printf '%s' "$qp_json" | jq -r '.id')"
       qp_payload="$(printf '%s' "$qp_json" | jq -c --arg cfId "$cf_id" --arg cfName "$dual_cf_name" '
-        .minFormatScore = 100
+        .upgradeAllowed = true
+        | .cutoffFormatScore = 100
+        | .minFormatScore = 100
         | .minUpgradeFormatScore = 100
         | .formatItems = (((.formatItems // []) | map(select(.format != ($cfId | tonumber)))) + [{format: ($cfId | tonumber), name: $cfName, score: 100}])
       ')"
@@ -781,37 +774,28 @@ data:
     ensure_radarr_dual_audio_policy() {
       dual_cf_name="German + English Dual Audio"
 
-      lang_schema="$(radarr_get /api/v3/customformat/schema | jq -c 'map(select(.implementation == "LanguageSpecification"))[0]')"
       title_schema="$(radarr_get /api/v3/customformat/schema | jq -c 'map(select(.implementation == "ReleaseTitleSpecification"))[0]')"
-      if [ "$lang_schema" = "null" ] || [ "$title_schema" = "null" ]; then
+      if [ "$title_schema" = "null" ]; then
         log "Radarr custom format schema missing; skipping dual-audio policy."
         return 0
       fi
 
       cf_payload="$(jq -n -c \
         --arg name "$dual_cf_name" \
-        --arg lang "$lang_schema" \
         --arg title "$title_schema" '
           {
             name: $name,
             includeCustomFormatWhenRenaming: false,
             specifications: [
-              (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
-                | .name = "Language German"
+              (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
+                | .name = "German Title Token"
                 | .required = true
-                | (.fields[]? | select(.name == "value")).value = 4
-                | (.fields[]? | select(.name == "exceptLanguage")).value = false
-              ),
-              (($lang | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
-                | .name = "Language English"
-                | .required = true
-                | (.fields[]? | select(.name == "value")).value = 1
-                | (.fields[]? | select(.name == "exceptLanguage")).value = false
+                | (.fields[]? | select(.name == "value")).value = "\\b(German|Deutsch|GER)\\b"
               ),
               (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
-                | .name = "Dual Title Token"
+                | .name = "Dual Audio Title Token"
                 | .required = true
-                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|MULTI)\\b"
+                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|DUAL[-_. ]?AUDIO|MULTI|Dubbed)\\b"
               )
             ]
           }
@@ -841,6 +825,8 @@ data:
       qp_id="$(printf '%s' "$qp_json" | jq -r '.id')"
       qp_payload="$(printf '%s' "$qp_json" | jq -c --arg cfId "$cf_id" --arg cfName "$dual_cf_name" '
         .language = {id: 4, name: "German"}
+        | .upgradeAllowed = true
+        | .cutoffFormatScore = 100
         | .minFormatScore = 100
         | .minUpgradeFormatScore = 100
         | .formatItems = (((.formatItems // []) | map(select(.format != ($cfId | tonumber)))) + [{format: ($cfId | tonumber), name: $cfName, score: 100}])
