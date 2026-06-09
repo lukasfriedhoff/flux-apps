@@ -325,6 +325,11 @@ data:
     # Public indexers.
     ensure_indexer "Knaben" "Knaben" true "" || log "Failed to sync Knaben indexer; will retry."
     ensure_indexer "TorrentsCSV" "TorrentsCSV" true "" || log "Failed to sync TorrentsCSV indexer; will retry."
+    ensure_cardigann_indexer "1337x" "1337x" true || log "Failed to sync 1337x indexer; will retry."
+    ensure_cardigann_indexer "LimeTorrents" "LimeTorrents" true || log "Failed to sync LimeTorrents indexer; will retry."
+    ensure_cardigann_indexer "TorrentDownload" "TorrentDownload" true || log "Failed to sync TorrentDownload indexer; will retry."
+    ensure_cardigann_indexer "TorrentGalaxyClone" "TorrentGalaxy" true || log "Failed to sync TorrentGalaxy indexer; will retry."
+    ensure_cardigann_indexer "kickasstorrents.to" "KickassTorrents" true || log "Failed to sync KickassTorrents indexer; will retry."
     # SubsPlease is TV/anime-only and causes repeated Radarr category mapping errors.
     ensure_indexer "SubsPlease" "SubsPlease" false "" || log "Failed to sync SubsPlease indexer; will retry."
     ensure_cardigann_indexer "The Pirate Bay" "The Pirate Bay" true || log "Failed to sync The Pirate Bay indexer; will retry."
