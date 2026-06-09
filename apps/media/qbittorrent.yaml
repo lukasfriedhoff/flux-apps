@@ -70,6 +70,7 @@ spec:
               TZ: ${media_timezone}
               VPN_SERVICE_PROVIDER: custom
               VPN_TYPE: wireguard
+              IPV6: "on"
               WIREGUARD_PRIVATE_KEY:
                 valueFrom:
                   secretKeyRef:
@@ -102,10 +103,27 @@ spec:
                     key: wireguard_allowed_ips
               WIREGUARD_PERSISTENT_KEEPALIVE_INTERVAL: "25s"
               WIREGUARD_MTU: "1280"
-              DNS_ADDRESS: "1.1.1.1"
+              DNS_ADDRESS:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_dns
               DOT: "off"
-              HEALTH_TARGET_ADDRESS: "1.1.1.1:53"
-              HEALTH_ICMP_TARGET_IPS: "1.1.1.1,9.9.9.9,95.173.205.162"
+              VPN_PORT_FORWARDING: "on"
+              VPN_PORT_FORWARDING_PROVIDER: protonvpn
+              VPN_PORT_FORWARDING_STATUS_FILE: /tmp/gluetun/forwarded_port
+              VPN_PORT_FORWARDING_UP_COMMAND:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_pf_up_command
+              VPN_PORT_FORWARDING_DOWN_COMMAND:
+                valueFrom:
+                  secretKeyRef:
+                    name: media-protonvpn
+                    key: wireguard_pf_down_command
+              HEALTH_TARGET_ADDRESS: "[2a07:b944::2:1]:53"
+              HEALTH_ICMP_TARGET_IPS: "2a07:b944::2:1,2a02:6ea0:c501:8096::10"
               HEALTH_RESTART_VPN: "on"
               HEALTH_VPN_DURATION_INITIAL: "20m"
               HEALTH_VPN_DURATION_ADDITION: "5m"
@@ -144,6 +162,34 @@ spec:
               limits:
                 cpu: 500m
                 memory: 1Gi
+          port-sync:
+            image:
+              repository: alpine
+              tag: "3.20"
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -eu
+                last_port=""
+                while true; do
+                  if [ -s /tmp/gluetun/forwarded_port ]; then
+                    port="$(cat /tmp/gluetun/forwarded_port)"
+                    if [ "$port" != "$last_port" ]; then
+                      if wget -qO- --post-data "json={\"listen_port\":$port,\"current_network_interface\":\"tun0\",\"random_port\":false,\"upnp\":false}" http://127.0.0.1:8080/api/v2/app/setPreferences >/dev/null; then
+                        last_port="$port"
+                      fi
+                    fi
+                  fi
+                  sleep 30
+                done
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                cpu: 50m
+                memory: 64Mi
     service:
       main:
         ports:
@@ -200,3 +246,8 @@ spec:
         hostPathType: CharDevice
         globalMounts:
           - path: /dev/net/tun
+      gluetun-tmp:
+        enabled: true
+        type: emptyDir
+        globalMounts:
+          - path: /tmp/gluetun
