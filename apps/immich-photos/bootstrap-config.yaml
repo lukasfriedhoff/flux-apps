@@ -57,6 +57,40 @@ data:
       '
     }
 
+    json_library_specs() {
+      node -e '
+        const fs = require("fs");
+        const usersPath = process.argv[1];
+        const librariesPath = process.argv[2];
+        const users = JSON.parse(fs.readFileSync(usersPath, "utf8"));
+        const libraries = JSON.parse(fs.readFileSync(librariesPath, "utf8"));
+        const libraryByOwner = new Map();
+        for (const library of Array.isArray(libraries) ? libraries : []) {
+          if (library && library.name === "Nextcloud Photos" && library.ownerId) {
+            libraryByOwner.set(library.ownerId, library);
+          }
+        }
+        for (const user of Array.isArray(users) ? users : []) {
+          if (!user || user.deletedAt || user.status === "deleted") {
+            continue;
+          }
+          if (!user.oauthId) {
+            continue;
+          }
+          const importPath = `/usr/src/app/external/${user.oauthId}`;
+          const existing = libraryByOwner.get(user.id);
+          if (existing) {
+            const paths = Array.isArray(existing.importPaths) ? existing.importPaths : [];
+            if (paths.length !== 1 || paths[0] !== importPath) {
+              console.log(JSON.stringify({ action: "update", id: existing.id, ownerId: user.id, email: user.email, importPath }));
+            }
+            continue;
+          }
+          console.log(JSON.stringify({ action: "create", ownerId: user.id, email: user.email, importPath }));
+        }
+      ' "$@"
+    }
+
     json_apply_oauth() {
       node -e '
         let input = "";
@@ -223,31 +257,18 @@ data:
       exit 1
     fi
 
-    configure_external_library() {
-      me_body="$(mktemp)"
-      me_code="$(
+    configure_external_libraries() {
+      users_body="$(mktemp)"
+      users_code="$(
         curl -sS \
-          -o "$me_body" \
+          -o "$users_body" \
           -w '%{http_code}' \
           -H "Authorization: Bearer $access_token" \
-          "$IMMICH_URL/api/users/me" || true
+          "$IMMICH_URL/api/admin/users" || true
       )"
-      if [ "$me_code" != "200" ]; then
-        log "Could not fetch admin user info ($me_code); skipping external library setup."
-        rm -f "$me_body"
-        return 0
-      fi
-      admin_id="$(node -e '
-        let input = "";
-        process.stdin.on("data", (chunk) => (input += chunk));
-        process.stdin.on("end", () => {
-          try { process.stdout.write(JSON.parse(input).id || ""); }
-          catch { process.stdout.write(""); }
-        });
-      ' < "$me_body" || true)"
-      rm -f "$me_body"
-      if [ -z "$admin_id" ]; then
-        log "Could not extract admin user ID; skipping external library setup."
+      if [ "$users_code" != "200" ]; then
+        log "Could not read users ($users_code); skipping external library setup."
+        rm -f "$users_body"
         return 0
       fi
 
@@ -264,40 +285,58 @@ data:
         rm -f "$libraries_body"
         return 0
       fi
-      has_external="$(
-        node -e '
-          let input = "";
-          process.stdin.on("data", (chunk) => (input += chunk));
-          process.stdin.on("end", () => {
-            try {
-              const libs = JSON.parse(input);
-              process.stdout.write(Array.isArray(libs) && libs.some(l => l.name === "Nextcloud Photos") ? "true" : "false");
-            } catch { process.stdout.write("false"); }
-          });
-        ' < "$libraries_body" || echo 'false'
-      )"
-      rm -f "$libraries_body"
-      if [ "$has_external" = "true" ]; then
-        log "External library already configured."
+
+      specs="$(json_library_specs "$users_body" "$libraries_body" || true)"
+      rm -f "$users_body" "$libraries_body"
+      if [ -z "$specs" ]; then
+        log "Per-user external libraries already configured."
         return 0
       fi
-      create_body="$(mktemp)"
-      create_code="$(
-        curl -sS \
-          -o "$create_body" \
-          -w '%{http_code}' \
-          -X POST \
-          -H "Authorization: Bearer $access_token" \
-          -H 'Content-Type: application/json' \
-          --data "{\"type\":\"EXTERNAL\",\"name\":\"Nextcloud Photos\",\"ownerId\":\"$admin_id\",\"importPaths\":[\"/usr/src/app/external\"]}" \
-          "$IMMICH_URL/api/libraries" || true
-      )"
-      if [ "$create_code" = "200" ] || [ "$create_code" = "201" ]; then
-        log "External library 'Nextcloud Photos' created."
-      else
-        log "Failed to create external library ($create_code): $(cat "$create_body" 2>/dev/null || true)"
-      fi
-      rm -f "$create_body"
+
+      printf '%s\n' "$specs" | while IFS= read -r spec; do
+        [ -n "$spec" ] || continue
+        action="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).action || ""));')"
+        library_id="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).id || ""));')"
+        owner_id="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).ownerId || ""));')"
+        email="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).email || ""));')"
+        import_path="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).importPath || ""));')"
+        payload="{\"type\":\"EXTERNAL\",\"name\":\"Nextcloud Photos\",\"ownerId\":\"$owner_id\",\"importPaths\":[\"$import_path\"]}"
+        library_body="$(mktemp)"
+        if [ "$action" = "update" ] && [ -n "$library_id" ]; then
+          library_code="$(
+            curl -sS \
+              -o "$library_body" \
+              -w '%{http_code}' \
+              -X PUT \
+              -H "Authorization: Bearer $access_token" \
+              -H 'Content-Type: application/json' \
+              --data "$payload" \
+              "$IMMICH_URL/api/libraries/$library_id" || true
+          )"
+          if [ "$library_code" = "200" ]; then
+            log "External library updated for $email at $import_path."
+          else
+            log "Failed to update external library for $email ($library_code): $(cat "$library_body" 2>/dev/null || true)"
+          fi
+        else
+          library_code="$(
+            curl -sS \
+              -o "$library_body" \
+              -w '%{http_code}' \
+              -X POST \
+              -H "Authorization: Bearer $access_token" \
+              -H 'Content-Type: application/json' \
+              --data "$payload" \
+              "$IMMICH_URL/api/libraries" || true
+          )"
+          if [ "$library_code" = "200" ] || [ "$library_code" = "201" ]; then
+            log "External library created for $email at $import_path."
+          else
+            log "Failed to create external library for $email ($library_code): $(cat "$library_body" 2>/dev/null || true)"
+          fi
+        fi
+        rm -f "$library_body"
+      done
     }
 
     configure_library_scan() {
@@ -357,7 +396,7 @@ data:
       rm -f "$scan_update_body"
     }
 
-    configure_external_library
+    configure_external_libraries
     configure_library_scan
 
     IMMICH_OIDC_PROVIDER="$${IMMICH_OIDC_PROVIDER:-none}"

@@ -475,18 +475,37 @@ spec:
               echo "Timed out waiting for Shared Photos external storage lock; skipping."
               return 0
             fi
-            existing="$(timeout 30 php /var/www/html/occ files_external:list \
+            desired_datadir='/shared-photos/$user'
+            existing_mount="$(timeout 30 php /var/www/html/occ files_external:list \
               --output=json 2>/dev/null \
-              | php -r 'foreach(json_decode(file_get_contents("php://stdin"),true) as $m){if($m["mount_point"]=="/Photos"){echo "found";break;}}')"
-            if [ "$existing" = "found" ]; then
-              echo "Shared Photos external storage already configured."
+              | php -r '
+                $mounts = json_decode(file_get_contents("php://stdin"), true);
+                if (!is_array($mounts)) {
+                  exit;
+                }
+                foreach ($mounts as $m) {
+                  if (($m["mount_point"] ?? "") === "/Photos") {
+                    echo ($m["mount_id"] ?? "") . "|" . (($m["configuration"]["datadir"] ?? ""));
+                    break;
+                  }
+                }
+              ')"
+            if [ -n "$existing_mount" ]; then
+              mount_id="$${existing_mount%%|*}"
+              current_datadir="$${existing_mount#*|}"
+              if [ "$current_datadir" != "$desired_datadir" ]; then
+                echo "Updating Shared Photos external storage to per-user path $desired_datadir..."
+                occ_safe files_external:config "$mount_id" datadir "$desired_datadir"
+              else
+                echo "Shared Photos external storage already configured."
+              fi
               rmdir "$lock_dir"
               return 0
             fi
-            echo "Creating Shared Photos external storage at /shared-photos..."
+            echo "Creating Shared Photos external storage at $desired_datadir..."
             if occ_safe files_external:create \
               "Photos" local null::null \
-              -c datadir=/shared-photos; then
+              -c datadir="$desired_datadir"; then
               rmdir "$lock_dir"
               return 0
             fi
