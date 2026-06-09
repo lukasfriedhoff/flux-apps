@@ -52,7 +52,15 @@ spec:
       instances: ${logday_postgres_instances:=1}
       imageName: ${logday_postgres_image:=ghcr.io/cloudnative-pg/postgresql:17.6-system-trixie}
       storage:
+        storageClass: ${logday_postgres_storage_class_name:=}
         size: ${logday_postgres_size:=10Gi}
+      backup:
+        enabled: ${logday_postgres_backup_enabled:=true}
+        destinationPath: "s3://${logday_postgres_backup_bucket}/${cluster_environment}/logday-postgres/"
+        endpointURL: "${logday_postgres_backup_endpoint_url:=}"
+        credentialSecretName: ${logday_postgres_backup_credential_secret_name:=logday-postgres-backup-credentials}
+        retentionPolicy: "${logday_postgres_backup_retention:=30d}"
+        schedule: "${logday_postgres_backup_cron:=0 0 2 * * *}"
       resources:
         requests:
           cpu: ${logday_postgres_requests_cpu:=100m}

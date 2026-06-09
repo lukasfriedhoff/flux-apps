@@ -19,6 +19,22 @@ spec:
   storage:
     storageClass: ${attic_postgres_storage_class_name}
     size: ${attic_postgres_size}
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${attic_postgres_backup_bucket}/${cluster_environment}/attic-postgres/"
+      endpointURL: "${attic_postgres_backup_endpoint_url:=}"
+      s3Credentials:
+        accessKeyId:
+          name: ${attic_postgres_backup_credential_secret_name}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${attic_postgres_backup_credential_secret_name}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${attic_postgres_backup_retention:=30d}"
   resources:
     requests:
       cpu: ${attic_postgres_requests_cpu}
@@ -28,3 +44,15 @@ spec:
       cpu: ${attic_postgres_limits_cpu}
       memory: ${attic_postgres_limits_memory}
       ephemeral-storage: ${attic_postgres_limits_ephemeral_storage}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: ${attic_postgres_cluster_name}
+  namespace: ${attic_namespace}
+spec:
+  schedule: "${attic_postgres_backup_cron:=0 0 2 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: ${attic_postgres_cluster_name}
