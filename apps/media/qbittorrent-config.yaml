@@ -5,6 +5,10 @@ metadata:
   namespace: media
 data:
   qBittorrent.conf: |-
+    [BitTorrent]
+    Session\AddTrackersFromURLEnabled=true
+    Session\AdditionalTrackersURL=https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt
+
     [Preferences]
     WebUI\Address=*
     WebUI\CSRFProtection=false

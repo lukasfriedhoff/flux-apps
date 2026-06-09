@@ -56,6 +56,23 @@ spec:
                   fi
                 }
 
+                ensure_section_pref() {
+                  section="$1"
+                  key="$2"
+                  value="$3"
+                  if ! grep -qx "\\[$section\\]" "$config"; then
+                    printf '\n[%s]\n' "$section" >> "$config"
+                  fi
+                  if grep -q "^$key=" "$config"; then
+                    sed -i "s|^$key=.*|$key=$value|" "$config"
+                  else
+                    sed -i "/^\\[$section\\]$/a$key=$value" "$config"
+                  fi
+                }
+
+                ensure_section_pref 'BitTorrent' 'Session\\AddTrackersFromURLEnabled' 'true'
+                ensure_section_pref 'BitTorrent' 'Session\\AdditionalTrackersURL' 'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt'
+
                 ensure_pref 'WebUI\\Authentication\\Enabled' 'false'
                 ensure_pref 'WebUI\\AuthSubnetWhitelistEnabled' 'true'
                 ensure_pref 'WebUI\\AuthSubnetWhitelist' '${k8s_pod_cidr},${k8s_service_cidr}'
