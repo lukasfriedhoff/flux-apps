@@ -12,7 +12,7 @@ spec:
       prometheus.io/port: "9187"
       prometheus.io/path: "/metrics"
   storage:
-    storageClass: ${default_sts_storage_class_name}
+    storageClass: ${nextcloud_postgres_storage_class_name:=${default_sts_storage_class_name}}
     size: ${nextcloud_postgres_size}
   bootstrap:
     initdb:
