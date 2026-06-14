@@ -40,6 +40,7 @@ spec:
               value: |
                 experimental-features = nix-command flakes
                 sandbox = false
+                require-sigs = false
                 max-jobs = ${hydra_nix_max_jobs}
                 cores = ${hydra_nix_cores}
                 trusted-users = root
@@ -120,6 +121,7 @@ spec:
               cat > /etc/nix/nix.conf <<EOF_NIX
               experimental-features = nix-command flakes
               sandbox = false
+              require-sigs = false
               max-jobs = ${hydra_nix_max_jobs}
               cores = ${hydra_nix_cores}
               trusted-users = root
