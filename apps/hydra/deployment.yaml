@@ -103,6 +103,15 @@ spec:
                 secretKeyRef:
                   name: ${hydra_admin_secret_name}
                   key: password
+            - name: ATTIC_UPLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_attic_upload_secret_name}
+                  key: ${hydra_attic_upload_token_key}
+            - name: ATTIC_SERVER
+              value: ${hydra_attic_server}
+            - name: ATTIC_CACHE
+              value: ${hydra_attic_cache}
           command:
             - /bin/sh
             - -ec
@@ -134,6 +143,8 @@ spec:
               mkdir -p /state/root /state/root/bin /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
               ln -sfn /state/hydra /var/lib/hydra
               chown -R hydra:hydra /state/hydra /nix/var/nix/gcroots/hydra
+              install -m 0600 -o root -g root /dev/null /state/hydra/attic-upload-token
+              printf '%s' "$${ATTIC_UPLOAD_TOKEN}" > /state/hydra/attic-upload-token
               rm -f /state/root/bin/su
               printf '%s\n' \
                 '#!/bin/sh' \
@@ -150,6 +161,42 @@ spec:
                 > /state/root/bin/su
               chmod +x /state/root/bin/su
               export PATH="/state/root/bin:$${PATH}"
+
+              cat > /state/root/bin/hydra-attic-upload-hook <<'EOF_HOOK'
+              #!/bin/sh
+              set -eu
+              export HOME=/state/root
+              export XDG_CONFIG_HOME=/state/root/.config
+              export PATH="/nix/var/nix/profiles/default/bin:$${HOME}/.nix-profile/bin:/root/.nix-profile/bin:/run/current-system/sw/bin:/bin:/usr/bin"
+
+              if [ -z "$${OUT_PATHS:-}" ]; then
+                exit 0
+              fi
+              if ! command -v attic >/dev/null 2>&1; then
+                echo "hydra-attic-upload-hook: attic client is unavailable; skipping upload" >&2
+                exit 0
+              fi
+              token_file=/state/hydra/attic-upload-token
+              if [ ! -s "$token_file" ]; then
+                echo "hydra-attic-upload-hook: upload token is unavailable; skipping upload" >&2
+                exit 0
+              fi
+              token="$(cat "$token_file")"
+              if [ -z "$token" ]; then
+                echo "hydra-attic-upload-hook: upload token is empty; skipping upload" >&2
+                exit 0
+              fi
+
+              mkdir -p "$XDG_CONFIG_HOME"
+              if ! attic login hydra "$ATTIC_SERVER" "$token" >/dev/null 2>&1; then
+                echo "hydra-attic-upload-hook: attic login failed; skipping upload" >&2
+                exit 0
+              fi
+              if ! attic push "hydra:$ATTIC_CACHE" $OUT_PATHS; then
+                echo "hydra-attic-upload-hook: attic push failed; build remains successful" >&2
+              fi
+              EOF_HOOK
+              chmod +x /state/root/bin/hydra-attic-upload-hook
 
               cat > /state/hydra/hydra.conf <<EOF_CONFIG
               store_uri = auto
@@ -173,6 +220,7 @@ spec:
               allowed-uris = github: git+https://github.com/ https://github.com/
               extra-substituters = ${hydra_nix_substituters}
               extra-trusted-public-keys = ${hydra_nix_trusted_public_keys}
+              post-build-hook = /state/root/bin/hydra-attic-upload-hook
               EOF_NIX
 
               if ! command -v hydra-init >/dev/null 2>&1; then
@@ -180,6 +228,9 @@ spec:
               fi
               if ! command -v su >/dev/null 2>&1; then
                 nix profile install --refresh ${hydra_nix_extra_packages}
+              fi
+              if ! command -v attic >/dev/null 2>&1; then
+                nix profile install --refresh ${hydra_nix_attic_package}
               fi
 
               hydra-init
