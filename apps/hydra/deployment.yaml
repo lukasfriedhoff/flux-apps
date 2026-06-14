@@ -83,6 +83,8 @@ spec:
             - |
               set -euo pipefail
               export HOME=/state/root
+              export USER=root
+              export LOGNAME=root
               export PATH="/nix/var/nix/profiles/default/bin:$${HOME}/.nix-profile/bin:/root/.nix-profile/bin:$${PATH}"
               export XDG_CONFIG_HOME=/state/root/.config
               export HYDRA_HOME=/state/hydra
@@ -132,6 +134,9 @@ spec:
 
               if ! command -v hydra-init >/dev/null 2>&1; then
                 nix profile install --refresh ${hydra_nix_packages}
+              fi
+              if ! command -v su >/dev/null 2>&1; then
+                nix profile install --refresh ${hydra_nix_extra_packages}
               fi
 
               hydra-init
