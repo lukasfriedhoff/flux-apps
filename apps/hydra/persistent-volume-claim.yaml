@@ -10,3 +10,16 @@ spec:
   resources:
     requests:
       storage: ${hydra_storage_size}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${hydra_service_name}-nix-store
+  namespace: ${hydra_namespace}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${hydra_nix_store_storage_class_name}
+  resources:
+    requests:
+      storage: ${hydra_nix_store_size}
