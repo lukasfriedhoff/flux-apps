@@ -33,22 +33,8 @@ spec:
               value: ${hydra_public_url}
             - name: HYDRA_LISTEN_HOST
               value: "0.0.0.0"
-            - name: HYDRA_PORT
-              value: "${hydra_service_port}"
             - name: HYDRA_JOBSET_FLAKE
               value: ${hydra_jobset_flake}
-            - name: HYDRA_JOBSET_CHECK_INTERVAL
-              value: "${hydra_jobset_check_interval}"
-            - name: HYDRA_JOBSET_KEEP_NR
-              value: "${hydra_jobset_keep_nr}"
-            - name: HYDRA_MAX_SERVERS
-              value: "${hydra_max_servers}"
-            - name: HYDRA_MIN_SPARE_SERVERS
-              value: "${hydra_min_spare_servers}"
-            - name: HYDRA_MAX_SPARE_SERVERS
-              value: "${hydra_max_spare_servers}"
-            - name: HYDRA_EVALUATOR_MAX_MEMORY_SIZE
-              value: "${hydra_evaluator_max_memory_size}"
             - name: NIX_CONFIG
               value: |
                 experimental-features = nix-command flakes
@@ -99,6 +85,13 @@ spec:
               export XDG_CONFIG_HOME=/state/root/.config
               export HYDRA_HOME=/state/hydra
               export HYDRA_DBI="dbi:Pg:dbname=$${POSTGRES_DB};host=$${POSTGRES_HOST};port=$${POSTGRES_PORT};user=$${POSTGRES_USER};password=$${POSTGRES_PASSWORD}"
+              export HYDRA_PORT="${hydra_service_port}"
+              export HYDRA_JOBSET_CHECK_INTERVAL="${hydra_jobset_check_interval}"
+              export HYDRA_JOBSET_KEEP_NR="${hydra_jobset_keep_nr}"
+              export HYDRA_MAX_SERVERS="${hydra_max_servers}"
+              export HYDRA_MIN_SPARE_SERVERS="${hydra_min_spare_servers}"
+              export HYDRA_MAX_SPARE_SERVERS="${hydra_max_spare_servers}"
+              export HYDRA_EVALUATOR_MAX_MEMORY_SIZE="${hydra_evaluator_max_memory_size}"
 
               if ! grep -q '^hydra:' /etc/group; then
                 echo 'hydra:x:1000:' >> /etc/group
