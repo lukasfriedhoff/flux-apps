@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: hydra
 spec:
+  progressDeadlineSeconds: 3600
   replicas: 1
   strategy:
     type: Recreate
@@ -191,7 +192,7 @@ spec:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 180
+            initialDelaySeconds: 1800
             periodSeconds: 30
             timeoutSeconds: 5
           resources:
