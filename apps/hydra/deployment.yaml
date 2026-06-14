@@ -88,6 +88,7 @@ spec:
               export PATH="/nix/var/nix/profiles/default/bin:$${HOME}/.nix-profile/bin:/root/.nix-profile/bin:$${PATH}"
               export XDG_CONFIG_HOME=/state/root/.config
               export HYDRA_HOME=/state/hydra
+              export HYDRA_DATA=/state/hydra
               export HYDRA_DBI="dbi:Pg:dbname=$${POSTGRES_DB};host=$${POSTGRES_HOST};port=$${POSTGRES_PORT};user=$${POSTGRES_USER};password=$${POSTGRES_PASSWORD}"
               export HYDRA_PORT="${hydra_service_port}"
               export HYDRA_JOBSET_CHECK_INTERVAL="${hydra_jobset_check_interval}"
@@ -104,7 +105,7 @@ spec:
                 echo 'hydra:x:1000:1000:Hydra:/state/hydra:/bin/sh' >> /etc/passwd
               fi
 
-              mkdir -p /state/root /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
+              mkdir -p /state/root /state/root/bin /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
               ln -sfn /state/hydra /var/lib/hydra
               chown -R hydra:hydra /state/hydra /nix/var/nix/gcroots/hydra
 
@@ -137,6 +138,10 @@ spec:
               fi
               if ! command -v su >/dev/null 2>&1; then
                 nix profile install --refresh ${hydra_nix_extra_packages}
+              fi
+              if ! command -v su >/dev/null 2>&1 && command -v runuser >/dev/null 2>&1; then
+                ln -sf "$$(command -v runuser)" /state/root/bin/su
+                export PATH="/state/root/bin:$${PATH}"
               fi
 
               hydra-init
