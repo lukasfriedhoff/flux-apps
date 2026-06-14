@@ -131,7 +131,7 @@ spec:
               EOF_NIX
 
               if ! command -v hydra-init >/dev/null 2>&1; then
-                nix profile install --refresh nixpkgs#hydra nixpkgs#curl nixpkgs#git nixpkgs#jq nixpkgs#openssh
+                nix profile install --refresh ${hydra_nix_packages}
               fi
 
               hydra-init
