@@ -1,0 +1,219 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${hydra_service_name}
+  namespace: ${hydra_namespace}
+  labels:
+    app.kubernetes.io/name: hydra
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hydra
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hydra
+    spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: hydra
+          image: nixos/nix:${hydra_nix_image_tag}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: ${hydra_service_port}
+              protocol: TCP
+          env:
+            - name: HYDRA_PUBLIC_URL
+              value: ${hydra_public_url}
+            - name: HYDRA_LISTEN_HOST
+              value: "0.0.0.0"
+            - name: HYDRA_PORT
+              value: "${hydra_service_port}"
+            - name: HYDRA_JOBSET_FLAKE
+              value: ${hydra_jobset_flake}
+            - name: HYDRA_JOBSET_CHECK_INTERVAL
+              value: "${hydra_jobset_check_interval}"
+            - name: HYDRA_JOBSET_KEEP_NR
+              value: "${hydra_jobset_keep_nr}"
+            - name: HYDRA_MAX_SERVERS
+              value: "${hydra_max_servers}"
+            - name: HYDRA_MIN_SPARE_SERVERS
+              value: "${hydra_min_spare_servers}"
+            - name: HYDRA_MAX_SPARE_SERVERS
+              value: "${hydra_max_spare_servers}"
+            - name: HYDRA_EVALUATOR_MAX_MEMORY_SIZE
+              value: "${hydra_evaluator_max_memory_size}"
+            - name: NIX_CONFIG
+              value: |
+                experimental-features = nix-command flakes
+                sandbox = false
+                max-jobs = ${hydra_nix_max_jobs}
+                cores = ${hydra_nix_cores}
+                trusted-users = root
+                allowed-uris = github: git+https://github.com/ https://github.com/
+                substituters = ${hydra_nix_substituters}
+                trusted-public-keys = ${hydra_nix_trusted_public_keys}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_postgres_cluster_name}-app
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_postgres_cluster_name}-app
+                  key: password
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_postgres_cluster_name}-app
+                  key: host
+            - name: POSTGRES_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_postgres_cluster_name}-app
+                  key: port
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_postgres_cluster_name}-app
+                  key: dbname
+            - name: HYDRA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_admin_secret_name}
+                  key: password
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              set -euo pipefail
+              export PATH="/nix/var/nix/profiles/default/bin:/root/.nix-profile/bin:$${PATH}"
+              export HOME=/state/root
+              export XDG_CONFIG_HOME=/state/root/.config
+              export HYDRA_HOME=/state/hydra
+              export HYDRA_DBI="dbi:Pg:dbname=$${POSTGRES_DB};host=$${POSTGRES_HOST};port=$${POSTGRES_PORT};user=$${POSTGRES_USER};password=$${POSTGRES_PASSWORD}"
+
+              if ! grep -q '^hydra:' /etc/group; then
+                echo 'hydra:x:1000:' >> /etc/group
+              fi
+              if ! grep -q '^hydra:' /etc/passwd; then
+                echo 'hydra:x:1000:1000:Hydra:/state/hydra:/bin/sh' >> /etc/passwd
+              fi
+
+              mkdir -p /state/root /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
+              ln -sfn /state/hydra /var/lib/hydra
+              chown -R hydra:hydra /state/hydra /nix/var/nix/gcroots/hydra
+
+              cat > /state/hydra/hydra.conf <<EOF_CONFIG
+              store_uri = auto
+              binary_cache_public_uri = ${hydra_binary_cache_public_uri}
+              binary_cache_secret_key_file =
+              max_output_size = ${hydra_max_output_size}
+              evaluator_max_memory_size = $${HYDRA_EVALUATOR_MAX_MEMORY_SIZE}
+              hydra_url = $${HYDRA_PUBLIC_URL}
+              notification_sender = ${hydra_notification_sender}
+              gc_roots_dir = /nix/var/nix/gcroots/hydra
+              EOF_CONFIG
+              ln -sf /state/hydra/hydra.conf /etc/hydra.conf
+
+              cat > /etc/nix/nix.conf <<EOF_NIX
+              experimental-features = nix-command flakes
+              sandbox = false
+              max-jobs = ${hydra_nix_max_jobs}
+              cores = ${hydra_nix_cores}
+              trusted-users = root
+              allowed-uris = github: git+https://github.com/ https://github.com/
+              substituters = ${hydra_nix_substituters}
+              trusted-public-keys = ${hydra_nix_trusted_public_keys}
+              EOF_NIX
+
+              if ! command -v hydra-init >/dev/null 2>&1; then
+                nix profile install --refresh nixpkgs#hydra nixpkgs#curl nixpkgs#git nixpkgs#jq nixpkgs#openssh
+              fi
+
+              hydra-init
+              hydra-create-user admin \
+                --full-name "Admin" \
+                --email-address "admin@localhost" \
+                --password "$${HYDRA_ADMIN_PASSWORD}" \
+                --role admin || true
+
+              hydra-queue-runner -v &
+              queue_pid="$${!}"
+              hydra-evaluator &
+              evaluator_pid="$${!}"
+              hydra-update-gc-roots &
+              gc_pid="$${!}"
+              hydra-server -f -h "$${HYDRA_LISTEN_HOST}" -p "$${HYDRA_PORT}" \
+                --min_spare_servers "$${HYDRA_MIN_SPARE_SERVERS}" \
+                --max_spare_servers "$${HYDRA_MAX_SPARE_SERVERS}" \
+                --max_servers "$${HYDRA_MAX_SERVERS}" \
+                --max_requests 100 &
+              server_pid="$${!}"
+
+              for i in $(seq 1 60); do
+                curl -sf "http://127.0.0.1:$${HYDRA_PORT}/" >/dev/null 2>&1 && break
+                [ "$${i}" = 60 ] && { echo "Hydra web server did not become ready" >&2; exit 1; }
+                sleep 2
+              done
+
+              cookie_jar=/tmp/hydra-cookie
+              curl -sf -c "$${cookie_jar}" \
+                -X POST \
+                -H "Referer: http://127.0.0.1:$${HYDRA_PORT}/" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                --data-urlencode "username=admin" \
+                --data-urlencode "password=$${HYDRA_ADMIN_PASSWORD}" \
+                "http://127.0.0.1:$${HYDRA_PORT}/login" >/dev/null || true
+
+              curl -sf -b "$${cookie_jar}" \
+                -X PUT \
+                -H "Content-Type: application/json" \
+                --data '{"displayname":"NixOS Configurations","description":"All NixOS host configurations","enabled":"1","visible":"1"}' \
+                "http://127.0.0.1:$${HYDRA_PORT}/project/nixos-configs" >/dev/null || true
+
+              curl -sf -b "$${cookie_jar}" \
+                -X PUT \
+                -H "Content-Type: application/json" \
+                --data "{\"type\":1,\"flake\":\"$${HYDRA_JOBSET_FLAKE}\",\"description\":\"All NixOS host configurations\",\"checkinterval\":$${HYDRA_JOBSET_CHECK_INTERVAL},\"schedulingshares\":1,\"keepnr\":$${HYDRA_JOBSET_KEEP_NR},\"enabled\":1,\"visible\":true}" \
+                "http://127.0.0.1:$${HYDRA_PORT}/jobset/nixos-configs/all" >/dev/null || true
+
+              trap 'kill "$${server_pid}" "$${queue_pid}" "$${evaluator_pid}" "$${gc_pid}" 2>/dev/null || true; wait' TERM INT
+              wait -n "$${server_pid}" "$${queue_pid}" "$${evaluator_pid}" "$${gc_pid}"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 180
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: ${hydra_requests_cpu}
+              memory: ${hydra_requests_memory}
+              ephemeral-storage: ${hydra_requests_ephemeral_storage}
+            limits:
+              cpu: ${hydra_limits_cpu}
+              memory: ${hydra_limits_memory}
+              ephemeral-storage: ${hydra_limits_ephemeral_storage}
+          volumeMounts:
+            - name: state
+              mountPath: /state
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: ${hydra_service_name}-state

@@ -1,0 +1,30 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ${hydra_postgres_cluster_name}
+  namespace: ${hydra_namespace}
+spec:
+  imageName: ${hydra_postgres_image}
+  instances: ${hydra_postgres_instances}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: /metrics
+  bootstrap:
+    initdb:
+      database: ${hydra_postgres_db_name}
+      owner: ${hydra_postgres_user}
+  storage:
+    storageClass: ${hydra_postgres_storage_class_name}
+    size: ${hydra_postgres_size}
+  resources:
+    requests:
+      cpu: ${hydra_postgres_requests_cpu}
+      memory: ${hydra_postgres_requests_memory}
+      ephemeral-storage: ${hydra_postgres_requests_ephemeral_storage}
+    limits:
+      cpu: ${hydra_postgres_limits_cpu}
+      memory: ${hydra_postgres_limits_memory}
+      ephemeral-storage: ${hydra_postgres_limits_ephemeral_storage}

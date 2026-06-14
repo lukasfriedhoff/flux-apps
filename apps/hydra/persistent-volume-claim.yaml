@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${hydra_service_name}-state
+  namespace: ${hydra_namespace}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${hydra_storage_class_name}
+  resources:
+    requests:
+      storage: ${hydra_storage_size}
