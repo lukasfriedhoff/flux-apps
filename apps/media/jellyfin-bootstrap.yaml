@@ -79,6 +79,11 @@ spec:
         existingClaim: jellyfin
         globalMounts:
           - path: /mnt
+      media:
+        enabled: true
+        existingClaim: arr-media
+        globalMounts:
+          - path: /media
       auth-secret:
         enabled: true
         type: secret
