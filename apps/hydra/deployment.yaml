@@ -82,8 +82,8 @@ spec:
             - -ec
             - |
               set -euo pipefail
-              export PATH="/nix/var/nix/profiles/default/bin:/root/.nix-profile/bin:$${PATH}"
               export HOME=/state/root
+              export PATH="/nix/var/nix/profiles/default/bin:$${HOME}/.nix-profile/bin:/root/.nix-profile/bin:$${PATH}"
               export XDG_CONFIG_HOME=/state/root/.config
               export HYDRA_HOME=/state/hydra
               export HYDRA_DBI="dbi:Pg:dbname=$${POSTGRES_DB};host=$${POSTGRES_HOST};port=$${POSTGRES_PORT};user=$${POSTGRES_USER};password=$${POSTGRES_PASSWORD}"
