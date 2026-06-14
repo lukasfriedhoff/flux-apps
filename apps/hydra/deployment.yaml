@@ -108,6 +108,21 @@ spec:
               mkdir -p /state/root /state/root/bin /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
               ln -sfn /state/hydra /var/lib/hydra
               chown -R hydra:hydra /state/hydra /nix/var/nix/gcroots/hydra
+              cat > /state/root/bin/su <<'EOF_SU'
+              #!/bin/sh
+              while [ "$#" -gt 0 ]; do
+                case "$1" in
+                  -s) shift 2 ;;
+                  -c) shift; exec /bin/sh -lc "$1" ;;
+                  --) shift ;;
+                  -*) shift ;;
+                  *) shift ;;
+                esac
+              done
+              exec /bin/sh
+              EOF_SU
+              chmod +x /state/root/bin/su
+              export PATH="/state/root/bin:$${PATH}"
 
               cat > /state/hydra/hydra.conf <<EOF_CONFIG
               store_uri = auto
@@ -138,10 +153,6 @@ spec:
               fi
               if ! command -v su >/dev/null 2>&1; then
                 nix profile install --refresh ${hydra_nix_extra_packages}
-              fi
-              if ! command -v su >/dev/null 2>&1 && command -v runuser >/dev/null 2>&1; then
-                ln -sf "$$(command -v runuser)" /state/root/bin/su
-                export PATH="/state/root/bin:$${PATH}"
               fi
 
               hydra-init
@@ -192,7 +203,7 @@ spec:
                 "http://127.0.0.1:$${HYDRA_PORT}/jobset/nixos-configs/all" >/dev/null || true
 
               trap 'kill "$${server_pid}" "$${queue_pid}" "$${evaluator_pid}" "$${gc_pid}" 2>/dev/null || true; wait' TERM INT
-              wait -n "$${server_pid}" "$${queue_pid}" "$${evaluator_pid}" "$${gc_pid}"
+              wait "$${server_pid}"
           readinessProbe:
             httpGet:
               path: /
