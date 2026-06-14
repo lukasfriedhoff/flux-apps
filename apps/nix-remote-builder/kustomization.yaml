@@ -4,3 +4,4 @@ resources:
   - persistent-volume-claim.yaml
   - deployment.yaml
   - service.yaml
+  - network-policy.yaml

@@ -57,7 +57,7 @@ spec:
                 ssh-keygen -y -f /state/ssh/ssh_host_ed25519_key > /state/ssh/ssh_host_ed25519_key.pub
               fi
 
-              printf '%s\n' "$${NIX_REMOTE_BUILDER_AUTHORIZED_KEY}" > /root/.ssh/authorized_keys
+              printf '%s\n' "restrict $${NIX_REMOTE_BUILDER_AUTHORIZED_KEY}" > /root/.ssh/authorized_keys
               chmod 0600 /root/.ssh/authorized_keys
 
               cat > /state/sshd_config <<CFG
