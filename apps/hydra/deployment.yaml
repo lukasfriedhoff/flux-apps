@@ -108,6 +108,7 @@ spec:
               mkdir -p /state/root /state/root/bin /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
               ln -sfn /state/hydra /var/lib/hydra
               chown -R hydra:hydra /state/hydra /nix/var/nix/gcroots/hydra
+              rm -f /state/root/bin/su
               printf '%s\n' \
                 '#!/bin/sh' \
                 'while [ "$#" -gt 0 ]; do' \
