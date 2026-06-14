@@ -15,6 +15,32 @@ spec:
       labels:
         app.kubernetes.io/name: nix-remote-builder
     spec:
+      initContainers:
+        - name: seed-nix-store
+          image: nixos/nix:${nix_remote_builder_image_tag}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              set -euo pipefail
+              if [ ! -e /nix-persist/store ]; then
+                mkdir -p /nix-persist
+                cp -a /nix/. /nix-persist/.
+              fi
+              mkdir -p /nix-persist/store /nix-persist/var/nix
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+              ephemeral-storage: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 1Gi
+          volumeMounts:
+            - name: nix-store
+              mountPath: /nix-persist
       containers:
         - name: builder
           image: nixos/nix:${nix_remote_builder_image_tag}
@@ -126,16 +152,23 @@ spec:
             requests:
               cpu: ${nix_remote_builder_requests_cpu}
               memory: ${nix_remote_builder_requests_memory}
+              ephemeral-storage: ${nix_remote_builder_requests_ephemeral_storage}
             limits:
               cpu: ${nix_remote_builder_limits_cpu}
               memory: ${nix_remote_builder_limits_memory}
+              ephemeral-storage: ${nix_remote_builder_limits_ephemeral_storage}
           volumeMounts:
+            - name: nix-store
+              mountPath: /nix
             - name: state
               mountPath: /state
             - name: host-key
               mountPath: /host-key
               readOnly: true
       volumes:
+        - name: nix-store
+          persistentVolumeClaim:
+            claimName: ${nix_remote_builder_service_name}-nix-store
         - name: state
           persistentVolumeClaim:
             claimName: ${nix_remote_builder_service_name}-state

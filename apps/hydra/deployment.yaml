@@ -21,6 +21,32 @@ spec:
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: seed-nix-store
+          image: nixos/nix:${hydra_nix_image_tag}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              set -euo pipefail
+              if [ ! -e /nix-persist/store ]; then
+                mkdir -p /nix-persist
+                cp -a /nix/. /nix-persist/.
+              fi
+              mkdir -p /nix-persist/store /nix-persist/var/nix
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+              ephemeral-storage: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 1Gi
+          volumeMounts:
+            - name: nix-store
+              mountPath: /nix-persist
       containers:
         - name: hydra
           image: nixos/nix:${hydra_nix_image_tag}
@@ -229,9 +255,14 @@ spec:
               memory: ${hydra_limits_memory}
               ephemeral-storage: ${hydra_limits_ephemeral_storage}
           volumeMounts:
+            - name: nix-store
+              mountPath: /nix
             - name: state
               mountPath: /state
       volumes:
+        - name: nix-store
+          persistentVolumeClaim:
+            claimName: ${hydra_service_name}-nix-store
         - name: state
           persistentVolumeClaim:
             claimName: ${hydra_service_name}-state
