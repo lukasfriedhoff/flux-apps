@@ -44,8 +44,8 @@ spec:
                 cores = ${hydra_nix_cores}
                 trusted-users = root
                 allowed-uris = github: git+https://github.com/ https://github.com/
-                substituters = ${hydra_nix_substituters}
-                trusted-public-keys = ${hydra_nix_trusted_public_keys}
+                extra-substituters = ${hydra_nix_substituters}
+                extra-trusted-public-keys = ${hydra_nix_trusted_public_keys}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -124,8 +124,8 @@ spec:
               cores = ${hydra_nix_cores}
               trusted-users = root
               allowed-uris = github: git+https://github.com/ https://github.com/
-              substituters = ${hydra_nix_substituters}
-              trusted-public-keys = ${hydra_nix_trusted_public_keys}
+              extra-substituters = ${hydra_nix_substituters}
+              extra-trusted-public-keys = ${hydra_nix_trusted_public_keys}
               EOF_NIX
 
               if ! command -v hydra-init >/dev/null 2>&1; then
