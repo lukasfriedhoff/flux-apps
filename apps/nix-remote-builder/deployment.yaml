@@ -54,7 +54,15 @@ spec:
                 cp /tmp/shadow /etc/shadow
                 chmod 0600 /etc/shadow
               fi
-              sed -i 's|^root:[^:]*:|root:*:|' /etc/shadow
+              while IFS=: read -r user password rest; do
+                if [ "$${user}" = root ]; then
+                  printf 'root:*:%s\n' "$${rest}"
+                else
+                  printf '%s:%s:%s\n' "$${user}" "$${password}" "$${rest}"
+                fi
+              done < /etc/shadow > /tmp/shadow
+              cp /tmp/shadow /etc/shadow
+              chmod 0600 /etc/shadow
 
               if [ ! -s /state/ssh/ssh_host_ed25519_key ]; then
                 cp /host-key/ssh_host_ed25519_key /state/ssh/ssh_host_ed25519_key
