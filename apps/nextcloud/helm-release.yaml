@@ -475,6 +475,36 @@ spec:
               /var/www/html/apps/files_external/appinfo/info.xml; then
               return 0
             fi
+            ensure_shared_photos_user_dirs() {
+              if [ ! -d /shared-photos ]; then
+                echo "Shared Photos mount /shared-photos is not present; skipping user directory sync."
+                return 0
+              fi
+              timeout 30 php /var/www/html/occ user:list --output=json 2>/dev/null \
+                | php -r '
+                  $users = json_decode(file_get_contents("php://stdin"), true);
+                  if (!is_array($users)) {
+                    exit;
+                  }
+                  foreach (array_keys($users) as $user) {
+                    echo $user . "\n";
+                  }
+                ' \
+                | while IFS= read -r user_id; do
+                  case "$user_id" in
+                    ""|*/*|*..*)
+                      continue
+                      ;;
+                  esac
+                  user_dir="/shared-photos/$user_id"
+                  if [ ! -d "$user_dir" ]; then
+                    echo "Creating Shared Photos user directory: $user_dir"
+                    mkdir -p "$user_dir"
+                  fi
+                  chown 33:33 "$user_dir" || true
+                  chmod 0770 "$user_dir" || true
+                done
+            }
             lock_dir=/var/www/html/config/.shared-photos-storage.lock
             lock_acquired=false
             for _ in $(seq 1 60); do
@@ -489,6 +519,7 @@ spec:
               return 0
             fi
             desired_datadir='/shared-photos/$user'
+            ensure_shared_photos_user_dirs
             existing_mount="$(timeout 30 php /var/www/html/occ files_external:list \
               --output=json 2>/dev/null \
               | php -r '
