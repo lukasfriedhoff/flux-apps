@@ -165,12 +165,14 @@ spec:
               file_put_contents('/var/www/html/config/config.php', \$cfg);
             " 2>/dev/null && echo "DB password synced from secret into config.php."
           fi
-          # --- EMPTY DB RECOVERY ---
-          # If config.php says installed=true but the DB schema is gone (e.g.
-          # CNPG cluster was recreated and the PVC was wiped), reset the
-          # installed flag and remove the admin data dir so the install block
-          # below can run maintenance:install cleanly.
-          if [ -f /var/www/html/config/config.php ] && grep -q "'installed' => true" /var/www/html/config/config.php; then
+          # --- DB INSTALL STATE RECOVERY ---
+          # Treat the database schema as authoritative. If config.php lost the
+          # installed flag but the schema exists, restore the flag instead of
+          # trying a destructive/conflicting fresh install. If config.php says
+          # installed=true but the schema is gone, reset it so installation can
+          # run against an actually empty DB.
+          schema_check="unknown"
+          if [ -f /var/www/html/config/config.php ]; then
             schema_check=$(php -r "
               try {
                 \$pdo = new PDO(
@@ -183,7 +185,18 @@ spec:
               } catch (Exception \$e) { echo 'err'; }
             " 2>/dev/null)
             echo "DB schema check: $schema_check"
-            if [ "$schema_check" = "empty" ]; then
+            if [ "$schema_check" = "ok" ]; then
+              php -r '
+                $file = "/var/www/html/config/config.php";
+                $cfg = file_get_contents($file);
+                if (preg_match("/'\''installed'\''\s*=>/", $cfg)) {
+                  $cfg = preg_replace("/'\''installed'\''\s*=>\s*false/", "'\''installed'\'' => true", $cfg, 1);
+                } else {
+                  $cfg = preg_replace("/\n\);\s*$/", "\n  '\''installed'\'' => true,\n);\n", $cfg, 1);
+                }
+                file_put_contents($file, $cfg);
+              ' 2>/dev/null && echo "Nextcloud installed flag synced from existing DB schema."
+            elif grep -q "'installed' => true" /var/www/html/config/config.php && [ "$schema_check" = "empty" ]; then
               echo "DB schema missing; resetting installed flag for fresh install."
               sed -i "s/'installed' => true/'installed' => false/" /var/www/html/config/config.php
               admin_dir="$NEXTCLOUD_DATA_DIR/$NEXTCLOUD_ADMIN_USER"
