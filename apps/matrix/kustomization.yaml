@@ -5,6 +5,7 @@ resources:
   - element-web.yaml
   - persistent-volume-claims.yaml
   - postgres.yaml
+  - synapse-db-integrity-repair.yaml
   - synapse.yaml
   - bridges.yaml
   - ingress.yaml
