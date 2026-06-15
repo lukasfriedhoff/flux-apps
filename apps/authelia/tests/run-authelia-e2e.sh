@@ -17,6 +17,7 @@ AUTHELIA_PASSWORD="${AUTHELIA_PASSWORD:-}"
 AUTHELIA_TARGET_URL="${AUTHELIA_TARGET_URL:-https://${STATUS_HOST}/}"
 AUTHELIA_LOCAL_TIMEOUT="${AUTHELIA_LOCAL_TIMEOUT:-30}"
 AUTHELIA_REQUIRE_PASSWORD="${AUTHELIA_REQUIRE_PASSWORD:-false}"
+AUTHELIA_EXPECTED_POLICY="${AUTHELIA_EXPECTED_POLICY:-one_factor}"
 JELLYSEERR_PORT_FORWARD_NAMESPACE="${JELLYSEERR_PORT_FORWARD_NAMESPACE:-media}"
 JELLYSEERR_PORT_FORWARD_LOCAL_PORT="${JELLYSEERR_PORT_FORWARD_LOCAL_PORT:-15075}"
 
@@ -287,6 +288,31 @@ assert_http_200() {
   log "${name}: HTTP 200"
 }
 
+assert_auth_gate_with_session() {
+  local name="$1"
+  local url="$2"
+  local headers_file code location location_host
+
+  headers_file="$(mktemp)"
+  code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -o /dev/null -D "$headers_file" -w '%{http_code}' "$url")"
+  location="$(location_from_headers "$headers_file")"
+  rm -f "$headers_file"
+
+  case "$code" in
+    401|403|302) ;;
+    *) fail "${name}: expected auth gate status 401/403/302 from ${url}, got ${code}" ;;
+  esac
+
+  if [ -n "$location" ]; then
+    location_host="$(host_from_url "$location")"
+    [ "$location_host" = "$AUTH_HOST" ] || fail "${name}: expected redirect to ${AUTH_HOST}, got ${location}"
+  fi
+
+  log "${name}: auth gate status=${code}"
+}
+
 assert_post_json_200() {
   local name="$1"
   local url="$2"
@@ -393,6 +419,73 @@ fi
 log "Authenticating to Authelia as ${AUTHELIA_USER}"
 authelia_login
 log "Authelia session established"
+
+if [ "$AUTHELIA_EXPECTED_POLICY" = "two_factor" ]; then
+  log "Validating two-factor gates after one-factor login"
+
+  assert_http_200 grafana "https://$(cluster_host grafana)/"
+  assert_http_200 status_dashboard_authed "https://${STATUS_HOST}/"
+  assert_http_200 collabora "https://$(cluster_host collabora)/"
+
+  for host in \
+    "$(cluster_host dashboard)" \
+    "$(cluster_host jellyseerr)" \
+    "$(cluster_host sonarr)" \
+    "$(cluster_host radarr)" \
+    "$(cluster_host lidarr)" \
+    "$(cluster_host readarr)" \
+    "$(cluster_host prowlarr)" \
+    "$(cluster_host bazarr)" \
+    "$(cluster_host qbittorrent)" \
+    "$(cluster_host profilarr)" \
+    "$(cluster_host moonlight)" \
+    "$(cluster_host jellyfin)"
+  do
+    assert_auth_gate_with_session "${host}_two_factor_gate" "https://${host}/"
+  done
+
+  assert_auth_gate_with_session logs_ready_two_factor_gate "https://$(cluster_host logs)/loki/api/v1/status/buildinfo"
+  assert_auth_gate_with_session metrics_ready_two_factor_gate "https://$(cluster_host metrics)/ready"
+  assert_auth_gate_with_session traces_otlp_two_factor_gate "https://$(cluster_host traces)/v1/traces"
+
+  complete_oidc_consent \
+    "https://$(cluster_host grafana)/login/generic_oauth" \
+    "$(cluster_host grafana)" \
+    "grafana"
+
+  grafana_health_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -o "${WORK_DIR}/grafana-health.json" -w '%{http_code}' \
+    "https://$(cluster_host grafana)/api/health")"
+  [ "$grafana_health_code" = "200" ] || fail "grafana: /api/health returned ${grafana_health_code}"
+  jq -e '.database == "ok"' "${WORK_DIR}/grafana-health.json" >/dev/null || fail "grafana: health payload does not report database=ok"
+  log "grafana: health API check passed"
+
+  matrix_versions_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -o "${WORK_DIR}/matrix-versions.json" -w '%{http_code}' \
+    "https://$(cluster_host matrix)/_matrix/client/versions")"
+  [ "$matrix_versions_code" = "200" ] || fail "matrix: client versions returned ${matrix_versions_code}"
+  jq -e '.versions | length > 0' "${WORK_DIR}/matrix-versions.json" >/dev/null || fail "matrix: versions payload is empty"
+  log "matrix: versions API check passed"
+
+  element_config_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -o "${WORK_DIR}/element-config.json" -w '%{http_code}' \
+    "https://$(cluster_host chat)/config.json")"
+  [ "$element_config_code" = "200" ] || fail "element: config.json returned ${element_config_code}"
+  jq -e '.default_server_config."m.homeserver".base_url == "https://'"$(cluster_host matrix)"'"' "${WORK_DIR}/element-config.json" >/dev/null \
+    || fail "element: config.json homeserver does not point to expected matrix host"
+  log "element: config check passed"
+
+  immich_ping_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -o "${WORK_DIR}/immich-ping.json" -w '%{http_code}' \
+    "https://$(cluster_host meme)/api/server/ping")"
+  [ "$immich_ping_code" = "200" ] || fail "immich: /api/server/ping returned ${immich_ping_code}"
+  jq -e '.res == "pong"' "${WORK_DIR}/immich-ping.json" >/dev/null || fail "immich: ping payload is unexpected"
+  log "immich: ping API check passed"
+
+  log "All Authelia E2E checks passed for two-factor policy."
+  exit 0
+fi
 
 # Session-backed checks across protected ingress hosts.
 assert_http_200 traefik_dashboard "https://$(cluster_host dashboard)/"
