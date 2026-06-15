@@ -96,9 +96,10 @@ commands:
           2*|400) ;;
           *) fail "$app indexer testall returned HTTP $indexer_test_http_code: $indexer_test_json" ;;
         esac
-        # Some public trackers are intermittently rate-limited (429) or return category
-        # mismatches for a specific ARR app. Keep the test strict on overall health by
-        # requiring at least one valid indexer and only allowing known transient messages.
+      # Some public trackers are intermittently rate-limited, unavailable, or return
+      # category mismatches for a specific ARR app. Keep the test strict on overall
+      # health by requiring at least one valid indexer and only allowing known
+      # transient messages.
         printf '%s' "$indexer_test_json" | jq -e '
           (length > 0)
           and (map(select(.isValid == true)) | length > 0)
@@ -110,7 +111,7 @@ commands:
                 (.validationFailures // [])
                 | all(
                     (.errorMessage // "")
-                    | test("no results in the configured categories|TooManyRequests|429"; "i")
+                    | test("no results in the configured categories|TooManyRequests|429|server is unavailable|timed out|timeout"; "i")
                   )
               )
             )
