@@ -133,6 +133,15 @@ commands:
         users_json="$(curl -fsS -H "$auth_header" "${base_url}/Users" 2>/dev/null || true)"
         user_id="$(printf '%s' "$users_json" | jq -r '.[0].Id // empty' 2>/dev/null || true)"
       fi
+      if [ -z "$user_id" ]; then
+        users_count="$(printf '%s' "${users_json:-[]}" | jq -r 'if type == "array" then length else 0 end' 2>/dev/null || printf '0')"
+        if [ "$users_count" = "0" ]; then
+          log "No Jellyfin users exist; creating media-e2e user for user-scoped API checks"
+          create_user_payload="$(jq -cn '{Name:"media-e2e"}')"
+          created_user_json="$(curl -fsS -H "$auth_header" -H 'Content-Type: application/json' -X POST "${base_url}/Users/New" --data "$create_user_payload")"
+          user_id="$(printf '%s' "$created_user_json" | jq -r '.Id // empty')"
+        fi
+      fi
       [ -n "$user_id" ] || fail "Could not resolve Jellyfin user id from token"
 
       uri() {
