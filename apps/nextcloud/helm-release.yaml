@@ -403,7 +403,7 @@ spec:
           }
           repair_external_jwt_keys() {
             marker="$(timeout 30 php /var/www/html/occ config:app:get external gitops_jwt_key_repair --default-value= 2>/dev/null || true)"
-            if [ "$marker" = "v1" ]; then
+            if [ "$marker" = "v2" ]; then
               return 0
             fi
 
@@ -411,7 +411,9 @@ spec:
             occ_safe config:app:delete external jwt_secret || true
             occ_safe config:app:delete external jwt_private_key || true
             occ_safe config:app:delete external jwt_public_key || true
-            occ_safe config:app:set external gitops_jwt_key_repair --value=v1
+            occ_safe config:app:delete external jwt_token_privkey_es256 || true
+            occ_safe config:app:delete external jwt_token_pubkey_es256 || true
+            occ_safe config:app:set external gitops_jwt_key_repair --value=v2
           }
           configure_external_photos_link() {
             enabled="$(printf '%s' "$${NEXTCLOUD_EXTERNAL_PHOTOS_ENABLED:-disabled}" | tr '[:upper:]' '[:lower:]')"
