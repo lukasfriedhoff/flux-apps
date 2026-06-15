@@ -237,6 +237,22 @@ assert_http_200() {
   log "${name}: HTTP 200"
 }
 
+assert_post_json_200() {
+  local name="$1"
+  local url="$2"
+  local payload="$3"
+  local code
+  code="$(curl -ksS -L --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -H 'Content-Type: application/json' \
+    -X POST \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -o "${WORK_DIR}/${name}.json" -w '%{http_code}' \
+    --data "$payload" \
+    "$url")"
+  [ "$code" = "200" ] || fail "${name}: expected HTTP 200 from ${url}, got ${code}"
+  log "${name}: HTTP 200"
+}
+
 check_jellyseerr_oidc_public_settings() {
   if ! command -v kubectl >/dev/null 2>&1; then
     log "kubectl not found; skipping jellyseerr public settings check."
@@ -346,9 +362,9 @@ assert_http_200 immich_login_authed "https://$(cluster_host meme)/auth/login"
 assert_http_200 element_web_authed "https://$(cluster_host chat)/"
 assert_http_200 status_dashboard_authed "https://${STATUS_HOST}/"
 
-assert_http_200 logs_ready "https://$(cluster_host logs)/ready"
+assert_http_200 logs_ready "https://$(cluster_host logs)/loki/api/v1/status/buildinfo"
 assert_http_200 metrics_ready "https://$(cluster_host metrics)/ready"
-assert_http_200 traces_ready "https://$(cluster_host traces)/ready"
+assert_post_json_200 traces_otlp "https://$(cluster_host traces)/v1/traces" '{}'
 
 # OIDC login flows.
 complete_oidc_consent \
