@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: synapse-db-integrity-repair
+  name: synapse-db-integrity-repair-v2
   namespace: matrix
 spec:
   backoffLimit: 6
@@ -44,66 +44,55 @@ spec:
               done
 
               psql -v ON_ERROR_STOP=1 <<'SQL'
-              DO $$
-              DECLARE
-                users_count bigint;
-                profiles_count bigint;
-                stream_position bigint;
-              BEGIN
-                SELECT count(*) INTO users_count FROM users;
-                SELECT count(*) INTO profiles_count FROM profiles;
+              INSERT INTO users (
+                name,
+                password_hash,
+                creation_ts,
+                admin,
+                upgrade_ts,
+                is_guest,
+                appservice_id,
+                consent_version,
+                consent_server_notice_sent,
+                user_type,
+                deactivated,
+                shadow_banned,
+                consent_ts,
+                approved,
+                locked,
+                suspended
+              )
+              SELECT
+                full_user_id,
+                NULL,
+                (extract(epoch from now()) * 1000)::bigint,
+                0,
+                NULL,
+                0,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                0,
+                false,
+                NULL,
+                true,
+                false,
+                false
+              FROM profiles
+              WHERE full_user_id IS NOT NULL
+                AND NOT EXISTS (SELECT 1 FROM users LIMIT 1)
+              ON CONFLICT (name) DO NOTHING;
 
-                IF users_count = 0 AND profiles_count > 0 THEN
-                  INSERT INTO users (
-                    name,
-                    password_hash,
-                    creation_ts,
-                    admin,
-                    upgrade_ts,
-                    is_guest,
-                    appservice_id,
-                    consent_version,
-                    consent_server_notice_sent,
-                    user_type,
-                    deactivated,
-                    shadow_banned,
-                    consent_ts,
-                    approved,
-                    locked,
-                    suspended
-                  )
-                  SELECT
-                    full_user_id,
-                    NULL,
-                    (extract(epoch from now()) * 1000)::bigint,
-                    0,
-                    NULL,
-                    0,
-                    NULL,
-                    NULL,
-                    NULL,
-                    NULL,
-                    0,
-                    false,
-                    NULL,
-                    true,
-                    false,
-                    false
-                  FROM profiles
-                  WHERE full_user_id IS NOT NULL
-                  ON CONFLICT (name) DO NOTHING;
-                END IF;
-
-                SELECT greatest(
+              INSERT INTO user_directory_stream_pos(lock, stream_id)
+              SELECT
+                'X',
+                greatest(
                   coalesce((SELECT max(stream_ordering) FROM events), 0),
                   coalesce((SELECT max(stream_id) FROM current_state_delta_stream), 0),
                   0
-                ) INTO stream_position;
-
-                INSERT INTO user_directory_stream_pos(lock, stream_id)
-                VALUES ('X', stream_position)
-                ON CONFLICT (lock) DO UPDATE
-                  SET stream_id = excluded.stream_id
-                  WHERE user_directory_stream_pos.stream_id IS NULL;
-              END $$;
+                )
+              ON CONFLICT (lock) DO UPDATE
+                SET stream_id = excluded.stream_id
+                WHERE user_directory_stream_pos.stream_id IS NULL;
               SQL
