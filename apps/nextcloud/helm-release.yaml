@@ -519,30 +519,40 @@ spec:
                 echo "Shared Photos mount /shared-photos is not present; skipping user directory sync."
                 return 0
               fi
+              users_file="$(mktemp)"
+              trap 'rm -f "$users_file"' EXIT
               timeout 30 php /var/www/html/occ user:list --output=json 2>/dev/null \
                 | php -r '
                   $users = json_decode(file_get_contents("php://stdin"), true);
                   if (!is_array($users)) {
-                    exit;
+                    exit(1);
                   }
                   foreach (array_keys($users) as $user) {
                     echo $user . "\n";
                   }
-                ' \
-                | while IFS= read -r user_id; do
+                ' > "$users_file" || {
+                  echo "Unable to read Nextcloud users for Shared Photos directory sync."
+                  return 0
+                }
+              checked_users=0
+              created_dirs=0
+              while IFS= read -r user_id; do
                   case "$user_id" in
                     ""|*/*|*..*)
                       continue
                       ;;
                   esac
+                  checked_users=$((checked_users + 1))
                   user_dir="/shared-photos/$user_id"
                   if [ ! -d "$user_dir" ]; then
                     echo "Creating Shared Photos user directory: $user_dir"
                     mkdir -p "$user_dir"
+                    created_dirs=$((created_dirs + 1))
                   fi
                   chown 33:33 "$user_dir" || true
                   chmod 0770 "$user_dir" || true
-                done
+                done < "$users_file"
+              echo "Checked $checked_users Shared Photos user directories; created $created_dirs."
             }
             lock_dir=/var/www/html/config/.shared-photos-storage.lock
             lock_acquired=false

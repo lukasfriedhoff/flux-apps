@@ -64,6 +64,8 @@ if [ ! -d /shared-photos ]; then
   echo "/shared-photos is not mounted" >&2
   exit 1
 fi
+users_file="$(mktemp)"
+trap 'rm -f "$users_file"' EXIT
 php /var/www/html/occ user:list --output=json \
   | php -r '
     $users = json_decode(file_get_contents("php://stdin"), true);
@@ -74,16 +76,26 @@ php /var/www/html/occ user:list --output=json \
     foreach (array_keys($users) as $user) {
       echo $user . "\n";
     }
-  ' \
-  | while IFS= read -r user_id; do
+  ' > "$users_file"
+if [ ! -s "$users_file" ]; then
+  echo "Nextcloud user list is empty" >&2
+  exit 1
+fi
+checked_users=0
+while IFS= read -r user_id; do
     case "$user_id" in
       ""|*/*|*..*) continue ;;
     esac
+    checked_users=$((checked_users + 1))
     if [ ! -d "/shared-photos/$user_id" ]; then
       echo "missing Shared Photos user directory: /shared-photos/$user_id" >&2
       exit 1
     fi
-  done
+done < "$users_file"
+if [ "$checked_users" -eq 0 ]; then
+  echo "No valid Nextcloud users were checked" >&2
+  exit 1
+fi
 SCRIPT
 
 echo "[nextcloud-smoke] ok"
