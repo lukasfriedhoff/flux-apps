@@ -27,6 +27,7 @@ data:
 
   immich_photos_uploads_storage_class_name: "longhorn-rwo-1r"
   immich_photos_uploads_size: "200Gi"
+  immich_photos_shared_storage_class_name: "longhorn-rwx-1r"
 
   immich_photos_postgres_storage_class_name: "longhorn-rwo-1r"
   immich_photos_postgres_size: "50Gi"
