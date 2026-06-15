@@ -181,14 +181,18 @@ commands:
       episode_item_id=""
       audio_item_id=""
 
-      for _ in $(seq 1 30); do
-        movies_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Movie&SearchTerm=$(uri "E2E Movie")")"
-        tv_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Episode&SearchTerm=$(uri "E2E Test Show")")"
-        audio_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Audio&SearchTerm=$(uri "E2E Track")")"
+      movie_path="/media/e2e-test/movies/E2E Movie (2024)/E2E Movie (2024).mp4"
+      episode_path="/media/e2e-test/tv/E2E Test Show (2024)/Season 01/E2E Test Show (2024) - S01E01 - Pilot.mp4"
+      audio_path="/media/e2e-test/music/E2E Artist/E2E Album (2024)/01 - E2E Track.mp3"
 
-        movie_item_id="$(printf '%s' "$movies_json" | jq -r '.Items[0].Id // empty')"
-        episode_item_id="$(printf '%s' "$tv_json" | jq -r '.Items[0].Id // empty')"
-        audio_item_id="$(printf '%s' "$audio_json" | jq -r '.Items[0].Id // empty')"
+      for _ in $(seq 1 30); do
+        movies_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Movie&Fields=Path")"
+        tv_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Episode&Fields=Path")"
+        audio_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Audio&Fields=Path")"
+
+        movie_item_id="$(printf '%s' "$movies_json" | jq -r --arg path "$movie_path" '.Items[]? | select(.Path == $path) | .Id' | head -n1)"
+        episode_item_id="$(printf '%s' "$tv_json" | jq -r --arg path "$episode_path" '.Items[]? | select(.Path == $path) | .Id' | head -n1)"
+        audio_item_id="$(printf '%s' "$audio_json" | jq -r --arg path "$audio_path" '.Items[]? | select(.Path == $path) | .Id' | head -n1)"
 
         if [ -n "$movie_item_id" ] && [ -n "$episode_item_id" ] && [ -n "$audio_item_id" ]; then
           break
