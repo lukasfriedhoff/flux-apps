@@ -46,6 +46,8 @@ spec:
                     echo "Shared Photos mount /shared-photos is missing." >&2
                     exit 1
                   fi
+                  users_file="$(mktemp)"
+                  trap 'rm -f "$users_file"' EXIT
                   php /var/www/html/occ user:list --output=json \
                     | php -r '
                       $users = json_decode(file_get_contents("php://stdin"), true);
@@ -55,19 +57,32 @@ spec:
                       foreach (array_keys($users) as $user) {
                         echo $user . "\n";
                       }
-                    ' \
-                    | while IFS= read -r user_id; do
+                    ' > "$users_file"
+                  if [ ! -s "$users_file" ]; then
+                    echo "Nextcloud user list is empty." >&2
+                    exit 1
+                  fi
+                  checked_users=0
+                  created_dirs=0
+                  while IFS= read -r user_id; do
                       case "$user_id" in
                         ""|*/*|*..*)
                           continue
                           ;;
                       esac
+                      checked_users=$((checked_users + 1))
                       user_dir="/shared-photos/$user_id"
                       if [ ! -d "$user_dir" ]; then
                         echo "Creating $user_dir"
                         mkdir -p "$user_dir"
+                        created_dirs=$((created_dirs + 1))
                       fi
                       chown 33:33 "$user_dir" || true
                       chmod 0770 "$user_dir" || true
-                    done
+                    done < "$users_file"
+                  if [ "$checked_users" -eq 0 ]; then
+                    echo "No valid Nextcloud users were checked." >&2
+                    exit 1
+                  fi
+                  echo "Checked $checked_users Shared Photos user directories; created $created_dirs."
                   SCRIPT
