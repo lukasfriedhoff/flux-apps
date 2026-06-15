@@ -171,19 +171,39 @@ spec:
           # trying a destructive/conflicting fresh install. If config.php says
           # installed=true but the schema is gone, reset it so installation can
           # run against an actually empty DB.
-          schema_check="unknown"
-          if [ -f /var/www/html/config/config.php ]; then
-            schema_check=$(php -r "
+          check_db_schema() {
+            php -r "
               try {
                 \$pdo = new PDO(
                   'pgsql:host=' . getenv('POSTGRES_HOST') . ';dbname=' . getenv('POSTGRES_DB'),
                   getenv('POSTGRES_USER'),
                   getenv('POSTGRES_PASSWORD')
                 );
-                \$s = \$pdo->query(\"SELECT 1 FROM information_schema.tables WHERE table_name='oc_appconfig' LIMIT 1\");
-                echo (\$s && \$s->rowCount() > 0) ? 'ok' : 'empty';
-              } catch (Exception \$e) { echo 'err'; }
-            " 2>/dev/null)
+                \$exists = \$pdo->query(\"SELECT to_regclass('public.oc_appconfig')\")->fetchColumn();
+                if (!\$exists) {
+                  echo 'empty';
+                  exit;
+                }
+                \$pdo->query('SELECT 1 FROM oc_appconfig LIMIT 1');
+                echo 'ok';
+              } catch (Exception \$e) {
+                echo \$e->getCode() === '42501' ? 'denied' : 'err';
+              }
+            " 2>/dev/null
+          }
+          schema_check="unknown"
+          if [ -f /var/www/html/config/config.php ]; then
+            schema_check="$(check_db_schema)"
+            if [ "$schema_check" = "denied" ]; then
+              echo "DB schema exists but grants are missing; waiting for ACL repair job."
+              for _ in $(seq 1 60); do
+                sleep 5
+                schema_check="$(check_db_schema)"
+                if [ "$schema_check" != "denied" ]; then
+                  break
+                fi
+              done
+            fi
             echo "DB schema check: $schema_check"
             if [ "$schema_check" = "ok" ]; then
               php -r '
@@ -204,6 +224,9 @@ spec:
                 echo "Removing admin data dir to allow re-install: $admin_dir"
                 rm -rf "${NEXTCLOUD_DATA_DIR:?}/${NEXTCLOUD_ADMIN_USER:?}"
               fi
+            elif [ "$schema_check" = "denied" ]; then
+              echo "DB schema grants are still missing after waiting; restarting pod."
+              exit 1
             fi
           fi
           status_json="$(php /var/www/html/occ status --output=json 2>/dev/null || true)"
