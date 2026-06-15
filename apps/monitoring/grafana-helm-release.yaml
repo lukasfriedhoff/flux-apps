@@ -6,6 +6,8 @@ metadata:
 spec:
   interval: 10m0s
   timeout: 30m0s
+  driftDetection:
+    mode: enabled
   chart:
     spec:
       chart: grafana
