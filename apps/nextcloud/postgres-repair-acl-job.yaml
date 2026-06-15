@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-postgres-repair-acl-v3
+  name: nextcloud-postgres-repair-acl-v4
   namespace: nextcloud
 spec:
   backoffLimit: 6
@@ -40,7 +40,7 @@ spec:
                 echo "No running primary PostgreSQL pod found." >&2
                 exit 1
               fi
-              kubectl -n nextcloud exec "$pod" -c postgres -- psql -U postgres -d nextcloud -v ON_ERROR_STOP=1 <<'SQL'
+              kubectl -n nextcloud exec -i "$pod" -c postgres -- psql -U postgres -d nextcloud -v ON_ERROR_STOP=1 <<'SQL'
               ALTER DATABASE nextcloud OWNER TO nextcloud;
               ALTER SCHEMA public OWNER TO nextcloud;
               GRANT ALL ON SCHEMA public TO nextcloud;
