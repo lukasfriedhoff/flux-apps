@@ -32,6 +32,14 @@ spec:
       backupTarget: ${longhorn_backup_target:=}
       backupTargetCredentialSecret: ${longhorn_backup_target_credential_secret_name:=}
       pollInterval: ${longhorn_backup_poll_interval:=300}
+    longhornManager:
+      resources:
+        requests:
+          cpu: ${longhorn_manager_requests_cpu:=100m}
+          memory: ${longhorn_manager_requests_memory:=512Mi}
+        limits:
+          cpu: ${longhorn_manager_limits_cpu:=1000m}
+          memory: ${longhorn_manager_limits_memory:=2Gi}
     persistence:
       defaultClass: false
       defaultClassReplicaCount: ${longhorn_default_replica_count}
