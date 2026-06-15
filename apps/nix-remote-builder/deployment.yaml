@@ -90,9 +90,10 @@ spec:
               cp /tmp/shadow /etc/shadow
               chmod 0600 /etc/shadow
 
-              if [ ! -s /state/ssh/ssh_host_ed25519_key ]; then
+              if [ ! -s /state/ssh/ssh_host_ed25519_key ] || ! ssh-keygen -y -f /state/ssh/ssh_host_ed25519_key >/dev/null 2>&1; then
                 cp /host-key/ssh_host_ed25519_key /state/ssh/ssh_host_ed25519_key
                 chmod 0600 /state/ssh/ssh_host_ed25519_key
+                rm -f /state/ssh/ssh_host_ed25519_key.pub
               fi
               if [ ! -s /state/ssh/ssh_host_ed25519_key.pub ]; then
                 ssh-keygen -y -f /state/ssh/ssh_host_ed25519_key > /state/ssh/ssh_host_ed25519_key.pub
