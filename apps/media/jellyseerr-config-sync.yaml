@@ -29,7 +29,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: sync
-              image: alpine:3.20.0
+              image: alpine/k8s:1.34.1
               env:
                 - name: JELLYSEERR_APP_TITLE
                   value: Jellyseerr
@@ -78,8 +78,6 @@ spec:
                 - -c
                 - |
                   set -eu
-
-                  apk add --no-cache curl jq >/dev/null
 
                   settings_file="/app/config/settings.json"
                   settings_json='{}'
