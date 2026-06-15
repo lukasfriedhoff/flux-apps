@@ -24,6 +24,7 @@ spec:
   values:
     controllers:
       main:
+        replicas: 1
         initContainers:
           git-bootstrap:
             image:
