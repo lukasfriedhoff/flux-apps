@@ -222,7 +222,8 @@ complete_oidc_consent_from_json_start() {
   local start_url="$1"
   local expected_host="$2"
   local app_name="$3"
-  local start_json redirect_url
+  local provider_slug="${4:-authelia}"
+  local start_json redirect_url headers_file auth_body_file auth_code callback_url callback_code callback_body_file
 
   start_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
     -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
@@ -231,7 +232,42 @@ complete_oidc_consent_from_json_start() {
   redirect_url="$(printf '%s' "$start_json" | jq -r '.redirectUrl // .redirect_uri // .redirect // empty')"
   [ -n "$redirect_url" ] || fail "${app_name}: start endpoint did not return redirect URL"
 
-  complete_oidc_consent "$redirect_url" "$expected_host" "$app_name"
+  headers_file="$(mktemp)"
+  auth_body_file="${WORK_DIR}/${app_name}-oidc-auth.html"
+  auth_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -D "$headers_file" -o "$auth_body_file" -w '%{http_code}' \
+    "$redirect_url")"
+
+  case "$auth_code" in
+    302|303)
+      callback_url="$(location_from_headers "$headers_file")"
+      ;;
+    *)
+      rm -f "$headers_file"
+      complete_oidc_consent "$redirect_url" "$expected_host" "$app_name"
+      return 0
+      ;;
+  esac
+  rm -f "$headers_file"
+
+  [ -n "$callback_url" ] || fail "${app_name}: authorization response did not include callback URI"
+  [ "$(host_from_url "$callback_url")" = "$expected_host" ] || fail "${app_name}: callback host mismatch (${callback_url})"
+
+  callback_body_file="${WORK_DIR}/${app_name}-oidc-callback.json"
+  callback_code="$(jq -cn --arg callbackUrl "$callback_url" '{callbackUrl:$callbackUrl}' \
+    | curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+      -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+      -H 'Content-Type: application/json' \
+      -o "$callback_body_file" -w '%{http_code}' \
+      --data @- \
+      "https://${expected_host}/api/v1/auth/oidc/callback/${provider_slug}")"
+
+  case "$callback_code" in
+    200|204) ;;
+    *) fail "${app_name}: OIDC callback returned ${callback_code}" ;;
+  esac
+  log "${app_name}: OIDC callback complete"
 }
 
 assert_http_200() {
