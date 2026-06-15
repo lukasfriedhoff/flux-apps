@@ -1,0 +1,225 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jellyseerr-config-sync
+  namespace: media
+spec:
+  schedule: '*/5 * * * *'
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 240
+      ttlSecondsAfterFinished: 300
+      template:
+        spec:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                          - jellyseerr
+                  topologyKey: kubernetes.io/hostname
+          restartPolicy: Never
+          containers:
+            - name: sync
+              image: alpine:3.20.0
+              env:
+                - name: JELLYSEERR_APP_TITLE
+                  value: Jellyseerr
+                - name: JELLYSEERR_APP_URL
+                  value: https://jellyseerr${public_host_suffix}.${delegating_domain}
+                - name: JELLYFIN_SERVER_NAME
+                  value: ${jellyfin_server_name}
+                - name: JELLYFIN_SERVER_HOST
+                  value: jellyfin
+                - name: JELLYFIN_SERVER_PORT
+                  value: "8096"
+                - name: JELLYFIN_SERVER_USE_SSL
+                  value: "false"
+                - name: JELLYFIN_HOSTNAME
+                  value: ${jellyfin_internal_base_url}
+                - name: JELLYFIN_EXTERNAL_HOSTNAME
+                  value: jellyfin${public_host_suffix}.${delegating_domain}
+                - name: JELLYFIN_FORGOT_PASSWORD_URL
+                  value: https://jellyfin${public_host_suffix}.${delegating_domain}/web/index.html#!/forgotpassword.html
+                - name: OIDC_PROVIDER_NAME
+                  value: Authelia
+                - name: OIDC_PROVIDER_SLUG
+                  value: authelia
+                - name: OIDC_ISSUER_URL
+                  value: https://auth${public_host_suffix}.${delegating_domain}
+                - name: OIDC_CLIENT_ID
+                  value: jellyseerr
+                - name: OIDC_SCOPES
+                  value: openid profile email groups
+                - name: RADARR_EXTERNAL_URL
+                  value: https://radarr${public_host_suffix}.${delegating_domain}
+                - name: SONARR_EXTERNAL_URL
+                  value: https://sonarr${public_host_suffix}.${delegating_domain}
+                - name: RADARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${arr_api_keys_secret_name}
+                      key: radarr_api_key
+                - name: SONARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${arr_api_keys_secret_name}
+                      key: sonarr_api_key
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+
+                  apk add --no-cache curl jq >/dev/null
+
+                  settings_file="/app/config/settings.json"
+                  settings_json='{}'
+                  if [ -s "$settings_file" ]; then
+                    settings_json="$(cat "$settings_file")"
+                  else
+                    echo "[jellyseerr-config-sync] settings.json missing; bootstrapping from empty config."
+                  fi
+
+                  wait_for_arr() {
+                    base_url="$1"
+                    api_key="$2"
+                    attempts=0
+                    while [ "$attempts" -lt 20 ]; do
+                      if curl -fsS -m 5 -H "X-Api-Key: $api_key" "$base_url/system/status" >/dev/null 2>&1; then
+                        return 0
+                      fi
+                      attempts=$((attempts + 1))
+                      sleep 3
+                    done
+                    return 1
+                  }
+
+                  settings_json="$(
+                    printf '%s' "$settings_json" \
+                    | jq --arg appTitle "$${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "$${JELLYSEERR_APP_URL:-}" --arg jellyfinName "$${JELLYFIN_SERVER_NAME:-Jellyfin}" --arg jellyfinIP "$${JELLYFIN_SERVER_HOST:-jellyfin}" --arg jellyfinPort "$${JELLYFIN_SERVER_PORT:-8096}" --arg jellyfinHost "$${JELLYFIN_HOSTNAME:-http://jellyfin:8096}" --arg jellyfinExternal "$${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "$${JELLYFIN_FORGOT_PASSWORD_URL:-}" --arg oidcName "$${OIDC_PROVIDER_NAME:-Authelia}" --arg oidcSlug "$${OIDC_PROVIDER_SLUG:-authelia}" --arg oidcIssuer "$${OIDC_ISSUER_URL:-}" --arg oidcClientId "$${OIDC_CLIENT_ID:-jellyseerr}" --arg oidcScopes "$${OIDC_SCOPES:-openid profile email groups}" --argjson jellyfinUseSsl "$${JELLYFIN_SERVER_USE_SSL:-false}" '
+                      .main.applicationTitle = $appTitle
+                      | .main.applicationUrl = $appUrl
+                      | .main.mediaServerType = 4
+                      | .main.oidcLogin = true
+                      | .main.localLogin = true
+                      | .main.mediaServerLogin = true
+                      | .oidc = (.oidc // {})
+                      | .oidc.providers = [
+                          {
+                            slug: ($oidcSlug | ascii_downcase),
+                            name: $oidcName,
+                            issuerUrl: $oidcIssuer,
+                            clientId: $oidcClientId,
+                            scopes: $oidcScopes,
+                            newUserLogin: true
+                          }
+                        ]
+                      | .jellyfin.name = $jellyfinName
+                      | .jellyfin.ip = $jellyfinIP
+                      | .jellyfin.port = $jellyfinPort
+                      | .jellyfin.useSsl = $jellyfinUseSsl
+                      | .jellyfin.hostname = $jellyfinHost
+                      | .jellyfin.externalHostname = $jellyfinExternal
+                      | .jellyfin.jellyfinForgotPasswordUrl = $forgotPassword
+                      | .public.initialized = true
+                    '
+                  )"
+
+                  if [ -n "$${RADARR_API_KEY:-}" ] && wait_for_arr "http://radarr:7878/api/v3" "$RADARR_API_KEY"; then
+                    radarr_profile_json="$(curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "http://radarr:7878/api/v3/qualityprofile")"
+                    radarr_root_json="$(curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "http://radarr:7878/api/v3/rootfolder")"
+                    radarr_profile_id="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].id // map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
+                    radarr_profile_name="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].name // map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
+                    radarr_root_dir="$(printf '%s' "$radarr_root_json" | jq -r '.[0].path // "/media/movies"')"
+                    radarr_service="$(
+                      jq -cn \
+                        --arg apiKey "$RADARR_API_KEY" \
+                        --arg activeProfileName "$radarr_profile_name" \
+                        --arg activeDirectory "$radarr_root_dir" \
+                        --arg externalUrl "$${RADARR_EXTERNAL_URL:-}" \
+                        --argjson activeProfileId "$radarr_profile_id" \
+                        '{
+                          name: "radarr",
+                          hostname: "radarr",
+                          port: 7878,
+                          apiKey: $apiKey,
+                          useSsl: false,
+                          baseUrl: "",
+                          activeProfileId: $activeProfileId,
+                          activeProfileName: $activeProfileName,
+                          activeDirectory: $activeDirectory,
+                          is4k: false,
+                          minimumAvailability: "released",
+                          isDefault: true,
+                          externalUrl: $externalUrl,
+                          syncEnabled: true,
+                          preventSearch: false
+                        }'
+                    )"
+                    settings_json="$(printf '%s' "$settings_json" | jq --argjson svc "$radarr_service" '.radarr = [$svc]')"
+                  fi
+
+                  if [ -n "$${SONARR_API_KEY:-}" ] && wait_for_arr "http://sonarr:8989/api/v3" "$SONARR_API_KEY"; then
+                    sonarr_profile_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/qualityprofile")"
+                    sonarr_language_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/languageprofile")"
+                    sonarr_root_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/rootfolder")"
+                    sonarr_profile_id="$(printf '%s' "$sonarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].id // map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
+                    sonarr_profile_name="$(printf '%s' "$sonarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].name // map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
+                    sonarr_language_id="$(printf '%s' "$sonarr_language_json" | jq -r 'map(select(.name == "German + English"))[0].id // .[0].id // 1')"
+                    sonarr_root_dir="$(printf '%s' "$sonarr_root_json" | jq -r '.[0].path // "/media/tv"')"
+                    sonarr_service="$(
+                      jq -cn \
+                        --arg apiKey "$SONARR_API_KEY" \
+                        --arg activeProfileName "$sonarr_profile_name" \
+                        --arg activeDirectory "$sonarr_root_dir" \
+                        --arg externalUrl "$${SONARR_EXTERNAL_URL:-}" \
+                        --argjson activeProfileId "$sonarr_profile_id" \
+                        --argjson activeLanguageProfileId "$sonarr_language_id" \
+                        '{
+                          name: "sonarr",
+                          hostname: "sonarr",
+                          port: 8989,
+                          apiKey: $apiKey,
+                          useSsl: false,
+                          baseUrl: "",
+                          activeProfileId: $activeProfileId,
+                          activeProfileName: $activeProfileName,
+                          activeDirectory: $activeDirectory,
+                          activeLanguageProfileId: $activeLanguageProfileId,
+                          is4k: false,
+                          enableSeasonFolders: true,
+                          isDefault: true,
+                          externalUrl: $externalUrl,
+                          syncEnabled: true,
+                          preventSearch: false
+                        }'
+                    )"
+                    settings_json="$(printf '%s' "$settings_json" | jq --argjson svc "$sonarr_service" '.sonarr = [$svc]')"
+                  fi
+
+                  printf '%s\n' "$settings_json" > "$${settings_file}.tmp"
+                  mv "$${settings_file}.tmp" "$settings_file"
+                  echo "[jellyseerr-config-sync] settings updated."
+              volumeMounts:
+                - name: jellyseerr-config
+                  mountPath: /app/config
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 48Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          volumes:
+            - name: jellyseerr-config
+              persistentVolumeClaim:
+                claimName: jellyseerr

@@ -18,6 +18,7 @@ resources:
   - readarr.yaml
   - bazarr.yaml
   - jellyseerr.yaml
+  - jellyseerr-config-sync.yaml
   - jellyseerr-admin-sync.yaml
   - jellyfin.yaml
   - jellyfin-bootstrap-config.yaml
