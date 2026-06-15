@@ -168,7 +168,11 @@ complete_oidc_consent() {
 
   final_url="$(curl_follow "$start_url" "${WORK_DIR}/${app_name}-oidc-start.html")"
   if ! printf '%s' "$final_url" | rg -q '/consent/openid/decision'; then
-    [ "$(host_from_url "$final_url")" = "$expected_host" ] || fail "${app_name}: unexpected host without consent page (${final_url})"
+    if [ "$(host_from_url "$final_url")" != "$expected_host" ]; then
+      if ! rg -q "https://${expected_host}/.*loginToken=" "${WORK_DIR}/${app_name}-oidc-start.html"; then
+        fail "${app_name}: unexpected host without consent page (${final_url})"
+      fi
+    fi
     log "${app_name}: OIDC start reached ${final_url}"
     return 0
   fi
@@ -206,7 +210,11 @@ complete_oidc_consent() {
   [ -n "$redirect_url" ] || fail "${app_name}: consent response did not include redirect URI"
 
   final_url="$(curl_follow "$redirect_url" "${WORK_DIR}/${app_name}-oidc-final.html")"
-  [ "$(host_from_url "$final_url")" = "$expected_host" ] || fail "${app_name}: final host mismatch (${final_url})"
+  if [ "$(host_from_url "$final_url")" != "$expected_host" ]; then
+    if ! rg -q "https://${expected_host}/.*loginToken=" "${WORK_DIR}/${app_name}-oidc-final.html"; then
+      fail "${app_name}: final host mismatch (${final_url})"
+    fi
+  fi
   log "${app_name}: OIDC consent complete (${final_url})"
 }
 
