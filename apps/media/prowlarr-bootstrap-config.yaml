@@ -414,7 +414,38 @@ data:
     ensure_lidarr_rootfolder() {
       root_json="$(lidarr_get /api/v1/rootfolder | jq -c 'map(select(.path == "/media/music"))[0]')"
       if [ "$root_json" = "null" ]; then
-        if lidarr_post /api/v1/rootfolder '{"path":"/media/music"}' >/dev/null; then
+        metadata_profile_id="$(
+          lidarr_get /api/v1/metadataprofile \
+            | jq -r 'map(select(.name == "Standard"))[0].id // .[0].id // empty'
+        )"
+        quality_profile_id="$(
+          lidarr_get /api/v1/qualityprofile \
+            | jq -r 'map(select(.name == "Standard"))[0].id // .[0].id // empty'
+        )"
+        case "$metadata_profile_id" in
+          ''|*[!0-9]*)
+            metadata_profile_id=1
+            ;;
+        esac
+        case "$quality_profile_id" in
+          ''|*[!0-9]*)
+            quality_profile_id=1
+            ;;
+        esac
+        payload="$(
+          jq -cn \
+            --arg path "/media/music" \
+            --arg name "Music" \
+            --argjson metadataProfileId "$metadata_profile_id" \
+            --argjson qualityProfileId "$quality_profile_id" \
+            '{
+              path: $path,
+              name: $name,
+              defaultMetadataProfileId: $metadataProfileId,
+              defaultQualityProfileId: $qualityProfileId
+            }'
+        )"
+        if lidarr_post /api/v1/rootfolder "$payload" >/dev/null; then
           log "Created Lidarr root folder /media/music."
         else
           log "Failed to create Lidarr root folder /media/music."
