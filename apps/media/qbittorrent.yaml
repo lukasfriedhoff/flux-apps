@@ -6,6 +6,8 @@ metadata:
 spec:
   interval: 10m0s
   timeout: 10m0s
+  driftDetection:
+    mode: enabled
   install:
     remediation:
       retries: 3
