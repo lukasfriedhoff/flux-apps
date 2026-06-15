@@ -27,7 +27,7 @@ spec:
           name: synapsedb-app
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
-    size: ${matrix_postgres_size}
+    size: ${matrix_synapse_postgres_size:=${matrix_postgres_size}}
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_synapsedb_backup_path:=synapsedb}/"
@@ -81,7 +81,7 @@ spec:
           name: whatsappdb-app
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
-    size: ${matrix_postgres_size}
+    size: ${matrix_whatsapp_postgres_size:=${matrix_postgres_size}}
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/whatsappdb/"
@@ -135,7 +135,7 @@ spec:
           name: wadb-app
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
-    size: ${matrix_postgres_size}
+    size: ${matrix_wa_postgres_size:=${matrix_postgres_size}}
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/wadb/"
@@ -189,7 +189,7 @@ spec:
           name: telegramdb-app
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
-    size: ${matrix_postgres_size}
+    size: ${matrix_telegram_postgres_size:=${matrix_postgres_size}}
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/telegramdb/"
@@ -243,7 +243,7 @@ spec:
           name: signaldbprivate-app
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
-    size: ${matrix_postgres_size}
+    size: ${matrix_signal_postgres_size:=${matrix_postgres_size}}
   backup:
     barmanObjectStore:
       destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/signaldbprivate/"
