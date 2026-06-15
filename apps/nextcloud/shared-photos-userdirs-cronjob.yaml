@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-shared-photos-userdirs
+  namespace: nextcloud
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: nextcloud-upgrade-check
+          containers:
+            - name: sync
+              image: alpine/k8s:1.34.1
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  pod="$(
+                    kubectl -n nextcloud get pods \
+                      -l app.kubernetes.io/instance=nextcloud,app.kubernetes.io/component=app \
+                      --no-headers \
+                      | awk '$3 == "Running" { print $1; exit }'
+                  )"
+                  if [ -z "$pod" ]; then
+                    echo "No running Nextcloud app pod found." >&2
+                    exit 1
+                  fi
+                  kubectl -n nextcloud exec "$pod" -- /bin/sh -s <<'SCRIPT'
+                  set -eu
+                  if [ ! -d /shared-photos ]; then
+                    echo "Shared Photos mount /shared-photos is missing." >&2
+                    exit 1
+                  fi
+                  php /var/www/html/occ user:list --output=json \
+                    | php -r '
+                      $users = json_decode(file_get_contents("php://stdin"), true);
+                      if (!is_array($users)) {
+                        exit(1);
+                      }
+                      foreach (array_keys($users) as $user) {
+                        echo $user . "\n";
+                      }
+                    ' \
+                    | while IFS= read -r user_id; do
+                      case "$user_id" in
+                        ""|*/*|*..*)
+                          continue
+                          ;;
+                      esac
+                      user_dir="/shared-photos/$user_id"
+                      if [ ! -d "$user_dir" ]; then
+                        echo "Creating $user_dir"
+                        mkdir -p "$user_dir"
+                      fi
+                      chown 33:33 "$user_dir" || true
+                      chmod 0770 "$user_dir" || true
+                    done
+                  SCRIPT

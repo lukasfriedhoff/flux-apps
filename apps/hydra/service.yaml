@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${hydra_service_name}
+  namespace: ${hydra_namespace}
+  labels:
+    app.kubernetes.io/name: hydra
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: hydra
+  ports:
+    - name: http
+      port: ${hydra_service_port}
+      targetPort: http
+      protocol: TCP
