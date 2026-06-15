@@ -43,7 +43,7 @@ commands:
 
         mkdir -p \
           "/media/e2e-test/movies/E2E Movie (2024)" \
-          "/media/e2e-test/tv/E2E Show/Season 01" \
+          "/media/e2e-test/tv/E2E Test Show (2024)/Season 01" \
           "/media/e2e-test/music/E2E Artist/E2E Album (2024)"
 
         fetch_if_missing \
@@ -52,7 +52,7 @@ commands:
 
         fetch_if_missing \
           "https://samplelib.com/lib/preview/mp4/sample-5s.mp4" \
-          "/media/e2e-test/tv/E2E Show/Season 01/E2E Show - S01E01 - Pilot.mp4"
+          "/media/e2e-test/tv/E2E Test Show (2024)/Season 01/E2E Test Show (2024) - S01E01 - Pilot.mp4"
 
         fetch_if_missing \
           "https://samplelib.com/lib/preview/mp3/sample-3s.mp3" \
@@ -174,7 +174,7 @@ commands:
 
       for _ in $(seq 1 30); do
         movies_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Movie&SearchTerm=$(uri "E2E Movie")")"
-        tv_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Episode&SearchTerm=$(uri "E2E Show")")"
+        tv_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Episode&SearchTerm=$(uri "E2E Test Show")")"
         audio_json="$(curl -fsS -H "$auth_header" "${base_url}/Users/${user_id}/Items?Recursive=true&IncludeItemTypes=Audio&SearchTerm=$(uri "E2E Track")")"
 
         movie_item_id="$(printf '%s' "$movies_json" | jq -r '.Items[0].Id // empty')"
