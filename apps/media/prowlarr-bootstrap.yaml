@@ -109,7 +109,7 @@ spec:
         globalMounts:
           - path: /mnt/arr-media
       private-trackers:
-        enabled: true
+        enabled: ${media_private_trackers_secret_enabled}
         type: secret
         name: prowlarr-private-trackers
         defaultMode: 0440

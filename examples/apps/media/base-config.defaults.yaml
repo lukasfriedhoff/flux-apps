@@ -34,4 +34,5 @@ data:
   media_download_promotion_min_age_hours: "72h"
   media_download_promotion_category_regex: "^(radarr|sonarr|lidarr|readarr)-imported$"
   media_download_promotion_target_base: "/media/staged"
+  media_private_trackers_secret_enabled: "false"
   protonvpn_server_countries: "Switzerland"
