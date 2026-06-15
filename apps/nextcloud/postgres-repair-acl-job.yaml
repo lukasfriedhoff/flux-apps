@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-postgres-repair-acl-v2
+  name: nextcloud-postgres-repair-acl-v3
   namespace: nextcloud
 spec:
   backoffLimit: 6
@@ -36,7 +36,7 @@ spec:
                 fi
                 sleep 5
               done
-              if [ -z "${pod:-}" ]; then
+              if [ -z "$pod" ]; then
                 echo "No running primary PostgreSQL pod found." >&2
                 exit 1
               fi
@@ -50,23 +50,12 @@ spec:
               ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO nextcloud;
               ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO nextcloud;
               ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO nextcloud;
-              DO $$
-              DECLARE
-                obj record;
-              BEGIN
-                FOR obj IN
-                  SELECT schemaname, tablename
-                  FROM pg_tables
-                  WHERE schemaname = 'public'
-                LOOP
-                  EXECUTE format('ALTER TABLE %I.%I OWNER TO nextcloud', obj.schemaname, obj.tablename);
-                END LOOP;
-                FOR obj IN
-                  SELECT sequence_schema, sequence_name
-                  FROM information_schema.sequences
-                  WHERE sequence_schema = 'public'
-                LOOP
-                  EXECUTE format('ALTER SEQUENCE %I.%I OWNER TO nextcloud', obj.sequence_schema, obj.sequence_name);
-                END LOOP;
-              END $$;
+              SELECT format('ALTER TABLE %I.%I OWNER TO nextcloud;', schemaname, tablename)
+              FROM pg_tables
+              WHERE schemaname = 'public'
+              \gexec
+              SELECT format('ALTER SEQUENCE %I.%I OWNER TO nextcloud;', sequence_schema, sequence_name)
+              FROM information_schema.sequences
+              WHERE sequence_schema = 'public'
+              \gexec
               SQL
