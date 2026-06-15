@@ -409,10 +409,10 @@ grafana_health_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
 jq -e '.database == "ok"' "${WORK_DIR}/grafana-health.json" >/dev/null || fail "grafana: health payload does not report database=ok"
 log "grafana: health API check passed"
 
-nextcloud_dashboard_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
-  -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
-  -o "${WORK_DIR}/nextcloud-dashboard.html" -w '%{http_code}' \
-  "https://$(cluster_host nextcloud)/apps/dashboard/")"
+  nextcloud_dashboard_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -o "${WORK_DIR}/nextcloud-dashboard.html" -w '%{http_code}' \
+    "https://$(cluster_host nextcloud)/index.php/apps/dashboard/")"
 [ "$nextcloud_dashboard_code" = "200" ] || fail "nextcloud: dashboard returned ${nextcloud_dashboard_code}"
 if rg -q "An exception occurred while executing a query|Undefined table" "${WORK_DIR}/nextcloud-dashboard.html"; then
   fail "nextcloud: SQL error detected in dashboard response"
