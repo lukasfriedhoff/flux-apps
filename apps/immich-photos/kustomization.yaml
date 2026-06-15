@@ -9,5 +9,4 @@ resources:
   - machine-learning.yaml
   - server.yaml
   - ingress.yaml
-  - pv-photos.yaml
   - pvc-photos.yaml

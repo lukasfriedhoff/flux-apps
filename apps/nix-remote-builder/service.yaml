@@ -5,16 +5,14 @@ metadata:
   namespace: ${nix_remote_builder_namespace}
   labels:
     app.kubernetes.io/name: nix-remote-builder
-  annotations:
-    external-dns.alpha.kubernetes.io/hostname: nix-builder${public_host_suffix}.${delegating_domain}
-    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
-  type: LoadBalancer
+  type: ${nix_remote_builder_service_type:=NodePort}
+  externalTrafficPolicy: ${nix_remote_builder_external_traffic_policy:=Local}
   selector:
     app.kubernetes.io/name: nix-remote-builder
   ports:
     - name: ssh
       port: ${nix_remote_builder_ssh_port}
       targetPort: ssh
+      nodePort: ${nix_remote_builder_node_port:=30610}
       protocol: TCP

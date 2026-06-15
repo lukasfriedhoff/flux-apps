@@ -165,25 +165,58 @@ spec:
               file_put_contents('/var/www/html/config/config.php', \$cfg);
             " 2>/dev/null && echo "DB password synced from secret into config.php."
           fi
-          # --- EMPTY DB RECOVERY ---
-          # If config.php says installed=true but the DB schema is gone (e.g.
-          # CNPG cluster was recreated and the PVC was wiped), reset the
-          # installed flag and remove the admin data dir so the install block
-          # below can run maintenance:install cleanly.
-          if [ -f /var/www/html/config/config.php ] && grep -q "'installed' => true" /var/www/html/config/config.php; then
-            schema_check=$(php -r "
+          # --- DB INSTALL STATE RECOVERY ---
+          # Treat the database schema as authoritative. If config.php lost the
+          # installed flag but the schema exists, restore the flag instead of
+          # trying a destructive/conflicting fresh install. If config.php says
+          # installed=true but the schema is gone, reset it so installation can
+          # run against an actually empty DB.
+          check_db_schema() {
+            php -r "
               try {
                 \$pdo = new PDO(
                   'pgsql:host=' . getenv('POSTGRES_HOST') . ';dbname=' . getenv('POSTGRES_DB'),
                   getenv('POSTGRES_USER'),
                   getenv('POSTGRES_PASSWORD')
                 );
-                \$s = \$pdo->query(\"SELECT 1 FROM information_schema.tables WHERE table_name='oc_appconfig' LIMIT 1\");
-                echo (\$s && \$s->rowCount() > 0) ? 'ok' : 'empty';
-              } catch (Exception \$e) { echo 'err'; }
-            " 2>/dev/null)
+                \$exists = \$pdo->query(\"SELECT to_regclass('public.oc_appconfig')\")->fetchColumn();
+                if (!\$exists) {
+                  echo 'empty';
+                  exit;
+                }
+                \$pdo->query('SELECT 1 FROM oc_appconfig LIMIT 1');
+                echo 'ok';
+              } catch (Exception \$e) {
+                echo \$e->getCode() === '42501' ? 'denied' : 'err';
+              }
+            " 2>/dev/null
+          }
+          schema_check="unknown"
+          if [ -f /var/www/html/config/config.php ]; then
+            schema_check="$(check_db_schema)"
+            if [ "$schema_check" = "denied" ]; then
+              echo "DB schema exists but grants are missing; waiting for ACL repair job."
+              for _ in $(seq 1 60); do
+                sleep 5
+                schema_check="$(check_db_schema)"
+                if [ "$schema_check" != "denied" ]; then
+                  break
+                fi
+              done
+            fi
             echo "DB schema check: $schema_check"
-            if [ "$schema_check" = "empty" ]; then
+            if [ "$schema_check" = "ok" ]; then
+              php -r '
+                $file = "/var/www/html/config/config.php";
+                $cfg = file_get_contents($file);
+                if (preg_match("/'\''installed'\''\s*=>/", $cfg)) {
+                  $cfg = preg_replace("/'\''installed'\''\s*=>\s*false/", "'\''installed'\'' => true", $cfg, 1);
+                } else {
+                  $cfg = preg_replace("/\n\);\s*$/", "\n  '\''installed'\'' => true,\n);\n", $cfg, 1);
+                }
+                file_put_contents($file, $cfg);
+              ' 2>/dev/null && echo "Nextcloud installed flag synced from existing DB schema."
+            elif grep -q "'installed' => true" /var/www/html/config/config.php && [ "$schema_check" = "empty" ]; then
               echo "DB schema missing; resetting installed flag for fresh install."
               sed -i "s/'installed' => true/'installed' => false/" /var/www/html/config/config.php
               admin_dir="$NEXTCLOUD_DATA_DIR/$NEXTCLOUD_ADMIN_USER"
@@ -191,6 +224,9 @@ spec:
                 echo "Removing admin data dir to allow re-install: $admin_dir"
                 rm -rf "${NEXTCLOUD_DATA_DIR:?}/${NEXTCLOUD_ADMIN_USER:?}"
               fi
+            elif [ "$schema_check" = "denied" ]; then
+              echo "DB schema grants are still missing after waiting; restarting pod."
+              exit 1
             fi
           fi
           status_json="$(php /var/www/html/occ status --output=json 2>/dev/null || true)"
@@ -365,6 +401,20 @@ spec:
                 ;;
             esac
           }
+          repair_external_jwt_keys() {
+            marker="$(timeout 30 php /var/www/html/occ config:app:get external gitops_jwt_key_repair --default-value= 2>/dev/null || true)"
+            if [ "$marker" = "v2" ]; then
+              return 0
+            fi
+
+            echo "Rotating stale Nextcloud external-app JWT keys once."
+            occ_safe config:app:delete external jwt_secret || true
+            occ_safe config:app:delete external jwt_private_key || true
+            occ_safe config:app:delete external jwt_public_key || true
+            occ_safe config:app:delete external jwt_token_privkey_es256 || true
+            occ_safe config:app:delete external jwt_token_pubkey_es256 || true
+            occ_safe config:app:set external gitops_jwt_key_repair --value=v2
+          }
           configure_external_photos_link() {
             enabled="$(printf '%s' "$${NEXTCLOUD_EXTERNAL_PHOTOS_ENABLED:-disabled}" | tr '[:upper:]' '[:lower:]')"
             case "$enabled" in
@@ -382,6 +432,8 @@ spec:
               echo "External photos link enabled but NEXTCLOUD_EXTERNAL_PHOTOS_URL is empty; skipping."
               return 0
             fi
+
+            repair_external_jwt_keys
 
             if ! enable_custom_app_if_present external /var/www/html/custom_apps/external/appinfo/info.xml; then
               return 0
@@ -462,6 +514,36 @@ spec:
               /var/www/html/apps/files_external/appinfo/info.xml; then
               return 0
             fi
+            ensure_shared_photos_user_dirs() {
+              if [ ! -d /shared-photos ]; then
+                echo "Shared Photos mount /shared-photos is not present; skipping user directory sync."
+                return 0
+              fi
+              timeout 30 php /var/www/html/occ user:list --output=json 2>/dev/null \
+                | php -r '
+                  $users = json_decode(file_get_contents("php://stdin"), true);
+                  if (!is_array($users)) {
+                    exit;
+                  }
+                  foreach (array_keys($users) as $user) {
+                    echo $user . "\n";
+                  }
+                ' \
+                | while IFS= read -r user_id; do
+                  case "$user_id" in
+                    ""|*/*|*..*)
+                      continue
+                      ;;
+                  esac
+                  user_dir="/shared-photos/$user_id"
+                  if [ ! -d "$user_dir" ]; then
+                    echo "Creating Shared Photos user directory: $user_dir"
+                    mkdir -p "$user_dir"
+                  fi
+                  chown 33:33 "$user_dir" || true
+                  chmod 0770 "$user_dir" || true
+                done
+            }
             lock_dir=/var/www/html/config/.shared-photos-storage.lock
             lock_acquired=false
             for _ in $(seq 1 60); do
@@ -476,6 +558,7 @@ spec:
               return 0
             fi
             desired_datadir='/shared-photos/$user'
+            ensure_shared_photos_user_dirs
             existing_mount="$(timeout 30 php /var/www/html/occ files_external:list \
               --output=json 2>/dev/null \
               | php -r '

@@ -1,0 +1,98 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: synapse-db-integrity-repair-v2
+  namespace: matrix
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: repair
+          image: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: synapsedb-rw.matrix.svc.cluster.local
+            - name: PGDATABASE
+              value: ${matrix_synapse_postgres_source_dbname:=synapse}
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: synapsedb-app
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: synapsedb-app
+                  key: password
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              until psql -v ON_ERROR_STOP=1 -c 'select 1' >/dev/null; do
+                echo "Waiting for Synapse database..."
+                sleep 5
+              done
+
+              psql -v ON_ERROR_STOP=1 <<'SQL'
+              INSERT INTO users (
+                name,
+                password_hash,
+                creation_ts,
+                admin,
+                upgrade_ts,
+                is_guest,
+                appservice_id,
+                consent_version,
+                consent_server_notice_sent,
+                user_type,
+                deactivated,
+                shadow_banned,
+                consent_ts,
+                approved,
+                locked,
+                suspended
+              )
+              SELECT
+                full_user_id,
+                NULL,
+                (extract(epoch from now()) * 1000)::bigint,
+                0,
+                NULL,
+                0,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                0,
+                false,
+                NULL,
+                true,
+                false,
+                false
+              FROM profiles
+              WHERE full_user_id IS NOT NULL
+                AND NOT EXISTS (SELECT 1 FROM users LIMIT 1)
+              ON CONFLICT (name) DO NOTHING;
+
+              INSERT INTO user_directory_stream_pos(lock, stream_id)
+              SELECT
+                'X',
+                greatest(
+                  coalesce((SELECT max(stream_ordering) FROM events), 0),
+                  coalesce((SELECT max(stream_id) FROM current_state_delta_stream), 0),
+                  0
+                )
+              ON CONFLICT (lock) DO UPDATE
+                SET stream_id = excluded.stream_id
+                WHERE user_directory_stream_pos.stream_id IS NULL;
+              SQL

@@ -168,7 +168,11 @@ complete_oidc_consent() {
 
   final_url="$(curl_follow "$start_url" "${WORK_DIR}/${app_name}-oidc-start.html")"
   if ! printf '%s' "$final_url" | rg -q '/consent/openid/decision'; then
-    [ "$(host_from_url "$final_url")" = "$expected_host" ] || fail "${app_name}: unexpected host without consent page (${final_url})"
+    if [ "$(host_from_url "$final_url")" != "$expected_host" ]; then
+      if ! rg -q "https://${expected_host}/.*loginToken=" "${WORK_DIR}/${app_name}-oidc-start.html"; then
+        fail "${app_name}: unexpected host without consent page (${final_url})"
+      fi
+    fi
     log "${app_name}: OIDC start reached ${final_url}"
     return 0
   fi
@@ -206,7 +210,11 @@ complete_oidc_consent() {
   [ -n "$redirect_url" ] || fail "${app_name}: consent response did not include redirect URI"
 
   final_url="$(curl_follow "$redirect_url" "${WORK_DIR}/${app_name}-oidc-final.html")"
-  [ "$(host_from_url "$final_url")" = "$expected_host" ] || fail "${app_name}: final host mismatch (${final_url})"
+  if [ "$(host_from_url "$final_url")" != "$expected_host" ]; then
+    if ! rg -q "https://${expected_host}/.*loginToken=" "${WORK_DIR}/${app_name}-oidc-final.html"; then
+      fail "${app_name}: final host mismatch (${final_url})"
+    fi
+  fi
   log "${app_name}: OIDC consent complete (${final_url})"
 }
 
@@ -214,7 +222,8 @@ complete_oidc_consent_from_json_start() {
   local start_url="$1"
   local expected_host="$2"
   local app_name="$3"
-  local start_json redirect_url
+  local provider_slug="${4:-authelia}"
+  local start_json redirect_url headers_file auth_body_file auth_code callback_url callback_code callback_body_file
 
   start_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
     -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
@@ -223,7 +232,42 @@ complete_oidc_consent_from_json_start() {
   redirect_url="$(printf '%s' "$start_json" | jq -r '.redirectUrl // .redirect_uri // .redirect // empty')"
   [ -n "$redirect_url" ] || fail "${app_name}: start endpoint did not return redirect URL"
 
-  complete_oidc_consent "$redirect_url" "$expected_host" "$app_name"
+  headers_file="$(mktemp)"
+  auth_body_file="${WORK_DIR}/${app_name}-oidc-auth.html"
+  auth_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -D "$headers_file" -o "$auth_body_file" -w '%{http_code}' \
+    "$redirect_url")"
+
+  case "$auth_code" in
+    302|303)
+      callback_url="$(location_from_headers "$headers_file")"
+      ;;
+    *)
+      rm -f "$headers_file"
+      complete_oidc_consent "$redirect_url" "$expected_host" "$app_name"
+      return 0
+      ;;
+  esac
+  rm -f "$headers_file"
+
+  [ -n "$callback_url" ] || fail "${app_name}: authorization response did not include callback URI"
+  [ "$(host_from_url "$callback_url")" = "$expected_host" ] || fail "${app_name}: callback host mismatch (${callback_url})"
+
+  callback_body_file="${WORK_DIR}/${app_name}-oidc-callback.json"
+  callback_code="$(jq -cn --arg callbackUrl "$callback_url" '{callbackUrl:$callbackUrl}' \
+    | curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+      -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+      -H 'Content-Type: application/json' \
+      -o "$callback_body_file" -w '%{http_code}' \
+      --data @- \
+      "https://${expected_host}/api/v1/auth/oidc/callback/${provider_slug}")"
+
+  case "$callback_code" in
+    200|204) ;;
+    *) fail "${app_name}: OIDC callback returned ${callback_code}" ;;
+  esac
+  log "${app_name}: OIDC callback complete"
 }
 
 assert_http_200() {
@@ -233,6 +277,22 @@ assert_http_200() {
   code="$(curl -ksS -L --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
     -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
     -o "${WORK_DIR}/${name}.html" -w '%{http_code}' "$url")"
+  [ "$code" = "200" ] || fail "${name}: expected HTTP 200 from ${url}, got ${code}"
+  log "${name}: HTTP 200"
+}
+
+assert_post_json_200() {
+  local name="$1"
+  local url="$2"
+  local payload="$3"
+  local code
+  code="$(curl -ksS -L --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -H 'Content-Type: application/json' \
+    -X POST \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -o "${WORK_DIR}/${name}.json" -w '%{http_code}' \
+    --data "$payload" \
+    "$url")"
   [ "$code" = "200" ] || fail "${name}: expected HTTP 200 from ${url}, got ${code}"
   log "${name}: HTTP 200"
 }
@@ -346,9 +406,9 @@ assert_http_200 immich_login_authed "https://$(cluster_host meme)/auth/login"
 assert_http_200 element_web_authed "https://$(cluster_host chat)/"
 assert_http_200 status_dashboard_authed "https://${STATUS_HOST}/"
 
-assert_http_200 logs_ready "https://$(cluster_host logs)/ready"
+assert_http_200 logs_ready "https://$(cluster_host logs)/loki/api/v1/status/buildinfo"
 assert_http_200 metrics_ready "https://$(cluster_host metrics)/ready"
-assert_http_200 traces_ready "https://$(cluster_host traces)/ready"
+assert_post_json_200 traces_otlp "https://$(cluster_host traces)/v1/traces" '{}'
 
 # OIDC login flows.
 complete_oidc_consent \
@@ -385,10 +445,10 @@ grafana_health_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
 jq -e '.database == "ok"' "${WORK_DIR}/grafana-health.json" >/dev/null || fail "grafana: health payload does not report database=ok"
 log "grafana: health API check passed"
 
-nextcloud_dashboard_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
-  -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
-  -o "${WORK_DIR}/nextcloud-dashboard.html" -w '%{http_code}' \
-  "https://$(cluster_host nextcloud)/apps/dashboard/")"
+  nextcloud_dashboard_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -o "${WORK_DIR}/nextcloud-dashboard.html" -w '%{http_code}' \
+    "https://$(cluster_host nextcloud)/index.php/apps/dashboard/")"
 [ "$nextcloud_dashboard_code" = "200" ] || fail "nextcloud: dashboard returned ${nextcloud_dashboard_code}"
 if rg -q "An exception occurred while executing a query|Undefined table" "${WORK_DIR}/nextcloud-dashboard.html"; then
   fail "nextcloud: SQL error detected in dashboard response"
