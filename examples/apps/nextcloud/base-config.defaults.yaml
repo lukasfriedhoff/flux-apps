@@ -14,6 +14,7 @@ data:
   nextcloud_data_size: "500Gi"
   nextcloud_data_claim_name: "nextcloud-nextcloud-data"
   nextcloud_data_storage_class_name: "ssd-cephfs-2r"
+  nextcloud_photos_storage_class_name: "ssd-cephfs-2r"
   nextcloud_hpa_enabled: "false"
   nextcloud_hpa_cpu_threshold: "60"
   nextcloud_hpa_max_pods: "3"
