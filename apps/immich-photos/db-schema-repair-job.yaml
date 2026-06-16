@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: immich-photos-db-schema-repair-v2
+  name: immich-photos-db-schema-repair-v3
   namespace: immich-photos
   labels:
-    app.kubernetes.io/name: immich-photos-db-schema-repair-v2
+    app.kubernetes.io/name: immich-photos-db-schema-repair-v3
 spec:
   backoffLimit: 1
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: immich-photos-db-schema-repair-v2
+        app.kubernetes.io/name: immich-photos-db-schema-repair-v3
     spec:
       automountServiceAccountToken: false
       restartPolicy: Never
@@ -45,85 +45,68 @@ spec:
               psql -v ON_ERROR_STOP=1 <<'SQL'
               BEGIN;
 
-              DO $$$$
-              DECLARE
-                duplicate_person_ids bigint;
-              BEGIN
-                SELECT count(*)
-                  INTO duplicate_person_ids
-                  FROM (
-                    SELECT id
-                      FROM public.person
-                     GROUP BY id
-                    HAVING count(*) > 1
-                  ) duplicates;
+              SELECT CASE
+                WHEN count(*) = 0 THEN 'duplicate check passed'
+                ELSE 'duplicate person ids found: ' || (1 / 0)::text
+              END
+                FROM (
+                  SELECT id
+                    FROM public.person
+                   GROUP BY id
+                  HAVING count(*) > 1
+                ) duplicates;
 
-                IF duplicate_person_ids > 0 THEN
-                  RAISE EXCEPTION 'cannot repair person constraints: % duplicate person id(s)', duplicate_person_ids;
-                END IF;
-
-                DELETE FROM public.asset_face asset_face
-                      USING public.person person
-                 WHERE asset_face."personId" = person.id
-                   AND NOT EXISTS (
-                         SELECT 1
-                           FROM public."user" app_user
-                          WHERE app_user.id = person."ownerId"
-                       );
-
-                DELETE FROM public.person person
-                 WHERE NOT EXISTS (
+              DELETE FROM public.asset_face asset_face
+                    USING public.person person
+               WHERE asset_face."personId" = person.id
+                 AND NOT EXISTS (
                        SELECT 1
                          FROM public."user" app_user
                         WHERE app_user.id = person."ownerId"
                      );
 
-                UPDATE public.person person
-                   SET "faceAssetId" = NULL
-                 WHERE person."faceAssetId" IS NOT NULL
-                   AND NOT EXISTS (
-                         SELECT 1
-                           FROM public.asset_face asset_face
-                          WHERE asset_face.id = person."faceAssetId"
-                       );
+              DELETE FROM public.person person
+               WHERE NOT EXISTS (
+                     SELECT 1
+                       FROM public."user" app_user
+                      WHERE app_user.id = person."ownerId"
+                   );
 
-                IF NOT EXISTS (
-                  SELECT 1
-                    FROM pg_constraint
-                   WHERE conrelid = 'public.person'::regclass
-                     AND conname = 'person_pkey'
-                ) THEN
-                  ALTER TABLE public.person
-                    ADD CONSTRAINT person_pkey PRIMARY KEY (id);
-                END IF;
+              UPDATE public.person person
+                 SET "faceAssetId" = NULL
+               WHERE person."faceAssetId" IS NOT NULL
+                 AND NOT EXISTS (
+                       SELECT 1
+                         FROM public.asset_face asset_face
+                        WHERE asset_face.id = person."faceAssetId"
+                     );
 
-                IF NOT EXISTS (
-                  SELECT 1
-                    FROM pg_constraint
-                   WHERE conrelid = 'public.person'::regclass
-                     AND conname = 'person_ownerId_fkey'
-                ) THEN
-                  ALTER TABLE public.person
-                    ADD CONSTRAINT "person_ownerId_fkey"
-                    FOREIGN KEY ("ownerId")
-                    REFERENCES public."user"(id)
-                    ON UPDATE CASCADE
-                    ON DELETE CASCADE;
-                END IF;
+              SELECT 'ALTER TABLE public.person ADD CONSTRAINT person_pkey PRIMARY KEY (id)'
+               WHERE NOT EXISTS (
+                     SELECT 1
+                       FROM pg_constraint
+                      WHERE conrelid = 'public.person'::regclass
+                        AND conname = 'person_pkey'
+                   )
+              \gexec
 
-                IF NOT EXISTS (
-                  SELECT 1
-                    FROM pg_constraint
-                   WHERE conrelid = 'public.person'::regclass
-                     AND conname = 'person_faceAssetId_fkey'
-                ) THEN
-                  ALTER TABLE public.person
-                    ADD CONSTRAINT "person_faceAssetId_fkey"
-                    FOREIGN KEY ("faceAssetId")
-                    REFERENCES public.asset_face(id)
-                    ON DELETE SET NULL;
-                END IF;
-              END $$$$;
+              SELECT 'ALTER TABLE public.person ADD CONSTRAINT "person_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES public."user"(id) ON UPDATE CASCADE ON DELETE CASCADE'
+               WHERE NOT EXISTS (
+                     SELECT 1
+                       FROM pg_constraint
+                      WHERE conrelid = 'public.person'::regclass
+                        AND conname = 'person_ownerId_fkey'
+                   )
+              \gexec
+
+              SELECT 'ALTER TABLE public.person ADD CONSTRAINT "person_faceAssetId_fkey" FOREIGN KEY ("faceAssetId") REFERENCES public.asset_face(id) ON DELETE SET NULL'
+               WHERE NOT EXISTS (
+                     SELECT 1
+                       FROM pg_constraint
+                      WHERE conrelid = 'public.person'::regclass
+                        AND conname = 'person_faceAssetId_fkey'
+                   )
+              \gexec
 
               COMMIT;
               SQL
