@@ -27,6 +27,10 @@ spec:
                   value: "${media_download_promotion_category_regex}"
                 - name: TARGET_BASE
                   value: "${media_download_promotion_target_base}"
+                - name: MEDIA_UID
+                  value: "${media_puid}"
+                - name: MEDIA_GID
+                  value: "${media_pgid}"
                 - name: QB_URL
                   value: "http://qbittorrent:8080"
               volumeMounts:
@@ -86,6 +90,8 @@ spec:
                   )
                   category_rx = re.compile(category_re)
                   target_base = os.getenv("TARGET_BASE", "/media/staged").rstrip("/")
+                  media_uid = int(os.getenv("MEDIA_UID", "1000"))
+                  media_gid = int(os.getenv("MEDIA_GID", "1000"))
                   qb_url = os.getenv("QB_URL", "http://qbittorrent:8080").rstrip("/")
 
                   try:
@@ -131,6 +137,8 @@ spec:
                       bucket = bucket_map.get(category, "other")
                       target_dir = f"{target_base}/{bucket}"
                       os.makedirs(target_dir, exist_ok=True)
+                      os.chown(target_dir, media_uid, media_gid)
+                      os.chmod(target_dir, 0o775)
 
                       if dry_run:
                           print(
