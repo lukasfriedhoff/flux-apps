@@ -1,0 +1,9 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: nix-cache-attic-homelab-prefix
+  namespace: ${nix_cache_namespace}
+spec:
+  replacePathRegex:
+    regex: ^/(.*)
+    replacement: /homelab/$1
