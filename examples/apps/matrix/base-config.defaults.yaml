@@ -58,5 +58,15 @@ data:
 
   # pg_dump backup — endpoint URL and credentials all come from the secret (same key names as longhorn-backup-target)
   matrix_postgres_backup_bucket: "matrix-postgres-backup"
+  matrix_synapsedb_backup_generation: ""
+  matrix_synapsedb_backup_server_name: "synapsedb"
+  matrix_whatsappdb_backup_generation: ""
+  matrix_whatsappdb_backup_server_name: "whatsappdb"
+  matrix_wadb_backup_generation: ""
+  matrix_wadb_backup_server_name: "wadb"
+  matrix_telegramdb_backup_generation: ""
+  matrix_telegramdb_backup_server_name: "telegramdb"
+  matrix_signaldbprivate_backup_generation: ""
+  matrix_signaldbprivate_backup_server_name: "signaldbprivate"
   # Secret in the matrix namespace with keys AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINTS
   matrix_postgres_backup_credential_secret_name: "matrix-postgres-backup-credentials"

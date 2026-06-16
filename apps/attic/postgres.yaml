@@ -21,8 +21,9 @@ spec:
     size: ${attic_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${attic_postgres_backup_bucket}/${cluster_environment}/attic-postgres/"
+      destinationPath: "s3://${attic_postgres_backup_bucket}/${cluster_environment}/${attic_postgres_backup_generation:=}attic-postgres/"
       endpointURL: "${attic_postgres_backup_endpoint_url:=}"
+      serverName: ${attic_postgres_backup_server_name:=attic-postgres}
       s3Credentials:
         accessKeyId:
           name: ${attic_postgres_backup_credential_secret_name}

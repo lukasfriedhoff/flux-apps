@@ -30,6 +30,8 @@ data:
   # Set in the cluster overlay; leave empty to disable backup.
   nextcloud_postgres_backup_endpoint_url: ""
   nextcloud_postgres_backup_bucket: "nextcloud-postgres-backup"
+  nextcloud_postgres_backup_generation: ""
+  nextcloud_postgres_backup_server_name: "nextcloud-postgres"
   # Secret must exist in the nextcloud namespace with keys AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
   # (same key names as the longhorn-backup-target secret)
   nextcloud_postgres_backup_credential_secret_name: "nextcloud-postgres-backup-credentials"
