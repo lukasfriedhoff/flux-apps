@@ -49,5 +49,7 @@ data:
   # CNPG backup — endpoint URL and credentials all come from the secret (same key names as longhorn-backup-target).
   immich_photos_postgres_backup_bucket: "immich-postgres-backup"
   immich_photos_postgres_backup_cron: "0 0 2 * * *"
+  immich_photos_postgres_backup_generation: ""
+  immich_photos_postgres_backup_server_name: "immich-photos-postgres"
   # Secret in the immich-photos namespace with keys AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINTS.
   immich_photos_postgres_backup_credential_secret_name: "immich-photos-postgres-backup-credentials"

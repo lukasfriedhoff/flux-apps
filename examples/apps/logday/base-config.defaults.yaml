@@ -27,6 +27,8 @@ data:
   logday_postgres_backup_bucket: "logday-postgres-backup"
   logday_postgres_backup_cron: "0 0 2 * * *"
   logday_postgres_backup_endpoint_url: ""
+  logday_postgres_backup_generation: ""
+  logday_postgres_backup_server_name: "logday-postgres"
   logday_postgres_backup_credential_secret_name: "logday-postgres-backup-credentials"
   logday_postgres_backup_retention: "30d"
   logday_postgres_requests_cpu: "100m"

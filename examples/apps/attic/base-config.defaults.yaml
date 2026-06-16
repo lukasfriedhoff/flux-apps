@@ -34,6 +34,8 @@ data:
   attic_postgres_backup_bucket: attic-postgres-backup
   attic_postgres_backup_cron: "0 0 2 * * *"
   attic_postgres_backup_endpoint_url: ""
+  attic_postgres_backup_generation: ""
+  attic_postgres_backup_server_name: attic-postgres
   attic_postgres_backup_credential_secret_name: attic-postgres-backup-credentials
   attic_postgres_backup_retention: 30d
   attic_postgres_requests_cpu: 250m
