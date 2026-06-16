@@ -7,6 +7,8 @@ resources:
   - pvc-media.yaml
   - qbittorrent-config.yaml
   - qbittorrent.yaml
+  - qbit-manage-config.yaml
+  - qbit-manage.yaml
   - prowlarr.yaml
   - prowlarr-bootstrap-config.yaml
   - prowlarr-bootstrap.yaml
