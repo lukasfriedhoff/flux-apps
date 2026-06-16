@@ -24,6 +24,7 @@ spec:
   values:
     defaultSettings:
       defaultReplicaCount: ${longhorn_default_replica_count}
+      replicaSoftAntiAffinity: ${longhorn_replica_soft_anti_affinity:=false}
       allowRecurringJobWhileVolumeDetached: ${longhorn_allow_recurring_job_while_volume_detached:=true}
       storageMinimalAvailablePercentage: ${longhorn_storage_minimal_available_percentage:=10}
       storageOverProvisioningPercentage: ${longhorn_storage_over_provisioning_percentage:=100}
