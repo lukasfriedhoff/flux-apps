@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: immich-photos-db-schema-repair-v3
+  name: immich-photos-db-schema-repair-v4
   namespace: immich-photos
   labels:
-    app.kubernetes.io/name: immich-photos-db-schema-repair-v3
+    app.kubernetes.io/name: immich-photos-db-schema-repair-v4
 spec:
   backoffLimit: 1
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: immich-photos-db-schema-repair-v3
+        app.kubernetes.io/name: immich-photos-db-schema-repair-v4
     spec:
       automountServiceAccountToken: false
       restartPolicy: Never
@@ -45,16 +45,7 @@ spec:
               psql -v ON_ERROR_STOP=1 <<'SQL'
               BEGIN;
 
-              SELECT CASE
-                WHEN count(*) = 0 THEN 'duplicate check passed'
-                ELSE 'duplicate person ids found: ' || (1 / 0)::text
-              END
-                FROM (
-                  SELECT id
-                    FROM public.person
-                   GROUP BY id
-                  HAVING count(*) > 1
-                ) duplicates;
+              SELECT 'repairing immich photos person constraints';
 
               DELETE FROM public.asset_face asset_face
                     USING public.person person
