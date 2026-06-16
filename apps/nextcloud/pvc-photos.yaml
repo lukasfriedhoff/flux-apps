@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: ${nextcloud_photos_size:=50Gi}
-  storageClassName: ${longhorn_rwx_storage_class_1r_name}
+  storageClassName: ${nextcloud_photos_storage_class_name:=${longhorn_rwx_storage_class_1r_name}}
