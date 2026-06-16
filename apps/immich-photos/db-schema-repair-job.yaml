@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: immich-photos-db-schema-repair
+  name: immich-photos-db-schema-repair-v2
   namespace: immich-photos
   labels:
-    app.kubernetes.io/name: immich-photos-db-schema-repair
+    app.kubernetes.io/name: immich-photos-db-schema-repair-v2
 spec:
   backoffLimit: 1
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: immich-photos-db-schema-repair
+        app.kubernetes.io/name: immich-photos-db-schema-repair-v2
     spec:
       automountServiceAccountToken: false
       restartPolicy: Never
@@ -45,7 +45,7 @@ spec:
               psql -v ON_ERROR_STOP=1 <<'SQL'
               BEGIN;
 
-              DO $$
+              DO $$$$
               DECLARE
                 duplicate_person_ids bigint;
               BEGIN
@@ -123,7 +123,7 @@ spec:
                     REFERENCES public.asset_face(id)
                     ON DELETE SET NULL;
                 END IF;
-              END $$;
+              END $$$$;
 
               COMMIT;
               SQL
