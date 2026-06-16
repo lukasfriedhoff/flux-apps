@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: immich-photos-db-schema-repair-v5
+  name: immich-photos-db-schema-repair-v6
   namespace: immich-photos
   labels:
-    app.kubernetes.io/name: immich-photos-db-schema-repair-v5
+    app.kubernetes.io/name: immich-photos-db-schema-repair-v6
 spec:
   backoffLimit: 1
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: immich-photos-db-schema-repair-v5
+        app.kubernetes.io/name: immich-photos-db-schema-repair-v6
     spec:
       automountServiceAccountToken: false
       restartPolicy: Never
@@ -114,6 +114,15 @@ spec:
                        FROM pg_constraint
                       WHERE conrelid = 'public.person'::regclass
                         AND conname = 'person_ownerId_fkey'
+                   )
+              \gexec
+
+              SELECT 'ALTER TABLE public.asset_face ADD CONSTRAINT asset_face_pkey PRIMARY KEY (id)'
+               WHERE NOT EXISTS (
+                     SELECT 1
+                       FROM pg_constraint
+                      WHERE conrelid = 'public.asset_face'::regclass
+                        AND conname = 'asset_face_pkey'
                    )
               \gexec
 
