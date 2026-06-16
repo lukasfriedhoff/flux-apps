@@ -28,9 +28,9 @@ spec:
                 - name: TARGET_BASE
                   value: "${media_download_promotion_target_base}"
                 - name: MEDIA_UID
-                  value: "${media_puid}"
+                  value: "${media_puid} "
                 - name: MEDIA_GID
-                  value: "${media_pgid}"
+                  value: "${media_pgid} "
                 - name: QB_URL
                   value: "http://qbittorrent:8080"
               volumeMounts:
@@ -90,8 +90,8 @@ spec:
                   )
                   category_rx = re.compile(category_re)
                   target_base = os.getenv("TARGET_BASE", "/media/staged").rstrip("/")
-                  media_uid = int(os.getenv("MEDIA_UID", "1000"))
-                  media_gid = int(os.getenv("MEDIA_GID", "1000"))
+                  media_uid = int(os.getenv("MEDIA_UID", "1000").strip())
+                  media_gid = int(os.getenv("MEDIA_GID", "1000").strip())
                   qb_url = os.getenv("QB_URL", "http://qbittorrent:8080").rstrip("/")
 
                   try:
