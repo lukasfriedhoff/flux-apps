@@ -37,6 +37,10 @@ data:
       rules:
         - domain: 'auth${public_host_suffix}.${delegating_domain}'
           policy: bypass
+        - domain_regex: '^.*${public_host_suffix}\.${delegating_domain}$'
+          subject:
+            - 'user:testuser'
+          policy: one_factor
         - domain: 'meme${public_host_suffix}.${delegating_domain}'
           subject:
             - 'user:wooden'
@@ -166,6 +170,12 @@ data:
 
     identity_providers:
       oidc:
+        authorization_policies:
+          testuser_one_factor:
+            default_policy: ${authelia_oidc_policy}
+            rules:
+              - subject: 'user:testuser'
+                policy: one_factor
         claims_policies:
           nextcloud:
             custom_claims:
@@ -212,7 +222,7 @@ data:
           - client_id: nextcloud
             client_name: Nextcloud
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.nextcloud.secret" | msquote }}
-            authorization_policy: ${authelia_oidc_policy}
+            authorization_policy: testuser_one_factor
             consent_mode: implicit
             claims_policy: nextcloud
             redirect_uris:
@@ -253,7 +263,7 @@ data:
             client_name: Jellyfin
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.jellyfin.secret" | msquote }}
             public: false
-            authorization_policy: ${authelia_oidc_policy}
+            authorization_policy: testuser_one_factor
             require_pkce: true
             pkce_challenge_method: 'S256'
             redirect_uris:
@@ -273,7 +283,7 @@ data:
           - client_id: jellyseerr
             client_name: Jellyseerr
             public: true
-            authorization_policy: ${authelia_oidc_policy}
+            authorization_policy: testuser_one_factor
             consent_mode: implicit
             require_pkce: true
             pkce_challenge_method: 'S256'
@@ -294,7 +304,7 @@ data:
             client_name: Immich
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.immich.secret" | msquote }}
             public: false
-            authorization_policy: ${authelia_oidc_policy}
+            authorization_policy: testuser_one_factor
             consent_mode: implicit
             claims_policy: immich_meme
             redirect_uris:
@@ -318,7 +328,7 @@ data:
             client_name: Immich Photos
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.immich_photos.secret" | msquote }}
             public: false
-            authorization_policy: ${authelia_oidc_policy}
+            authorization_policy: testuser_one_factor
             consent_mode: implicit
             claims_policy: immich_photos
             redirect_uris:
@@ -342,7 +352,7 @@ data:
             client_name: Matrix Synapse
             client_secret: {{ secret "/secrets/authelia-oidc-matrix/client_secret_digest" | msquote }}
             public: false
-            authorization_policy: ${authelia_oidc_policy}
+            authorization_policy: testuser_one_factor
             consent_mode: implicit
             redirect_uris:
               - https://matrix${public_host_suffix}.${delegating_domain}/_synapse/client/oidc/callback
