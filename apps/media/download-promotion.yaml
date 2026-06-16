@@ -31,6 +31,8 @@ spec:
                   value: "${media_puid} "
                 - name: MEDIA_GID
                   value: "${media_pgid} "
+                - name: MAX_MOVES
+                  value: "${media_download_promotion_max_moves:=5} "
                 - name: QB_URL
                   value: "http://qbittorrent:8080"
               volumeMounts:
@@ -92,6 +94,7 @@ spec:
                   target_base = os.getenv("TARGET_BASE", "/media/staged").rstrip("/")
                   media_uid = int(os.getenv("MEDIA_UID", "1000").strip())
                   media_gid = int(os.getenv("MEDIA_GID", "1000").strip())
+                  max_moves = int(os.getenv("MAX_MOVES", "5").strip())
                   qb_url = os.getenv("QB_URL", "http://qbittorrent:8080").rstrip("/")
 
                   try:
@@ -118,6 +121,13 @@ spec:
                   if not candidates:
                       print("[download-promoter] no torrents matched category/age policy")
                       sys.exit(0)
+
+                  if max_moves > 0 and len(candidates) > max_moves:
+                      print(
+                          f"[download-promoter] limiting this run to {max_moves} "
+                          f"of {len(candidates)} matching torrents"
+                      )
+                      candidates = candidates[:max_moves]
 
                   promoted = 0
                   skipped = 0
