@@ -33,8 +33,9 @@ spec:
     size: ${immich_photos_postgres_size}
   backup:
     barmanObjectStore:
-      destinationPath: "s3://${immich_photos_postgres_backup_bucket}/${cluster_environment}/immich-photos-postgres/"
+      destinationPath: "s3://${immich_photos_postgres_backup_bucket}/${cluster_environment}/${immich_photos_postgres_backup_generation:=}immich-photos-postgres/"
       endpointURL: "${immich_photos_postgres_backup_endpoint_url:=}"
+      serverName: ${immich_photos_postgres_backup_server_name:=immich-photos-postgres}
       s3Credentials:
         accessKeyId:
           name: ${immich_photos_postgres_backup_credential_secret_name}

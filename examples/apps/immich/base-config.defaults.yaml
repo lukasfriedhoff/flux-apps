@@ -47,5 +47,7 @@ data:
 
   # pg_dump backup — endpoint URL and credentials all come from the secret (same key names as longhorn-backup-target)
   immich_postgres_backup_bucket: "immich-postgres-backup"
+  immich_postgres_backup_generation: ""
+  immich_postgres_backup_server_name: "immich-postgres"
   # Secret in the immich namespace with keys AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINTS
   immich_postgres_backup_credential_secret_name: "immich-postgres-backup-credentials"
