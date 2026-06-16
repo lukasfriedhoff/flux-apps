@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: immich-photos-db-schema-repair-v4
+  name: immich-photos-db-schema-repair-v5
   namespace: immich-photos
   labels:
-    app.kubernetes.io/name: immich-photos-db-schema-repair-v4
+    app.kubernetes.io/name: immich-photos-db-schema-repair-v5
 spec:
   backoffLimit: 1
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: immich-photos-db-schema-repair-v4
+        app.kubernetes.io/name: immich-photos-db-schema-repair-v5
     spec:
       automountServiceAccountToken: false
       restartPolicy: Never
@@ -71,6 +71,33 @@ spec:
                          FROM public.asset_face asset_face
                         WHERE asset_face.id = person."faceAssetId"
                      );
+
+              SELECT 'ALTER TABLE public."user" ADD CONSTRAINT user_pkey PRIMARY KEY (id)'
+               WHERE NOT EXISTS (
+                     SELECT 1
+                       FROM pg_constraint
+                      WHERE conrelid = 'public."user"'::regclass
+                        AND conname = 'user_pkey'
+                   )
+              \gexec
+
+              SELECT 'ALTER TABLE public."user" ADD CONSTRAINT user_email_uq UNIQUE (email)'
+               WHERE NOT EXISTS (
+                     SELECT 1
+                       FROM pg_constraint
+                      WHERE conrelid = 'public."user"'::regclass
+                        AND conname = 'user_email_uq'
+                   )
+              \gexec
+
+              SELECT 'ALTER TABLE public."user" ADD CONSTRAINT "user_storageLabel_uq" UNIQUE ("storageLabel")'
+               WHERE NOT EXISTS (
+                     SELECT 1
+                       FROM pg_constraint
+                      WHERE conrelid = 'public."user"'::regclass
+                        AND conname = 'user_storageLabel_uq'
+                   )
+              \gexec
 
               SELECT 'ALTER TABLE public.person ADD CONSTRAINT person_pkey PRIMARY KEY (id)'
                WHERE NOT EXISTS (
