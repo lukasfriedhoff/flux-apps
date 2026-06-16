@@ -1,0 +1,77 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: qbit-manage
+  namespace: media
+spec:
+  schedule: "${qbit_manage_cron}"
+  suspend: ${qbit_manage_suspended}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: qbit-manage
+              image: ghcr.io/stuffanthings/qbit_manage:${qbit_manage_image_tag}
+              args:
+                - python3
+                - qbit_manage.py
+                - --run
+                - --web-server=False
+                - --config-dir
+                - /config
+                - --log-level
+                - INFO
+              env:
+                - name: TZ
+                  value: ${media_timezone}
+                - name: QBT_CONFIG_DIR
+                  value: /config
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                - name: downloads
+                  mountPath: /downloads
+                - name: media
+                  mountPath: /media
+          initContainers:
+            - name: copy-config
+              image: alpine:3.20
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  cp /config-template/config.yml /config/config.yml
+                  mkdir -p \
+                    /downloads/.RecycleBin \
+                    /downloads/orphaned_data \
+                    /media/staged/movies \
+                    /media/staged/tv \
+                    /media/staged/music \
+                    /media/staged/books
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                - name: config-template
+                  mountPath: /config-template
+                - name: downloads
+                  mountPath: /downloads
+                - name: media
+                  mountPath: /media
+          volumes:
+            - name: config
+              emptyDir: {}
+            - name: config-template
+              configMap:
+                name: qbit-manage-config
+            - name: downloads
+              persistentVolumeClaim:
+                claimName: arr-downloads
+            - name: media
+              persistentVolumeClaim:
+                claimName: arr-media
