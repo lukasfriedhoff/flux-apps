@@ -4,8 +4,10 @@ metadata:
   name: ${nix_cache_service_name}
   namespace: ${nix_cache_namespace}
 spec:
+  selector:
+    app.kubernetes.io/name: attic
   ports:
     - name: http
       port: ${nix_cache_service_port}
       protocol: TCP
-      targetPort: ${nix_cache_service_port}
+      targetPort: 8080
