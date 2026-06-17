@@ -221,6 +221,53 @@ data:
           raise
 
 
+    def ensure_system_configuration(api_key: str) -> None:
+      if not api_key:
+        print("[jellyfin-bootstrap] no api key available for system configuration; skipping.")
+        return
+
+      for attempt in range(1, MAX_RETRIES + 1):
+        try:
+          config = _request_json("GET", "/System/Configuration", api_key)
+          if not isinstance(config, dict):
+            print("[jellyfin-bootstrap] unexpected System/Configuration payload; skipping.")
+            return
+
+          changed = False
+          if config.get("ServerName") != JELLYFIN_SERVER_NAME:
+            config["ServerName"] = JELLYFIN_SERVER_NAME
+            changed = True
+          if not config.get("MetadataCountryCode"):
+            config["MetadataCountryCode"] = "US"
+            changed = True
+          if not config.get("PreferredMetadataLanguage"):
+            config["PreferredMetadataLanguage"] = "en"
+            changed = True
+
+          if not changed:
+            print("[jellyfin-bootstrap] system configuration already up to date.")
+            return
+
+          _request_json("POST", "/System/Configuration", api_key, body=config)
+          print("[jellyfin-bootstrap] system configuration updated.")
+          return
+        except urllib.error.HTTPError as err:
+          if err.code == 401:
+            print("[jellyfin-bootstrap] api key unauthorized for system configuration; skipping.")
+            return
+          if attempt < MAX_RETRIES:
+            print(f"[jellyfin-bootstrap] system configuration API not ready (attempt {attempt}/{MAX_RETRIES}): HTTP {err.code}")
+            time.sleep(3)
+            continue
+          raise
+        except (urllib.error.URLError, TimeoutError) as err:
+          if attempt < MAX_RETRIES:
+            print(f"[jellyfin-bootstrap] system configuration API unavailable (attempt {attempt}/{MAX_RETRIES}): {err}")
+            time.sleep(3)
+            continue
+          raise
+
+
     def bootstrap() -> int:
       ensure_startup_wizard_completed()
       ensure_runtime_startup_wizard_completed()
@@ -245,6 +292,7 @@ data:
           if row and row[0] == api_key:
             print("[jellyfin-bootstrap] api key already up to date.")
             conn.close()
+            ensure_system_configuration(api_key)
             ensure_libraries(api_key)
             return 0
 
@@ -260,6 +308,7 @@ data:
           conn.commit()
           conn.close()
           print("[jellyfin-bootstrap] api key upserted.")
+          ensure_system_configuration(api_key)
           ensure_libraries(api_key)
           return 0
         except sqlite3.OperationalError as err:
