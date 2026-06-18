@@ -72,13 +72,22 @@ spec:
                       esac
                       checked_users=$((checked_users + 1))
                       user_dir="/shared-photos/$user_id"
+                      created_user_dir=false
                       if [ ! -d "$user_dir" ]; then
                         echo "Creating $user_dir"
                         mkdir -p "$user_dir"
                         created_dirs=$((created_dirs + 1))
+                        created_user_dir=true
                       fi
                       chown 33:33 "$user_dir" || true
                       chmod 0770 "$user_dir" || true
+                      if [ "$created_user_dir" = "true" ]; then
+                        timeout 60 php /var/www/html/occ files:scan \
+                          --path="/$user_id/files/Photos" \
+                          --shallow \
+                          --quiet \
+                          || echo "Warning: failed to shallow-scan /$user_id/files/Photos" >&2
+                      fi
                     done < "$users_file"
                   if [ "$checked_users" -eq 0 ]; then
                     echo "No valid Nextcloud users were checked." >&2

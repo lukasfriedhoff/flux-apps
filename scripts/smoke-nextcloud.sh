@@ -91,6 +91,19 @@ while IFS= read -r user_id; do
       echo "missing Shared Photos user directory: /shared-photos/$user_id" >&2
       exit 1
     fi
+    if ! NEXTCLOUD_SMOKE_USER="$user_id" php -r '
+      require_once "/var/www/html/lib/base.php";
+      $user = getenv("NEXTCLOUD_SMOKE_USER");
+      \OC_Util::setupFS($user);
+      $view = new \OC\Files\View("/" . $user . "/files");
+      if (!$view->file_exists("Photos") || !$view->is_dir("Photos")) {
+        fwrite(STDERR, "Photos is not accessible through Nextcloud filesystem for " . $user . "\n");
+        exit(1);
+      }
+    '; then
+      echo "Shared Photos mount exists but /Photos is not accessible for $user_id" >&2
+      exit 1
+    fi
 done < "$users_file"
 if [ "$checked_users" -eq 0 ]; then
   echo "No valid Nextcloud users were checked" >&2

@@ -554,6 +554,35 @@ spec:
                 done < "$users_file"
               echo "Checked $checked_users Shared Photos user directories; created $created_dirs."
             }
+            scan_shared_photos_user_dirs() {
+              users_file="$(mktemp)"
+              trap 'rm -f "$users_file"' EXIT
+              timeout 30 php /var/www/html/occ user:list --output=json 2>/dev/null \
+                | php -r '
+                  $users = json_decode(file_get_contents("php://stdin"), true);
+                  if (!is_array($users)) {
+                    exit(1);
+                  }
+                  foreach (array_keys($users) as $user) {
+                    echo $user . "\n";
+                  }
+                ' > "$users_file" || {
+                  echo "Unable to read Nextcloud users for Shared Photos scan."
+                  return 0
+                }
+              while IFS= read -r user_id; do
+                  case "$user_id" in
+                    ""|*/*|*..*)
+                      continue
+                      ;;
+                  esac
+                  timeout 60 php /var/www/html/occ files:scan \
+                    --path="/$user_id/files/Photos" \
+                    --shallow \
+                    --quiet \
+                    || echo "Warning: failed to shallow-scan /$user_id/files/Photos" >&2
+                done < "$users_file"
+            }
             lock_dir=/var/www/html/config/.shared-photos-storage.lock
             lock_acquired=false
             for _ in $(seq 1 60); do
@@ -592,6 +621,7 @@ spec:
               else
                 echo "Shared Photos external storage already configured."
               fi
+              scan_shared_photos_user_dirs
               rmdir "$lock_dir"
               return 0
             fi
@@ -599,6 +629,7 @@ spec:
             if occ_safe files_external:create \
               "Photos" local null::null \
               -c datadir="$desired_datadir"; then
+              scan_shared_photos_user_dirs
               rmdir "$lock_dir"
               return 0
             fi
