@@ -10,3 +10,4 @@ spec:
     requests:
       storage: ${arr_media_size}
   storageClassName: ${arr_media_storage_class_name}
+  volumeName: ${arr_media_volume_name:=}

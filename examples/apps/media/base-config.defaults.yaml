@@ -10,6 +10,7 @@ data:
   arr_downloads_storage_class_name: "ssd-cephfs-1r"
   arr_media_size: "1Ti"
   arr_media_storage_class_name: "ssd-cephfs-1r"
+  arr_media_volume_name: ""
   cloudflare_tunnel_hostname: "03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com"
   default_cluster_issuer: "letsencrypt-prod"
   delegating_domain: "h4xx.io"
