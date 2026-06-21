@@ -4,7 +4,7 @@ metadata:
   name: metube-download-promoter
   namespace: media
 spec:
-  schedule: "${metube_promotion_cron:=*/10 * * * *}"
+  schedule: "${metube_promotion_cron:=0/10 * * * *}"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
