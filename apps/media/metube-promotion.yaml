@@ -22,13 +22,17 @@ spec:
                 - name: ENABLED
                   value: "${metube_promotion_enabled:=enabled}"
                 - name: MIN_AGE_MINUTES
-                  value: "${metube_promotion_min_age_minutes:=2}"
+                  value: |-
+                    ${metube_promotion_min_age_minutes:=2}
                 - name: MAX_FILES
-                  value: "${metube_promotion_max_files:=100}"
+                  value: |-
+                    ${metube_promotion_max_files:=100}
                 - name: MEDIA_UID
-                  value: "${media_puid}"
+                  value: |-
+                    ${media_puid}
                 - name: MEDIA_GID
-                  value: "${media_pgid}"
+                  value: |-
+                    ${media_pgid}
                 - name: AUDIO_SOURCE_DIR
                   value: "${metube_audio_download_dir:=/downloads/metube/audio}"
                 - name: AUDIO_TARGET_DIR
