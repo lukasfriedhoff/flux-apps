@@ -22,13 +22,13 @@ spec:
                 - name: ENABLED
                   value: "${metube_promotion_enabled:=enabled}"
                 - name: MIN_AGE_MINUTES
-                  value: !!str ${metube_promotion_min_age_minutes:=2}
+                  value: "n${metube_promotion_min_age_minutes:=2}"
                 - name: MAX_FILES
-                  value: !!str ${metube_promotion_max_files:=100}
+                  value: "n${metube_promotion_max_files:=100}"
                 - name: MEDIA_UID
-                  value: !!str ${media_puid}
+                  value: "n${media_puid}"
                 - name: MEDIA_GID
-                  value: !!str ${media_pgid}
+                  value: "n${media_pgid}"
                 - name: AUDIO_SOURCE_DIR
                   value: "${metube_audio_download_dir:=/downloads/metube/audio}"
                 - name: AUDIO_TARGET_DIR
@@ -60,8 +60,11 @@ spec:
 
 
                   def int_env(name: str, default: str) -> int:
+                      raw = os.getenv(name, default).strip()
+                      if raw.startswith("n") and raw[1:].isdigit():
+                          raw = raw[1:]
                       try:
-                          return int(os.getenv(name, default).strip())
+                          return int(raw)
                       except ValueError:
                           print(f"[metube-promoter] invalid integer for {name}", file=sys.stderr)
                           raise SystemExit(1)
