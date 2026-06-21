@@ -106,7 +106,15 @@ spec:
                       )
                       sys.exit(1)
 
+                  bucket_map = {
+                      "radarr-imported": "movies",
+                      "sonarr-imported": "tv",
+                      "lidarr-imported": "music",
+                      "readarr-imported": "books",
+                  }
+
                   candidates = []
+                  already_promoted = 0
                   for torrent in torrents:
                       category = str(torrent.get("category", ""))
                       completion_on = int(torrent.get("completion_on") or 0)
@@ -116,10 +124,23 @@ spec:
                           continue
                       if (now - completion_on) < min_age_seconds:
                           continue
+                      bucket = bucket_map.get(category, "other")
+                      target_dir = f"{target_base}/{bucket}"
+                      save_path = str(torrent.get("save_path", ""))
+                      normalized_save_path = os.path.normpath(save_path)
+                      normalized_target_dir = os.path.normpath(target_dir)
+                      if normalized_save_path == normalized_target_dir or normalized_save_path.startswith(
+                          f"{normalized_target_dir}/"
+                      ):
+                          already_promoted += 1
+                          continue
                       candidates.append(torrent)
 
                   if not candidates:
-                      print("[download-promoter] no torrents matched category/age policy")
+                      print(
+                          "[download-promoter] no torrents matched category/age policy "
+                          f"(already_promoted={already_promoted})"
+                      )
                       sys.exit(0)
 
                   if max_moves > 0 and len(candidates) > max_moves:
@@ -131,12 +152,6 @@ spec:
 
                   promoted = 0
                   skipped = 0
-                  bucket_map = {
-                      "radarr-imported": "movies",
-                      "sonarr-imported": "tv",
-                      "lidarr-imported": "music",
-                      "readarr-imported": "books",
-                  }
 
                   for torrent in candidates:
                       hash_ = str(torrent.get("hash", ""))
@@ -178,7 +193,8 @@ spec:
                       promoted += 1
 
                   print(
-                      f"[download-promoter] finished (promoted={promoted}, dry_run_skipped={skipped})"
+                      f"[download-promoter] finished (promoted={promoted}, "
+                      f"dry_run_skipped={skipped}, already_promoted={already_promoted})"
                   )
           volumes:
             - name: media
