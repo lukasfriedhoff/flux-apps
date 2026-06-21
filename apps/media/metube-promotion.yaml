@@ -1,0 +1,146 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: metube-download-promoter
+  namespace: media
+spec:
+  schedule: "${metube_promotion_cron:=*/10 * * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: promote
+              image: python:3.12-alpine
+              env:
+                - name: ENABLED
+                  value: "${metube_promotion_enabled:=enabled}"
+                - name: MIN_AGE_MINUTES
+                  value: "${metube_promotion_min_age_minutes:=2}"
+                - name: MAX_FILES
+                  value: "${metube_promotion_max_files:=100}"
+                - name: MEDIA_UID
+                  value: "${media_puid}"
+                - name: MEDIA_GID
+                  value: "${media_pgid}"
+                - name: AUDIO_SOURCE_DIR
+                  value: "${metube_audio_download_dir:=/downloads/metube/audio}"
+                - name: AUDIO_TARGET_DIR
+                  value: "${metube_audio_promoted_dir:=/media/music/YouTube}"
+                - name: VIDEO_SOURCE_DIR
+                  value: "${metube_video_download_dir:=/downloads/metube/videos}"
+                - name: VIDEO_TARGET_DIR
+                  value: "${metube_video_promoted_dir:=/media/youtube/videos}"
+              volumeMounts:
+                - name: downloads
+                  mountPath: /downloads
+                - name: media
+                  mountPath: /media
+              command:
+                - /usr/local/bin/python
+                - -c
+                - |
+                  import os
+                  import shutil
+                  import sys
+                  import time
+                  from pathlib import Path
+
+                  TRUE_TOKENS = {"true", "1", "yes", "on", "enabled"}
+
+
+                  def env_true(name: str, default: str) -> bool:
+                      return os.getenv(name, default).strip().lower() in TRUE_TOKENS
+
+
+                  def int_env(name: str, default: str) -> int:
+                      try:
+                          return int(os.getenv(name, default).strip())
+                      except ValueError:
+                          print(f"[metube-promoter] invalid integer for {name}", file=sys.stderr)
+                          raise SystemExit(1)
+
+
+                  def promote_tree(source: Path, target: Path, min_age_seconds: int, max_files: int, uid: int, gid: int) -> int:
+                      if not source.exists():
+                          print(f"[metube-promoter] source missing: {source}")
+                          return 0
+
+                      target.mkdir(parents=True, exist_ok=True)
+                      os.chown(target, uid, gid)
+                      os.chmod(target, 0o775)
+
+                      now = time.time()
+                      promoted = 0
+                      for path in sorted(p for p in source.rglob("*") if p.is_file()):
+                          if max_files > 0 and promoted >= max_files:
+                              break
+                          if now - path.stat().st_mtime < min_age_seconds:
+                              continue
+
+                          relative = path.relative_to(source)
+                          destination = target / relative
+                          if destination.exists():
+                              print(f"[metube-promoter] skip existing target: {destination}")
+                              continue
+
+                          destination.parent.mkdir(parents=True, exist_ok=True)
+                          os.chown(destination.parent, uid, gid)
+                          os.chmod(destination.parent, 0o775)
+                          shutil.move(str(path), str(destination))
+                          os.chown(destination, uid, gid)
+                          os.chmod(destination, 0o664)
+                          promoted += 1
+                          print(f"[metube-promoter] moved {path} -> {destination}")
+
+                      for directory in sorted((p for p in source.rglob("*") if p.is_dir()), reverse=True):
+                          try:
+                              directory.rmdir()
+                          except OSError:
+                              pass
+
+                      return promoted
+
+
+                  if not env_true("ENABLED", "enabled"):
+                      print("[metube-promoter] disabled")
+                      raise SystemExit(0)
+
+                  min_age_seconds = int_env("MIN_AGE_MINUTES", "2") * 60
+                  max_files = int_env("MAX_FILES", "100")
+                  uid = int_env("MEDIA_UID", "1000")
+                  gid = int_env("MEDIA_GID", "1000")
+
+                  moves = 0
+                  moves += promote_tree(
+                      Path(os.getenv("AUDIO_SOURCE_DIR", "/downloads/metube/audio")),
+                      Path(os.getenv("AUDIO_TARGET_DIR", "/media/music/YouTube")),
+                      min_age_seconds,
+                      max_files,
+                      uid,
+                      gid,
+                  )
+                  if max_files <= 0 or moves < max_files:
+                      remaining = max_files - moves if max_files > 0 else 0
+                      moves += promote_tree(
+                          Path(os.getenv("VIDEO_SOURCE_DIR", "/downloads/metube/videos")),
+                          Path(os.getenv("VIDEO_TARGET_DIR", "/media/youtube/videos")),
+                          min_age_seconds,
+                          remaining,
+                          uid,
+                          gid,
+                      )
+                  print(f"[metube-promoter] finished promoted={moves}")
+          volumes:
+            - name: downloads
+              persistentVolumeClaim:
+                claimName: arr-downloads
+            - name: media
+              persistentVolumeClaim:
+                claimName: arr-media
