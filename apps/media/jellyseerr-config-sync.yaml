@@ -1,3 +1,39 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jellyseerr-config-sync
+  namespace: media
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jellyseerr-config-sync
+  namespace: media
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    resourceNames:
+      - jellyseerr
+    verbs:
+      - get
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jellyseerr-config-sync
+  namespace: media
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jellyseerr-config-sync
+subjects:
+  - kind: ServiceAccount
+    name: jellyseerr-config-sync
+    namespace: media
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -16,6 +52,7 @@ spec:
       ttlSecondsAfterFinished: 300
       template:
         spec:
+          serviceAccountName: jellyseerr-config-sync
           affinity:
             podAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -73,6 +110,10 @@ spec:
                     secretKeyRef:
                       name: ${arr_api_keys_secret_name}
                       key: sonarr_api_key
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
               command:
                 - /bin/sh
                 - -c
@@ -205,8 +246,15 @@ spec:
                   fi
 
                   printf '%s\n' "$settings_json" > "$${settings_file}.tmp"
+                  if [ -s "$settings_file" ] && cmp -s "$${settings_file}.tmp" "$settings_file"; then
+                    rm -f "$${settings_file}.tmp"
+                    echo "[jellyseerr-config-sync] settings unchanged."
+                    exit 0
+                  fi
+
                   mv "$${settings_file}.tmp" "$settings_file"
-                  echo "[jellyseerr-config-sync] settings updated."
+                  kubectl -n "$${POD_NAMESPACE:-media}" rollout restart deployment/jellyseerr
+                  echo "[jellyseerr-config-sync] settings updated; restarted jellyseerr."
               volumeMounts:
                 - name: jellyseerr-config
                   mountPath: /app/config
