@@ -17,6 +17,9 @@ data:
     PROWLARR_CONFIG = os.getenv("PROWLARR_CONFIG", "/mnt/prowlarr/config.xml")
     ROCKETHD_QUOTA_BYTES = int(os.getenv("ROCKETHD_QUOTA_BYTES", str(50 * 1024 * 1024 * 1024)))
     QBITTORRENT_DEFAULT_SEED_RATIO = float(os.getenv("QBITTORRENT_DEFAULT_SEED_RATIO", "1"))
+    QBITTORRENT_MAX_ACTIVE_DOWNLOADS = int(os.getenv("QBITTORRENT_MAX_ACTIVE_DOWNLOADS", "30"))
+    QBITTORRENT_MAX_ACTIVE_UPLOADS = int(os.getenv("QBITTORRENT_MAX_ACTIVE_UPLOADS", "300"))
+    QBITTORRENT_MAX_ACTIVE_TORRENTS = int(os.getenv("QBITTORRENT_MAX_ACTIVE_TORRENTS", "500"))
     PROWLARR_DEFAULT_SEED_RATIO = float(os.getenv("PROWLARR_DEFAULT_SEED_RATIO", "1"))
 
     ROCKETHD_TRACKER_MARKERS = ("rocket-hd", "rockethd", "rocket-hd.cc")
@@ -73,14 +76,24 @@ data:
           time.sleep(3)
       raise RuntimeError("qBittorrent API unavailable")
 
-    def enforce_qbittorrent_ratio():
+    def enforce_qbittorrent_defaults():
       prefs = {
         "max_ratio_enabled": True,
         "max_ratio": QBITTORRENT_DEFAULT_SEED_RATIO,
         "max_ratio_act": 0,
+        "queueing_enabled": True,
+        "max_active_downloads": QBITTORRENT_MAX_ACTIVE_DOWNLOADS,
+        "max_active_uploads": QBITTORRENT_MAX_ACTIVE_UPLOADS,
+        "max_active_torrents": QBITTORRENT_MAX_ACTIVE_TORRENTS,
       }
       qbt_post("/api/v2/app/setPreferences", {"json": json.dumps(prefs)})
-      log(f"qBittorrent default seed ratio enforced at {QBITTORRENT_DEFAULT_SEED_RATIO}")
+      log(
+        "qBittorrent defaults enforced: "
+        f"seed_ratio={QBITTORRENT_DEFAULT_SEED_RATIO} "
+        f"active_downloads={QBITTORRENT_MAX_ACTIVE_DOWNLOADS} "
+        f"active_uploads={QBITTORRENT_MAX_ACTIVE_UPLOADS} "
+        f"active_torrents={QBITTORRENT_MAX_ACTIVE_TORRENTS}"
+      )
 
     def torrent_is_rockethd(torrent_hash):
       try:
@@ -155,7 +168,7 @@ data:
 
     def main():
       wait_for_qbittorrent()
-      enforce_qbittorrent_ratio()
+      enforce_qbittorrent_defaults()
       enforce_rockethd_policy()
 
     if __name__ == "__main__":
@@ -167,7 +180,7 @@ metadata:
   name: qbittorrent-policy
   namespace: media
 spec:
-  schedule: "${qbittorrent_policy_cron:=*/5 * * * *}"
+  schedule: "*/5 * * * *"
   suspend: ${qbittorrent_policy_suspended:=false}
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
@@ -189,11 +202,17 @@ spec:
                 - name: PROWLARR_URL
                   value: http://prowlarr:9696
                 - name: ROCKETHD_QUOTA_BYTES
-                  value: "${rockethd_quota_bytes:=53687091200}"
+                  value: "${rockethd_quota_bytes:=53687091200} "
                 - name: QBITTORRENT_DEFAULT_SEED_RATIO
-                  value: "${qbittorrent_default_seed_ratio:=1}"
+                  value: "${qbittorrent_default_seed_ratio:=1} "
+                - name: QBITTORRENT_MAX_ACTIVE_DOWNLOADS
+                  value: "${qbittorrent_max_active_downloads:=30} "
+                - name: QBITTORRENT_MAX_ACTIVE_UPLOADS
+                  value: "${qbittorrent_max_active_uploads:=300} "
+                - name: QBITTORRENT_MAX_ACTIVE_TORRENTS
+                  value: "${qbittorrent_max_active_torrents:=500} "
                 - name: PROWLARR_DEFAULT_SEED_RATIO
-                  value: "${prowlarr_default_seed_ratio:=1}"
+                  value: "${prowlarr_default_seed_ratio:=1} "
               volumeMounts:
                 - name: script
                   mountPath: /scripts

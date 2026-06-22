@@ -9,7 +9,11 @@ data:
     Session\AddTrackersFromURLEnabled=true
     Session\AdditionalTrackersURL=https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt
     Session\GlobalMaxRatio=${qbittorrent_default_seed_ratio:=1}
+    Session\MaxActiveDownloads=${qbittorrent_max_active_downloads:=30}
+    Session\MaxActiveTorrents=${qbittorrent_max_active_torrents:=500}
+    Session\MaxActiveUploads=${qbittorrent_max_active_uploads:=300}
     Session\MaxUploads=200
+    Session\QueueingSystemEnabled=true
     Session\ShareLimitAction=Stop
 
     [Preferences]
