@@ -28,7 +28,7 @@ data:
       ("movies", "Movies", "/media/movies"),
       ("tvshows", "TV Shows", "/media/tv"),
       ("music", "Music", "/media/music"),
-      ("homevideos", "YouTube Videos", "/media/youtube/videos"),
+      ("youtubevideos", "YouTube Videos", "/media/youtube/videos"),
       ("books", "Books", "/media/books"),
     ]
 
