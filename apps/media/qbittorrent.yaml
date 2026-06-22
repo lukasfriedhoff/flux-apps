@@ -72,8 +72,8 @@ spec:
                   fi
                 }
 
-                ensure_section_pref 'BitTorrent' 'Session\\AddTrackersFromURLEnabled' 'true'
-                ensure_section_pref 'BitTorrent' 'Session\\AdditionalTrackersURL' 'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt'
+                ensure_section_pref 'BitTorrent' 'Session\\AddTrackersFromURLEnabled' 'false'
+                ensure_section_pref 'BitTorrent' 'Session\\AdditionalTrackersURL' ''
                 ensure_section_pref 'BitTorrent' 'Session\\GlobalMaxRatio' '${qbittorrent_default_seed_ratio:=1}'
                 ensure_section_pref 'BitTorrent' 'Session\\MaxActiveDownloads' '${qbittorrent_max_active_downloads:=30}'
                 ensure_section_pref 'BitTorrent' 'Session\\MaxActiveTorrents' '${qbittorrent_max_active_torrents:=500}'

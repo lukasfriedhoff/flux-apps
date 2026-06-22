@@ -85,6 +85,8 @@ data:
         "max_active_downloads": QBITTORRENT_MAX_ACTIVE_DOWNLOADS,
         "max_active_uploads": QBITTORRENT_MAX_ACTIVE_UPLOADS,
         "max_active_torrents": QBITTORRENT_MAX_ACTIVE_TORRENTS,
+        "add_trackers_from_url_enabled": False,
+        "add_trackers_url": "",
       }
       qbt_post("/api/v2/app/setPreferences", {"json": json.dumps(prefs)})
       log(
@@ -92,7 +94,8 @@ data:
         f"seed_ratio={QBITTORRENT_DEFAULT_SEED_RATIO} "
         f"active_downloads={QBITTORRENT_MAX_ACTIVE_DOWNLOADS} "
         f"active_uploads={QBITTORRENT_MAX_ACTIVE_UPLOADS} "
-        f"active_torrents={QBITTORRENT_MAX_ACTIVE_TORRENTS}"
+        f"active_torrents={QBITTORRENT_MAX_ACTIVE_TORRENTS} "
+        "append_trackers_from_url=false"
       )
 
     def torrent_is_rockethd(torrent_hash):
