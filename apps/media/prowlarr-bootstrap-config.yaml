@@ -38,13 +38,18 @@ data:
       tr -d '\r\n' < "$file"
     }
 
+    read_tracker_secret() {
+      key="$1"
+      read_secret_file "/run/secrets/prowlarr-private-trackers/$key" || true
+    }
+
     PROWLARR_API_KEY="$${PROWLARR_API_KEY:-$$(read_api_key /mnt/prowlarr/config.xml || true)}"
     SONARR_API_KEY="$${SONARR_API_KEY:-$$(read_api_key /mnt/sonarr/config.xml || true)}"
     RADARR_API_KEY="$${RADARR_API_KEY:-$$(read_api_key /mnt/radarr/config.xml || true)}"
     LIDARR_API_KEY="$${LIDARR_API_KEY:-$$(read_api_key /mnt/lidarr/config.xml || true)}"
     READARR_API_KEY="$${READARR_API_KEY:-$$(read_api_key /mnt/readarr/config.xml || true)}"
-    TORRENTSYNDIKAT_API_KEY="$${TORRENTSYNDIKAT_API_KEY:-$$(read_secret_file /run/secrets/prowlarr-private-trackers/torrentsyndikat_api_key || true)}"
-    FLOOD_API_KEY="$${FLOOD_API_KEY:-$$(read_secret_file /run/secrets/prowlarr-private-trackers/flood_api_key || true)}"
+    TORRENTSYNDIKAT_API_KEY="$${TORRENTSYNDIKAT_API_KEY:-$$(read_tracker_secret torrentsyndikat_api_key)}"
+    FLOOD_API_KEY="$${FLOOD_API_KEY:-$$(read_tracker_secret flood_api_key)}"
 
     if [ -z "$PROWLARR_API_KEY" ]; then
       log "Prowlarr API key missing; skipping."
@@ -214,6 +219,235 @@ data:
       fi
     }
 
+    apply_indexer_fields() {
+      idx_json="$1"
+      field_values_json="$2"
+
+      printf '%s' "$idx_json" | jq -c --argjson fieldValues "$field_values_json" '
+        .fields = ((.fields // []) | map(
+          if ($fieldValues[.name] // null) != null then
+            .value = $fieldValues[.name]
+          else
+            .
+          end
+        ))
+      '
+    }
+
+    ensure_indexer_with_fields() {
+      impl="$1"
+      name="$2"
+      enabled="$3"
+      field_values_json="$4"
+
+      idx_json="$(prowlarr_get /api/v1/indexer | jq -c --arg impl "$impl" 'map(select(.implementation == $impl))[0]')"
+
+      if [ "$idx_json" = "null" ]; then
+        idx_json="$(prowlarr_get /api/v1/indexer/schema | jq -c --arg impl "$impl" 'map(select(.implementation == $impl))[0]')"
+        if [ "$idx_json" = "null" ]; then
+          log "No schema found for indexer implementation $impl; skipping."
+          return 0
+        fi
+        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --arg appProfileId "$APP_PROFILE_ID" '
+          .name = $name
+          | .enable = ($enabled == "true")
+          | .appProfileId = ($appProfileId | tonumber)
+        ')"
+        idx_json="$(apply_indexer_fields "$idx_json" "$field_values_json")"
+        if prowlarr_post /api/v1/indexer "$idx_json" >/dev/null; then
+          log "Created indexer $name ($impl)."
+        else
+          log "Failed to create indexer $name ($impl)."
+        fi
+      else
+        idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
+        idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --arg appProfileId "$APP_PROFILE_ID" '
+          .name = $name
+          | .enable = ($enabled == "true")
+          | .appProfileId = ($appProfileId | tonumber)
+        ')"
+        idx_json="$(apply_indexer_fields "$idx_json" "$field_values_json")"
+        if prowlarr_put "/api/v1/indexer/$idx_id" "$idx_json" >/dev/null; then
+          log "Updated indexer $name ($impl)."
+        else
+          log "Failed to update indexer $name ($impl)."
+        fi
+      fi
+    }
+
+    ensure_cardigann_indexer_with_fields() {
+      schema_name="$1"
+      name="$2"
+      enabled="$3"
+      field_values_json="$4"
+
+      idx_json="$(
+        prowlarr_get /api/v1/indexer \
+          | jq -c --arg name "$name" --arg schemaName "$schema_name" 'map(select(.implementation == "Cardigann" and (.name == $name or (((.fields // []) | map(select(.name == "definitionFile" and .value == $schemaName))) | length > 0))))[0]'
+      )"
+
+      if [ "$idx_json" = "null" ]; then
+        idx_json="$(
+          prowlarr_get /api/v1/indexer/schema \
+            | jq -c --arg schemaName "$schema_name" 'map(select(.implementation == "Cardigann" and .name == $schemaName))[0]'
+        )"
+        if [ "$idx_json" = "null" ]; then
+          log "No schema found for Cardigann indexer $schema_name; skipping."
+          return 0
+        fi
+        idx_json="$(printf '%s' "$idx_json" | jq -c \
+          --arg name "$name" \
+          --arg enabled "$enabled" \
+          --arg appProfileId "$APP_PROFILE_ID" '
+            .name = $name
+            | .enable = ($enabled == "true")
+            | .appProfileId = ($appProfileId | tonumber)
+          ')"
+        idx_json="$(apply_indexer_fields "$idx_json" "$field_values_json")"
+        if prowlarr_post /api/v1/indexer "$idx_json" >/dev/null; then
+          log "Created Cardigann indexer $name."
+        else
+          log "Failed to create Cardigann indexer $name."
+        fi
+      else
+        idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
+        idx_json="$(printf '%s' "$idx_json" | jq -c \
+          --arg name "$name" \
+          --arg enabled "$enabled" \
+          --arg appProfileId "$APP_PROFILE_ID" '
+            .name = $name
+            | .enable = ($enabled == "true")
+            | .appProfileId = ($appProfileId | tonumber)
+          ')"
+        idx_json="$(apply_indexer_fields "$idx_json" "$field_values_json")"
+        if prowlarr_put "/api/v1/indexer/$idx_id" "$idx_json" >/dev/null; then
+          log "Updated Cardigann indexer $name."
+        else
+          log "Failed to update Cardigann indexer $name."
+        fi
+      fi
+    }
+
+    ensure_private_api_indexer() {
+      impl="$1"
+      name="$2"
+      secret_key="$3"
+      field_name="$4"
+      api_key="$(read_tracker_secret "$secret_key")"
+
+      if [ -n "$api_key" ]; then
+        field_values_json="$(jq -cn --arg field "$field_name" --arg value "$api_key" '{($field): $value}')"
+        ensure_indexer_with_fields "$impl" "$name" true "$field_values_json" || return 1
+      else
+        ensure_indexer_with_fields "$impl" "$name" false '{}' || return 1
+      fi
+    }
+
+    ensure_private_cardigann_api_indexer() {
+      schema_name="$1"
+      name="$2"
+      secret_key="$3"
+      field_name="$4"
+      api_key="$(read_tracker_secret "$secret_key")"
+
+      if [ -n "$api_key" ]; then
+        field_values_json="$(jq -cn --arg field "$field_name" --arg value "$api_key" '{($field): $value}')"
+        ensure_cardigann_indexer_with_fields "$schema_name" "$name" true "$field_values_json" || return 1
+      else
+        ensure_cardigann_indexer_with_fields "$schema_name" "$name" false '{}' || return 1
+      fi
+    }
+
+    ensure_private_cardigann_login_indexer() {
+      schema_name="$1"
+      name="$2"
+      username_key="$3"
+      password_key="$4"
+      username="$(read_tracker_secret "$username_key")"
+      password="$(read_tracker_secret "$password_key")"
+
+      if [ -n "$username" ] && [ -n "$password" ]; then
+        field_values_json="$(jq -cn --arg username "$username" --arg password "$password" '{username: $username, password: $password}')"
+        ensure_cardigann_indexer_with_fields "$schema_name" "$name" true "$field_values_json" || return 1
+      else
+        ensure_cardigann_indexer_with_fields "$schema_name" "$name" false '{}' || return 1
+      fi
+    }
+
+    ensure_private_world_of_tomorrow_indexer() {
+      username="$(read_tracker_secret world_of_tomorrow_username)"
+      password="$(read_tracker_secret world_of_tomorrow_password)"
+      pin="$(read_tracker_secret world_of_tomorrow_pin)"
+
+      if [ -n "$username" ] && [ -n "$password" ]; then
+        field_values_json="$(jq -cn --arg username "$username" --arg password "$password" --arg pin "$pin" '{username: $username, password: $password} + (if $pin == "" then {} else {pin: $pin} end)')"
+        ensure_cardigann_indexer_with_fields "World-of-Tomorrow" "World-of-Tomorrow" true "$field_values_json" || return 1
+      else
+        ensure_cardigann_indexer_with_fields "World-of-Tomorrow" "World-of-Tomorrow" false '{}' || return 1
+      fi
+    }
+
+    ensure_private_torrentleech_indexer() {
+      username="$(read_tracker_secret torrentleech_username)"
+      password="$(read_tracker_secret torrentleech_password)"
+      alt_2fa_token="$(read_tracker_secret torrentleech_alt_2fa_token)"
+
+      if [ -n "$username" ] && [ -n "$password" ]; then
+        field_values_json="$(jq -cn --arg username "$username" --arg password "$password" --arg alt2fa "$alt_2fa_token" '{username: $username, password: $password} + (if $alt2fa == "" then {} else {alt2fatoken: $alt2fa} end)')"
+        ensure_cardigann_indexer_with_fields "TorrentLeech" "TorrentLeech" true "$field_values_json" || return 1
+      else
+        ensure_cardigann_indexer_with_fields "TorrentLeech" "TorrentLeech" false '{}' || return 1
+      fi
+    }
+
+    ensure_private_iptorrents_indexer() {
+      cookie="$(read_tracker_secret iptorrents_cookie)"
+      user_agent="$(read_tracker_secret iptorrents_user_agent)"
+
+      if [ -n "$cookie" ]; then
+        field_values_json="$(jq -cn --arg cookie "$cookie" --arg userAgent "$user_agent" '{cookie: $cookie} + (if $userAgent == "" then {} else {userAgent: $userAgent} end)')"
+        ensure_indexer_with_fields "IPTorrents" "IPTorrents" true "$field_values_json" || return 1
+      else
+        ensure_indexer_with_fields "IPTorrents" "IPTorrents" false '{}' || return 1
+      fi
+    }
+
+    ensure_private_filelist_indexer() {
+      username="$(read_tracker_secret filelist_username)"
+      passkey="$(read_tracker_secret filelist_passkey)"
+
+      if [ -n "$username" ] && [ -n "$passkey" ]; then
+        field_values_json="$(jq -cn --arg username "$username" --arg passkey "$passkey" '{username: $username, passkey: $passkey}')"
+        ensure_indexer_with_fields "FileList" "FileList.io" true "$field_values_json" || return 1
+      else
+        ensure_indexer_with_fields "FileList" "FileList.io" false '{}' || return 1
+      fi
+    }
+
+    ensure_private_beyondhd_indexer() {
+      api_key="$(read_tracker_secret beyondhd_api_key)"
+      rss_key="$(read_tracker_secret beyondhd_rss_key)"
+
+      if [ -n "$api_key" ] && [ -n "$rss_key" ]; then
+        field_values_json="$(jq -cn --arg apiKey "$api_key" --arg rssKey "$rss_key" '{apiKey: $apiKey, rssKey: $rssKey}')"
+        ensure_indexer_with_fields "BeyondHD" "BeyondHD" true "$field_values_json" || return 1
+      else
+        ensure_indexer_with_fields "BeyondHD" "BeyondHD" false '{}' || return 1
+      fi
+    }
+
+    ensure_private_passthepopcorn_indexer() {
+      api_user="$(read_tracker_secret passthepopcorn_api_user)"
+      api_key="$(read_tracker_secret passthepopcorn_api_key)"
+
+      if [ -n "$api_user" ] && [ -n "$api_key" ]; then
+        field_values_json="$(jq -cn --arg apiUser "$api_user" --arg apiKey "$api_key" '{aPIUser: $apiUser, aPIKey: $apiKey}')"
+        ensure_indexer_with_fields "PassThePopcorn" "PassThePopcorn" true "$field_values_json" || return 1
+      else
+        ensure_indexer_with_fields "PassThePopcorn" "PassThePopcorn" false '{}' || return 1
+      fi
+    }
+
     ensure_flood_indexer() {
       name="$1"
       enabled="$2"
@@ -334,7 +568,7 @@ data:
     ensure_cardigann_indexer "Nyaa.si" "Nyaa.si" true || log "Failed to sync Nyaa.si indexer; will retry."
     ensure_cardigann_indexer "Internet Archive" "Internet Archive" true || log "Failed to sync Internet Archive indexer; will retry."
 
-    # Private tracker (optional).
+    # Private trackers (optional; enabled only when matching secret keys exist).
     if [ -n "$${TORRENTSYNDIKAT_API_KEY:-}" ]; then
       ensure_indexer "TorrentSyndikat" "TorrentSyndikat" true "$TORRENTSYNDIKAT_API_KEY" || log "Failed to sync TorrentSyndikat indexer; will retry."
     else
@@ -346,6 +580,20 @@ data:
     else
       ensure_flood_indexer "Flood.st" false "" || log "Failed to disable Flood.st indexer; will retry."
     fi
+
+    ensure_private_cardigann_login_indexer "Immortuos" "Immortuos" "immortuos_username" "immortuos_password" || log "Failed to sync Immortuos indexer; will retry."
+    ensure_private_cardigann_login_indexer "Speedmaster HD" "Speedmaster HD" "speedmasterhd_username" "speedmasterhd_password" || log "Failed to sync Speedmaster HD indexer; will retry."
+    ensure_private_world_of_tomorrow_indexer || log "Failed to sync World-of-Tomorrow indexer; will retry."
+    ensure_private_cardigann_login_indexer "Explosiv-World" "Explosiv-World" "explosiv_world_username" "explosiv_world_password" || log "Failed to sync Explosiv-World indexer; will retry."
+    ensure_private_torrentleech_indexer || log "Failed to sync TorrentLeech indexer; will retry."
+    ensure_private_iptorrents_indexer || log "Failed to sync IPTorrents indexer; will retry."
+    ensure_private_filelist_indexer || log "Failed to sync FileList.io indexer; will retry."
+    ensure_private_beyondhd_indexer || log "Failed to sync BeyondHD indexer; will retry."
+    ensure_private_passthepopcorn_indexer || log "Failed to sync PassThePopcorn indexer; will retry."
+    ensure_private_cardigann_api_indexer "Aither (API)" "Aither" "aither_api_key" "apikey" || log "Failed to sync Aither indexer; will retry."
+    ensure_private_cardigann_api_indexer "Blutopia (API)" "Blutopia" "blutopia_api_key" "apikey" || log "Failed to sync Blutopia indexer; will retry."
+    ensure_private_cardigann_api_indexer "DigitalCore (API)" "DigitalCore" "digitalcore_api_key" "apikey" || log "Failed to sync DigitalCore indexer; will retry."
+    ensure_private_cardigann_api_indexer "HDTorrents.it (API)" "HDTorrents.it" "hdtorrentsit_api_key" "apikey" || log "Failed to sync HDTorrents.it indexer; will retry."
 
     # Push current indexer set into downstream Arr apps.
     prowlarr_post /api/v1/command '{"name":"ApplicationIndexerSync"}' >/dev/null || log "ApplicationIndexerSync command failed; will retry."

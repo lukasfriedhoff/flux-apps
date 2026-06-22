@@ -145,11 +145,38 @@ commands:
       prowlarr_indexers_json="$(prowlarr_get "$prowlarr_api_key" "/api/v1/indexer")"
 
       if kubectl -n "$ns" get secret prowlarr-private-trackers >/dev/null 2>&1; then
-        flood_key="$(kubectl -n "$ns" get secret prowlarr-private-trackers -o jsonpath='{.data.flood_api_key}' 2>/dev/null | base64 -d 2>/dev/null || true)"
-        if [ -n "$flood_key" ]; then
-          printf '%s' "$prowlarr_indexers_json" | jq -e 'any(.[]?; .name == "Flood.st" and .enable == true)' >/dev/null \
-            || fail "Flood.st indexer not configured/enabled in Prowlarr"
-        fi
+        secret_json="$(kubectl -n "$ns" get secret prowlarr-private-trackers -o json)"
+
+        secret_value() {
+          key="$1"
+          printf '%s' "$secret_json" | jq -r --arg key "$key" '.data[$key] // ""' | base64 -d 2>/dev/null || true
+        }
+
+        require_indexer_enabled_if_secret() {
+          indexer_name="$1"
+          shift
+          for key in "$@"; do
+            [ -n "$(secret_value "$key")" ] || return 0
+          done
+          printf '%s' "$prowlarr_indexers_json" | jq -e --arg name "$indexer_name" 'any(.[]?; .name == $name and .enable == true)' >/dev/null \
+            || fail "$indexer_name indexer not configured/enabled in Prowlarr"
+        }
+
+        require_indexer_enabled_if_secret "TorrentSyndikat" torrentsyndikat_api_key
+        require_indexer_enabled_if_secret "Flood.st" flood_api_key
+        require_indexer_enabled_if_secret "Immortuos" immortuos_username immortuos_password
+        require_indexer_enabled_if_secret "Speedmaster HD" speedmasterhd_username speedmasterhd_password
+        require_indexer_enabled_if_secret "World-of-Tomorrow" world_of_tomorrow_username world_of_tomorrow_password
+        require_indexer_enabled_if_secret "Explosiv-World" explosiv_world_username explosiv_world_password
+        require_indexer_enabled_if_secret "TorrentLeech" torrentleech_username torrentleech_password
+        require_indexer_enabled_if_secret "IPTorrents" iptorrents_cookie
+        require_indexer_enabled_if_secret "FileList.io" filelist_username filelist_passkey
+        require_indexer_enabled_if_secret "BeyondHD" beyondhd_api_key beyondhd_rss_key
+        require_indexer_enabled_if_secret "PassThePopcorn" passthepopcorn_api_user passthepopcorn_api_key
+        require_indexer_enabled_if_secret "Aither" aither_api_key
+        require_indexer_enabled_if_secret "Blutopia" blutopia_api_key
+        require_indexer_enabled_if_secret "DigitalCore" digitalcore_api_key
+        require_indexer_enabled_if_secret "HDTorrents.it" hdtorrentsit_api_key
       fi
 
       log "all media ARR checks passed"
