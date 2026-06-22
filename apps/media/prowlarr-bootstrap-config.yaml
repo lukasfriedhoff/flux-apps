@@ -594,6 +594,7 @@ data:
     ensure_private_cardigann_api_indexer "Blutopia (API)" "Blutopia" "blutopia_api_key" "apikey" || log "Failed to sync Blutopia indexer; will retry."
     ensure_private_cardigann_api_indexer "DigitalCore (API)" "DigitalCore" "digitalcore_api_key" "apikey" || log "Failed to sync DigitalCore indexer; will retry."
     ensure_private_cardigann_api_indexer "HDTorrents.it (API)" "HDTorrents.it" "hdtorrentsit_api_key" "apikey" || log "Failed to sync HDTorrents.it indexer; will retry."
+    ensure_private_cardigann_api_indexer "RocketHD (API)" "RocketHD" "rockethd_api_key" "apikey" || log "Failed to sync RocketHD indexer; will retry."
 
     # Push current indexer set into downstream Arr apps.
     prowlarr_post /api/v1/command '{"name":"ApplicationIndexerSync"}' >/dev/null || log "ApplicationIndexerSync command failed; will retry."

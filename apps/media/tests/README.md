@@ -45,6 +45,7 @@ Supported optional private tracker keys:
 - `blutopia_api_key`
 - `digitalcore_api_key`
 - `hdtorrentsit_api_key`
+- `rockethd_api_key`
 
 ### Jellyfin checks
 
