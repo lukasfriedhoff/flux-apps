@@ -31,6 +31,9 @@ spec:
             value: "1"
     controllers:
       main:
+        pod:
+          annotations:
+            reloader.stakater.com/auto: "true"
         replicas: 1
         initContainers:
           seed-config:
