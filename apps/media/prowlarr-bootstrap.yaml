@@ -40,7 +40,7 @@ spec:
           schedule: "*/30 * * * *"
           concurrencyPolicy: Forbid
           backoffLimit: 1
-          activeDeadlineSeconds: 240
+          activeDeadlineSeconds: 600
           ttlSecondsAfterFinished: 300
           successfulJobsHistory: 1
           failedJobsHistory: 3
