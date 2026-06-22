@@ -177,6 +177,7 @@ commands:
         require_indexer_enabled_if_secret "Blutopia" blutopia_api_key
         require_indexer_enabled_if_secret "DigitalCore" digitalcore_api_key
         require_indexer_enabled_if_secret "HDTorrents.it" hdtorrentsit_api_key
+        require_indexer_enabled_if_secret "RocketHD" rockethd_api_key
       fi
 
       log "all media ARR checks passed"
