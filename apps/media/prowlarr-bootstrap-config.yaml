@@ -10,6 +10,7 @@ data:
 
     PROWLARR_URL="$${PROWLARR_URL:-http://prowlarr:9696}"
     PROWLARR_APP_URL="$${PROWLARR_APP_URL:-http://prowlarr:9696}"
+    PROWLARR_DEFAULT_SEED_RATIO="$${PROWLARR_DEFAULT_SEED_RATIO:-1}"
     SONARR_URL="$${SONARR_URL:-http://sonarr:8989}"
     RADARR_URL="$${RADARR_URL:-http://radarr:7878}"
     LIDARR_URL="$${LIDARR_URL:-http://lidarr:8686}"
@@ -595,6 +596,14 @@ data:
     ensure_private_cardigann_api_indexer "DigitalCore (API)" "DigitalCore" "digitalcore_api_key" "apikey" || log "Failed to sync DigitalCore indexer; will retry."
     ensure_private_cardigann_api_indexer "HDTorrents.it (API)" "HDTorrents.it" "hdtorrentsit_api_key" "apikey" || log "Failed to sync HDTorrents.it indexer; will retry."
     ensure_private_cardigann_api_indexer "RocketHD (API)" "RocketHD" "rockethd_api_key" "apikey" || log "Failed to sync RocketHD indexer; will retry."
+    rocket_hd_json="$(prowlarr_get /api/v1/indexer | jq -c 'map(select(.implementation == "Cardigann" and (((.fields // []) | map(select(.name == "definitionFile" and .value == "rockethd"))) | length > 0)))[0]')"
+    if [ "$rocket_hd_json" != "null" ]; then
+      rocket_hd_id="$(printf '%s' "$rocket_hd_json" | jq -r '.id')"
+      rocket_hd_json="$(printf '%s' "$rocket_hd_json" | jq -c --arg seedRatio "$PROWLARR_DEFAULT_SEED_RATIO" '
+        (.fields[]? | select(.name == "torrentBaseSettings.seedRatio")).value = ($seedRatio | tonumber)
+      ')"
+      prowlarr_put "/api/v1/indexer/$rocket_hd_id" "$rocket_hd_json" >/dev/null || log "Failed to set RocketHD seed ratio; will retry."
+    fi
 
     # Push current indexer set into downstream Arr apps.
     prowlarr_post /api/v1/command '{"name":"ApplicationIndexerSync"}' >/dev/null || log "ApplicationIndexerSync command failed; will retry."
