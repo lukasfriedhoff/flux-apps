@@ -26,7 +26,25 @@ For each app (`sonarr`, `radarr`, `lidarr`, `readarr`) the test checks:
 The ARR test step also validates Prowlarr:
 
 1. Prowlarr API is reachable.
-2. If secret `prowlarr-private-trackers` contains `flood_api_key`, indexer `Flood.st` must exist and be enabled.
+2. If secret `prowlarr-private-trackers` contains credentials for a supported private tracker, that indexer must exist and be enabled.
+
+Supported optional private tracker keys:
+
+- `torrentsyndikat_api_key`
+- `flood_api_key`
+- `immortuos_username`, `immortuos_password`
+- `speedmasterhd_username`, `speedmasterhd_password`
+- `world_of_tomorrow_username`, `world_of_tomorrow_password`, optional `world_of_tomorrow_pin`
+- `explosiv_world_username`, `explosiv_world_password`
+- `torrentleech_username`, `torrentleech_password`, optional `torrentleech_alt_2fa_token`
+- `iptorrents_cookie`, optional `iptorrents_user_agent`
+- `filelist_username`, `filelist_passkey`
+- `beyondhd_api_key`, `beyondhd_rss_key`
+- `passthepopcorn_api_user`, `passthepopcorn_api_key`
+- `aither_api_key`
+- `blutopia_api_key`
+- `digitalcore_api_key`
+- `hdtorrentsit_api_key`
 
 ### Jellyfin checks
 
