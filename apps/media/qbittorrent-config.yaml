@@ -8,6 +8,7 @@ data:
     [BitTorrent]
     Session\AddTrackersFromURLEnabled=true
     Session\AdditionalTrackersURL=https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt
+    Session\MaxUploads=200
 
     [Preferences]
     WebUI\Address=*
