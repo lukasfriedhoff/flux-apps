@@ -617,12 +617,12 @@ data:
               (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .name = "German Title Token"
                 | .required = true
-                | (.fields[]? | select(.name == "value")).value = "\\b(German|Deutsch|GER)\\b"
+                | (.fields[]? | select(.name == "value")).value = "\\b(German|Deutsch|GER|DEU)\\b"
               ),
               (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .name = "Dual Audio Title Token"
                 | .required = true
-                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|DUAL[-_. ]?AUDIO|MULTI|Dubbed)\\b"
+                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|DUAL[-_. ]?AUDIO|MULTI|MULTI[-_. ]?AUDIO|MULTIAUDIO|Dubbed|EN|ENG|English)\\b"
               )
             ]
           }
@@ -821,12 +821,12 @@ data:
               (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .name = "German Title Token"
                 | .required = true
-                | (.fields[]? | select(.name == "value")).value = "\\b(German|Deutsch|GER)\\b"
+                | (.fields[]? | select(.name == "value")).value = "\\b(German|Deutsch|GER|DEU)\\b"
               ),
               (($title | fromjson) | {implementation, implementationName, infoLink, negate, required, fields}
                 | .name = "Dual Audio Title Token"
                 | .required = true
-                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|DUAL[-_. ]?AUDIO|MULTI|Dubbed)\\b"
+                | (.fields[]? | select(.name == "value")).value = "\\b(DL|DUAL|DUAL[-_. ]?AUDIO|MULTI|MULTI[-_. ]?AUDIO|MULTIAUDIO|Dubbed|EN|ENG|English)\\b"
               )
             ]
           }
