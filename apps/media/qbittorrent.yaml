@@ -74,7 +74,9 @@ spec:
 
                 ensure_section_pref 'BitTorrent' 'Session\\AddTrackersFromURLEnabled' 'true'
                 ensure_section_pref 'BitTorrent' 'Session\\AdditionalTrackersURL' 'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt'
+                ensure_section_pref 'BitTorrent' 'Session\\GlobalMaxRatio' '${qbittorrent_default_seed_ratio:=1}'
                 ensure_section_pref 'BitTorrent' 'Session\\MaxUploads' '200'
+                ensure_section_pref 'BitTorrent' 'Session\\ShareLimitAction' 'Stop'
 
                 ensure_pref 'WebUI\\Authentication\\Enabled' 'false'
                 ensure_pref 'WebUI\\AuthSubnetWhitelistEnabled' 'true'

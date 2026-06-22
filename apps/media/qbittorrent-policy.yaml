@@ -1,0 +1,211 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbittorrent-policy
+  namespace: media
+data:
+  sync.py: |-
+    import json
+    import os
+    import time
+    import urllib.parse
+    import urllib.request
+    import xml.etree.ElementTree as ET
+
+    QBITTORRENT_URL = os.getenv("QBITTORRENT_URL", "http://qbittorrent:8080").rstrip("/")
+    PROWLARR_URL = os.getenv("PROWLARR_URL", "http://prowlarr:9696").rstrip("/")
+    PROWLARR_CONFIG = os.getenv("PROWLARR_CONFIG", "/mnt/prowlarr/config.xml")
+    ROCKETHD_QUOTA_BYTES = int(os.getenv("ROCKETHD_QUOTA_BYTES", str(50 * 1024 * 1024 * 1024)))
+    QBITTORRENT_DEFAULT_SEED_RATIO = float(os.getenv("QBITTORRENT_DEFAULT_SEED_RATIO", "1"))
+    PROWLARR_DEFAULT_SEED_RATIO = float(os.getenv("PROWLARR_DEFAULT_SEED_RATIO", "1"))
+
+    ROCKETHD_TRACKER_MARKERS = ("rocket-hd", "rockethd", "rocket-hd.cc")
+
+    def log(message):
+      print(f"[qbittorrent-policy] {message}", flush=True)
+
+    def request_json(method, url, body=None, headers=None, timeout=30):
+      data = body.encode() if body is not None else None
+      req = urllib.request.Request(url, data=data, method=method, headers=headers or {})
+      with urllib.request.urlopen(req, timeout=timeout) as resp:
+        raw = resp.read()
+      if not raw:
+        return None
+      return json.loads(raw.decode())
+
+    def request_form(method, url, form, timeout=30):
+      data = urllib.parse.urlencode(form).encode()
+      req = urllib.request.Request(url, data=data, method=method)
+      with urllib.request.urlopen(req, timeout=timeout) as resp:
+        resp.read()
+
+    def qbt_get(path):
+      return request_json("GET", f"{QBITTORRENT_URL}{path}")
+
+    def qbt_post(path, form):
+      return request_form("POST", f"{QBITTORRENT_URL}{path}", form)
+
+    def prowlarr_api_key():
+      root = ET.parse(PROWLARR_CONFIG).getroot()
+      value = root.findtext("ApiKey")
+      if not value:
+        raise RuntimeError("Prowlarr API key missing")
+      return value.strip()
+
+    def prowlarr_get(api_key, path):
+      return request_json("GET", f"{PROWLARR_URL}{path}", headers={"X-Api-Key": api_key})
+
+    def prowlarr_put(api_key, path, payload):
+      return request_json(
+        "PUT",
+        f"{PROWLARR_URL}{path}",
+        body=json.dumps(payload),
+        headers={"X-Api-Key": api_key, "Content-Type": "application/json"},
+      )
+
+    def wait_for_qbittorrent():
+      for attempt in range(1, 21):
+        try:
+          qbt_get("/api/v2/app/preferences")
+          return
+        except Exception as err:
+          log(f"qBittorrent not ready yet ({attempt}/20): {err}")
+          time.sleep(3)
+      raise RuntimeError("qBittorrent API unavailable")
+
+    def enforce_qbittorrent_ratio():
+      prefs = {
+        "max_ratio_enabled": True,
+        "max_ratio": QBITTORRENT_DEFAULT_SEED_RATIO,
+        "max_ratio_act": 0,
+      }
+      qbt_post("/api/v2/app/setPreferences", {"json": json.dumps(prefs)})
+      log(f"qBittorrent default seed ratio enforced at {QBITTORRENT_DEFAULT_SEED_RATIO}")
+
+    def torrent_is_rockethd(torrent_hash):
+      try:
+        trackers = qbt_get(f"/api/v2/torrents/trackers?hash={urllib.parse.quote(torrent_hash)}") or []
+      except Exception as err:
+        log(f"failed to read trackers for {torrent_hash}: {err}")
+        return False
+      for tracker in trackers:
+        url = str(tracker.get("url", "")).lower()
+        if any(marker in url for marker in ROCKETHD_TRACKER_MARKERS):
+          return True
+      return False
+
+    def rockethd_torrents():
+      torrents = qbt_get("/api/v2/torrents/info?filter=all") or []
+      matched = []
+      for torrent in torrents:
+        torrent_hash = torrent.get("hash")
+        if torrent_hash and torrent_is_rockethd(torrent_hash):
+          matched.append(torrent)
+      return matched
+
+    def pause_incomplete_rockethd(torrents):
+      incomplete_hashes = [
+        torrent["hash"]
+        for torrent in torrents
+        if torrent.get("progress", 0) < 1 and torrent.get("hash")
+      ]
+      if not incomplete_hashes:
+        return 0
+      try:
+        qbt_post("/api/v2/torrents/stop", {"hashes": "|".join(incomplete_hashes)})
+      except Exception:
+        qbt_post("/api/v2/torrents/pause", {"hashes": "|".join(incomplete_hashes)})
+      return len(incomplete_hashes)
+
+    def rocket_hd_indexer(api_key):
+      indexers = prowlarr_get(api_key, "/api/v1/indexer") or []
+      for indexer in indexers:
+        fields = indexer.get("fields") or []
+        if any(field.get("name") == "definitionFile" and field.get("value") == "rockethd" for field in fields):
+          return indexer
+      return None
+
+    def set_field(indexer, field_name, value):
+      for field in indexer.get("fields") or []:
+        if field.get("name") == field_name:
+          field["value"] = value
+
+    def enforce_rockethd_policy():
+      torrents = rockethd_torrents()
+      total_size = sum(int(torrent.get("total_size") or 0) for torrent in torrents)
+      over_quota = total_size >= ROCKETHD_QUOTA_BYTES
+      paused_count = pause_incomplete_rockethd(torrents) if over_quota else 0
+
+      api_key = prowlarr_api_key()
+      indexer = rocket_hd_indexer(api_key)
+      if indexer is None:
+        log("RocketHD indexer missing in Prowlarr; nothing to update")
+        return
+
+      indexer["enable"] = not over_quota
+      set_field(indexer, "torrentBaseSettings.seedRatio", PROWLARR_DEFAULT_SEED_RATIO)
+      prowlarr_put(api_key, f"/api/v1/indexer/{indexer['id']}", indexer)
+
+      status = "disabled" if over_quota else "enabled"
+      log(
+        "RocketHD policy: "
+        f"torrents={len(torrents)} total_bytes={total_size} quota_bytes={ROCKETHD_QUOTA_BYTES} "
+        f"indexer={status} paused_incomplete={paused_count}"
+      )
+
+    def main():
+      wait_for_qbittorrent()
+      enforce_qbittorrent_ratio()
+      enforce_rockethd_policy()
+
+    if __name__ == "__main__":
+      main()
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: qbittorrent-policy
+  namespace: media
+spec:
+  schedule: "${qbittorrent_policy_cron:=*/5 * * * *}"
+  suspend: ${qbittorrent_policy_suspended:=false}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: policy
+              image: python:3.12-alpine
+              command:
+                - python3
+                - /scripts/sync.py
+              env:
+                - name: QBITTORRENT_URL
+                  value: http://qbittorrent:8080
+                - name: PROWLARR_URL
+                  value: http://prowlarr:9696
+                - name: ROCKETHD_QUOTA_BYTES
+                  value: "${rockethd_quota_bytes:=53687091200}"
+                - name: QBITTORRENT_DEFAULT_SEED_RATIO
+                  value: "${qbittorrent_default_seed_ratio:=1}"
+                - name: PROWLARR_DEFAULT_SEED_RATIO
+                  value: "${prowlarr_default_seed_ratio:=1}"
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+                - name: prowlarr
+                  mountPath: /mnt/prowlarr
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: qbittorrent-policy
+                defaultMode: 0555
+            - name: prowlarr
+              persistentVolumeClaim:
+                claimName: prowlarr

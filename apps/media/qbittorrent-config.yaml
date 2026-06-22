@@ -8,7 +8,9 @@ data:
     [BitTorrent]
     Session\AddTrackersFromURLEnabled=true
     Session\AdditionalTrackersURL=https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt
+    Session\GlobalMaxRatio=${qbittorrent_default_seed_ratio:=1}
     Session\MaxUploads=200
+    Session\ShareLimitAction=Stop
 
     [Preferences]
     WebUI\Address=*
