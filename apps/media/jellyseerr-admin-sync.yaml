@@ -64,8 +64,8 @@ spec:
                 runAsUser: 0
                 runAsGroup: 0
               env:
-                - name: JELLYSEERR_ADMIN_GROUP
-                  value: jellyseerr-admins
+                - name: JELLYSEERR_ADMIN_GROUPS
+                  value: jellyseerr-admins,admins
                 - name: AUTHELIA_USERS_SECRET_NAMESPACE
                   value: authelia
                 - name: AUTHELIA_USERS_SECRET_NAME
@@ -80,7 +80,12 @@ spec:
                   const { User } = require("/app/dist/entity/User");
                   const { Permission } = require("/app/dist/lib/permissions");
 
-                  const adminGroup = process.env.JELLYSEERR_ADMIN_GROUP || "jellyseerr-admins";
+                  const adminGroups = new Set(
+                    (process.env.JELLYSEERR_ADMIN_GROUPS || "jellyseerr-admins,admins")
+                      .split(",")
+                      .map((group) => group.trim())
+                      .filter(Boolean)
+                  );
                   const secretNamespace = process.env.AUTHELIA_USERS_SECRET_NAMESPACE || "authelia";
                   const secretName = process.env.AUTHELIA_USERS_SECRET_NAME || "authelia-users";
 
@@ -93,40 +98,70 @@ spec:
                     return String(value || "").replace(/^['"]|['"]$/g, "");
                   }
 
-                  function parseAutheliaUsersYaml(yamlText, groupName) {
+                  function parseAutheliaUsersYaml(yamlText, groupNames) {
                     const adminUsernames = new Set();
                     const adminEmails = new Set();
-                    const usersSplit = yamlText.split(/^users:\s*$/m);
 
-                    if (usersSplit.length < 2) {
-                      return { adminUsernames, adminEmails };
+                    let inUsers = false;
+                    let current = null;
+                    let currentField = "";
+
+                    function finishCurrent() {
+                      if (!current || !current.username) {
+                        return;
+                      }
+
+                      const hasAdminGroup = current.groups.some((group) => groupNames.has(group));
+                      if (!hasAdminGroup) {
+                        return;
+                      }
+
+                      adminUsernames.add(current.username);
+                      if (current.email) {
+                        adminEmails.add(current.email);
+                      }
                     }
 
-                    const usersSection = usersSplit.slice(1).join("\n");
-                    const userBlockRegex = /^  ([^:\n]+):\n((?:    .*(?:\n|$))*)/gm;
-                    let match;
-                    while ((match = userBlockRegex.exec(usersSection)) !== null) {
-                      const username = unquote(match[1]).trim().toLowerCase();
-                      const block = match[2];
-                      const emailMatch = block.match(/^    email:\s*(.+?)\s*$/m);
-                      const groups = Array.from(block.matchAll(/^    -\s*(.+?)\s*$/gm)).map((m) =>
-                        unquote(m[1]).trim()
-                      );
-
-                      if (!groups.includes(groupName)) {
+                    for (const rawLine of yamlText.split(/\r?\n/)) {
+                      if (/^users:\s*$/.test(rawLine)) {
+                        inUsers = true;
+                        continue;
+                      }
+                      if (!inUsers) {
                         continue;
                       }
 
-                      if (username) {
-                        adminUsernames.add(username);
+                      const userMatch = rawLine.match(/^  ([^\s:\n][^:\n]*):\s*$/);
+                      if (userMatch) {
+                        finishCurrent();
+                        current = {
+                          username: unquote(userMatch[1]).trim().toLowerCase(),
+                          email: "",
+                          groups: [],
+                        };
+                        currentField = "";
+                        continue;
                       }
-                      if (emailMatch) {
-                        const email = unquote(emailMatch[1]).trim().toLowerCase();
-                        if (email) {
-                          adminEmails.add(email);
+
+                      if (!current) {
+                        continue;
+                      }
+
+                      const fieldMatch = rawLine.match(/^    ([^:\n]+):(?:\s*(.*?))?\s*$/);
+                      if (fieldMatch) {
+                        currentField = fieldMatch[1].trim();
+                        if (currentField === "email") {
+                          current.email = unquote(fieldMatch[2] || "").trim().toLowerCase();
                         }
+                        continue;
+                      }
+
+                      const listMatch = rawLine.match(/^      -\s*(.+?)\s*$/);
+                      if (listMatch && currentField === "groups") {
+                        current.groups.push(unquote(listMatch[1]).trim());
                       }
                     }
+                    finishCurrent();
 
                     return { adminUsernames, adminEmails };
                   }
@@ -174,7 +209,7 @@ spec:
                       throw new Error("authelia-users secret missing users_database.yml");
                     }
                     const usersYaml = Buffer.from(encodedUsersDb, "base64").toString("utf8");
-                    const { adminUsernames, adminEmails } = parseAutheliaUsersYaml(usersYaml, adminGroup);
+                    const { adminUsernames, adminEmails } = parseAutheliaUsersYaml(usersYaml, adminGroups);
 
                     await datasource.initialize();
                     const repo = datasource.getRepository(User);
@@ -207,7 +242,7 @@ spec:
 
                     await datasource.destroy();
                     console.log(
-                      `[jellyseerr-admin-sync] group=$${adminGroup} admin_users=$${adminUsernames.size} db_users=$${users.length} updates=$${updates} grants=$${grants} revokes=$${revokes}`
+                      `[jellyseerr-admin-sync] groups=$${Array.from(adminGroups).join(",")} admin_users=$${adminUsernames.size} db_users=$${users.length} updates=$${updates} grants=$${grants} revokes=$${revokes}`
                     );
                   })().catch((err) => {
                     console.error(err?.stack || err?.message || String(err));
