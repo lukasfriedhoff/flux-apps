@@ -19,8 +19,10 @@ metadata:
 spec:
   replicas: ${immich_photos_server_replicas}
   strategy:
-    type: Recreate
-    rollingUpdate: null
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: immich-photos-server

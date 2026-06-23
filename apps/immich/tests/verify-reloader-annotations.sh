@@ -14,11 +14,11 @@ check_file() {
   if ! grep -q 'reloader.stakater.com/auto: "true"' "$file"; then
     fail "${deployment} is missing reloader.stakater.com/auto annotation"
   fi
-  if ! grep -q 'type: Recreate' "$file"; then
-    fail "${deployment} must use Recreate strategy to avoid surge deadlocks with RWO/stateful mounts"
+  if ! grep -q 'maxSurge: 0' "$file"; then
+    fail "${deployment} must disable rollout surge to avoid resource deadlocks"
   fi
-  if ! grep -q 'rollingUpdate: null' "$file"; then
-    fail "${deployment} must explicitly clear rollingUpdate when using Recreate"
+  if ! grep -q 'maxUnavailable: 1' "$file"; then
+    fail "${deployment} must allow one unavailable pod during replacement"
   fi
   printf '[immich-reloader-test] %s ok\n' "$deployment"
 }
