@@ -20,6 +20,7 @@ spec:
   replicas: ${immich_photos_server_replicas}
   strategy:
     type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       app.kubernetes.io/name: immich-photos-server
