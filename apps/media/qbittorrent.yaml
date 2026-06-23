@@ -200,15 +200,10 @@ spec:
               - -c
               - |
                 set -eu
-                last_port=""
                 while true; do
                   if [ -s /tmp/gluetun/forwarded_port ]; then
                     port="$(cat /tmp/gluetun/forwarded_port)"
-                    if [ "$port" != "$last_port" ]; then
-                      if wget -qO- --post-data "json={\"listen_port\":$port,\"current_network_interface\":\"tun0\",\"random_port\":false,\"upnp\":false}" http://127.0.0.1:8080/api/v2/app/setPreferences >/dev/null; then
-                        last_port="$port"
-                      fi
-                    fi
+                    wget -qO- --post-data "json={\"listen_port\":$port,\"current_network_interface\":\"tun0\",\"random_port\":false,\"upnp\":false}" http://127.0.0.1:8080/api/v2/app/setPreferences >/dev/null || true
                   fi
                   sleep 30
                 done
