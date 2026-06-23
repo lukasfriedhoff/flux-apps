@@ -6,7 +6,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: ${immich_photos_shared_storage_class_name:=${default_storage_class_name}}
+  storageClassName: ""
+  volumeName: ${immich_photos_shared_pv_name:=immich-photos-shared-pv}
   resources:
     requests:
       storage: ${nextcloud_photos_size:=50Gi}
