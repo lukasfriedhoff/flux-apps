@@ -23,6 +23,8 @@ spec:
       app.kubernetes.io/name: immich-photos-server
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
       labels:
         app.kubernetes.io/name: immich-photos-server
     spec:
