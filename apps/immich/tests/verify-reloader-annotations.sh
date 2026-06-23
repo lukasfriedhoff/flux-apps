@@ -25,3 +25,16 @@ check_file() {
 
 check_file "${repo_root}/apps/immich/server.yaml" immich-server
 check_file "${repo_root}/apps/immich-photos/server.yaml" immich-photos-server
+
+photos_kustomization="${repo_root}/apps/immich-photos/kustomization.yaml"
+photos_pvc="${repo_root}/apps/immich-photos/pvc-photos.yaml"
+if ! grep -q 'pv-photos.yaml' "$photos_kustomization"; then
+  fail "immich-photos kustomization must include the static Nextcloud photos PV"
+fi
+if ! grep -q 'storageClassName: ""' "$photos_pvc"; then
+  fail "immich-photos shared PVC must bind to a static NFS PV, not provision its own volume"
+fi
+if ! grep -q 'volumeName: ${immich_photos_shared_pv_name:=immich-photos-shared-pv}' "$photos_pvc"; then
+  fail "immich-photos shared PVC must pin the configured static PV name"
+fi
+printf '[immich-reloader-test] immich-photos shared storage ok\n'
