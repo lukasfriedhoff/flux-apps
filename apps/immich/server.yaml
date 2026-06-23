@@ -18,6 +18,8 @@ metadata:
   namespace: immich
 spec:
   replicas: ${immich_server_replicas}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: immich-server
