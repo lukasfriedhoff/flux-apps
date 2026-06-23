@@ -22,8 +22,14 @@ data:
         conditions:
           - "[STATUS] == 200"
       - name: Immich
-        group: Core
-        url: https://meme${public_host_suffix}.${delegating_domain}/
+        group: Photos
+        url: https://meme${public_host_suffix}.${delegating_domain}/api/server/ping
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Immich Photos
+        group: Photos
+        url: https://photos${public_host_suffix}.${delegating_domain}/api/server/ping
         interval: 1m
         conditions:
           - "[STATUS] == 200"
@@ -33,21 +39,141 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] == 200"
+      - name: Element Chat
+        group: Core
+        url: https://chat${public_host_suffix}.${delegating_domain}/config.json
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
       - name: Collabora
         group: Core
         url: https://collabora${public_host_suffix}.${delegating_domain}/hosting/discovery
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-      - name: Grafana
+      - name: Logday
         group: Core
+        url: https://logday${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Grafana
+        group: Monitoring
         url: https://grafana${public_host_suffix}.${delegating_domain}/api/health
         interval: 1m
         conditions:
           - "[STATUS] == 200"
+      - name: Traefik Dashboard
+        group: Monitoring
+        url: https://dashboard${public_host_suffix}.${delegating_domain}/dashboard/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Metrics Ingest
+        group: Monitoring
+        url: https://metrics${public_host_suffix}.${delegating_domain}/ready
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Logs Ingest
+        group: Monitoring
+        url: https://logs${public_host_suffix}.${delegating_domain}/ready
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Traces Ingest
+        group: Monitoring
+        url: https://traces${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
       - name: Nix Cache
-        group: Core
+        group: Build
         url: https://nix${public_host_suffix}.${delegating_domain}/nix-cache-info
         interval: 1m
         conditions:
           - "[STATUS] == 200"
+      - name: Attic
+        group: Build
+        url: https://attic${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Hydra
+        group: Build
+        url: https://hydra${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Jellyfin
+        group: Media
+        url: https://jellyfin${public_host_suffix}.${delegating_domain}/health
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Jellyseerr
+        group: Media
+        url: https://jellyseerr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: qBittorrent
+        group: Media
+        url: https://qbittorrent${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Prowlarr
+        group: Media
+        url: https://prowlarr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Sonarr
+        group: Media
+        url: https://sonarr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Radarr
+        group: Media
+        url: https://radarr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Lidarr
+        group: Media
+        url: https://lidarr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Readarr
+        group: Media
+        url: https://readarr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Bazarr
+        group: Media
+        url: https://bazarr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Profilarr
+        group: Media
+        url: https://profilarr${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: MeTube
+        group: Media
+        url: https://metube${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Moonlight
+        group: Media
+        url: https://moonlight${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
