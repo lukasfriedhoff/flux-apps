@@ -36,6 +36,31 @@ spec:
             reloader.stakater.com/auto: "true"
         replicas: 1
         initContainers:
+          prepare-downloads:
+            image:
+              repository: alpine
+              tag: "3.20"
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -eu
+                mkdir -p \
+                  /downloads/incomplete \
+                  /downloads/radarr \
+                  /downloads/sonarr \
+                  /downloads/lidarr \
+                  /downloads/readarr \
+                  /downloads/metube \
+                  /downloads/metube-incomplete
+
+                chown "$PUID:$PGID" /downloads/incomplete
+                chmod 0775 /downloads /downloads/incomplete
+
+                find /downloads/incomplete -mindepth 1 -maxdepth 1 -exec chown -R "$PUID:$PGID" {} \;
+            env:
+              PUID: ${media_puid}
+              PGID: ${media_pgid}
           seed-config:
             image:
               repository: alpine
