@@ -1,0 +1,97 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-shared-memes-userdirs
+  namespace: nextcloud
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: nextcloud-upgrade-check
+          containers:
+            - name: sync
+              image: alpine/k8s:1.34.1
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  pod="$(
+                    kubectl -n nextcloud get pods \
+                      -l app.kubernetes.io/instance=nextcloud,app.kubernetes.io/component=app \
+                      --no-headers \
+                      | awk '$3 == "Running" { print $1; exit }'
+                  )"
+                  if [ -z "$pod" ]; then
+                    echo "No running Nextcloud app pod found." >&2
+                    exit 1
+                  fi
+                  kubectl -n nextcloud exec "$pod" -- /bin/sh -s <<'SCRIPT'
+                  set -eu
+                  if [ ! -d /shared-memes ]; then
+                    echo "Shared Memes mount /shared-memes is missing." >&2
+                    exit 1
+                  fi
+                  users_file="$(mktemp)"
+                  trap 'rm -f "$users_file"' EXIT
+                  php /var/www/html/occ user:list --output=json \
+                    | php -r '
+                      $users = json_decode(file_get_contents("php://stdin"), true);
+                      if (!is_array($users)) {
+                        exit(1);
+                      }
+                      foreach (array_keys($users) as $user) {
+                        echo $user . "\n";
+                      }
+                    ' > "$users_file"
+                  if [ ! -s "$users_file" ]; then
+                    echo "Nextcloud user list is empty." >&2
+                    exit 1
+                  fi
+                  checked_users=0
+                  created_dirs=0
+                  while IFS= read -r user_id; do
+                      case "$user_id" in
+                        ""|*/*|*..*)
+                          continue
+                          ;;
+                      esac
+                      checked_users=$((checked_users + 1))
+                      user_dir="/shared-memes/$user_id"
+                      created_user_dir=false
+                      if [ ! -d "$user_dir" ]; then
+                        echo "Creating $user_dir"
+                        mkdir -p "$user_dir"
+                        created_dirs=$((created_dirs + 1))
+                        created_user_dir=true
+                      fi
+                      chown 33:33 "$user_dir" || true
+                      chmod 0770 "$user_dir" || true
+                      if [ "$created_user_dir" = "true" ]; then
+                        timeout 60 php /var/www/html/occ files:scan \
+                          --path="/$user_id/files/Memes" \
+                          --shallow \
+                          --quiet \
+                          || echo "Warning: failed to shallow-scan /$user_id/files/Memes" >&2
+                      fi
+                    done < "$users_file"
+                  if [ "$checked_users" -eq 0 ]; then
+                    echo "No valid Nextcloud users were checked." >&2
+                    exit 1
+                  fi
+                  echo "Checked $checked_users Shared Memes user directories; created $created_dirs."
+                  SCRIPT
