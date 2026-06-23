@@ -17,6 +17,9 @@ check_file() {
   if ! grep -q 'type: Recreate' "$file"; then
     fail "${deployment} must use Recreate strategy to avoid surge deadlocks with RWO/stateful mounts"
   fi
+  if ! grep -q 'rollingUpdate: null' "$file"; then
+    fail "${deployment} must explicitly clear rollingUpdate when using Recreate"
+  fi
   printf '[immich-reloader-test] %s ok\n' "$deployment"
 }
 
