@@ -6,9 +6,13 @@ metadata:
 data:
   qBittorrent.conf: |-
     [BitTorrent]
-    Session\AddTrackersFromURLEnabled=true
-    Session\AdditionalTrackersURL=https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt
+    Session\AddTrackersFromURLEnabled=false
+    Session\AdditionalTrackersURL=
+    Session\GlobalMaxRatio=-1
+    Session\GlobalMaxSeedingMinutes=-1
+    Session\GlobalMaxInactiveSeedingMinutes=-1
     Session\MaxUploads=200
+    Session\ShareLimitAction=Stop
 
     [Preferences]
     WebUI\Address=*

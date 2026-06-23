@@ -53,6 +53,7 @@ data:
   media_download_promotion_target_base: "/media/staged"
   media_private_trackers_secret_enabled: "false"
   protonvpn_server_countries: "Switzerland"
+  prowlarr_default_seed_ratio: ""
   qbit_manage_cron: "45 */6 * * *"
   qbit_manage_dry_run: "True"
   qbit_manage_image_tag: "v4.8.1"

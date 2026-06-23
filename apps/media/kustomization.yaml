@@ -7,6 +7,7 @@ resources:
   - pvc-media.yaml
   - qbittorrent-config.yaml
   - qbittorrent.yaml
+  - qbittorrent-policy.yaml
   - qbit-manage-config.yaml
   - qbit-manage.yaml
   - metube-presets.yaml
