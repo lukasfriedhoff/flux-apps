@@ -18,11 +18,18 @@ metadata:
   namespace: immich
 spec:
   replicas: ${immich_server_replicas}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: immich-server
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
       labels:
         app.kubernetes.io/name: immich-server
     spec:
