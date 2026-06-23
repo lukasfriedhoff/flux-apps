@@ -27,6 +27,12 @@ data:
 
   immich_uploads_storage_class_name: "longhorn-rwo-1r"
   immich_uploads_size: "200Gi"
+  immich_memes_shared_claim_name: "immich-memes-shared"
+  immich_memes_shared_pv_name: "immich-memes-shared-pv"
+  nextcloud_memes_size: "50Gi"
+  # Static NFS endpoint of the Nextcloud shared media volume root.
+  memes_shared_nfs_server: ""
+  memes_shared_nfs_path: "/export"
 
   immich_postgres_storage_class_name: "longhorn-rwo-1r"
   immich_postgres_size: "50Gi"

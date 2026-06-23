@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: nextcloud-shared-photos-userdirs
+  name: nextcloud-shared-memes-userdirs
   namespace: nextcloud
 spec:
   schedule: "*/5 * * * *"
@@ -42,8 +42,8 @@ spec:
                   fi
                   kubectl -n nextcloud exec "$pod" -- /bin/sh -s <<'SCRIPT'
                   set -eu
-                  if [ ! -d /shared-photos ]; then
-                    echo "Shared Photos mount /shared-photos is missing." >&2
+                  if [ ! -d /shared-memes ]; then
+                    echo "Shared Memes mount /shared-memes is missing." >&2
                     exit 1
                   fi
                   users_file="$(mktemp)"
@@ -71,7 +71,7 @@ spec:
                           ;;
                       esac
                       checked_users=$((checked_users + 1))
-                      user_dir="/shared-photos/$user_id"
+                      user_dir="/shared-memes/$user_id"
                       created_user_dir=false
                       if [ ! -d "$user_dir" ]; then
                         echo "Creating $user_dir"
@@ -83,15 +83,15 @@ spec:
                       chmod 0770 "$user_dir" || true
                       if [ "$created_user_dir" = "true" ]; then
                         timeout 60 php /var/www/html/occ files:scan \
-                          --path="/$user_id/files/Photos" \
+                          --path="/$user_id/files/Memes" \
                           --shallow \
                           --quiet \
-                          || echo "Warning: failed to shallow-scan /$user_id/files/Photos" >&2
+                          || echo "Warning: failed to shallow-scan /$user_id/files/Memes" >&2
                       fi
                     done < "$users_file"
                   if [ "$checked_users" -eq 0 ]; then
                     echo "No valid Nextcloud users were checked." >&2
                     exit 1
                   fi
-                  echo "Checked $checked_users Shared Photos user directories; created $created_dirs."
+                  echo "Checked $checked_users Shared Memes user directories; created $created_dirs."
                   SCRIPT

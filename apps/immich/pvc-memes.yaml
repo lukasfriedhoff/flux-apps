@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${immich_memes_shared_claim_name:=immich-memes-shared}
+  namespace: immich
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: ${immich_memes_shared_pv_name:=immich-memes-shared-pv}
+  resources:
+    requests:
+      storage: ${nextcloud_memes_size:=50Gi}
