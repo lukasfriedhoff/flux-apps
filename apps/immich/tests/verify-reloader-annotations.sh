@@ -14,6 +14,9 @@ check_file() {
   if ! grep -q 'reloader.stakater.com/auto: "true"' "$file"; then
     fail "${deployment} is missing reloader.stakater.com/auto annotation"
   fi
+  if ! grep -q 'type: Recreate' "$file"; then
+    fail "${deployment} must use Recreate strategy to avoid surge deadlocks with RWO/stateful mounts"
+  fi
   printf '[immich-reloader-test] %s ok\n' "$deployment"
 }
 
