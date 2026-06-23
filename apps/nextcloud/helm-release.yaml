@@ -72,6 +72,12 @@ spec:
           value: ${nextcloud_external_photos_url:=}
         - name: NEXTCLOUD_EXTERNAL_PHOTOS_LABEL
           value: ${nextcloud_external_photos_label:=Photos}
+        - name: NEXTCLOUD_EXTERNAL_MEMES_ENABLED
+          value: ${nextcloud_external_memes_enabled:=disabled}
+        - name: NEXTCLOUD_EXTERNAL_MEMES_URL
+          value: ${nextcloud_external_memes_url:=}
+        - name: NEXTCLOUD_EXTERNAL_MEMES_LABEL
+          value: ${nextcloud_external_memes_label:=Memes}
         - name: OIDC_LOGIN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
@@ -509,6 +515,100 @@ spec:
             occ_safe config:app:set external sites --value="$merged_sites"
             occ_safe config:app:set external max_site --value="$max_site"
           }
+          configure_external_memes_link() {
+            enabled="$(printf '%s' "$${NEXTCLOUD_EXTERNAL_MEMES_ENABLED:-disabled}" | tr '[:upper:]' '[:lower:]')"
+            case "$enabled" in
+              true|1|yes|on|enabled)
+                ;;
+              *)
+                echo "External memes link disabled."
+                return 0
+                ;;
+            esac
+
+            url="$${NEXTCLOUD_EXTERNAL_MEMES_URL:-}"
+            label="$${NEXTCLOUD_EXTERNAL_MEMES_LABEL:-Memes}"
+            if [ -z "$url" ]; then
+              echo "External memes link enabled but NEXTCLOUD_EXTERNAL_MEMES_URL is empty; skipping."
+              return 0
+            fi
+
+            repair_external_jwt_keys
+
+            if ! enable_custom_app_if_present external /var/www/html/custom_apps/external/appinfo/info.xml; then
+              return 0
+            fi
+
+            existing_sites="$(timeout 30 php /var/www/html/occ config:app:get external sites 2>/dev/null || true)"
+            if [ -z "$existing_sites" ]; then
+              existing_sites='{}'
+            fi
+
+            merged_sites="$(
+              EXTERNAL_SITES_JSON="$existing_sites" \
+              EXTERNAL_SITE_NAME="$label" \
+              EXTERNAL_SITE_URL="$url" \
+              php -r '
+                $raw = getenv("EXTERNAL_SITES_JSON");
+                $name = getenv("EXTERNAL_SITE_NAME");
+                $url = getenv("EXTERNAL_SITE_URL");
+                $sites = json_decode($raw ?: "{}", true);
+                if (!is_array($sites)) {
+                  $sites = [];
+                }
+                $maxId = 0;
+                $targetId = null;
+                foreach ($sites as $id => $site) {
+                  if (is_numeric((string) $id)) {
+                    $maxId = max($maxId, (int) $id);
+                  }
+                  if (is_array($site) && (
+                    (isset($site["name"]) && $site["name"] === $name) ||
+                    (isset($site["url"]) && $site["url"] === $url)
+                  )) {
+                    $targetId = (string) $id;
+                  }
+                }
+                if ($targetId === null || $targetId === "") {
+                  $targetId = (string) ($maxId + 1);
+                }
+                $sites[$targetId] = [
+                  "id" => $targetId,
+                  "name" => $name,
+                  "url" => $url,
+                  "lang" => "",
+                  "type" => "link",
+                  "device" => "0",
+                  "icon" => "",
+                  "groups" => [],
+                  "redirect" => false,
+                ];
+                echo json_encode($sites, JSON_UNESCAPED_SLASHES);
+              '
+            )"
+
+            max_site="$(
+              MERGED_SITES_JSON="$merged_sites" \
+              php -r '
+                $raw = getenv("MERGED_SITES_JSON");
+                $sites = json_decode($raw ?: "{}", true);
+                if (!is_array($sites)) {
+                  echo "1";
+                  exit;
+                }
+                $max = 1;
+                foreach ($sites as $id => $_) {
+                  if (is_numeric((string) $id)) {
+                    $max = max($max, (int) $id);
+                  }
+                }
+                echo (string) $max;
+              '
+            )"
+
+            occ_safe config:app:set external sites --value="$merged_sites"
+            occ_safe config:app:set external max_site --value="$max_site"
+          }
           configure_shared_photos_storage() {
             if ! enable_custom_app_if_present files_external \
               /var/www/html/apps/files_external/appinfo/info.xml; then
@@ -637,9 +737,139 @@ spec:
             rmdir "$lock_dir"
             return "$status"
           }
+          configure_shared_memes_storage() {
+            if ! enable_custom_app_if_present files_external \
+              /var/www/html/apps/files_external/appinfo/info.xml; then
+              return 0
+            fi
+            ensure_shared_memes_user_dirs() {
+              if [ ! -d /shared-memes ]; then
+                echo "Shared Memes mount /shared-memes is not present; skipping user directory sync."
+                return 0
+              fi
+              users_file="$(mktemp)"
+              trap 'rm -f "$users_file"' EXIT
+              timeout 30 php /var/www/html/occ user:list --output=json 2>/dev/null \
+                | php -r '
+                  $users = json_decode(file_get_contents("php://stdin"), true);
+                  if (!is_array($users)) {
+                    exit(1);
+                  }
+                  foreach (array_keys($users) as $user) {
+                    echo $user . "\n";
+                  }
+                ' > "$users_file" || {
+                  echo "Unable to read Nextcloud users for Shared Memes directory sync."
+                  return 0
+                }
+              checked_users=0
+              created_dirs=0
+              while IFS= read -r user_id; do
+                  case "$user_id" in
+                    ""|*/*|*..*)
+                      continue
+                      ;;
+                  esac
+                  checked_users=$((checked_users + 1))
+                  user_dir="/shared-memes/$user_id"
+                  if [ ! -d "$user_dir" ]; then
+                    echo "Creating Shared Memes user directory: $user_dir"
+                    mkdir -p "$user_dir"
+                    created_dirs=$((created_dirs + 1))
+                  fi
+                  chown 33:33 "$user_dir" || true
+                  chmod 0770 "$user_dir" || true
+                done < "$users_file"
+              echo "Checked $checked_users Shared Memes user directories; created $created_dirs."
+            }
+            scan_shared_memes_user_dirs() {
+              users_file="$(mktemp)"
+              trap 'rm -f "$users_file"' EXIT
+              timeout 30 php /var/www/html/occ user:list --output=json 2>/dev/null \
+                | php -r '
+                  $users = json_decode(file_get_contents("php://stdin"), true);
+                  if (!is_array($users)) {
+                    exit(1);
+                  }
+                  foreach (array_keys($users) as $user) {
+                    echo $user . "\n";
+                  }
+                ' > "$users_file" || {
+                  echo "Unable to read Nextcloud users for Shared Memes scan."
+                  return 0
+                }
+              while IFS= read -r user_id; do
+                  case "$user_id" in
+                    ""|*/*|*..*)
+                      continue
+                      ;;
+                  esac
+                  timeout 60 php /var/www/html/occ files:scan \
+                    --path="/$user_id/files/Memes" \
+                    --shallow \
+                    --quiet \
+                    || echo "Warning: failed to shallow-scan /$user_id/files/Memes" >&2
+                done < "$users_file"
+            }
+            lock_dir=/var/www/html/config/.shared-memes-storage.lock
+            lock_acquired=false
+            for _ in $(seq 1 60); do
+              if mkdir "$lock_dir" 2>/dev/null; then
+                lock_acquired=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$lock_acquired" != "true" ]; then
+              echo "Timed out waiting for Shared Memes external storage lock; skipping."
+              return 0
+            fi
+            desired_datadir='/shared-memes/$user'
+            ensure_shared_memes_user_dirs
+            existing_mount="$(timeout 30 php /var/www/html/occ files_external:list \
+              --output=json 2>/dev/null \
+              | php -r '
+                $mounts = json_decode(file_get_contents("php://stdin"), true);
+                if (!is_array($mounts)) {
+                  exit;
+                }
+                foreach ($mounts as $m) {
+                  if (($m["mount_point"] ?? "") === "/Memes") {
+                    echo ($m["mount_id"] ?? "") . "|" . (($m["configuration"]["datadir"] ?? ""));
+                    break;
+                  }
+                }
+              ')"
+            if [ -n "$existing_mount" ]; then
+              mount_id="$${existing_mount%%|*}"
+              current_datadir="$${existing_mount#*|}"
+              if [ "$current_datadir" != "$desired_datadir" ]; then
+                echo "Updating Shared Memes external storage to per-user path $desired_datadir..."
+                occ_safe files_external:config "$mount_id" datadir "$desired_datadir"
+              else
+                echo "Shared Memes external storage already configured."
+              fi
+              scan_shared_memes_user_dirs
+              rmdir "$lock_dir"
+              return 0
+            fi
+            echo "Creating Shared Memes external storage at $desired_datadir..."
+            if occ_safe files_external:create \
+              "Memes" local null::null \
+              -c datadir="$desired_datadir"; then
+              scan_shared_memes_user_dirs
+              rmdir "$lock_dir"
+              return 0
+            fi
+            status="$?"
+            rmdir "$lock_dir"
+            return "$status"
+          }
           configure_oidc_login
           configure_shared_photos_storage
+          configure_shared_memes_storage
           configure_external_photos_link
+          configure_external_memes_link
           enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
           ensure_app_enabled serverinfo
           if enable_custom_app_if_present richdocuments /var/www/html/custom_apps/richdocuments/appinfo/info.xml; then
@@ -828,10 +1058,16 @@ spec:
       extraVolumeMounts:
         - name: photos-shared
           mountPath: /shared-photos
+        - name: memes-shared
+          mountPath: /shared-memes
+          subPath: memes
       extraVolumes:
         - name: photos-shared
           persistentVolumeClaim:
             claimName: ${nextcloud_photos_claim_name:=nextcloud-photos-shared}
+        - name: memes-shared
+          persistentVolumeClaim:
+            claimName: ${nextcloud_memes_claim_name:=nextcloud-photos-shared}
     internalDatabase:
       enabled: false
     externalDatabase:

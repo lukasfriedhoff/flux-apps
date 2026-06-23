@@ -4,6 +4,8 @@ namespace: immich
 resources:
   - bootstrap-config.yaml
   - bootstrap-cronjob.yaml
+  - pv-memes.yaml
+  - pvc-memes.yaml
   - postgres.yaml
   - redis.yaml
   - machine-learning.yaml

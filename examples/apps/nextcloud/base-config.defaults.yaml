@@ -25,6 +25,12 @@ data:
   nextcloud_external_photos_enabled: "disabled"
   nextcloud_external_photos_url: "https://photos.h4xx.io"
   nextcloud_external_photos_label: "Photos"
+  nextcloud_external_memes_enabled: "disabled"
+  nextcloud_external_memes_url: "https://meme.h4xx.io"
+  nextcloud_external_memes_label: "Memes"
+  # By default Memes use a subdirectory on the same shared media PVC as Photos.
+  nextcloud_memes_claim_name: "nextcloud-photos-shared"
+  nextcloud_memes_size: "50Gi"
   trusted_proxies_cidr: "10.42.0.0/16"
   valkey_auth_secret_name: "nextcloud-valkey"
   # CNPG backup — external S3 endpoint URL with scheme (e.g. https://s3.provider.com)

@@ -57,6 +57,40 @@ data:
       '
     }
 
+    json_library_specs() {
+      node -e '
+        const fs = require("fs");
+        const usersPath = process.argv[1];
+        const librariesPath = process.argv[2];
+        const users = JSON.parse(fs.readFileSync(usersPath, "utf8"));
+        const libraries = JSON.parse(fs.readFileSync(librariesPath, "utf8"));
+        const libraryByOwner = new Map();
+        for (const library of Array.isArray(libraries) ? libraries : []) {
+          if (library && library.name === "Nextcloud Memes" && library.ownerId) {
+            libraryByOwner.set(library.ownerId, library);
+          }
+        }
+        for (const user of Array.isArray(users) ? users : []) {
+          if (!user || user.deletedAt || user.status === "deleted") {
+            continue;
+          }
+          if (!user.oauthId) {
+            continue;
+          }
+          const importPath = "/usr/src/app/external/memes/" + user.oauthId;
+          const existing = libraryByOwner.get(user.id);
+          if (existing) {
+            const paths = Array.isArray(existing.importPaths) ? existing.importPaths : [];
+            if (paths.length !== 1 || paths[0] !== importPath) {
+              console.log(JSON.stringify({ action: "update", id: existing.id, ownerId: user.id, email: user.email, importPath }));
+            }
+            continue;
+          }
+          console.log(JSON.stringify({ action: "create", ownerId: user.id, email: user.email, importPath }));
+        }
+      ' "$@"
+    }
+
     json_apply_oauth() {
       node -e '
         let input = "";
@@ -222,6 +256,148 @@ data:
       log "Login response did not include an access token; cannot continue bootstrap."
       exit 1
     fi
+
+    configure_external_libraries() {
+      users_body="$(mktemp)"
+      users_code="$(
+        curl -sS \
+          -o "$users_body" \
+          -w '%{http_code}' \
+          -H "Authorization: Bearer $access_token" \
+          "$IMMICH_URL/api/admin/users" || true
+      )"
+      if [ "$users_code" != "200" ]; then
+        log "Could not read users ($users_code); skipping external library setup."
+        rm -f "$users_body"
+        return 0
+      fi
+
+      libraries_body="$(mktemp)"
+      libraries_code="$(
+        curl -sS \
+          -o "$libraries_body" \
+          -w '%{http_code}' \
+          -H "Authorization: Bearer $access_token" \
+          "$IMMICH_URL/api/libraries" || true
+      )"
+      if [ "$libraries_code" != "200" ]; then
+        log "Could not read libraries ($libraries_code); skipping external library setup."
+        rm -f "$libraries_body"
+        return 0
+      fi
+
+      specs="$(json_library_specs "$users_body" "$libraries_body" || true)"
+      rm -f "$users_body" "$libraries_body"
+      if [ -z "$specs" ]; then
+        log "Per-user external libraries already configured."
+        return 0
+      fi
+
+      printf '%s\n' "$specs" | while IFS= read -r spec; do
+        [ -n "$spec" ] || continue
+        action="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).action || ""));')"
+        library_id="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).id || ""));')"
+        owner_id="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).ownerId || ""));')"
+        email="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).email || ""));')"
+        import_path="$(printf '%s' "$spec" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).importPath || ""));')"
+        payload="{\"type\":\"EXTERNAL\",\"name\":\"Nextcloud Memes\",\"ownerId\":\"$owner_id\",\"importPaths\":[\"$import_path\"]}"
+        library_body="$(mktemp)"
+        if [ "$action" = "update" ] && [ -n "$library_id" ]; then
+          library_code="$(
+            curl -sS \
+              -o "$library_body" \
+              -w '%{http_code}' \
+              -X PUT \
+              -H "Authorization: Bearer $access_token" \
+              -H 'Content-Type: application/json' \
+              --data "$payload" \
+              "$IMMICH_URL/api/libraries/$library_id" || true
+          )"
+          if [ "$library_code" = "200" ]; then
+            log "External library updated for $email at $import_path."
+          else
+            log "Failed to update external library for $email ($library_code): $(cat "$library_body" 2>/dev/null || true)"
+          fi
+        else
+          library_code="$(
+            curl -sS \
+              -o "$library_body" \
+              -w '%{http_code}' \
+              -X POST \
+              -H "Authorization: Bearer $access_token" \
+              -H 'Content-Type: application/json' \
+              --data "$payload" \
+              "$IMMICH_URL/api/libraries" || true
+          )"
+          if [ "$library_code" = "200" ] || [ "$library_code" = "201" ]; then
+            log "External library created for $email at $import_path."
+          else
+            log "Failed to create external library for $email ($library_code): $(cat "$library_body" 2>/dev/null || true)"
+          fi
+        fi
+        rm -f "$library_body"
+      done
+    }
+
+    configure_library_scan() {
+      scan_cfg_body="$(mktemp)"
+      scan_cfg_code="$(
+        curl -sS \
+          -o "$scan_cfg_body" \
+          -w '%{http_code}' \
+          -H "Authorization: Bearer $access_token" \
+          "$IMMICH_URL/api/system-config" || true
+      )"
+      if [ "$scan_cfg_code" != "200" ]; then
+        log "Could not read system config for library scan ($scan_cfg_code); skipping."
+        rm -f "$scan_cfg_body"
+        return 0
+      fi
+      desired_scan_cfg="$(node -e '
+        const cfg = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+        cfg.library = cfg.library || {};
+        cfg.library.scan = cfg.library.scan || {};
+        cfg.library.scan.enabled = true;
+        cfg.library.scan.cronExpression = "*/15 * * * *";
+        cfg.library.watch = cfg.library.watch || {};
+        cfg.library.watch.enabled = false;
+        process.stdout.write(JSON.stringify(cfg));
+      ' "$scan_cfg_body" || true)"
+      current_scan="$(node -e '
+        const cfg = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+        const s = (cfg.library || {}).scan || {};
+        process.stdout.write(JSON.stringify({enabled: s.enabled, cronExpression: s.cronExpression}));
+      ' "$scan_cfg_body" || echo '{}')"
+      rm -f "$scan_cfg_body"
+      if [ "$current_scan" = '{"enabled":true,"cronExpression":"*/15 * * * *"}' ]; then
+        log "Library scan schedule already configured."
+        return 0
+      fi
+      if [ -z "$desired_scan_cfg" ]; then
+        log "Failed to build desired scan config; skipping."
+        return 0
+      fi
+      scan_update_body="$(mktemp)"
+      scan_update_code="$(
+        curl -sS \
+          -o "$scan_update_body" \
+          -w '%{http_code}' \
+          -X PUT \
+          -H "Authorization: Bearer $access_token" \
+          -H 'Content-Type: application/json' \
+          --data "$desired_scan_cfg" \
+          "$IMMICH_URL/api/system-config" || true
+      )"
+      if [ "$scan_update_code" = "200" ]; then
+        log "Library scan schedule set to every 15 minutes."
+      else
+        log "Failed to set library scan schedule ($scan_update_code): $(cat "$scan_update_body" 2>/dev/null || true)"
+      fi
+      rm -f "$scan_update_body"
+    }
+
+    configure_external_libraries
+    configure_library_scan
 
     IMMICH_OIDC_PROVIDER="$${IMMICH_OIDC_PROVIDER:-none}"
     if [ "$IMMICH_OIDC_PROVIDER" != "authelia" ]; then

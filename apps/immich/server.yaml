@@ -97,10 +97,16 @@ spec:
           volumeMounts:
             - name: uploads
               mountPath: /usr/src/app/upload
+            - name: memes-shared
+              mountPath: /usr/src/app/external
+              readOnly: true
       volumes:
         - name: uploads
           persistentVolumeClaim:
             claimName: immich-uploads
+        - name: memes-shared
+          persistentVolumeClaim:
+            claimName: ${immich_memes_shared_claim_name:=immich-memes-shared}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
