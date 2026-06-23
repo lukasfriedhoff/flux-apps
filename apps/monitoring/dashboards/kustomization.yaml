@@ -28,6 +28,20 @@ configMapGenerator:
       - kubernetes-mixin/persistentvolumesusage.json
       - kubernetes-mixin/pod-total.json
       - kubernetes-mixin/workload-total.json
+  - name: grafana-dashboard-node-exporter
+    options:
+      annotations:
+        grafana_folder: Kubernetes
+    files:
+      - node-exporter/node-cluster-rsrc-use.json
+      - node-exporter/node-rsrc-use.json
+      - node-exporter/nodes.json
+  - name: grafana-dashboard-coredns
+    options:
+      annotations:
+        grafana_folder: Kubernetes
+    files:
+      - coredns/coredns.json
   - name: grafana-dashboard-loki
     options:
       annotations:

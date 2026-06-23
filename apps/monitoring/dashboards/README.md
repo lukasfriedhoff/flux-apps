@@ -4,6 +4,8 @@ This directory provides GitOps-managed dashboards loaded by Grafana's sidecar.
 
 ## Sources
 - Kubernetes mixin dashboards generated from `kubernetes-monitoring/kubernetes-mixin`.
+- Node Exporter dashboards generated from `prometheus/node_exporter` (`docs/node-mixin`).
+- CoreDNS dashboard generated from `povilasv/coredns-mixin`.
 - Traefik dashboard from `traefik/traefik` (contrib Grafana dashboard).
 - Authelia dashboard from `authelia/authelia` (examples).
 - Cert-manager dashboard from Grafana.com (dashboard ID 11001).
@@ -16,6 +18,8 @@ This directory provides GitOps-managed dashboards loaded by Grafana's sidecar.
 - Valkey dashboard from `oliver006/redis_exporter`.
 
 ## Notes
+- `kube-state-metrics` currently ships alerts/rules in its mixin, not Grafana dashboards.
+- Grafana's own mixin dashboard is not included because Grafana self-metrics are not enabled in the chart values.
 - Nextcloud dashboards require `nextcloud-exporter` metrics.
 - Valkey dashboards expect `redis_exporter` compatible metrics.
 - Ceph dashboards require Prometheus-enabled Ceph mgr exporters.
