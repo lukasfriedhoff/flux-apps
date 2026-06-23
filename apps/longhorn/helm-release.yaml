@@ -22,6 +22,10 @@ spec:
         namespace: ${longhorn_namespace}
       interval: 10m0s
   values:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9500"
+      prometheus.io/path: "/metrics"
     defaultSettings:
       defaultReplicaCount: ${longhorn_default_replica_count}
       replicaSoftAntiAffinity: ${longhorn_replica_soft_anti_affinity:=false}
@@ -34,6 +38,10 @@ spec:
       backupTargetCredentialSecret: ${longhorn_backup_target_credential_secret_name:=}
       pollInterval: ${longhorn_backup_poll_interval:=300}
     longhornManager:
+      serviceAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9500"
+        prometheus.io/path: "/metrics"
       resources:
         requests:
           cpu: ${longhorn_manager_requests_cpu:=100m}
