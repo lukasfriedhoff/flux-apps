@@ -16,11 +16,10 @@ data:
     PROWLARR_URL = os.getenv("PROWLARR_URL", "http://prowlarr:9696").rstrip("/")
     PROWLARR_CONFIG = os.getenv("PROWLARR_CONFIG", "/mnt/prowlarr/config.xml")
     ROCKETHD_QUOTA_BYTES = int(os.getenv("ROCKETHD_QUOTA_BYTES", str(50 * 1024 * 1024 * 1024)))
-    QBITTORRENT_DEFAULT_SEED_RATIO = float(os.getenv("QBITTORRENT_DEFAULT_SEED_RATIO", "1"))
     QBITTORRENT_MAX_ACTIVE_DOWNLOADS = int(os.getenv("QBITTORRENT_MAX_ACTIVE_DOWNLOADS", "30"))
     QBITTORRENT_MAX_ACTIVE_UPLOADS = int(os.getenv("QBITTORRENT_MAX_ACTIVE_UPLOADS", "300"))
     QBITTORRENT_MAX_ACTIVE_TORRENTS = int(os.getenv("QBITTORRENT_MAX_ACTIVE_TORRENTS", "500"))
-    PROWLARR_DEFAULT_SEED_RATIO = float(os.getenv("PROWLARR_DEFAULT_SEED_RATIO", "1"))
+    PROWLARR_DEFAULT_SEED_RATIO = os.getenv("PROWLARR_DEFAULT_SEED_RATIO", "").strip()
 
     ROCKETHD_TRACKER_MARKERS = ("rocket-hd", "rockethd", "rocket-hd.cc")
 
@@ -78,9 +77,13 @@ data:
 
     def enforce_qbittorrent_defaults():
       prefs = {
-        "max_ratio_enabled": True,
-        "max_ratio": QBITTORRENT_DEFAULT_SEED_RATIO,
+        "max_ratio_enabled": False,
+        "max_ratio": -1,
         "max_ratio_act": 0,
+        "max_seeding_time_enabled": False,
+        "max_seeding_time": -1,
+        "max_inactive_seeding_time_enabled": False,
+        "max_inactive_seeding_time": -1,
         "queueing_enabled": True,
         "max_active_downloads": QBITTORRENT_MAX_ACTIVE_DOWNLOADS,
         "max_active_uploads": QBITTORRENT_MAX_ACTIVE_UPLOADS,
@@ -91,7 +94,7 @@ data:
       qbt_post("/api/v2/app/setPreferences", {"json": json.dumps(prefs)})
       log(
         "qBittorrent defaults enforced: "
-        f"seed_ratio={QBITTORRENT_DEFAULT_SEED_RATIO} "
+        "seed_limits=disabled "
         f"active_downloads={QBITTORRENT_MAX_ACTIVE_DOWNLOADS} "
         f"active_uploads={QBITTORRENT_MAX_ACTIVE_UPLOADS} "
         f"active_torrents={QBITTORRENT_MAX_ACTIVE_TORRENTS} "
@@ -159,7 +162,10 @@ data:
         return
 
       indexer["enable"] = not over_quota
-      set_field(indexer, "torrentBaseSettings.seedRatio", PROWLARR_DEFAULT_SEED_RATIO)
+      if PROWLARR_DEFAULT_SEED_RATIO:
+        set_field(indexer, "torrentBaseSettings.seedRatio", float(PROWLARR_DEFAULT_SEED_RATIO))
+      else:
+        set_field(indexer, "torrentBaseSettings.seedRatio", None)
       prowlarr_put(api_key, f"/api/v1/indexer/{indexer['id']}", indexer)
 
       status = "disabled" if over_quota else "enabled"
@@ -206,8 +212,6 @@ spec:
                   value: http://prowlarr:9696
                 - name: ROCKETHD_QUOTA_BYTES
                   value: "${rockethd_quota_bytes:=53687091200} "
-                - name: QBITTORRENT_DEFAULT_SEED_RATIO
-                  value: "${qbittorrent_default_seed_ratio:=1} "
                 - name: QBITTORRENT_MAX_ACTIVE_DOWNLOADS
                   value: "${qbittorrent_max_active_downloads:=30} "
                 - name: QBITTORRENT_MAX_ACTIVE_UPLOADS
@@ -215,7 +219,7 @@ spec:
                 - name: QBITTORRENT_MAX_ACTIVE_TORRENTS
                   value: "${qbittorrent_max_active_torrents:=500} "
                 - name: PROWLARR_DEFAULT_SEED_RATIO
-                  value: "${prowlarr_default_seed_ratio:=1} "
+                  value: "${prowlarr_default_seed_ratio:=}"
               volumeMounts:
                 - name: script
                   mountPath: /scripts
