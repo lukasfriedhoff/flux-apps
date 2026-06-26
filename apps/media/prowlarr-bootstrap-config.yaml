@@ -557,17 +557,17 @@ data:
     ensure_app "Lidarr" "lidarr" "http://lidarr:8686" "$LIDARR_API_KEY" || log "Failed to sync Lidarr app; will retry."
     ensure_app "Readarr" "readarr" "http://readarr:8787" "$READARR_API_KEY" || log "Failed to sync Readarr app; will retry."
 
-    # Public indexers.
-    ensure_indexer "Knaben" "Knaben" true "" || log "Failed to sync Knaben indexer; will retry."
-    ensure_indexer "TorrentsCSV" "TorrentsCSV" true "" || log "Failed to sync TorrentsCSV indexer; will retry."
-    ensure_cardigann_indexer "LimeTorrents" "LimeTorrents" true || log "Failed to sync LimeTorrents indexer; will retry."
-    ensure_cardigann_indexer "TorrentDownload" "TorrentDownload" true || log "Failed to sync TorrentDownload indexer; will retry."
+    # Public indexers stay present but disabled so Prowlarr can prune them from Arr apps.
+    ensure_indexer "Knaben" "Knaben" false "" || log "Failed to disable Knaben indexer; will retry."
+    ensure_indexer "TorrentsCSV" "TorrentsCSV" false "" || log "Failed to disable TorrentsCSV indexer; will retry."
+    ensure_cardigann_indexer "LimeTorrents" "LimeTorrents" false || log "Failed to disable LimeTorrents indexer; will retry."
+    ensure_cardigann_indexer "TorrentDownload" "TorrentDownload" false || log "Failed to disable TorrentDownload indexer; will retry."
     # SubsPlease is TV/anime-only and causes repeated Radarr category mapping errors.
     ensure_indexer "SubsPlease" "SubsPlease" false "" || log "Failed to sync SubsPlease indexer; will retry."
-    ensure_cardigann_indexer "The Pirate Bay" "The Pirate Bay" true || log "Failed to sync The Pirate Bay indexer; will retry."
-    ensure_cardigann_indexer "YTS" "YTS" true || log "Failed to sync YTS indexer; will retry."
-    ensure_cardigann_indexer "Nyaa.si" "Nyaa.si" true || log "Failed to sync Nyaa.si indexer; will retry."
-    ensure_cardigann_indexer "Internet Archive" "Internet Archive" true || log "Failed to sync Internet Archive indexer; will retry."
+    ensure_cardigann_indexer "The Pirate Bay" "The Pirate Bay" false || log "Failed to disable The Pirate Bay indexer; will retry."
+    ensure_cardigann_indexer "YTS" "YTS" false || log "Failed to disable YTS indexer; will retry."
+    ensure_cardigann_indexer "Nyaa.si" "Nyaa.si" false || log "Failed to disable Nyaa.si indexer; will retry."
+    ensure_cardigann_indexer "Internet Archive" "Internet Archive" false || log "Failed to disable Internet Archive indexer; will retry."
 
     # Private trackers (optional; enabled only when matching secret keys exist).
     if [ -n "$${TORRENTSYNDIKAT_API_KEY:-}" ]; then
