@@ -112,6 +112,18 @@ spec:
               value: ${hydra_attic_server}
             - name: ATTIC_CACHE
               value: ${hydra_attic_cache}
+            - name: HYDRA_GITHUB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_github_credentials_secret_name}
+                  key: username
+                  optional: true
+            - name: HYDRA_GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_github_credentials_secret_name}
+                  key: password
+                  optional: true
           command:
             - /bin/sh
             - -ec
@@ -143,6 +155,21 @@ spec:
               mkdir -p /state/root /state/root/bin /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
               ln -sfn /state/hydra /var/lib/hydra
               chown -R hydra:hydra /state/hydra /nix/var/nix/gcroots/hydra
+              if [ -n "$${HYDRA_GITHUB_TOKEN:-}" ]; then
+                install -m 0600 -o root -g root /dev/null /state/root/github-token
+                printf '%s' "$${HYDRA_GITHUB_TOKEN}" > /state/root/github-token
+                cat > /state/root/bin/git-askpass <<'EOF_ASKPASS'
+              #!/bin/sh
+              case "$1" in
+                *Username*) printf '%s\n' "$${HYDRA_GITHUB_USERNAME:-lukasfriedhoff}" ;;
+                *Password*) cat /state/root/github-token ;;
+                *) printf '\n' ;;
+              esac
+              EOF_ASKPASS
+                chmod 0700 /state/root/bin/git-askpass
+                export GIT_ASKPASS=/state/root/bin/git-askpass
+                export GIT_TERMINAL_PROMPT=0
+              fi
               install -m 0600 -o root -g root /dev/null /state/hydra/attic-upload-token
               printf '%s' "$${ATTIC_UPLOAD_TOKEN}" > /state/hydra/attic-upload-token
               rm -f /state/root/bin/su
