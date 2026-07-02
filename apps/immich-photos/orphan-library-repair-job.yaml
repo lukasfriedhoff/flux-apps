@@ -1,0 +1,140 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: immich-photos-orphan-library-repair-v1
+  namespace: immich-photos
+  labels:
+    app.kubernetes.io/name: immich-photos-orphan-library-repair-v1
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich-photos-orphan-library-repair-v1
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      containers:
+        - name: repair
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: immich-photos-postgres-rw
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: ${immich_photos_secret_name}
+                  key: DB_DATABASE_NAME
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: ${immich_photos_secret_name}
+                  key: DB_USERNAME
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${immich_photos_secret_name}
+                  key: DB_PASSWORD
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              psql -v ON_ERROR_STOP=1 <<'SQL'
+              BEGIN;
+
+              SELECT 'repairing orphaned Nextcloud Photos external libraries';
+
+              CREATE TEMP TABLE library_repairs ON COMMIT DROP AS
+              WITH current_libraries AS (
+                SELECT
+                  app_user.id AS current_owner_id,
+                  app_user.email AS current_owner_email,
+                  app_user."oauthId" AS oauth_id,
+                  current_library.id AS current_library_id,
+                  orphan_library.id AS orphan_library_id
+                FROM public."user" app_user
+                JOIN public.library current_library
+                  ON current_library."ownerId" = app_user.id
+                 AND current_library.name = 'Nextcloud Photos'
+                 AND current_library."deletedAt" IS NULL
+                 AND current_library."importPaths" = ARRAY['/usr/src/app/external/' || app_user."oauthId"]
+                JOIN public.library orphan_library
+                  ON orphan_library.name = current_library.name
+                 AND orphan_library."deletedAt" IS NULL
+                 AND orphan_library."importPaths" = current_library."importPaths"
+                 AND orphan_library."ownerId" <> app_user.id
+                LEFT JOIN public."user" orphan_owner
+                  ON orphan_owner.id = orphan_library."ownerId"
+                WHERE app_user."deletedAt" IS NULL
+                  AND app_user."oauthId" IS NOT NULL
+                  AND app_user."oauthId" <> ''
+                  AND orphan_owner.id IS NULL
+              ),
+              broken_current_assets AS (
+                SELECT asset.id, current_libraries.current_library_id
+                FROM current_libraries
+                JOIN public.asset asset
+                  ON asset."ownerId" = current_libraries.current_owner_id
+                 AND asset."libraryId" = current_libraries.current_library_id
+                LEFT JOIN public.asset_file asset_file
+                  ON asset_file."assetId" = asset.id
+                WHERE asset_file."assetId" IS NULL
+              )
+              SELECT
+                current_libraries.*,
+                (SELECT count(*) FROM broken_current_assets WHERE current_library_id = current_libraries.current_library_id) AS broken_asset_count
+              FROM current_libraries;
+
+              DELETE FROM public.asset asset
+              USING library_repairs repair
+              WHERE asset."ownerId" = repair.current_owner_id
+                AND asset."libraryId" = repair.current_library_id
+                AND NOT EXISTS (
+                  SELECT 1
+                  FROM public.asset_file asset_file
+                  WHERE asset_file."assetId" = asset.id
+                );
+
+              DELETE FROM public.library library
+              USING library_repairs repair
+              WHERE library.id = repair.current_library_id
+                AND NOT EXISTS (
+                  SELECT 1
+                  FROM public.asset asset
+                  WHERE asset."libraryId" = library.id
+                );
+
+              UPDATE public.library library
+              SET "ownerId" = repair.current_owner_id,
+                  "updatedAt" = now(),
+                  "updateId" = immich_uuid_v7()
+              FROM library_repairs repair
+              WHERE library.id = repair.orphan_library_id;
+
+              UPDATE public.asset asset
+              SET "ownerId" = repair.current_owner_id,
+                  "updatedAt" = now(),
+                  "updateId" = immich_uuid_v7()
+              FROM library_repairs repair
+              WHERE asset."libraryId" = repair.orphan_library_id;
+
+              SELECT
+                current_owner_email,
+                broken_asset_count,
+                current_library_id,
+                orphan_library_id
+              FROM library_repairs
+              ORDER BY current_owner_email;
+
+              COMMIT;
+              SQL
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
