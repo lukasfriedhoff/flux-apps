@@ -112,6 +112,8 @@ spec:
                 ensure_section_pref 'BitTorrent' 'Session\\QueueingSystemEnabled' 'true'
                 ensure_section_pref 'BitTorrent' 'Session\\ShareLimitAction' 'Stop'
 
+                ensure_pref 'Connection\\Interface' 'tun0'
+                ensure_pref 'Connection\\InterfaceAddress' ''
                 ensure_pref 'WebUI\\Authentication\\Enabled' 'false'
                 ensure_pref 'WebUI\\AuthSubnetWhitelistEnabled' 'true'
                 ensure_pref 'WebUI\\AuthSubnetWhitelist' '${k8s_pod_cidr},${k8s_service_cidr}'
@@ -228,10 +230,12 @@ spec:
               - |
                 set -eu
                 while true; do
+                  prefs='{"current_network_interface":"tun0","current_interface_address":"","random_port":false,"upnp":false}'
                   if [ -s /tmp/gluetun/forwarded_port ]; then
                     port="$(cat /tmp/gluetun/forwarded_port)"
-                    wget -qO- --post-data "json={\"listen_port\":$port,\"current_network_interface\":\"tun0\",\"random_port\":false,\"upnp\":false}" http://127.0.0.1:8080/api/v2/app/setPreferences >/dev/null || true
+                    prefs="{\"listen_port\":$port,\"current_network_interface\":\"tun0\",\"current_interface_address\":\"\",\"random_port\":false,\"upnp\":false}"
                   fi
+                  wget -qO- --post-data "json=$prefs" http://127.0.0.1:8080/api/v2/app/setPreferences >/dev/null || true
                   sleep 30
                 done
             resources:
