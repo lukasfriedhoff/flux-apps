@@ -24,6 +24,16 @@ grep -q '"max_inactive_seeding_time_enabled": False' "$rendered" \
   || fail 'qBittorrent API policy does not disable max_inactive_seeding_time_enabled'
 grep -q '"add_trackers_from_url_enabled": False' "$rendered" \
   || fail 'qBittorrent API policy does not disable automatic tracker URL appends'
+grep -q '"current_network_interface": "tun0"' "$rendered" \
+  || fail 'qBittorrent API policy does not force tun0 interface binding'
+grep -q '"random_port": False' "$rendered" \
+  || fail 'qBittorrent API policy does not disable random port'
+grep -q '"upnp": False' "$rendered" \
+  || fail 'qBittorrent API policy does not disable UPnP'
+grep -q 'name: qbittorrent-egress' "$rendered" \
+  || fail 'qBittorrent egress NetworkPolicy is not rendered'
+grep -q 'cidr: .*qbittorrent_vpn_endpoint_cidr' "$rendered" \
+  || fail 'qBittorrent NetworkPolicy does not use the VPN endpoint CIDR substitution'
 
 if grep -q 'QBITTORRENT_DEFAULT_SEED_RATIO' "$rendered"; then
   fail 'legacy QBITTORRENT_DEFAULT_SEED_RATIO must not be rendered'
