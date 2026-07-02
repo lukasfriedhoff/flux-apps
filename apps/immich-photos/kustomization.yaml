@@ -5,6 +5,7 @@ resources:
   - bootstrap-config.yaml
   - bootstrap-cronjob.yaml
   - db-schema-repair-job.yaml
+  - orphan-library-repair-job.yaml
   - postgres.yaml
   - redis.yaml
   - machine-learning.yaml
