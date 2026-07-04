@@ -138,7 +138,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (nextcloud_active_users_daily_total{instance=\"$instance\"})",
+          "expr": "max(nextcloud_active_users_daily_total)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -233,9 +233,9 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (nextcloud_users_total{instance=\"$instance\"})",
+          "expr": "max(nextcloud_users_total)",
           "intervalFactor": 1,
-          "legendFormat": "total ({{instance}})",
+          "legendFormat": "total",
           "metric": "",
           "range": true,
           "refId": "A",
@@ -247,10 +247,10 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (nextcloud_active_users_total{instance=\"$instance\"})",
+          "expr": "max(nextcloud_active_users_total)",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "active ({{instance}})",
+          "legendFormat": "active",
           "metric": "",
           "range": true,
           "refId": "B",
@@ -345,7 +345,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (nextcloud_files_total{instance=\"$instance\"})",
+          "expr": "max(nextcloud_files_total)",
           "intervalFactor": 1,
           "legendFormat": "__auto",
           "metric": "",
@@ -455,7 +455,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(type) (nextcloud_shares_total{instance=\"$instance\"})",
+          "expr": "max by(type) (nextcloud_shares_total)",
           "intervalFactor": 1,
           "legendFormat": "{{type}}",
           "metric": "",
@@ -552,7 +552,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(direction) (nextcloud_shares_federated_total{instance=\"$instance\"})",
+          "expr": "max by(direction) (nextcloud_shares_federated_total)",
           "intervalFactor": 1,
           "legendFormat": "{{direction}}",
           "metric": "",
@@ -633,7 +633,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (nextcloud_apps_installed_total{instance=\"$instance\"})",
+          "expr": "max(nextcloud_apps_installed_total)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -703,7 +703,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (nextcloud_apps_updates_available_total{instance=\"$instance\"})",
+          "expr": "max(nextcloud_apps_updates_available_total)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -748,7 +748,7 @@
         "mode": "html"
       },
       "pluginVersion": "10.4.1",
-      "title": "Version Info ($instance)",
+      "title": "Version Info",
       "type": "text"
     },
     {
@@ -836,7 +836,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (nextcloud_free_space_bytes{instance=\"$instance\"})",
+          "expr": "max(nextcloud_free_space_bytes)",
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -934,7 +934,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by (cause) (rate(nextcloud_scrape_errors_total{instance=\"$instance\"}[5m]))",
+          "expr": "sum by (cause) (rate(nextcloud_scrape_errors_total[5m]))",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -1240,30 +1240,7 @@
     "list": [
       {
         "current": {},
-        "datasource": {
-          "type": "prometheus",
-          "uid": "mimir"
-        },
-        "definition": "",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Instance",
-        "multi": false,
-        "name": "instance",
-        "options": [],
-        "query": "label_values(nextcloud_up, instance)",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "current": {},
-        "definition": "query_result(group by (version) (nextcloud_system_info{instance=\"$instance\"}))",
+        "definition": "query_result(group by (version) (nextcloud_system_info))",
         "hide": 2,
         "includeAll": false,
         "multi": false,
@@ -1271,7 +1248,7 @@
         "options": [],
         "query": {
           "qryType": 3,
-          "query": "query_result(group by (version) (nextcloud_system_info{instance=\"$instance\"}))",
+          "query": "query_result(group by (version) (nextcloud_system_info))",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
@@ -1282,7 +1259,7 @@
       },
       {
         "current": {},
-        "definition": "query_result(group by (version) (nextcloud_php_info{instance=\"$instance\"}))",
+        "definition": "query_result(group by (version) (nextcloud_php_info))",
         "hide": 2,
         "includeAll": false,
         "multi": false,
@@ -1290,7 +1267,7 @@
         "options": [],
         "query": {
           "qryType": 3,
-          "query": "query_result(group by (version) (nextcloud_php_info{instance=\"$instance\"}))",
+          "query": "query_result(group by (version) (nextcloud_php_info))",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
@@ -1301,7 +1278,7 @@
       },
       {
         "current": {},
-        "definition": "query_result(label_join(group by (type, version) (nextcloud_database_info{instance=\"$instance\"}), \"info\", \" \", \"type\", \"version\"))",
+        "definition": "query_result(label_join(group by (type, version) (nextcloud_database_info), \"info\", \" \", \"type\", \"version\"))",
         "hide": 2,
         "includeAll": false,
         "multi": false,
@@ -1309,7 +1286,7 @@
         "options": [],
         "query": {
           "qryType": 3,
-          "query": "query_result(label_join(group by (type, version) (nextcloud_database_info{instance=\"$instance\"}), \"info\", \" \", \"type\", \"version\"))",
+          "query": "query_result(label_join(group by (type, version) (nextcloud_database_info), \"info\", \" \", \"type\", \"version\"))",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
