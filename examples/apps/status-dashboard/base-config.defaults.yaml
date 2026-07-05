@@ -1,4 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
 data:
+  default_cluster_issuer: "letsencrypt-prod"
+  flux_kustomization_default_interval: "1h0m0s"
+  flux_kustomization_default_retry_interval: "10m0s"
+  flux_kustomization_default_timeout: "5m0s"
   status_dashboard_suspend: "true"
   status_dashboard_namespace: "status-dashboard"
   status_dashboard_host: "status.h4xx.io"

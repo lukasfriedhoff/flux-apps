@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - helm-repo.yaml
+  - postgres.yaml
+  - pvc-app.yaml
+  - pvc-data.yaml
+  - pvc-photos.yaml
+  - postgres-repair-acl-rbac.yaml
+  - postgres-repair-acl-job.yaml
+  - migrate-app-pvc-job.yaml
+  - shared-photos-userdirs-cronjob.yaml
+  - shared-memes-userdirs-cronjob.yaml
+  - scheduled-backup.yaml
+  - upgrade-check-rbac.yaml
+  - upgrade-check-cronjob.yaml
+  - verify-custom-apps.yaml
+  - metrics-exporter.yaml
+  - helm-release.yaml
