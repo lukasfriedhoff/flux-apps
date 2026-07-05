@@ -351,7 +351,12 @@ spec:
           disable_problematic_apps
           ensure_app_enabled() {
             app="$1"
-            occ_safe app:enable -n "$app"
+            force="${2:-false}"
+            if [ "$force" = "true" ]; then
+              occ_safe app:enable --force -n "$app"
+            else
+              occ_safe app:enable -n "$app"
+            fi
           }
           wait_for_file() {
             file="$1"
@@ -391,7 +396,7 @@ spec:
                 else
                   oidc_marker="/var/www/html/custom_apps/oidc_login/appinfo/info.xml"
                   if wait_for_file "$oidc_marker" 30 2; then
-                    ensure_app_enabled oidc_login
+                    ensure_app_enabled oidc_login true
                   else
                     echo "OIDC app payload missing after startup wait; keeping current oidc_login state."
                   fi

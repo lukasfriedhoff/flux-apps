@@ -50,7 +50,7 @@ spec:
                     echo "Nextcloud is in maintenance mode." >&2
                     exit 1
                   fi
-                  if ! kubectl -n nextcloud exec "$pod" -- /bin/sh -c "php /var/www/html/occ app:list | grep -q ' - oidc_login:'"; then
+                  if ! kubectl -n nextcloud exec "$pod" -- /bin/sh -c "php /var/www/html/occ app:list --enabled | grep -q ' - oidc_login:'"; then
                     echo "OIDC app oidc_login is not enabled." >&2
                     exit 1
                   fi
