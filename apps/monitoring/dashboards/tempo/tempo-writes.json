@@ -81,7 +81,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -132,7 +136,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/cortex-gw(-internal)?\", route=~\"(opentelemetry_proto_collector_trace_v1_traceservice_export|otlp_v1_traces)\"}[$__rate_interval])) by (le,)) * 1e3",
@@ -141,7 +149,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/cortex-gw(-internal)?\", route=~\"(opentelemetry_proto_collector_trace_v1_traceservice_export|otlp_v1_traces)\"}[$__rate_interval])) by () * 1e3 / sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/cortex-gw(-internal)?\", route=~\"(opentelemetry_proto_collector_trace_v1_traceservice_export|otlp_v1_traces)\"}[$__rate_interval])) by ()",
@@ -150,7 +162,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -228,7 +244,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{grpc_status}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -308,7 +328,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{job}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Envoy dropped connections percentage",
@@ -356,14 +380,22 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{job}} rq",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(envoy_cluster_circuit_breakers_default_remaining_cx{namespace=\"$namespace\"}) by(job)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{job}} cx",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Envoy remaining requests/connections",
@@ -423,14 +455,22 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "accepted",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_receiver_refused_spans{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "refused",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Spans / sec",
@@ -478,7 +518,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "received",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Bytes / sec",
@@ -547,7 +591,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_distributor_push_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval])) by (le,)) * 1e3",
@@ -556,7 +604,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_distributor_push_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval])) by () * 1e3 / sum(rate(tempo_distributor_push_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval])) by ()",
@@ -565,7 +617,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -643,21 +699,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "accepted",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_receiver_refused_spans{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "refused",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_distributor_ingester_append_failures_total{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "ingester append failure",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Receiver spans / sec",
@@ -705,7 +773,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{reason}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Discarded spans",
@@ -765,7 +837,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "appends",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Kafka append records / sec",
@@ -813,7 +889,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{reason}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Kafka failed append records / sec",
@@ -873,7 +953,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "writes",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Kafka write bytes / sec",
@@ -939,21 +1023,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "50th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.99, sum by (le) (rate(tempo_distributor_kafka_write_latency_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval])))",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "99th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_distributor_kafka_write_latency_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval])) / sum(rate(tempo_distributor_kafka_write_latency_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/distributor\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "average",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Kafka write latency (sec)",
@@ -1044,7 +1140,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -1095,7 +1195,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_memcache_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/compactor\",method=\"Memcache.Put\"}[$__rate_interval])) by (le,)) * 1e3",
@@ -1104,7 +1208,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_memcache_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/compactor\",method=\"Memcache.Put\"}[$__rate_interval])) by () * 1e3 / sum(rate(tempo_memcache_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/compactor\",method=\"Memcache.Put\"}[$__rate_interval])) by ()",
@@ -1113,7 +1221,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1204,7 +1316,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -1255,7 +1371,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempodb_backend_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/compactor\",operation=~\"(PUT|POST)\"}[$__rate_interval])) by (le,)) * 1e3",
@@ -1264,7 +1384,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempodb_backend_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/compactor\",operation=~\"(PUT|POST)\"}[$__rate_interval])) by () * 1e3 / sum(rate(tempodb_backend_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/compactor\",operation=~\"(PUT|POST)\"}[$__rate_interval])) by ()",
@@ -1273,7 +1397,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1315,7 +1443,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Mimir",
           "value": "mimir"
         },

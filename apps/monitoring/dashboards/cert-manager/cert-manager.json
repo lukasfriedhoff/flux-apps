@@ -68,7 +68,10 @@
     },
     {
       "columns": [],
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fontSize": "100%",
       "gridPos": {
         "h": 8,
@@ -130,10 +133,14 @@
       ],
       "targets": [
         {
-          "expr": "sort_desc( sum(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$Namespace\"} - time()) BY (name,exported_namespace) )",
+          "expr": "sort_desc( sum(certmanager_certificate_expiration_timestamp_seconds{namespace=~\"$Namespace\",name=~\"$Certificate\"} - time()) BY (name,namespace) )",
           "instant": true,
-          "legendFormat": " {{exported_namespace}} / {{name}}",
-          "refId": "A"
+          "legendFormat": " {{namespace}} / {{name}}",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "timeFrom": null,
@@ -148,7 +155,10 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
@@ -186,12 +196,16 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(certmanager_certificate_ready_status) BY (condition)",
+          "expr": "sum(certmanager_certificate_ready_status{namespace=~\"$Namespace\",name=~\"$Certificate\"}) BY (condition)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{condition}}",
           "refId": "A",
-          "step": 1800
+          "step": 1800,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -240,7 +254,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
@@ -277,11 +294,15 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$Namespace\"} - time()) BY (name,exported_namespace)",
+          "expr": "sum(certmanager_certificate_expiration_timestamp_seconds{namespace=~\"$Namespace\",name=~\"$Certificate\"} - time()) BY (name,namespace)",
           "instant": false,
           "intervalFactor": 1,
-          "legendFormat": " {{exported_namespace}} / {{name}}",
-          "refId": "A"
+          "legendFormat": " {{namespace}} / {{name}}",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -344,7 +365,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -381,7 +405,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -434,7 +462,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -491,7 +522,11 @@
         {
           "expr": "sum(certmanager_http_acme_client_request_count)",
           "instant": true,
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": "",
@@ -514,7 +549,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -551,7 +589,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count{path=\"/directory\"}[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -600,7 +642,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -637,7 +682,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count{path=\"/acme/cert\"}[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -686,7 +735,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -723,7 +775,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count{path=\"/acme/new-acct\"}[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -772,7 +828,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -809,7 +868,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count{path=\"/acme/order\"}[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -858,7 +921,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -895,7 +961,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count{path=\"/acme/new-order\"}[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -944,7 +1014,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -981,7 +1054,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count{path=\"/acme/authz-v3\"}[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -1030,7 +1107,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1067,7 +1147,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count{path=\"/acme/chall-v3\"}[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -1116,7 +1200,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "$Datasource",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1153,7 +1240,11 @@
         {
           "expr": "sum(rate(certmanager_http_acme_client_request_count{path=\"/acme/finalize\"}[2m])) BY (status)",
           "legendFormat": "{{status}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "thresholds": [],
@@ -1207,39 +1298,24 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": true,
-          "text": "Mimir",
-          "value": "mimir"
-        },
-        "hide": 0,
-        "includeAll": false,
-        "label": "Datasource",
-        "multi": false,
-        "name": "Datasource",
-        "options": [],
-        "query": "prometheus",
-        "refresh": 1,
-        "regex": "/k8s.*/",
-        "skipUrlSync": false,
-        "type": "datasource"
-      },
-      {
         "allValue": ".*",
         "current": {
           "selected": true,
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "$Datasource",
-        "definition": "label_values(exported_namespace)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "mimir"
+        },
+        "definition": "label_values(certmanager_certificate_expiration_timestamp_seconds, namespace)",
         "hide": 0,
         "includeAll": true,
         "label": null,
-        "multi": false,
+        "multi": true,
         "name": "Namespace",
         "options": [],
-        "query": "label_values(exported_namespace)",
+        "query": "label_values(certmanager_certificate_expiration_timestamp_seconds, namespace)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -1257,15 +1333,18 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "$Datasource",
-        "definition": "label_values(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$Namespace\"},name) ",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "mimir"
+        },
+        "definition": "label_values(certmanager_certificate_expiration_timestamp_seconds{namespace=~\"$Namespace\"}, name)",
         "hide": 0,
         "includeAll": true,
         "label": null,
-        "multi": false,
+        "multi": true,
         "name": "Certificate",
         "options": [],
-        "query": "label_values(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$Namespace\"},name) ",
+        "query": "label_values(certmanager_certificate_expiration_timestamp_seconds{namespace=~\"$Namespace\"}, name)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,

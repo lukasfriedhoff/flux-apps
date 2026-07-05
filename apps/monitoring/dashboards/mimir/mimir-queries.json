@@ -78,37 +78,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_query_frontend_queue_duration_seconds{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_query_frontend_queue_duration_seconds_bucket{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_query_frontend_queue_duration_seconds{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_query_frontend_queue_duration_seconds_bucket{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_query_frontend_queue_duration_seconds{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_query_frontend_queue_duration_seconds{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_query_frontend_queue_duration_seconds_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_query_frontend_queue_duration_seconds_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queue duration",
@@ -175,37 +199,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_query_frontend_retries{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_query_frontend_retries_bucket{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_query_frontend_retries{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_query_frontend_retries_bucket{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(histogram_sum(rate(cortex_query_frontend_retries{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_query_frontend_retries{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(rate(cortex_query_frontend_retries_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_query_frontend_retries_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Retries",
@@ -272,7 +320,11 @@
               "expr": "sum by(pod) (cortex_query_frontend_queue_length{$read_path_matcher})",
               "format": "time_series",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queue length (per pod)",
@@ -322,7 +374,11 @@
               "expr": "sum by(user) (cortex_query_frontend_queue_length{$read_path_matcher}) > 0",
               "format": "time_series",
               "legendFormat": "{{user}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queue length (per user)",
@@ -384,37 +440,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_query_scheduler_queue_duration_seconds{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_query_scheduler_queue_duration_seconds_bucket{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_query_scheduler_queue_duration_seconds{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_query_scheduler_queue_duration_seconds_bucket{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_query_scheduler_queue_duration_seconds{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_query_scheduler_queue_duration_seconds{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_query_scheduler_queue_duration_seconds_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_query_scheduler_queue_duration_seconds_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queue duration",
@@ -481,7 +561,11 @@
               "expr": "sum by(pod) (cortex_query_scheduler_queue_length{$read_path_matcher})",
               "format": "time_series",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queue length (per pod)",
@@ -531,7 +615,11 @@
               "expr": "sum by(user) (cortex_query_scheduler_queue_length{$read_path_matcher}) > 0",
               "format": "time_series",
               "legendFormat": "{{user}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queue length (per user)",
@@ -592,13 +680,21 @@
               "expr": "(sum(rate(cortex_frontend_split_queries_total{$read_path_matcher}[$__rate_interval])) / sum (rate(cortex_frontend_query_range_duration_seconds_count{$read_path_matcher, method=\"split_by_interval_and_results_cache\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "splitting rate",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum(rate(cortex_frontend_split_queries_total{$read_path_matcher}[$__rate_interval])) / sum (histogram_count(rate(cortex_frontend_query_range_duration_seconds{$read_path_matcher, method=\"split_by_interval_and_results_cache\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "splitting rate",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Intervals per query",
@@ -647,7 +743,11 @@
               "expr": "# Query the new metric introduced in Mimir 2.10.\n(\n  sum by(request_type) (rate(cortex_frontend_query_result_cache_hits_total{$read_path_matcher}[$__rate_interval]))\n  /\n  sum by(request_type) (rate(cortex_frontend_query_result_cache_requests_total{$read_path_matcher}[$__rate_interval]))\n)\n# Otherwise fallback to the previous general-purpose metrics.\nor\n(\n  label_replace(\n    sum (\n      rate(thanos_cache_hits_total{name=\"frontend-cache\", $read_path_matcher}[$__rate_interval])\n    )\n    /\n    sum (\n      rate(thanos_cache_requests_total{name=~\"frontend-cache\", $read_path_matcher}[$__rate_interval])\n    ),\n    \"request_type\", \"query_range\", \"\", \"\")\n)\n",
               "format": "time_series",
               "legendFormat": "{{request_type}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Query results cache hit ratio",
@@ -697,7 +797,11 @@
               "expr": "sum(rate(cortex_frontend_query_result_cache_skipped_total{$read_path_matcher}[$__rate_interval])) by (reason) /\nignoring (reason) group_left sum(rate(cortex_frontend_query_result_cache_attempted_total{$read_path_matcher}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "{{reason}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Query results cache skipped",
@@ -708,7 +812,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Query-frontend \u2013 query splitting and results cache",
+      "title": "Query-frontend – query splitting and results cache",
       "titleSize": "h6"
     },
     {
@@ -759,7 +863,11 @@
               "expr": "sum(rate(cortex_frontend_query_sharding_rewrites_succeeded_total{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_frontend_query_sharding_rewrites_attempted_total{$read_path_matcher}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "sharded queries ratio",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Sharded queries ratio",
@@ -809,37 +917,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_frontend_sharded_queries_per_query{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_frontend_sharded_queries_per_query_bucket{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_frontend_sharded_queries_per_query{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_frontend_sharded_queries_per_query_bucket{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(histogram_sum(rate(cortex_frontend_sharded_queries_per_query{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_frontend_sharded_queries_per_query{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(rate(cortex_frontend_sharded_queries_per_query_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_frontend_sharded_queries_per_query_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Number of sharded queries per query",
@@ -868,7 +1000,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Query-frontend \u2013 query sharding",
+      "title": "Query-frontend – query sharding",
       "titleSize": "h6"
     },
     {
@@ -892,7 +1024,11 @@
               "expr": "sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=\"$namespace\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "Bytes",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Query Expression Length",
@@ -940,19 +1076,31 @@
               "expr": "histogram_quantile(0.99, sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=\"$namespace\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99th Percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.90, sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=\"$namespace\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "90th Percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_avg(sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=\"$namespace\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "Average",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Query Expression Percentiles",
@@ -1044,13 +1192,21 @@
               "expr": "sum(rate(cortex_ingest_storage_strong_consistency_requests_total{component=\"query-frontend\", $read_path_matcher}[$__rate_interval]))\n-\nsum(rate(cortex_ingest_storage_strong_consistency_failures_total{component=\"query-frontend\", $read_path_matcher}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_ingest_storage_strong_consistency_failures_total{component=\"query-frontend\", $read_path_matcher}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queries with strong read consistency / sec",
@@ -1100,7 +1256,11 @@
               "expr": "sum by(container) (rate(cortex_query_frontend_queries_consistency_total{$read_path_matcher,consistency=\"strong\"}[$__rate_interval]))\n/\nsum by(container) (rate(cortex_query_frontend_queries_total{$read_path_matcher}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "{{container}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queries with strong read consistency ratio",
@@ -1108,7 +1268,7 @@
         },
         {
           "datasource": "$datasource",
-          "description": "### Strong read consistency queries \u2014 wait latency\nHow long does the request wait to guarantee strong read consistency.\n",
+          "description": "### Strong read consistency queries — wait latency\nHow long does the request wait to guarantee strong read consistency.\n",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -1149,28 +1309,44 @@
               "expr": "histogram_avg(sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component=\"query-frontend\", $read_path_matcher}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "avg",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.99, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component=\"query-frontend\", $read_path_matcher}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.999, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component=\"query-frontend\", $read_path_matcher}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99.9th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(1.0, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component=\"query-frontend\", $read_path_matcher}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "100th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
-          "title": "Strong read consistency queries \u2014 wait latency",
+          "title": "Strong read consistency queries — wait latency",
           "type": "timeseries"
         }
       ],
@@ -1178,7 +1354,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Query-frontend \u2013 strong consistency (ingest storage)",
+      "title": "Query-frontend – strong consistency (ingest storage)",
       "titleSize": "h6"
     },
     {
@@ -1259,13 +1435,21 @@
               "expr": "sum(rate(cortex_ingest_storage_reader_last_produced_offset_requests_total{$read_path_matcher}[$__rate_interval]))\n-\nsum(rate(cortex_ingest_storage_reader_last_produced_offset_failures_total{$read_path_matcher}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_ingest_storage_reader_last_produced_offset_failures_total{$read_path_matcher}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Fetch last produced offset requests / sec",
@@ -1314,25 +1498,41 @@
               "expr": "histogram_avg(sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{$read_path_matcher}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "avg",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.99, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{$read_path_matcher}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.999, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{$read_path_matcher}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99.9th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(1.0, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{$read_path_matcher}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "100th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Fetch last produced offset latency",
@@ -1387,7 +1587,11 @@
               "expr": "sum(rate(cortex_mimir_query_engine_estimated_query_peak_memory_consumption{$read_path_matcher, cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "Estimated memory consumption",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Estimated per-query memory consumption",
@@ -1436,7 +1640,11 @@
               "expr": "sum(rate(cortex_mimir_query_engine_unsupported_queries_total{$read_path_matcher, cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\"}[$__rate_interval])) or vector(0)",
               "format": "time_series",
               "legendFormat": "Queries",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Fallback to Prometheus' query engine",
@@ -1497,37 +1705,61 @@
               "expr": "(histogram_quantile(0.99, sum by (le) (cluster_job_stage:cortex_ingester_queried_series_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", stage=\"merged_blocks\"})) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum (cluster_job_stage:cortex_ingester_queried_series:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", stage=\"merged_blocks\"})) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_native"
+              "refId": "A_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (cluster_job_stage:cortex_ingester_queried_series_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", stage=\"merged_blocks\"})) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (cluster_job_stage:cortex_ingester_queried_series:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", stage=\"merged_blocks\"})) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_native"
+              "refId": "B_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(cluster_job_stage:cortex_ingester_queried_series_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", stage=\"merged_blocks\"}) /\nsum(cluster_job_stage:cortex_ingester_queried_series_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", stage=\"merged_blocks\"})\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(histogram_sum(cluster_job_stage:cortex_ingester_queried_series:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", stage=\"merged_blocks\"})) /\nsum(histogram_count(cluster_job_stage:cortex_ingester_queried_series:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", stage=\"merged_blocks\"}))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_native"
+              "refId": "C_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Series per query",
@@ -1576,37 +1808,61 @@
               "expr": "(histogram_quantile(0.99, sum by (le) (cluster_job:cortex_ingester_queried_samples_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum (cluster_job:cortex_ingester_queried_samples:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_native"
+              "refId": "A_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (cluster_job:cortex_ingester_queried_samples_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (cluster_job:cortex_ingester_queried_samples:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_native"
+              "refId": "B_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(cluster_job:cortex_ingester_queried_samples_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}) /\nsum(cluster_job:cortex_ingester_queried_samples_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(histogram_sum(cluster_job:cortex_ingester_queried_samples:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) /\nsum(histogram_count(cluster_job:cortex_ingester_queried_samples:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_native"
+              "refId": "C_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Samples per query",
@@ -1655,37 +1911,61 @@
               "expr": "(histogram_quantile(0.99, sum by (le) (cluster_job:cortex_ingester_queried_exemplars_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum (cluster_job:cortex_ingester_queried_exemplars:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_native"
+              "refId": "A_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (cluster_job:cortex_ingester_queried_exemplars_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (cluster_job:cortex_ingester_queried_exemplars:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_native"
+              "refId": "B_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(cluster_job:cortex_ingester_queried_exemplars_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}) /\nsum(cluster_job:cortex_ingester_queried_exemplars_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(histogram_sum(cluster_job:cortex_ingester_queried_exemplars:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"})) /\nsum(histogram_count(cluster_job:cortex_ingester_queried_exemplars:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_native"
+              "refId": "C_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Exemplars per query",
@@ -1777,13 +2057,21 @@
               "expr": "sum(rate(cortex_ingest_storage_strong_consistency_requests_total{component=\"partition-reader\", cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n-\nsum(rate(cortex_ingest_storage_strong_consistency_failures_total{component=\"partition-reader\", cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_ingest_storage_strong_consistency_failures_total{component=\"partition-reader\", cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests with strong read consistency / sec",
@@ -1864,25 +2152,41 @@
               "expr": "(\n  sum(rate(cortex_ingest_storage_strong_consistency_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n  -\n  sum(rate(cortex_ingest_storage_strong_consistency_failures_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n)\n / (sum (rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\",route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(\n  sum(rate(cortex_ingest_storage_strong_consistency_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n  -\n  sum(rate(cortex_ingest_storage_strong_consistency_failures_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n)\n / (sum (histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\",route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_ingest_storage_strong_consistency_failures_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n / (sum (rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\",route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_ingest_storage_strong_consistency_failures_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n / (sum (histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\",route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests with strong read consistency ratio",
@@ -1890,7 +2194,7 @@
         },
         {
           "datasource": "$datasource",
-          "description": "### Strong read consistency queries \u2014 wait latency\nHow long does the request wait to guarantee strong read consistency.\n",
+          "description": "### Strong read consistency queries — wait latency\nHow long does the request wait to guarantee strong read consistency.\n",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -1931,28 +2235,44 @@
               "expr": "histogram_avg(sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component=\"partition-reader\", cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "avg",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.99, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component=\"partition-reader\", cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.999, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component=\"partition-reader\", cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99.9th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(1.0, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component=\"partition-reader\", cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "100th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
-          "title": "Strong read consistency queries \u2014 wait latency",
+          "title": "Strong read consistency queries — wait latency",
           "type": "timeseries"
         }
       ],
@@ -1960,7 +2280,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Ingester \u2013 strong consistency (ingest storage)",
+      "title": "Ingester – strong consistency (ingest storage)",
       "titleSize": "h6"
     },
     {
@@ -2041,13 +2361,21 @@
               "expr": "sum(rate(cortex_ingest_storage_reader_last_produced_offset_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n-\nsum(rate(cortex_ingest_storage_reader_last_produced_offset_failures_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_ingest_storage_reader_last_produced_offset_failures_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Fetch last produced offset requests / sec",
@@ -2096,25 +2424,41 @@
               "expr": "histogram_avg(sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "avg",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.99, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.999, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99.9th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(1.0, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "100th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Fetch last produced offset latency",
@@ -2163,25 +2507,41 @@
               "expr": "histogram_avg(sum(rate(cortex_ingest_storage_reader_receive_delay_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", phase=\"running\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "avg",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.99, sum(rate(cortex_ingest_storage_reader_receive_delay_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", phase=\"running\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.999, sum(rate(cortex_ingest_storage_reader_receive_delay_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", phase=\"running\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99.9th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(1.0, sum(rate(cortex_ingest_storage_reader_receive_delay_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", phase=\"running\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "100th percentile",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Kafka end-to-end latency when ingesters are running",
@@ -2242,37 +2602,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_querier_storegateway_instances_hit_per_query{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_querier_storegateway_instances_hit_per_query_bucket{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_querier_storegateway_instances_hit_per_query{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_querier_storegateway_instances_hit_per_query_bucket{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(histogram_sum(rate(cortex_querier_storegateway_instances_hit_per_query{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_querier_storegateway_instances_hit_per_query{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(rate(cortex_querier_storegateway_instances_hit_per_query_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_querier_storegateway_instances_hit_per_query_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Number of store-gateways hit per query",
@@ -2339,37 +2723,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_querier_storegateway_refetches_per_query{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_querier_storegateway_refetches_per_query_bucket{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_querier_storegateway_refetches_per_query{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_querier_storegateway_refetches_per_query_bucket{$read_path_matcher}[$__rate_interval]))) * 1) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(histogram_sum(rate(cortex_querier_storegateway_refetches_per_query{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_querier_storegateway_refetches_per_query{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1 * sum(rate(cortex_querier_storegateway_refetches_per_query_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_querier_storegateway_refetches_per_query_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Refetches of missing blocks per query",
@@ -2453,7 +2861,11 @@
               "expr": "sum(rate(cortex_querier_blocks_consistency_checks_failed_total{$read_path_matcher}[$__rate_interval])) / sum(rate(cortex_querier_blocks_consistency_checks_total{$read_path_matcher}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "Failure Rate",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Consistency checks failed",
@@ -2515,13 +2927,21 @@
               "expr": "(sum by (reason) (rate(cortex_querier_queries_rejected_total{$read_path_matcher}[$__rate_interval])) / ignoring (reason) group_left sum (rate(cortex_querier_request_duration_seconds_count{$read_path_matcher, route=~\"(prometheus|api_prom)_api_v1_query(_range)?\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{reason}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (reason) (rate(cortex_querier_queries_rejected_total{$read_path_matcher}[$__rate_interval])) / ignoring (reason) group_left sum (histogram_count(rate(cortex_querier_request_duration_seconds{$read_path_matcher, route=~\"(prometheus|api_prom)_api_v1_query(_range)?\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{reason}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Rejected queries",
@@ -2564,7 +2984,11 @@
               "expr": "sum(rate(cortex_mimir_query_engine_estimated_query_peak_memory_consumption{$read_path_matcher, cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "Estimated memory consumption",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Estimated per-query memory consumption",
@@ -2613,7 +3037,11 @@
               "expr": "sum(rate(cortex_mimir_query_engine_unsupported_queries_total{$read_path_matcher, cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\"}[$__rate_interval])) or vector(0)",
               "format": "time_series",
               "legendFormat": "Queries",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Fallback to Prometheus' query engine",
@@ -2673,19 +3101,31 @@
               "expr": "max(cortex_bucket_index_loaded{$read_path_matcher})",
               "format": "time_series",
               "legendFormat": "Max",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(cortex_bucket_index_loaded{$read_path_matcher})",
               "format": "time_series",
               "legendFormat": "Min",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "avg(cortex_bucket_index_loaded{$read_path_matcher})",
               "format": "time_series",
               "legendFormat": "Average",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Bucket indexes loaded (per querier)",
@@ -2764,13 +3204,21 @@
               "expr": "sum(rate(cortex_bucket_index_loads_total{$read_path_matcher}[$__rate_interval])) - sum(rate(cortex_bucket_index_load_failures_total{$read_path_matcher}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_bucket_index_load_failures_total{$read_path_matcher}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Bucket indexes load / sec",
@@ -2819,37 +3267,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_bucket_index_load_duration_seconds{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_bucket_index_load_duration_seconds_bucket{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_bucket_index_load_duration_seconds{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_bucket_index_load_duration_seconds_bucket{$read_path_matcher}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_bucket_index_load_duration_seconds{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_bucket_index_load_duration_seconds{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_bucket_index_load_duration_seconds_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_bucket_index_load_duration_seconds_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Bucket indexes load latency",
@@ -2928,13 +3400,21 @@
               "expr": "sum by (level) (rate(cortex_bucket_store_series_blocks_queried_sum{component=\"store-gateway\",level=~\"[0-4]\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "{{level}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_bucket_store_series_blocks_queried_sum{component=\"store-gateway\",level!~\"[0-4]\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "5+",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Blocks queried / sec by compaction level",
@@ -2982,7 +3462,11 @@
               "expr": "sum by(data_type) (\n  # Exclude \"chunks refetched\".\n  rate(cortex_bucket_store_series_data_size_fetched_bytes_sum{component=\"store-gateway\", stage!=\"refetched\", cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "{{data_type}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Data fetched / sec",
@@ -3030,7 +3514,11 @@
               "expr": "sum by(data_type) (\n  # Exclude \"chunks processed\" to only count \"chunks returned\", other than postings and series.\n  rate(cortex_bucket_store_series_data_size_touched_bytes_sum{component=\"store-gateway\", stage!=\"processed\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "{{data_type}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Data touched / sec",
@@ -3090,13 +3578,21 @@
               "expr": "(sum by (stage) (rate(cortex_bucket_store_series_request_stage_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])) /\nsum by (stage) (rate(cortex_bucket_store_series_request_stage_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{stage}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (stage) (histogram_sum(rate(cortex_bucket_store_series_request_stage_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))) /\nsum by (stage) (histogram_count(rate(cortex_bucket_store_series_request_stage_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{stage}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Series request average latency",
@@ -3144,13 +3640,21 @@
               "expr": "(histogram_quantile(0.99, sum by (le,stage) (rate(cortex_bucket_store_series_request_stage_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{stage}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (stage) (rate(cortex_bucket_store_series_request_stage_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{stage}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Series request 99th percentile latency",
@@ -3200,13 +3704,21 @@
               "expr": "(# Clamping min to 0 because if preloading not useful at all, then the actual value we get is\n# slightly negative because of the small overhead introduced by preloading.\nclamp_min(1 - (\n    sum(rate(cortex_bucket_store_series_batch_preloading_wait_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n    /\n    sum(rate(cortex_bucket_store_series_batch_preloading_load_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n), 0)\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "% of time reduced by preloading",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(# Clamping min to 0 because if preloading not useful at all, then the actual value we get is\n# slightly negative because of the small overhead introduced by preloading.\nclamp_min(1 - (\n    sum(histogram_sum(rate(cortex_bucket_store_series_batch_preloading_wait_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])))\n    /\n    sum(histogram_sum(rate(cortex_bucket_store_series_batch_preloading_load_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])))\n), 0)\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "% of time reduced by preloading",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Series batch preloading efficiency",
@@ -3267,7 +3779,11 @@
               "expr": "cortex_bucket_store_blocks_loaded{component=\"store-gateway\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}",
               "format": "time_series",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Blocks currently owned",
@@ -3346,13 +3862,21 @@
               "expr": "sum(rate(cortex_bucket_store_block_loads_total{component=\"store-gateway\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])) - sum(rate(cortex_bucket_store_block_load_failures_total{component=\"store-gateway\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_bucket_store_block_load_failures_total{component=\"store-gateway\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Blocks loaded / sec",
@@ -3431,13 +3955,21 @@
               "expr": "sum(rate(cortex_bucket_store_block_drops_total{component=\"store-gateway\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])) - sum(rate(cortex_bucket_store_block_drop_failures_total{component=\"store-gateway\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "successful",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(cortex_bucket_store_block_drop_failures_total{component=\"store-gateway\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "failed",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Blocks dropped / sec",
@@ -3497,7 +4029,11 @@
               "expr": "cortex_bucket_store_indexheader_lazy_load_total{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"} - cortex_bucket_store_indexheader_lazy_unload_total{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}",
               "format": "time_series",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Lazy loaded index-headers",
@@ -3546,37 +4082,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_bucket_store_indexheader_lazy_load_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_bucket_store_indexheader_lazy_load_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_bucket_store_indexheader_lazy_load_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_bucket_store_indexheader_lazy_load_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_bucket_store_indexheader_lazy_load_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_bucket_store_indexheader_lazy_load_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_bucket_store_indexheader_lazy_load_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval])) /\nsum(rate(cortex_bucket_store_indexheader_lazy_load_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Index-header lazy load duration",
@@ -3644,37 +4204,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_bucket_stores_gate_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",gate=\"index_header\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_bucket_stores_gate_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",gate=\"index_header\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_bucket_stores_gate_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",gate=\"index_header\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_bucket_stores_gate_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",gate=\"index_header\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_bucket_stores_gate_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",gate=\"index_header\"}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_bucket_stores_gate_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",gate=\"index_header\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_bucket_stores_gate_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",gate=\"index_header\"}[$__rate_interval])) /\nsum(rate(cortex_bucket_stores_gate_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",gate=\"index_header\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Index-header lazy load gate latency",
@@ -3753,7 +4337,11 @@
               "expr": "sum(rate(cortex_bucket_store_series_hash_cache_hits_total{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n/\nsum(rate(cortex_bucket_store_series_hash_cache_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "hit ratio",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Series hash cache hit ratio",
@@ -3802,7 +4390,11 @@
               "expr": "sum(rate(thanos_store_index_cache_hits_total{item_type=\"ExpandedPostings\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n/\nsum(rate(thanos_store_index_cache_requests_total{item_type=\"ExpandedPostings\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "hit ratio",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "ExpandedPostings cache hit ratio",
@@ -3851,7 +4443,11 @@
               "expr": "sum(rate(cortex_cache_memory_hits_total{name=\"chunks-attributes-cache\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n/\nsum(rate(cortex_cache_memory_requests_total{name=\"chunks-attributes-cache\",cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"}[$__rate_interval]))\n",
               "format": "time_series",
               "legendFormat": "hit ratio",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Chunks attributes in-memory cache hit ratio",
@@ -3875,7 +4471,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Mimir",
           "value": "mimir"
         },

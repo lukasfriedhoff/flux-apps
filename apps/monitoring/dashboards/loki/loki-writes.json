@@ -218,7 +218,11 @@
               "expr": "sum by (status) (\n  label_replace(label_replace(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\",job=~\"($namespace)/distributor\", route=~\"api_prom_push|loki_api_v1_push|otlp_v1_logs|/httpgrpc.HTTP/Handle\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -266,19 +270,31 @@
               "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:loki_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/distributor\", route=~\"api_prom_push|loki_api_v1_push|otlp_v1_logs|/httpgrpc.HTTP/Handle\"})) * 1e3",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum by (le) (cluster_job_route:loki_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/distributor\", route=~\"api_prom_push|loki_api_v1_push|otlp_v1_logs|/httpgrpc.HTTP/Handle\"})) * 1e3",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "1e3 * sum(cluster_job_route:loki_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/distributor\", route=~\"api_prom_push|loki_api_v1_push|otlp_v1_logs|/httpgrpc.HTTP/Handle\"}) / sum(cluster_job_route:loki_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/distributor\", route=~\"api_prom_push|loki_api_v1_push|otlp_v1_logs|/httpgrpc.HTTP/Handle\"})",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -347,7 +363,11 @@
               "intervalFactor": 2,
               "legendFormat": "__auto",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per Pod Latency (p99)",
@@ -406,7 +426,11 @@
               "expr": "sum (rate(loki_distributor_structured_metadata_bytes_received_total{cluster=~\"$cluster\",job=~\"($namespace)/distributor\",}[$__rate_interval])) / sum(rate(loki_distributor_bytes_received_total{cluster=~\"$cluster\",job=~\"($namespace)/distributor\",}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "bytes",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per Total Received Bytes",
@@ -454,7 +478,11 @@
               "expr": "sum by (tenant) (rate(loki_distributor_structured_metadata_bytes_received_total{cluster=~\"$cluster\",job=~\"($namespace)/distributor\",}[$__rate_interval])) / ignoring(tenant) group_left sum(rate(loki_distributor_structured_metadata_bytes_received_total{cluster=~\"$cluster\",job=~\"($namespace)/distributor\",}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "{{tenant}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per Tenant",
@@ -682,7 +710,11 @@
               "expr": "sum by (status) (\n  label_replace(label_replace(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\",job=~\"($namespace)/(ingester-zone.*|partition-ingester-.*)\", route=\"/logproto.Pusher/Push\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -730,19 +762,31 @@
               "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:loki_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/(ingester-zone.*|partition-ingester-.*)\", route=\"/logproto.Pusher/Push\"})) * 1e3",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum by (le) (cluster_job_route:loki_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/(ingester-zone.*|partition-ingester-.*)\", route=\"/logproto.Pusher/Push\"})) * 1e3",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "1e3 * sum(cluster_job_route:loki_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/(ingester-zone.*|partition-ingester-.*)\", route=\"/logproto.Pusher/Push\"}) / sum(cluster_job_route:loki_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/(ingester-zone.*|partition-ingester-.*)\", route=\"/logproto.Pusher/Push\"})",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -811,7 +855,11 @@
               "intervalFactor": 2,
               "legendFormat": "__auto",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per Pod Latency (p99)",
@@ -1021,7 +1069,11 @@
               "expr": "sum by (status) (\n  label_replace(label_replace(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", route=\"/logproto.Pusher/Push\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -1069,19 +1121,31 @@
               "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:loki_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/(ingester.*|partition-ingester.*)\", route=\"/logproto.Pusher/Push\"})) * 1e3",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum by (le) (cluster_job_route:loki_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/(ingester.*|partition-ingester.*)\", route=\"/logproto.Pusher/Push\"})) * 1e3",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "1e3 * sum(cluster_job_route:loki_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/(ingester.*|partition-ingester.*)\", route=\"/logproto.Pusher/Push\"}) / sum(cluster_job_route:loki_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/(ingester.*|partition-ingester.*)\", route=\"/logproto.Pusher/Push\"})",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1150,7 +1214,11 @@
               "intervalFactor": 2,
               "legendFormat": "__auto",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per Pod Latency (p99)",
@@ -1360,7 +1428,11 @@
               "expr": "sum by (status) (\n  label_replace(label_replace(rate(loki_index_request_duration_seconds_count{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"index_chunk\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -1408,19 +1480,31 @@
               "expr": "histogram_quantile(0.99, sum(rate(loki_index_request_duration_seconds_bucket{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"index_chunk\"}[$__rate_interval])) by (le)) * 1e3",
               "format": "time_series",
               "legendFormat": "99th Percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(loki_index_request_duration_seconds_bucket{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"index_chunk\"}[$__rate_interval])) by (le)) * 1e3",
               "format": "time_series",
               "legendFormat": "50th Percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(loki_index_request_duration_seconds_sum{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"index_chunk\"}[$__rate_interval])) * 1e3 / sum(rate(loki_index_request_duration_seconds_count{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"index_chunk\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1489,7 +1573,11 @@
               "intervalFactor": 2,
               "legendFormat": "__auto",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per Pod Latency (p99)",
@@ -1699,7 +1787,11 @@
               "expr": "sum by (status) (\n  label_replace(label_replace(rate(loki_boltdb_shipper_request_duration_seconds_count{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"WRITE\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -1747,19 +1839,31 @@
               "expr": "histogram_quantile(0.99, sum(rate(loki_boltdb_shipper_request_duration_seconds_bucket{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"WRITE\"}[$__rate_interval])) by (le)) * 1e3",
               "format": "time_series",
               "legendFormat": "99th Percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(loki_boltdb_shipper_request_duration_seconds_bucket{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"WRITE\"}[$__rate_interval])) by (le)) * 1e3",
               "format": "time_series",
               "legendFormat": "50th Percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(loki_boltdb_shipper_request_duration_seconds_sum{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"WRITE\"}[$__rate_interval])) * 1e3 / sum(rate(loki_boltdb_shipper_request_duration_seconds_count{cluster=~\"$cluster\",job=~\"($namespace)/(ingester.*|partition-ingester.*)\", operation=\"WRITE\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1828,7 +1932,11 @@
               "intervalFactor": 2,
               "legendFormat": "__auto",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per Pod Latency (p99)",
@@ -1852,7 +1960,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Mimir",
           "value": "mimir"
         },
@@ -1866,7 +1974,7 @@
         "type": "datasource"
       },
       {
-        "allValue": null,
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": "testing-srv3",
@@ -1874,9 +1982,9 @@
         },
         "datasource": "$datasource",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "cluster",
-        "multi": false,
+        "multi": true,
         "name": "cluster",
         "options": [],
         "query": "label_values(loki_build_info, cluster)",
@@ -1890,7 +1998,7 @@
         "useTags": false
       },
       {
-        "allValue": null,
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": "monitoring",
@@ -1898,9 +2006,9 @@
         },
         "datasource": "$datasource",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "namespace",
-        "multi": false,
+        "multi": true,
         "name": "namespace",
         "options": [],
         "query": "label_values(loki_build_info{cluster=~\"$cluster\"}, namespace)",

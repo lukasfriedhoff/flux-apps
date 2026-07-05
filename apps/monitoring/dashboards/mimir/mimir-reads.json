@@ -35,7 +35,7 @@
       "height": "175px",
       "panels": [
         {
-          "content": "<p>\n  This dashboard shows health metrics for the read path.\n  It is broken into sections for each service on the read path, and organized by the order in which the read request flows.\n  <br/>\n  Incoming queries travel from the gateway \u2192 query frontend \u2192 query scheduler \u2192 querier \u2192 ingester and/or store-gateway (depending on the time range of the query).\n  <br/>\n  For each service, there are 3 panels showing (1) requests per second to that service, (2) average, median, and p99 latency of requests to that service, and (3) p99 latency of requests to each instance of that service.\n</p>\n<p>\n  The dashboard also shows metrics for the 4 optional caches that can be deployed:\n  the query results cache, the metadata cache, the chunks cache, and the index cache.\n  <br/>\n  These panels will show \u201cno data\u201d if the caches are not deployed.\n</p>\n<p>\n  Lastly, it also includes metrics for how the ingester and store-gateway interact with object storage.\n</p>\n",
+          "content": "<p>\n  This dashboard shows health metrics for the read path.\n  It is broken into sections for each service on the read path, and organized by the order in which the read request flows.\n  <br/>\n  Incoming queries travel from the gateway → query frontend → query scheduler → querier → ingester and/or store-gateway (depending on the time range of the query).\n  <br/>\n  For each service, there are 3 panels showing (1) requests per second to that service, (2) average, median, and p99 latency of requests to that service, and (3) p99 latency of requests to each instance of that service.\n</p>\n<p>\n  The dashboard also shows metrics for the 4 optional caches that can be deployed:\n  the query results cache, the metadata cache, the chunks cache, and the index cache.\n  <br/>\n  These panels will show “no data” if the caches are not deployed.\n</p>\n<p>\n  Lastly, it also includes metrics for how the ingester and store-gateway interact with object storage.\n</p>\n",
           "datasource": null,
           "description": "",
           "id": 1,
@@ -94,13 +94,21 @@
               "expr": "(sum (rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_query\"}[$__rate_interval])) + sum(rate(cortex_prometheus_rule_evaluations_total{cluster=~\"$cluster\", job=~\"($namespace)/((ruler|ruler-zone-.*|cortex|mimir))\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum (histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_query\"}[$__rate_interval]))) + sum(rate(cortex_prometheus_rule_evaluations_total{cluster=~\"$cluster\", job=~\"($namespace)/((ruler|ruler-zone-.*|cortex|mimir))\"}[$__rate_interval]))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "70,80",
@@ -176,13 +184,21 @@
               "expr": "(sum (rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_query_range\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum (histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_query_range\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "70,80",
@@ -258,13 +274,21 @@
               "expr": "(sum (rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_labels\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum (histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_labels\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "70,80",
@@ -340,13 +364,21 @@
               "expr": "(sum (rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_label_name_values\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum (histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_label_name_values\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "70,80",
@@ -422,13 +454,21 @@
               "expr": "(sum (rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_series\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum (histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\",route=~\"(prometheus|api_prom)_api_v1_series\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "70,80",
@@ -672,13 +712,21 @@
               "expr": "(sum by (status) (\n  label_replace(label_replace(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (status) (\n  label_replace(label_replace(histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"}[$__rate_interval])),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -727,37 +775,61 @@
               "expr": "(histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"})) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum (cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"})) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_native"
+              "refId": "A_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"})) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"})) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_native"
+              "refId": "B_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(cluster_job_route:cortex_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"}) /\nsum(cluster_job_route:cortex_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"})\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"})) /\nsum(histogram_count(cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"}))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_native"
+              "refId": "C_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -807,14 +879,22 @@
               "expr": "(histogram_quantile(0.99, sum by (le,pod) (rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "exemplar": true,
               "expr": "(histogram_quantile(0.99, sum by (pod) (rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", route=~\"(prometheus|api_prom)_api_v1_.+\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per pod p99 latency",
@@ -875,13 +955,21 @@
               "expr": "(sum (histogram_count(rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Requests/s",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum (rate(cortex_query_scheduler_queue_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Requests/s",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -931,37 +1019,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_query_scheduler_queue_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_query_scheduler_queue_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_query_scheduler_queue_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval])) /\nsum(rate(cortex_query_scheduler_queue_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency (Time in Queue)",
@@ -1030,7 +1142,11 @@
               "expr": "sum(min_over_time(cortex_query_scheduler_queue_length{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__interval]))",
               "format": "time_series",
               "legendFormat": "Queue length",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Queue length",
@@ -1092,13 +1208,21 @@
               "expr": "(label_replace(histogram_quantile(0.99, sum by (additional_queue_dimensions) (rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) * 1e3, \"additional_queue_dimensions\", \"unknown\", \"additional_queue_dimensions\", \"^$\")\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th Percentile: {{ additional_queue_dimensions }}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(label_replace(histogram_quantile(0.99, sum by (le,additional_queue_dimensions) (rate(cortex_query_scheduler_queue_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) * 1e3, \"additional_queue_dimensions\", \"unknown\", \"additional_queue_dimensions\", \"^$\")\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th Percentile: {{ additional_queue_dimensions }}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "99th Percentile Latency by Expected Query Component",
@@ -1148,13 +1272,21 @@
               "expr": "(label_replace(histogram_quantile(0.50, sum by (additional_queue_dimensions) (rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) * 1e3, \"additional_queue_dimensions\", \"unknown\", \"additional_queue_dimensions\", \"^$\")\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th Percentile: {{ additional_queue_dimensions }}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(label_replace(histogram_quantile(0.50, sum by (le,additional_queue_dimensions) (rate(cortex_query_scheduler_queue_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) * 1e3, \"additional_queue_dimensions\", \"unknown\", \"additional_queue_dimensions\", \"^$\")\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th Percentile: {{ additional_queue_dimensions }}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "50th Percentile Latency by Expected Query Component",
@@ -1204,13 +1336,21 @@
               "expr": "(label_replace(1e3 * sum by (additional_queue_dimensions) (histogram_sum(rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))) /\nsum by (additional_queue_dimensions) (histogram_count(rate(cortex_query_scheduler_queue_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval])))\n, \"additional_queue_dimensions\", \"unknown\", \"additional_queue_dimensions\", \"^$\")\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average: {{ additional_queue_dimensions }}",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(label_replace(1e3 * sum by (additional_queue_dimensions) (rate(cortex_query_scheduler_queue_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval])) /\nsum by (additional_queue_dimensions) (rate(cortex_query_scheduler_queue_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"}[$__rate_interval]))\n, \"additional_queue_dimensions\", \"unknown\", \"additional_queue_dimensions\", \"^$\")\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average: {{ additional_queue_dimensions }}",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Average Latency by Expected Query Component",
@@ -1271,13 +1411,21 @@
               "expr": "sum by(query_component) (cortex_query_scheduler_querier_inflight_requests{quantile=\"0.99\", cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"})",
               "format": "time_series",
               "legendFormat": "99th Percentile Inflight Requests: {{query_component}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(cortex_query_scheduler_connected_querier_clients{cluster=~\"$cluster\", job=~\"($namespace)/((query-scheduler.*))\"})",
               "format": "time_series",
               "legendFormat": "Total Connected Queriers",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "99th Percentile Inflight Requests by Query Component vs. Total Connected Queriers",
@@ -1337,7 +1485,11 @@
               "expr": "sum (\n  rate(thanos_cache_operations_total{name=\"frontend-cache\", cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\"}[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "Requests/s",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -1386,37 +1538,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", name=\"frontend-cache\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", name=\"frontend-cache\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", name=\"frontend-cache\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", name=\"frontend-cache\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", name=\"frontend-cache\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", name=\"frontend-cache\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_cache_operation_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", name=\"frontend-cache\"}[$__rate_interval])) /\nsum(rate(thanos_cache_operation_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((query-frontend.*|cortex|mimir))\", name=\"frontend-cache\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1445,7 +1621,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Cache \u2013 query results",
+      "title": "Cache – query results",
       "titleSize": "h6"
     },
     {
@@ -1645,13 +1821,21 @@
               "expr": "(sum by (status) (\n  label_replace(label_replace(rate(cortex_querier_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (status) (\n  label_replace(label_replace(histogram_count(rate(cortex_querier_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"}[$__rate_interval])),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -1700,37 +1884,61 @@
               "expr": "(histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_querier_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"})) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum (cluster_job_route:cortex_querier_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"})) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_native"
+              "refId": "A_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_querier_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"})) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (cluster_job_route:cortex_querier_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"})) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_native"
+              "refId": "B_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(cluster_job_route:cortex_querier_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"}) /\nsum(cluster_job_route:cortex_querier_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"})\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(cluster_job_route:cortex_querier_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"})) /\nsum(histogram_count(cluster_job_route:cortex_querier_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"}))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_native"
+              "refId": "C_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1780,14 +1988,22 @@
               "expr": "(histogram_quantile(0.99, sum by (le,pod) (rate(cortex_querier_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "exemplar": true,
               "expr": "(histogram_quantile(0.99, sum by (pod) (rate(cortex_querier_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", route=~\"((prometheus|api_prom)_api_v1_.+|querierpb.EvaluateQueryRequest)\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per pod p99 latency",
@@ -1999,13 +2215,21 @@
               "expr": "(sum by (status) (\n  label_replace(label_replace(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\",route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (status) (\n  label_replace(label_replace(histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\",route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -2055,37 +2279,61 @@
               "expr": "(histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"})) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum (cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"})) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_native"
+              "refId": "A_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"})) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"})) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_native"
+              "refId": "B_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(cluster_job_route:cortex_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}) /\nsum(cluster_job_route:cortex_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"})\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"})) /\nsum(histogram_count(cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_native"
+              "refId": "C_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -2136,14 +2384,22 @@
               "expr": "(histogram_quantile(0.99, sum by (le,pod) (rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "exemplar": true,
               "expr": "(histogram_quantile(0.99, sum by (pod) (rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir))\", route=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per ingester pod p99 latency",
@@ -2355,13 +2611,21 @@
               "expr": "(sum by (status) (\n  label_replace(label_replace(rate(cortex_ingester_client_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (status) (\n  label_replace(label_replace(histogram_count(rate(cortex_ingester_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -2411,37 +2675,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_ingester_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_ingester_client_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_ingester_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_ingester_client_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_ingester_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_ingester_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_ingester_client_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])) /\nsum(rate(cortex_ingester_client_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -2510,14 +2798,22 @@
               "expr": "(histogram_quantile(0.99, sum by (le,pod) (rate(cortex_ingester_client_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "exemplar": true,
               "expr": "(histogram_quantile(0.99, sum by (pod) (rate(cortex_ingester_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/cortex.Ingester/(QueryStream|QueryExemplars|LabelValues|LabelNames|UserStats|AllUserStats|MetricsForLabelMatchers|MetricsMetadata|LabelNamesAndValues|LabelValuesCardinality|ActiveSeries)\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per querier pod p99 latency",
@@ -2729,13 +3025,21 @@
               "expr": "(sum by (status) (\n  label_replace(label_replace(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",route=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (status) (\n  label_replace(label_replace(histogram_count(rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",route=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval])),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -2785,37 +3089,61 @@
               "expr": "(histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"})) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum (cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"})) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_native"
+              "refId": "A_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"})) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"})) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_native"
+              "refId": "B_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(cluster_job_route:cortex_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"}) /\nsum(cluster_job_route:cortex_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"})\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"})) /\nsum(histogram_count(cluster_job_route:cortex_request_duration_seconds:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"}))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_native"
+              "refId": "C_native",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -2866,14 +3194,22 @@
               "expr": "(histogram_quantile(0.99, sum by (le,pod) (rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "exemplar": true,
               "expr": "(histogram_quantile(0.99, sum by (pod) (rate(cortex_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", route=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per store-gateway pod p99 latency",
@@ -3085,13 +3421,21 @@
               "expr": "(sum by (status) (\n  label_replace(label_replace(rate(cortex_storegateway_client_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (status) (\n  label_replace(label_replace(histogram_count(rate(cortex_storegateway_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval])),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -3141,37 +3485,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_storegateway_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_storegateway_client_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_storegateway_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_storegateway_client_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_storegateway_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_storegateway_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_storegateway_client_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval])) /\nsum(rate(cortex_storegateway_client_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -3240,14 +3608,22 @@
               "expr": "(histogram_quantile(0.99, sum by (le,pod) (rate(cortex_storegateway_client_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "exemplar": true,
               "expr": "(histogram_quantile(0.99, sum by (pod) (rate(cortex_storegateway_client_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=~\"/gatewaypb.StoreGateway/.*\"}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Per querier pod p99 latency",
@@ -3357,19 +3733,31 @@
               "expr": "max by (scaletargetref_name) (\n  kube_horizontalpodautoscaler_spec_max_replicas{cluster=~\"$cluster\", namespace=~\"$namespace\", horizontalpodautoscaler=~\"keda-hpa-(?:mimir-)?querier.*\"}\n  # Add the scaletargetref_name label which is more readable than \"kube-hpa-...\"\n  * on (cluster, namespace, horizontalpodautoscaler) group_left (scaletargetref_name)\n    group by (cluster, namespace, horizontalpodautoscaler, scaletargetref_name) (kube_horizontalpodautoscaler_info{cluster=~\"$cluster\", namespace=~\"$namespace\", horizontalpodautoscaler=~\"keda-hpa-(?:mimir-)?querier.*\"})\n)\n",
               "format": "time_series",
               "legendFormat": "Max {{ scaletargetref_name }}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "max by (scaletargetref_name) (\n  kube_horizontalpodautoscaler_status_current_replicas{cluster=~\"$cluster\", namespace=~\"$namespace\", horizontalpodautoscaler=~\"keda-hpa-(?:mimir-)?querier.*\"}\n  # Add the scaletargetref_name label which is more readable than \"kube-hpa-...\"\n  * on (cluster, namespace, horizontalpodautoscaler) group_left (scaletargetref_name)\n    group by (cluster, namespace, horizontalpodautoscaler, scaletargetref_name) (kube_horizontalpodautoscaler_info{cluster=~\"$cluster\", namespace=~\"$namespace\", horizontalpodautoscaler=~\"keda-hpa-(?:mimir-)?querier.*\"})\n)\n",
               "format": "time_series",
               "legendFormat": "Current {{ scaletargetref_name }}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "max by (scaletargetref_name) (\n  kube_horizontalpodautoscaler_spec_min_replicas{cluster=~\"$cluster\", namespace=~\"$namespace\", horizontalpodautoscaler=~\"keda-hpa-(?:mimir-)?querier.*\"}\n  # Add the scaletargetref_name label which is more readable than \"kube-hpa-...\"\n  * on (cluster, namespace, horizontalpodautoscaler) group_left (scaletargetref_name)\n    group by (cluster, namespace, horizontalpodautoscaler, scaletargetref_name) (kube_horizontalpodautoscaler_info{cluster=~\"$cluster\", namespace=~\"$namespace\", horizontalpodautoscaler=~\"keda-hpa-(?:mimir-)?querier.*\"})\n)\n",
               "format": "time_series",
               "legendFormat": "Min {{ scaletargetref_name }}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Replicas",
@@ -3418,7 +3806,11 @@
               "expr": "sum by (scaler) (\n  label_replace(\n    keda_scaler_metrics_value{cluster=~\"$cluster\", exported_namespace=~\"$namespace\"},\n    \"namespace\", \"$1\", \"exported_namespace\", \"(.*)\"\n  )\n  /\n  on(cluster, namespace, scaledObject, metric) group_left\n  max by (cluster, namespace, scaledObject, metric) (\n    label_replace(label_replace(\n        kube_horizontalpodautoscaler_spec_target_metric{cluster=~\"$cluster\", namespace=~\"$namespace\", horizontalpodautoscaler=~\"keda-hpa-(?:mimir-)?querier.*\"},\n        \"metric\", \"$1\", \"metric_name\", \"(.+)\"\n    ), \"scaledObject\", \"$1\", \"horizontalpodautoscaler\", \"keda-hpa-(?:mimir-)?(.*)\")\n  )\n)\n",
               "format": "time_series",
               "legendFormat": "{{ scaler }}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Scaling metric (desired replicas)",
@@ -3467,7 +3859,11 @@
               "expr": "sum by(cluster, namespace, metric, scaledObject, scaler) (\n  label_replace(\n    rate(keda_scaler_errors[$__rate_interval]),\n    \"namespace\", \"$1\", \"exported_namespace\", \"(.+)\"\n  )\n) +\non(cluster, namespace, metric, scaledObject) group_left\n  # Using `max by ()` so that series churn doesn't break the promQL join\n  max by (cluster, namespace, metric, scaledObject) (\n    label_replace(\n      label_replace(\n          kube_horizontalpodautoscaler_spec_target_metric{cluster=~\"$cluster\", namespace=~\"$namespace\", horizontalpodautoscaler=~\"keda-hpa-(?:mimir-)?querier.*\"} * 0,\n          \"scaledObject\", \"$1\", \"horizontalpodautoscaler\", \"keda-hpa-(?:mimir-)?(.*)\"\n      ),\n      \"metric\", \"$1\", \"metric_name\", \"(.+)\"\n    )\n  )\n",
               "format": "time_series",
               "legendFormat": "{{scaler}} failures",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Autoscaler failures rate",
@@ -3478,7 +3874,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Querier \u2013 autoscaling",
+      "title": "Querier – autoscaling",
       "titleSize": "h6"
     },
     {
@@ -3678,13 +4074,21 @@
               "expr": "(sum by (status) (\n  label_replace(label_replace(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(sum by (status) (\n  label_replace(label_replace(histogram_count(rate(cortex_kv_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval])),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z_]+)\"))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -3733,37 +4137,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(cortex_kv_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(cortex_kv_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(cortex_kv_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_kv_request_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(cortex_kv_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval])) /\nsum(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", kv_name=~\"store-gateway\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -3792,7 +4220,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Store-gateway \u2013 key-value store for store-gateways ring",
+      "title": "Store-gateway – key-value store for store-gateways ring",
       "titleSize": "h6"
     },
     {
@@ -3841,7 +4269,11 @@
               "expr": "sum by(operation) (\n  rate(\n    thanos_cache_operations_total{\n      component=\"store-gateway\",\n      name=\"index-cache\",\n      cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"\n    }[$__rate_interval]\n  )\n)\n",
               "format": "time_series",
               "legendFormat": "{{operation}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -3890,37 +4322,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"index-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"index-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"index-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"index-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"index-cache\"\n}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"index-cache\"\n}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_cache_operation_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"index-cache\"\n}[$__rate_interval])) /\nsum(rate(thanos_cache_operation_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"index-cache\"\n}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency (getmulti)",
@@ -3987,7 +4443,11 @@
               "expr": "sum by(item_type) (\n  rate(\n    thanos_store_index_cache_hits_total{\n      component=\"store-gateway\",\n      cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"\n    }[$__rate_interval]\n  )\n)\n/\nsum by(item_type) (\n  rate(\n    thanos_store_index_cache_requests_total{\n      component=\"store-gateway\",\n      cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\"\n    }[$__rate_interval]\n  )\n)\n",
               "format": "time_series",
               "legendFormat": "{{item_type}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Hit ratio",
@@ -3998,7 +4458,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Memcached \u2013 block index cache (store-gateway accesses)",
+      "title": "Memcached – block index cache (store-gateway accesses)",
       "titleSize": "h6"
     },
     {
@@ -4047,7 +4507,11 @@
               "expr": "sum by(operation) (\n  rate(thanos_cache_operations_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",\n    component=\"store-gateway\",\n    name=\"chunks-cache\"\n  }[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "{{operation}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -4096,37 +4560,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"chunks-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"chunks-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"chunks-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"chunks-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"chunks-cache\"\n}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"chunks-cache\"\n}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_cache_operation_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"chunks-cache\"\n}[$__rate_interval])) /\nsum(rate(thanos_cache_operation_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"chunks-cache\"\n}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency (getmulti)",
@@ -4192,7 +4680,11 @@
               "expr": "sum(\n  rate(thanos_cache_hits_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",\n    component=\"store-gateway\",\n    name=\"chunks-cache\"\n  }[$__rate_interval])\n)\n/\nsum(\n  rate(thanos_cache_requests_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",\n    component=\"store-gateway\",\n    name=\"chunks-cache\"\n  }[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "items",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Hit ratio",
@@ -4203,7 +4695,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Memcached \u2013 chunks cache (store-gateway accesses)",
+      "title": "Memcached – chunks cache (store-gateway accesses)",
       "titleSize": "h6"
     },
     {
@@ -4252,7 +4744,11 @@
               "expr": "sum by(operation) (\n  rate(thanos_cache_operations_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",\n    component=\"store-gateway\",\n    name=\"metadata-cache\"\n  }[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "{{operation}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -4301,37 +4797,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"metadata-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"metadata-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"metadata-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"metadata-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"metadata-cache\"\n}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"metadata-cache\"\n}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_cache_operation_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"metadata-cache\"\n}[$__rate_interval])) /\nsum(rate(thanos_cache_operation_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\", operation=\"getmulti\", component=\"store-gateway\", name=\"metadata-cache\"\n}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency (getmulti)",
@@ -4397,7 +4917,11 @@
               "expr": "sum(\n  rate(thanos_cache_hits_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",\n    component=\"store-gateway\",\n    name=\"metadata-cache\"\n  }[$__rate_interval])\n)\n/\nsum(\n  rate(thanos_cache_requests_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((store-gateway.*|cortex|mimir))\",\n    component=\"store-gateway\",\n    name=\"metadata-cache\"\n  }[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "items",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Hit ratio",
@@ -4408,7 +4932,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Memcached \u2013 metadata cache (store-gateway accesses)",
+      "title": "Memcached – metadata cache (store-gateway accesses)",
       "titleSize": "h6"
     },
     {
@@ -4457,7 +4981,11 @@
               "expr": "sum by(operation) (\n  rate(thanos_cache_operations_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\",\n    component=\"querier\",\n    name=\"metadata-cache\"\n  }[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "{{operation}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests / sec",
@@ -4506,37 +5034,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=\"getmulti\", component=\"querier\", name=\"metadata-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=\"getmulti\", component=\"querier\", name=\"metadata-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=\"getmulti\", component=\"querier\", name=\"metadata-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_cache_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=\"getmulti\", component=\"querier\", name=\"metadata-cache\"\n}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=\"getmulti\", component=\"querier\", name=\"metadata-cache\"\n}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_cache_operation_duration_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=\"getmulti\", component=\"querier\", name=\"metadata-cache\"\n}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_cache_operation_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=\"getmulti\", component=\"querier\", name=\"metadata-cache\"\n}[$__rate_interval])) /\nsum(rate(thanos_cache_operation_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\", operation=\"getmulti\", component=\"querier\", name=\"metadata-cache\"\n}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency (getmulti)",
@@ -4602,7 +5154,11 @@
               "expr": "sum(\n  rate(thanos_cache_hits_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\",\n    component=\"querier\",\n    name=\"metadata-cache\"\n  }[$__rate_interval])\n)\n/\nsum(\n  rate(thanos_cache_requests_total{\n    cluster=~\"$cluster\", job=~\"($namespace)/((querier.*|cortex|mimir))\",\n    component=\"querier\",\n    name=\"metadata-cache\"\n  }[$__rate_interval])\n)\n",
               "format": "time_series",
               "legendFormat": "items",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Hit ratio",
@@ -4613,7 +5169,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Memcached \u2013 metadata cache (querier accesses)",
+      "title": "Memcached – metadata cache (querier accesses)",
       "titleSize": "h6"
     },
     {
@@ -4662,7 +5218,11 @@
               "expr": "sum by(operation) (rate(thanos_objstore_bucket_operations_total{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "{{operation}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Operations / sec",
@@ -4695,7 +5255,11 @@
               "expr": "sum by(operation) (rate(thanos_objstore_bucket_operation_failures_total{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\"}[$__rate_interval])) / sum by(operation) (rate(thanos_objstore_bucket_operations_total{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\"}[$__rate_interval])) >= 0",
               "format": "time_series",
               "legendFormat": "{{operation}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Error rate",
@@ -4744,37 +5308,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"attributes\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"attributes\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"attributes\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"attributes\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"attributes\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"attributes\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"attributes\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"attributes\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Attributes",
@@ -4841,37 +5429,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"exists\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"exists\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"exists\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"exists\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"exists\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"exists\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"exists\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"exists\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Exists",
@@ -4950,37 +5562,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Get",
@@ -5047,37 +5683,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get_range\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get_range\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get_range\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get_range\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get_range\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get_range\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get_range\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"get_range\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: GetRange",
@@ -5144,37 +5804,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"upload\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"upload\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"upload\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"upload\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"upload\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"upload\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"upload\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"upload\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Upload",
@@ -5241,37 +5925,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"delete\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"delete\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"delete\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"delete\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"delete\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"delete\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"delete\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"store-gateway\",operation=\"delete\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Delete",
@@ -5349,7 +6057,11 @@
               "expr": "sum by(operation) (rate(thanos_objstore_bucket_operations_total{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "{{operation}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Operations / sec",
@@ -5382,7 +6094,11 @@
               "expr": "sum by(operation) (rate(thanos_objstore_bucket_operation_failures_total{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\"}[$__rate_interval])) / sum by(operation) (rate(thanos_objstore_bucket_operations_total{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\"}[$__rate_interval])) >= 0",
               "format": "time_series",
               "legendFormat": "{{operation}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Error rate",
@@ -5431,37 +6147,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"attributes\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"attributes\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"attributes\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"attributes\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"attributes\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"attributes\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"attributes\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"attributes\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Attributes",
@@ -5528,37 +6268,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"exists\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"exists\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"exists\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"exists\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"exists\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"exists\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"exists\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"exists\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Exists",
@@ -5637,37 +6401,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Get",
@@ -5734,37 +6522,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get_range\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get_range\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get_range\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get_range\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get_range\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get_range\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get_range\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"get_range\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: GetRange",
@@ -5831,37 +6643,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"upload\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"upload\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"upload\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"upload\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"upload\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"upload\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"upload\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"upload\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Upload",
@@ -5928,37 +6764,61 @@
               "expr": "(histogram_quantile(0.99, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"delete\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.99, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"delete\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "99th percentile",
-              "refId": "A_classic"
+              "refId": "A_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum (rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"delete\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(histogram_quantile(0.50, sum by (le) (rate(thanos_objstore_bucket_operation_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"delete\"}[$__rate_interval]))) * 1e3) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "50th percentile",
-              "refId": "B_classic"
+              "refId": "B_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(histogram_sum(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"delete\"}[$__rate_interval]))) /\nsum(histogram_count(rate(thanos_objstore_bucket_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"delete\"}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C"
+              "refId": "C",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "(1e3 * sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"delete\"}[$__rate_interval])) /\nsum(rate(thanos_objstore_bucket_operation_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\",component=\"querier\",operation=\"delete\"}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
               "format": "time_series",
               "legendFormat": "Average",
-              "refId": "C_classic"
+              "refId": "C_classic",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency of op: Delete",
@@ -6000,7 +6860,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Mimir",
           "value": "mimir"
         },

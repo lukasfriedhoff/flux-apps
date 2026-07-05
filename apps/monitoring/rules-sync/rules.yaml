@@ -616,6 +616,50 @@ groups:
         record: node:node_cpu_utilization:ratio_rate5m
       - expr: "avg by (cluster) (\n  node:node_cpu_utilization:ratio_rate5m\n)\n"
         record: cluster:node_cpu:ratio_rate5m
+      - expr: "label_replace(\n  node:node_cpu_utilization:ratio_rate5m,\n  \"instance\", \"$1\", \"node\", \"(.*)\"\n)\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_cpu_utilisation:rate5m
+      - expr: "label_replace(\n  node:node_num_cpu:sum,\n  \"instance\", \"$1\", \"node\", \"(.*)\"\n)\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_num_cpu:sum
+      - expr: "label_replace(\n  (\n    label_replace(node_load1{job=\"integrations/node_exporter\"}, \"node\", \"$1\", \"instance\", \"(.*)\")\n      / on(cluster, node) node:node_num_cpu:sum\n  ),\n  \"instance\", \"$1\", \"node\", \"(.*)\"\n)\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_load1_per_cpu:ratio
+      - expr: "1 - (\n  node_memory_MemAvailable_bytes{job=\"integrations/node_exporter\"}\n    / node_memory_MemTotal_bytes{job=\"integrations/node_exporter\"}\n)\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_memory_utilisation:ratio
+      - expr: "rate(node_vmstat_pgmajfault{job=\"integrations/node_exporter\"}[5m])\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_vmstat_pgmajfault:rate5m
+      - expr: "rate(node_network_receive_bytes_total{job=\"integrations/node_exporter\", device!=\"lo\"}[5m])\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_network_receive_bytes_excluding_lo:rate5m
+      - expr: "rate(node_network_transmit_bytes_total{job=\"integrations/node_exporter\", device!=\"lo\"}[5m])\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_network_transmit_bytes_excluding_lo:rate5m
+      - expr: "rate(node_network_receive_drop_total{job=\"integrations/node_exporter\", device!=\"lo\"}[5m])\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_network_receive_drop_excluding_lo:rate5m
+      - expr: "rate(node_network_transmit_drop_total{job=\"integrations/node_exporter\", device!=\"lo\"}[5m])\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance:node_network_transmit_drop_excluding_lo:rate5m
+      - expr: "rate(node_disk_io_time_seconds_total{job=\"integrations/node_exporter\", device!=\"\"}[5m])\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance_device:node_disk_io_time_seconds:rate5m
+      - expr: "rate(node_disk_io_time_weighted_seconds_total{job=\"integrations/node_exporter\", device!=\"\"}[5m])\n"
+        labels:
+          job: integrations/node_exporter
+        record: instance_device:node_disk_io_time_weighted_seconds:rate5m
   - name: kubelet.rules
     rules:
       - expr: "histogram_quantile(\n  0.99,\n  sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job=\"\

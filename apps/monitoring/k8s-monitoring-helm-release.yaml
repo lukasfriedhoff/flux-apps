@@ -49,10 +49,10 @@ spec:
                 path: /spec/template/spec/containers/0/resources
                 value:
                   requests:
-                    cpu: "50m"
+                    cpu: "100m"
                     memory: "96Mi"
                   limits:
-                    cpu: "300m"
+                    cpu: "1000m"
                     memory: "256Mi"
           - target:
               kind: StatefulSet
@@ -155,10 +155,10 @@ spec:
                 path: /spec/template/spec/containers/0/resources
                 value:
                   requests:
-                    cpu: "50m"
+                    cpu: "100m"
                     memory: "96Mi"
                   limits:
-                    cpu: "300m"
+                    cpu: "1000m"
                     memory: "256Mi"
           - target:
               kind: DaemonSet
@@ -169,8 +169,8 @@ spec:
                 path: /spec/template/spec/containers/0/resources
                 value:
                   requests:
-                    cpu: "25m"
+                    cpu: "50m"
                     memory: "64Mi"
                   limits:
-                    cpu: "200m"
+                    cpu: "1000m"
                     memory: "192Mi"

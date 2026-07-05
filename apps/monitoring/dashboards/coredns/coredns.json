@@ -77,7 +77,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "",
@@ -154,7 +158,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "",
@@ -212,14 +220,22 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{rcode}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(coredns_forward_responses_total{job=\"kube-dns\",pod=~\"$instance\"}[5m])) by (rcode)",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "forward {{rcode}}",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -300,14 +316,22 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{server}} {{zone}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.99, sum(rate(coredns_forward_request_duration_seconds_bucket{job=\"kube-dns\",pod=~\"$instance\"}[5m])) by (to, le))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "forward {{to}}",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -401,7 +425,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -482,7 +510,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{zone}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -563,7 +595,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{to}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -676,7 +712,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "",
@@ -734,14 +774,22 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(coredns_cache_misses_total{job=\"kube-dns\",pod=~\"$instance\"}[5m]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "misses",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -822,7 +870,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -935,7 +987,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": "",
@@ -993,14 +1049,22 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "99th {{server}} {{zone}} {{proto}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_request_size_bytes_bucket{job=\"kube-dns\",pod=~\"$instance\"}[5m])) by (server, zone, proto, le))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "50th {{server}} {{zone}} {{proto}}",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -1081,14 +1145,22 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "99th {{server}} {{zone}} {{proto}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_response_size_bytes_bucket{job=\"kube-dns\",pod=~\"$instance\"}[5m])) by (server, zone, proto, le))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "50th {{server}} {{zone}} {{proto}}",
-              "refId": "B"
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -1182,7 +1254,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{pod}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -1263,7 +1339,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{pod}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -1344,7 +1424,11 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{pod}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "thresholds": [],
@@ -1402,8 +1486,9 @@
     "list": [
       {
         "current": {
-          "text": "default",
-          "value": "default"
+          "selected": false,
+          "text": "Mimir",
+          "value": "mimir"
         },
         "hide": 0,
         "label": "Data Source",
@@ -1415,13 +1500,17 @@
         "type": "datasource"
       },
       {
-        "allValue": null,
-        "current": {},
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
         "label": null,
-        "multi": false,
+        "multi": true,
         "name": "instance",
         "options": [],
         "query": "label_values(coredns_build_info{job=\"kube-dns\"}, pod)",

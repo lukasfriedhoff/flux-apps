@@ -39,7 +39,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "mimir"
       },
       "description": "",
       "fieldConfig": {
@@ -109,7 +109,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "mimir"
       },
       "description": "",
       "fieldConfig": {
@@ -175,7 +175,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "mimir"
       },
       "description": "",
       "fieldConfig": {
@@ -245,7 +245,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "mimir"
       },
       "description": "",
       "fieldConfig": {
@@ -309,7 +309,7 @@
       "type": "stat"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "mimir",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -365,14 +365,18 @@
           "expr": "sum(rate(gotk_reconcile_duration_seconds_sum{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"Kustomization|HelmRelease\"}[5m])) by (kind)\n/\n  sum(rate(gotk_reconcile_duration_seconds_count{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"Kustomization|HelmRelease\"}[5m])) by (kind)",
           "interval": "",
           "legendFormat": "{{kind}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "title": "Reconciler ops avg. duration",
       "type": "bargauge"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "mimir",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -428,7 +432,11 @@
           "expr": "sum(rate(gotk_reconcile_duration_seconds_sum{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\"}[5m])) by (kind)\n/\n  sum(rate(gotk_reconcile_duration_seconds_count{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\"}[5m])) by (kind)",
           "interval": "",
           "legendFormat": "{{kind}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "title": "Source ops avg. duration",
@@ -436,7 +444,7 @@
     },
     {
       "collapsed": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "mimir",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -451,7 +459,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "mimir"
       },
       "description": "",
       "fieldConfig": {
@@ -627,7 +635,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "mimir"
       },
       "description": "",
       "fieldConfig": {
@@ -825,7 +833,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "mimir"
       },
       "description": "",
       "fieldConfig": {
@@ -984,7 +992,7 @@
     },
     {
       "collapsed": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "mimir",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -997,7 +1005,7 @@
       "type": "row"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "mimir",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1122,14 +1130,18 @@
           "hide": false,
           "interval": "",
           "legendFormat": "{{kind}}/{{name}}",
-          "refId": "B"
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "title": "Cluster reconciliation duration",
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "mimir",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1254,7 +1266,11 @@
           "hide": false,
           "interval": "",
           "legendFormat": "{{kind}}/{{name}}",
-          "refId": "B"
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          }
         }
       ],
       "title": "Source acquisition duration",
@@ -1341,8 +1357,8 @@
       {
         "current": {
           "selected": false,
-          "text": "Prometheus",
-          "value": "Prometheus"
+          "text": "Mimir",
+          "value": "mimir"
         },
         "hide": 0,
         "includeAll": false,

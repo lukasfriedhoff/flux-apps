@@ -81,7 +81,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -132,7 +136,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/cortex-gw(-internal)?\",route=~\"api_.*\"}[$__rate_interval])) by (le,route)) * 1e3",
@@ -141,7 +149,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/cortex-gw(-internal)?\",route=~\"api_.*\"}[$__rate_interval])) by (route) * 1e3 / sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/cortex-gw(-internal)?\",route=~\"api_.*\"}[$__rate_interval])) by (route)",
@@ -150,7 +162,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -241,7 +257,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -292,7 +312,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/query-frontend\",route=~\"api_.*\"}[$__rate_interval])) by (le,route)) * 1e3",
@@ -301,7 +325,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/query-frontend\",route=~\"api_.*\"}[$__rate_interval])) by (route) * 1e3 / sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/query-frontend\",route=~\"api_.*\"}[$__rate_interval])) by (route)",
@@ -310,7 +338,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -401,7 +433,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -452,7 +488,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/querier\",route=~\"querier_api_.*\"}[$__rate_interval])) by (le,route)) * 1e3",
@@ -461,7 +501,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/querier\",route=~\"querier_api_.*\"}[$__rate_interval])) by (route) * 1e3 / sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/querier\",route=~\"querier_api_.*\"}[$__rate_interval])) by (route)",
@@ -470,7 +514,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -539,7 +587,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_querier_worker_request_executed_total_bucket{cluster=~\"$cluster\", job=~\"($namespace)/querier\",route=~\"querier_api_.*\"}[$__rate_interval])) by (le,route)) * 1e3",
@@ -548,7 +600,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_querier_worker_request_executed_total_sum{cluster=~\"$cluster\", job=~\"($namespace)/querier\",route=~\"querier_api_.*\"}[$__rate_interval])) by (route) * 1e3 / sum(rate(tempo_querier_worker_request_executed_total_count{cluster=~\"$cluster\", job=~\"($namespace)/querier\",route=~\"querier_api_.*\"}[$__rate_interval])) by (route)",
@@ -557,7 +613,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Requests Executed",
@@ -648,7 +708,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -699,7 +763,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_request_duration_seconds_bucket{cluster=~\"$cluster\", container=\"live-store\",route=~\"/tempopb.Querier/.*\"}[$__rate_interval])) by (le,route)) * 1e3",
@@ -708,7 +776,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_request_duration_seconds_sum{cluster=~\"$cluster\", container=\"live-store\",route=~\"/tempopb.Querier/.*\"}[$__rate_interval])) by (route) * 1e3 / sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\", container=\"live-store\",route=~\"/tempopb.Querier/.*\"}[$__rate_interval])) by (route)",
@@ -717,7 +789,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -783,7 +859,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Pending Queue Length",
@@ -831,7 +911,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Completed Blocks",
@@ -894,7 +978,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{partition}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Lag of records by partition",
@@ -945,7 +1033,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{partition}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Lag by partition (sec)",
@@ -1018,7 +1110,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -1069,7 +1165,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempo_memcache_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/querier\",method=~\"Memcache.Get|Memcache.GetMulti\"}[$__rate_interval])) by (le,)) * 1e3",
@@ -1078,7 +1178,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempo_memcache_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/querier\",method=~\"Memcache.Get|Memcache.GetMulti\"}[$__rate_interval])) by () * 1e3 / sum(rate(tempo_memcache_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/querier\",method=~\"Memcache.Get|Memcache.GetMulti\"}[$__rate_interval])) by ()",
@@ -1087,7 +1191,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1178,7 +1286,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{status}}",
-              "refId": "A"
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "QPS",
@@ -1229,7 +1341,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 99th",
               "refId": "A",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "histogram_quantile(0.50, sum(rate(tempodb_backend_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/querier\",operation=\"GET\"}[$__rate_interval])) by (le,)) * 1e3",
@@ -1238,7 +1354,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} 50th",
               "refId": "B",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "sum(rate(tempodb_backend_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/querier\",operation=\"GET\"}[$__rate_interval])) by () * 1e3 / sum(rate(tempodb_backend_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/querier\",operation=\"GET\"}[$__rate_interval])) by ()",
@@ -1247,7 +1367,11 @@
               "intervalFactor": 2,
               "legendFormat": "{{route}} Average",
               "refId": "C",
-              "step": 10
+              "step": 10,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Latency",
@@ -1289,7 +1413,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Mimir",
           "value": "mimir"
         },

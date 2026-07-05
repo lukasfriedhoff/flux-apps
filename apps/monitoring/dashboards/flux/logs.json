@@ -6,7 +6,12 @@
       "description": "",
       "type": "datasource",
       "pluginId": "loki",
-      "pluginName": "Loki"
+      "pluginName": "Loki",
+      "current": {
+        "selected": false,
+        "text": "Loki",
+        "value": "loki"
+      }
     }
   ],
   "annotations": {
@@ -55,7 +60,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": "${DS_LOKI}",
+      "datasource": "loki",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -127,7 +132,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_LOKI}",
+          "datasource": "loki",
           "expr": "sum(count_over_time({namespace=~\"$namespace\", stream=~\"$stream\", app =~\"$controller\"} | json | __error__!=\"JSONParserErr\" | level=~\"$level\" |= \"$query\" [$__interval]))",
           "instant": false,
           "legendFormat": "Log count",
@@ -138,7 +143,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_LOKI}",
+      "datasource": "loki",
       "description": "Logs from services running in Kubernetes",
       "gridPos": {
         "h": 25,
@@ -159,7 +164,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_LOKI}",
+          "datasource": "loki",
           "expr": "{namespace=~\"$namespace\", stream=~\"$stream\", app =~\"$controller\"} | json | __error__!=\"JSONParserErr\" | level=~\"$level\" |= \"$query\"",
           "refId": "A"
         }
@@ -230,7 +235,7 @@
         "type": "custom"
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": [
@@ -240,7 +245,7 @@
             "$__all"
           ]
         },
-        "datasource": "${DS_LOKI}",
+        "datasource": "loki",
         "definition": "label_values(app)",
         "hide": 0,
         "includeAll": true,
@@ -265,7 +270,7 @@
             "flux-system"
           ]
         },
-        "datasource": "${DS_LOKI}",
+        "datasource": "loki",
         "definition": "label_values(namespace)",
         "hide": 0,
         "includeAll": true,
@@ -286,7 +291,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "${DS_LOKI}",
+        "datasource": "loki",
         "definition": "label_values(stream)",
         "hide": 0,
         "includeAll": true,
@@ -304,7 +309,7 @@
         "current": {
           "selected": false,
           "text": "Loki",
-          "value": "Loki"
+          "value": "loki"
         },
         "hide": 0,
         "includeAll": false,

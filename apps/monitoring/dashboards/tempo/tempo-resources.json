@@ -80,21 +80,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"cortex-gw(-internal)?\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"cortex-gw(-internal)?\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"cortex-gw(-internal)?\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -154,21 +166,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"cortex-gw(-internal)?\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"cortex-gw(-internal)?\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -234,7 +258,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -324,21 +352,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"distributor\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"distributor\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"distributor\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -398,21 +438,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"distributor\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"distributor\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -478,7 +530,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -568,21 +624,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -642,21 +710,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -722,7 +802,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -812,21 +896,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"metrics-generator\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"metrics-generator\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"metrics-generator\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -886,21 +982,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"metrics-generator\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"metrics-generator\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -966,7 +1074,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -1056,21 +1168,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-frontend\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-frontend\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-frontend\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -1130,21 +1254,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-frontend\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-frontend\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -1210,7 +1346,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -1300,21 +1440,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"querier\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"querier\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"querier\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -1374,21 +1526,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"querier\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"querier\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -1454,7 +1618,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -1544,21 +1712,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"compactor\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"compactor\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"compactor\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -1618,21 +1798,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"compactor\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"compactor\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -1698,7 +1890,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -1788,21 +1984,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"memcached\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"memcached\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"memcached\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -1862,21 +2070,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"memcached\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"memcached\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -1966,21 +2186,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-scheduler\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-scheduler\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-scheduler\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -2040,21 +2272,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-scheduler\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-scheduler\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -2120,7 +2364,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -2210,21 +2458,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-worker\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-worker\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-worker\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -2284,21 +2544,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-worker\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"backend-worker\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -2364,7 +2636,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -2454,21 +2730,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"block-builder\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"block-builder\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"block-builder\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -2528,21 +2816,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"block-builder\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"block-builder\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -2608,7 +2908,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -2698,21 +3002,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\"})",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\", resource=\"cpu\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "CPU",
@@ -2772,21 +3088,33 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{pod}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "limit",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             },
             {
               "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"live-store\", resource=\"memory\"} > 0)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "request",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (workingset)",
@@ -2852,7 +3180,11 @@
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{instance}}",
-              "legendLink": null
+              "legendLink": null,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              }
             }
           ],
           "title": "Memory (go heap inuse)",
@@ -2894,7 +3226,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Mimir",
           "value": "mimir"
         },

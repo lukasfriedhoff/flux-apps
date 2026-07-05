@@ -1194,7 +1194,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Mimir",
           "value": "mimir"
         },
@@ -1239,7 +1239,9 @@
           "selected": true,
           "text": "All",
           "value": "$__all"
-        }
+        },
+        "multi": true,
+        "allValue": ".*"
       }
     ]
   },
