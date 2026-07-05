@@ -675,3 +675,213 @@ groups:
         for: 15m
         labels:
           severity: critical
+  - name: homelab-gitops-apps
+    rules:
+      - alert: FluxAppKustomizationNotReady
+        expr: |
+          gotk_reconcile_condition{kind="Kustomization",type="Ready",status="False"} == 1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Flux app Kustomization is not ready.
+          description: Flux Kustomization {{ $labels.namespace }}/{{ $labels.name }} has been NotReady for more than 10 minutes.
+          runbook_url: https://fluxcd.io/flux/cheatsheets/troubleshooting/
+      - alert: FluxHelmReleaseNotReady
+        expr: |
+          gotk_reconcile_condition{kind="HelmRelease",type="Ready",status="False"} == 1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: HelmRelease is not ready.
+          description: HelmRelease {{ $labels.namespace }}/{{ $labels.name }} has been NotReady for more than 10 minutes.
+          runbook_url: https://fluxcd.io/flux/cheatsheets/troubleshooting/
+      - alert: FluxSourceNotReady
+        expr: |
+          gotk_reconcile_condition{kind=~"GitRepository|HelmRepository|OCIRepository",type="Ready",status="False"} == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Flux source is not ready.
+          description: Flux source {{ $labels.kind }} {{ $labels.namespace }}/{{ $labels.name }} has been NotReady for more than 10 minutes.
+          runbook_url: https://fluxcd.io/flux/cheatsheets/troubleshooting/
+      - alert: FluxReconciliationSuspended
+        expr: |
+          gotk_suspend_status{kind=~"Kustomization|HelmRelease|GitRepository|HelmRepository|OCIRepository"} == 1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Flux reconciliation is suspended.
+          description: Flux {{ $labels.kind }} {{ $labels.namespace }}/{{ $labels.name }} has reconciliation suspended for more than 30 minutes.
+          runbook_url: https://fluxcd.io/flux/cheatsheets/troubleshooting/
+      - alert: FluxReconcileErrors
+        expr: |
+          sum by (cluster, namespace, kind, name) (
+            increase(gotk_reconcile_condition{type="Ready",status="False"}[15m])
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Flux reconciliation is repeatedly failing.
+          description: Flux {{ $labels.kind }} {{ $labels.namespace }}/{{ $labels.name }} has repeatedly entered NotReady in the last 15 minutes.
+          runbook_url: https://fluxcd.io/flux/cheatsheets/troubleshooting/
+  - name: homelab-app-storage-and-certificates
+    rules:
+      - alert: CertificateNotReady
+        expr: |
+          certmanager_certificate_ready_status{condition="False"} == 1
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: TLS certificate is not ready.
+          description: Certificate {{ $labels.namespace }}/{{ $labels.name }} has been NotReady for more than 15 minutes.
+          runbook_url: https://cert-manager.io/docs/troubleshooting/
+      - alert: CertificateExpiresSoon
+        expr: |
+          (certmanager_certificate_expiration_timestamp_seconds - time()) < 7 * 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: TLS certificate expires soon.
+          description: Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in less than 7 days.
+          runbook_url: https://cert-manager.io/docs/troubleshooting/
+      - alert: CertificateExpiresVerySoon
+        expr: |
+          (certmanager_certificate_expiration_timestamp_seconds - time()) < 24 * 60 * 60
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: TLS certificate expires within 24 hours.
+          description: Certificate {{ $labels.namespace }}/{{ $labels.name }} expires within 24 hours.
+          runbook_url: https://cert-manager.io/docs/troubleshooting/
+      - alert: PersistentVolumeClaimNotBound
+        expr: |
+          kube_persistentvolumeclaim_status_phase{job="integrations/kubernetes/kube-state-metrics",phase!="Bound"} == 1
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: PVC is not bound.
+          description: PersistentVolumeClaim {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has phase {{ $labels.phase }} for more than 15 minutes.
+          runbook_url: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+      - alert: PersistentVolumeClaimAlmostFull
+        expr: |
+          (
+            kubelet_volume_stats_available_bytes{job="integrations/kubernetes/kubelet"}
+            /
+            kubelet_volume_stats_capacity_bytes{job="integrations/kubernetes/kubelet"}
+          ) < 0.10
+          and
+          kubelet_volume_stats_capacity_bytes{job="integrations/kubernetes/kubelet"} > 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: PVC is almost full.
+          description: PersistentVolumeClaim {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has less than 10% free space for more than 30 minutes.
+          runbook_url: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+      - alert: PersistentVolumeClaimCriticalFreeSpace
+        expr: |
+          (
+            kubelet_volume_stats_available_bytes{job="integrations/kubernetes/kubelet"}
+            /
+            kubelet_volume_stats_capacity_bytes{job="integrations/kubernetes/kubelet"}
+          ) < 0.03
+          and
+          kubelet_volume_stats_capacity_bytes{job="integrations/kubernetes/kubelet"} > 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: PVC free space is critical.
+          description: PersistentVolumeClaim {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has less than 3% free space for more than 10 minutes.
+          runbook_url: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+  - name: homelab-backups
+    rules:
+      - alert: CNPGBackupStale
+        expr: |
+          time() - max by (cluster, namespace, pod) (
+            {__name__=~"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp"} > 0
+          ) > 48 * 60 * 60
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: CNPG backup is stale.
+          description: CNPG cluster pod {{ $labels.namespace }}/{{ $labels.pod }} has no available backup newer than 48 hours.
+          runbook_url: https://cloudnative-pg.io/documentation/current/backup/
+      - alert: CNPGBackupTimestampMissing
+        expr: |
+          max by (cluster, namespace, pod) (
+            {__name__=~"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp"} == 0
+          ) == 1
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: CNPG backup timestamp is missing.
+          description: CNPG cluster pod {{ $labels.namespace }}/{{ $labels.pod }} reports no available backup timestamp.
+          runbook_url: https://cloudnative-pg.io/documentation/current/backup/
+      - alert: CNPGWALArchiveFailures
+        expr: |
+          sum by (cluster, namespace, pod) (
+            increase(cnpg_pg_stat_archiver_failed_count[30m])
+          ) > 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: CNPG WAL archiving is failing.
+          description: CNPG pod {{ $labels.namespace }}/{{ $labels.pod }} has WAL archive failures in the last 30 minutes.
+          runbook_url: https://cloudnative-pg.io/documentation/current/backup/
+      - alert: CNPGWALArchiveStalled
+        expr: |
+          max by (cluster, namespace, pod) (
+            cnpg_pg_stat_archiver_seconds_since_last_archival
+          ) > 60 * 60
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: CNPG WAL archiving appears stalled.
+          description: CNPG pod {{ $labels.namespace }}/{{ $labels.pod }} has not archived a WAL file for more than 1 hour.
+          runbook_url: https://cloudnative-pg.io/documentation/current/backup/
+      - alert: BackupJobFailed
+        expr: |
+          kube_job_failed{job="integrations/kubernetes/kube-state-metrics", job_name=~".*(backup|snapshot|sync).*"} > 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backup-related Kubernetes Job failed.
+          description: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed. Investigate logs before deleting the failed Job.
+          runbook_url: https://kubernetes.io/docs/concepts/workloads/controllers/job/
+      - alert: BackupCronJobSuspended
+        expr: |
+          kube_cronjob_spec_suspend{job="integrations/kubernetes/kube-state-metrics", cronjob=~".*(backup|snapshot|sync).*"} == 1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Backup-related CronJob is suspended.
+          description: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is suspended.
+          runbook_url: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+      - alert: BackupCronJobMissedSchedule
+        expr: |
+          (
+            time() - kube_cronjob_next_schedule_time{job="integrations/kubernetes/kube-state-metrics", cronjob=~".*(backup|snapshot|sync).*"}
+          ) > 2 * 60 * 60
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Backup-related CronJob missed its next schedule.
+          description: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is more than 2 hours past its next scheduled run.
+          runbook_url: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
