@@ -105,6 +105,10 @@ spec:
                 ensure_section_pref 'BitTorrent' 'Session\\GlobalMaxRatio' '-1'
                 ensure_section_pref 'BitTorrent' 'Session\\GlobalMaxSeedingMinutes' '-1'
                 ensure_section_pref 'BitTorrent' 'Session\\GlobalMaxInactiveSeedingMinutes' '-1'
+                ensure_section_pref 'BitTorrent' 'Session\\Interface' 'tun0'
+                ensure_section_pref 'BitTorrent' 'Session\\InterfaceName' 'tun0'
+                ensure_section_pref 'BitTorrent' 'Session\\InterfaceAddress' ''
+                ensure_section_pref 'BitTorrent' 'Session\\Port' '6881'
                 ensure_section_pref 'BitTorrent' 'Session\\MaxActiveDownloads' '${qbittorrent_max_active_downloads:=30}'
                 ensure_section_pref 'BitTorrent' 'Session\\MaxActiveTorrents' '${qbittorrent_max_active_torrents:=500}'
                 ensure_section_pref 'BitTorrent' 'Session\\MaxActiveUploads' '${qbittorrent_max_active_uploads:=300}'
@@ -180,8 +184,8 @@ spec:
                   secretKeyRef:
                     name: media-protonvpn
                     key: wireguard_pf_down_command
-              HEALTH_TARGET_ADDRESS: "[2a07:b944::2:1]:53"
-              HEALTH_ICMP_TARGET_IPS: "2a07:b944::2:1,2a02:6ea0:c501:8096::10"
+              HEALTH_TARGET_ADDRESS: "10.2.0.1:53"
+              HEALTH_ICMP_TARGET_IPS: "10.2.0.1"
               HEALTH_RESTART_VPN: "on"
               HEALTH_VPN_DURATION_INITIAL: "20m"
               HEALTH_VPN_DURATION_ADDITION: "5m"
@@ -222,22 +226,71 @@ spec:
                 memory: 4Gi
           port-sync:
             image:
-              repository: alpine
-              tag: "3.20"
+              repository: python
+              tag: "3.12-alpine"
             command:
-              - /bin/sh
+              - /usr/local/bin/python
               - -c
               - |
-                set -eu
-                while true; do
-                  prefs='{"current_network_interface":"tun0","current_interface_address":"","random_port":false,"upnp":false}'
-                  if [ -s /tmp/gluetun/forwarded_port ]; then
-                    port="$(cat /tmp/gluetun/forwarded_port)"
-                    prefs="{\"listen_port\":$port,\"current_network_interface\":\"tun0\",\"current_interface_address\":\"\",\"random_port\":false,\"upnp\":false}"
-                  fi
-                  wget -qO- --post-data "json=$prefs" http://127.0.0.1:8080/api/v2/app/setPreferences >/dev/null || true
-                  sleep 30
-                done
+                import json
+                import sys
+                import time
+                import urllib.parse
+                import urllib.request
+                from urllib.error import HTTPError, URLError
+
+                last_port = None
+                prefs_url = "http://127.0.0.1:8080/api/v2/app/preferences"
+                set_url = "http://127.0.0.1:8080/api/v2/app/setPreferences"
+                port_file = "/tmp/gluetun/forwarded_port"
+
+                def read_forwarded_port():
+                    try:
+                        with open(port_file, "r", encoding="utf-8") as handle:
+                            port = handle.read().strip()
+                    except FileNotFoundError:
+                        return None
+                    if not port.isdigit():
+                        return None
+                    return int(port)
+
+                def get_preferences():
+                    with urllib.request.urlopen(prefs_url, timeout=10) as response:
+                        return json.loads(response.read().decode("utf-8"))
+
+                def set_preferences(payload):
+                    data = urllib.parse.urlencode({"json": json.dumps(payload)}).encode("utf-8")
+                    request = urllib.request.Request(url=set_url, data=data, method="POST")
+                    with urllib.request.urlopen(request, timeout=10):
+                        return
+
+                while True:
+                    port = read_forwarded_port()
+                    if port is None:
+                        time.sleep(30)
+                        continue
+
+                    try:
+                        prefs = get_preferences()
+                        desired = {
+                            "listen_port": port,
+                            "current_interface_name": "tun0",
+                            "current_network_interface": "tun0",
+                            "current_interface_address": "",
+                            "random_port": False,
+                            "upnp": False,
+                        }
+                        needs_update = any(prefs.get(key) != value for key, value in desired.items())
+                        if needs_update:
+                            set_preferences(desired)
+                            print(f"[port-sync] set qBittorrent listen_port={port} interface=tun0", flush=True)
+                        elif port != last_port:
+                            print(f"[port-sync] qBittorrent already synced listen_port={port}", flush=True)
+                        last_port = port
+                    except (HTTPError, URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as exc:
+                        print(f"[port-sync] waiting for qBittorrent API: {exc}", file=sys.stderr, flush=True)
+
+                    time.sleep(30)
             resources:
               requests:
                 cpu: 5m
