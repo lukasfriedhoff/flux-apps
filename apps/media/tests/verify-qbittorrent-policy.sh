@@ -26,6 +26,12 @@ grep -q '"add_trackers_from_url_enabled": False' "$rendered" \
   || fail 'qBittorrent API policy does not disable automatic tracker URL appends'
 grep -q '"current_network_interface": "tun0"' "$rendered" \
   || fail 'qBittorrent API policy does not force tun0 interface binding'
+grep -Fq 'Session\Interface=tun0' "$rendered" \
+  || fail 'qBittorrent static config does not force tun0 interface binding'
+grep -Fq "Session\\\\Interface' 'tun0'" "$rendered" \
+  || fail 'qBittorrent config init does not force tun0 interface binding'
+grep -q '"current_interface_name": "tun0"' "$rendered" \
+  || fail 'qBittorrent port sync does not force current_interface_name=tun0'
 grep -q '"random_port": False' "$rendered" \
   || fail 'qBittorrent API policy does not disable random port'
 grep -q '"upnp": False' "$rendered" \

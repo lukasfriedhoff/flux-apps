@@ -11,6 +11,10 @@ data:
     Session\GlobalMaxRatio=-1
     Session\GlobalMaxSeedingMinutes=-1
     Session\GlobalMaxInactiveSeedingMinutes=-1
+    Session\Interface=tun0
+    Session\InterfaceAddress=
+    Session\InterfaceName=tun0
+    Session\Port=6881
     Session\MaxActiveDownloads=${qbittorrent_max_active_downloads:=30}
     Session\MaxActiveTorrents=${qbittorrent_max_active_torrents:=500}
     Session\MaxActiveUploads=${qbittorrent_max_active_uploads:=300}
