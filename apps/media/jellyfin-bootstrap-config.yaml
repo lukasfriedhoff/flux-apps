@@ -30,6 +30,7 @@ data:
       ("music", "Music", "/media/music"),
       ("youtubevideos", "YouTube Videos", "/media/youtube/videos"),
       ("books", "Books", "/media/books"),
+      ("homevideos", "Other Downloads", "/downloads/other"),
     ]
 
 
