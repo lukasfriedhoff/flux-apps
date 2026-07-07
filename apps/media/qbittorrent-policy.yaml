@@ -99,6 +99,9 @@ data:
         "current_interface_address": "",
         "random_port": False,
         "upnp": False,
+        "save_path": "/downloads/other",
+        "temp_path": "/downloads/incomplete",
+        "temp_path_enabled": True,
       }
       qbt_post("/api/v2/app/setPreferences", {"json": json.dumps(prefs)})
       log(

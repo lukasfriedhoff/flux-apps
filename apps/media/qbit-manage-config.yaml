@@ -37,7 +37,8 @@ data:
       orphaned_dir: "/downloads/orphaned_data"
 
     cat:
-      Uncategorized: "/downloads"
+      Uncategorized: "/downloads/other"
+      other: "/downloads/other"
       radarr: "/downloads"
       sonarr: "/downloads"
       lidarr: "/downloads"

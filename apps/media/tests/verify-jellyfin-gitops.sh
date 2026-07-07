@@ -30,5 +30,9 @@ grep -q '/downloads/other' "$rendered" \
   || fail 'Jellyfin Other Downloads library path is not rendered'
 grep -q 'existingClaim: arr-downloads' "$rendered" \
   || fail 'Jellyfin does not mount arr-downloads'
+grep -Fq 'Downloads\SavePath=/downloads/other' "$rendered" \
+  || fail 'qBittorrent static config does not default unsorted downloads to /downloads/other'
+grep -q '"save_path": "/downloads/other"' "$rendered" \
+  || fail 'qBittorrent API policy does not enforce /downloads/other as default save path'
 
 printf '[jellyfin-gitops-test] ok\n'
