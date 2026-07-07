@@ -970,9 +970,14 @@ spec:
                 url="$2"
                 expected="$3"
                 required="$4"
+                desired_version="$5"
                 if [ -f "$target/$required" ]; then
-                  echo "Custom app '$name' already present; skipping download."
-                  return 0
+                  current_version="$(python3 -c 'import re,sys,pathlib; data=pathlib.Path(sys.argv[1]).read_text(errors="ignore"); match=re.search(r"<version>([^<]+)</version>", data); print(match.group(1) if match else "")' "$target/$name/appinfo/info.xml")"
+                  if [ "$current_version" = "$desired_version" ]; then
+                    echo "Custom app '$name' already present at $current_version; skipping download."
+                    return 0
+                  fi
+                  echo "Custom app '$name' is $current_version, expected $desired_version; replacing."
                 fi
                 stage="$tmp_root/$name"
                 rm -rf "$stage"
@@ -990,22 +995,28 @@ spec:
                 mail \
                 https://github.com/nextcloud-releases/mail/releases/download/v5.7.4/mail-v5.7.4.tar.gz \
                 4975770bd441349169dceb9d0dc6dd9d6c2e85e0d095ed5a536c117ce52d2eaa \
-                mail/vendor/autoload.php
+                mail/vendor/autoload.php \
+                5.7.4
               fetch_app \
                 richdocuments \
                 https://github.com/nextcloud-releases/richdocuments/releases/download/v10.1.2/richdocuments-v10.1.2.tar.gz \
                 5bb91dd34ff98e666531143fc43077f961e52a30aafe18115d1c9e5b2bb62ca2 \
-                richdocuments/appinfo/info.xml
+                richdocuments/appinfo/info.xml \
+                10.1.2
               fetch_app \
                 oidc_login \
-                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
-                014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912 \
-                oidc_login/appinfo/info.xml
+                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.1/oidc_login.tar.gz \
+                2816bc03b682d2e4ba150a0e49aee722469a61ef80d8a780b737eaa0ac341a7e \
+                oidc_login/appinfo/info.xml \
+                3.3.1
+              sed -i 's/max-version="33"/max-version="34"/' "$target/oidc_login/appinfo/info.xml"
+              chown 33:33 "$target/oidc_login/appinfo/info.xml"
               fetch_app \
                 external \
-                https://github.com/nextcloud-releases/external/releases/download/v8.0.1/external-v8.0.1.tar.gz \
-                aaa517f17bb412e69f70cd6e3017b229b38b4d2a91fe38dbf334ead83a252129 \
-                external/appinfo/info.xml
+                https://github.com/nextcloud-releases/external/releases/download/v9.0.1/external-v9.0.1.tar.gz \
+                b18a55b6a0e12d4a1ced0d74b6e5ef6927f322c8b9b3409dae4ea68717e422d9 \
+                external/appinfo/info.xml \
+                9.0.1
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www/html/custom_apps
