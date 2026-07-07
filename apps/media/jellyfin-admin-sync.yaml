@@ -33,7 +33,7 @@ metadata:
   name: jellyfin-admin-sync
   namespace: media
 spec:
-  schedule: "${jellyfin_admin_sync_cron:=*/15 * * * *}"
+  schedule: "${jellyfin_admin_sync_cron:=0/15 * * * *}"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
