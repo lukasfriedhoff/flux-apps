@@ -20,6 +20,11 @@ data:
     QBITTORRENT_MAX_ACTIVE_UPLOADS = int(os.getenv("QBITTORRENT_MAX_ACTIVE_UPLOADS", "300"))
     QBITTORRENT_MAX_ACTIVE_TORRENTS = int(os.getenv("QBITTORRENT_MAX_ACTIVE_TORRENTS", "500"))
     PROWLARR_DEFAULT_SEED_RATIO = os.getenv("PROWLARR_DEFAULT_SEED_RATIO", "").strip()
+    QBITTORRENT_ALLOWED_TRACKER_MARKERS = tuple(
+      marker.strip().lower()
+      for marker in os.getenv("QBITTORRENT_ALLOWED_TRACKER_MARKERS", "rocket-hd.cc,flood.st").split(",")
+      if marker.strip()
+    )
 
     ROCKETHD_TRACKER_MARKERS = ("rocket-hd", "rockethd", "rocket-hd.cc")
 
@@ -106,6 +111,57 @@ data:
         "interface=tun0 random_port=false upnp=false"
       )
 
+    def tracker_is_allowed(url):
+      normalized = str(url or "").strip().lower()
+      if not normalized.startswith(("http://", "https://", "udp://")):
+        return True
+      return any(marker in normalized for marker in QBITTORRENT_ALLOWED_TRACKER_MARKERS)
+
+    def prune_public_trackers():
+      torrents = qbt_get("/api/v2/torrents/info?filter=all") or []
+      touched_torrents = 0
+      removed_trackers = 0
+
+      for torrent in torrents:
+        torrent_hash = torrent.get("hash")
+        if not torrent_hash:
+          continue
+        try:
+          trackers = qbt_get(f"/api/v2/torrents/trackers?hash={urllib.parse.quote(torrent_hash)}") or []
+        except Exception as err:
+          log(f"failed to read trackers for {torrent_hash}: {err}")
+          continue
+
+        remove_urls = sorted(
+          {
+            str(tracker.get("url", "")).strip()
+            for tracker in trackers
+            if str(tracker.get("url", "")).strip()
+            and not tracker_is_allowed(tracker.get("url", ""))
+          }
+        )
+        if not remove_urls:
+          continue
+
+        try:
+          qbt_post(
+            "/api/v2/torrents/removeTrackers",
+            {
+              "hash": torrent_hash,
+              "urls": "|".join(remove_urls),
+            },
+          )
+          touched_torrents += 1
+          removed_trackers += len(remove_urls)
+        except Exception as err:
+          log(f"failed to remove public trackers for {torrent_hash}: {err}")
+
+      log(
+        "qBittorrent tracker policy enforced: "
+        f"allowed_markers={','.join(QBITTORRENT_ALLOWED_TRACKER_MARKERS)} "
+        f"touched_torrents={touched_torrents} removed_trackers={removed_trackers}"
+      )
+
     def torrent_is_rockethd(torrent_hash):
       try:
         trackers = qbt_get(f"/api/v2/torrents/trackers?hash={urllib.parse.quote(torrent_hash)}") or []
@@ -183,6 +239,7 @@ data:
     def main():
       wait_for_qbittorrent()
       enforce_qbittorrent_defaults()
+      prune_public_trackers()
       enforce_rockethd_policy()
 
     if __name__ == "__main__":
@@ -225,6 +282,8 @@ spec:
                   value: "${qbittorrent_max_active_torrents:=500} "
                 - name: PROWLARR_DEFAULT_SEED_RATIO
                   value: "${prowlarr_default_seed_ratio:=}"
+                - name: QBITTORRENT_ALLOWED_TRACKER_MARKERS
+                  value: "${qbittorrent_allowed_tracker_markers:=rocket-hd.cc,flood.st}"
               volumeMounts:
                 - name: script
                   mountPath: /scripts
