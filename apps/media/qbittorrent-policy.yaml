@@ -74,6 +74,7 @@ data:
         "current_interface_address": "",
         "random_port": False,
         "upnp": False,
+        "lsd": False,
         "save_path": "/downloads/other",
         "temp_path": "/downloads/incomplete",
         "temp_path_enabled": True,
@@ -86,7 +87,7 @@ data:
         f"active_uploads={QBITTORRENT_MAX_ACTIVE_UPLOADS} "
         f"active_torrents={QBITTORRENT_MAX_ACTIVE_TORRENTS} "
         "append_trackers_from_url=false "
-        "interface=tun0 random_port=false upnp=false"
+        "interface=tun0 random_port=false upnp=false lsd=false"
       )
 
     def tracker_is_allowed(url):

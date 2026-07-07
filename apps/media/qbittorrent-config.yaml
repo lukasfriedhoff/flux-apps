@@ -14,6 +14,7 @@ data:
     Session\Interface=tun0
     Session\InterfaceAddress=
     Session\InterfaceName=tun0
+    Session\LSDEnabled=false
     Session\Port=6881
     Session\MaxActiveDownloads=${qbittorrent_max_active_downloads:=30}
     Session\MaxActiveTorrents=${qbittorrent_max_active_torrents:=500}
