@@ -42,9 +42,16 @@ spec:
                 richdocuments/appinfo/info.xml
               verify_app \
                 oidc_login \
-                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.0/oidc_login.tar.gz \
-                014f77f1db97688eb6e5c86a8279ea9ef381d1b32044cdd94158a5b2d6f8c912 \
+                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.1/oidc_login.tar.gz \
+                2816bc03b682d2e4ba150a0e49aee722469a61ef80d8a780b737eaa0ac341a7e \
                 oidc_login/appinfo/info.xml
+              sed -i 's/max-version="33"/max-version="34"/' /custom_apps/oidc_login/appinfo/info.xml
+              grep -q 'max-version="34"' /custom_apps/oidc_login/appinfo/info.xml
+              verify_app \
+                external \
+                https://github.com/nextcloud-releases/external/releases/download/v9.0.1/external-v9.0.1.tar.gz \
+                b18a55b6a0e12d4a1ced0d74b6e5ef6927f322c8b9b3409dae4ea68717e422d9 \
+                external/appinfo/info.xml
           volumeMounts:
             - name: nextcloud-custom-apps
               mountPath: /custom_apps
