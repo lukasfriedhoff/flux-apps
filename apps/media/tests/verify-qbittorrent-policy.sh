@@ -30,6 +30,8 @@ grep -q '/api/v2/torrents/removeTrackers' "$rendered" \
   || fail 'qBittorrent policy does not prune disallowed torrent trackers'
 grep -q 'rocket-hd.cc,flood.st' "$rendered" \
   || fail 'qBittorrent tracker allowlist does not default to private tracker markers'
+grep -q '/api/v2/torrents/start' "$rendered" \
+  || fail 'qBittorrent policy does not restart completed stopped torrents'
 grep -q '"current_network_interface": "tun0"' "$rendered" \
   || fail 'qBittorrent API policy does not force tun0 interface binding'
 grep -Fq 'Session\Interface=tun0' "$rendered" \
