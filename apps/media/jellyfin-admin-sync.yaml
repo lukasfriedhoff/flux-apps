@@ -1,0 +1,218 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jellyfin-admin-sync
+  namespace: media
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jellyfin-admin-sync-read-authelia-users
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["authelia-users"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jellyfin-admin-sync-read-authelia-users
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jellyfin-admin-sync-read-authelia-users
+subjects:
+  - kind: ServiceAccount
+    name: jellyfin-admin-sync
+    namespace: media
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jellyfin-admin-sync
+  namespace: media
+spec:
+  schedule: "${jellyfin_admin_sync_cron:=*/15 * * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: jellyfin-admin-sync
+          restartPolicy: Never
+          containers:
+            - name: sync
+              image: python:3.12-alpine
+              env:
+                - name: JELLYFIN_BASE_URL
+                  value: ${jellyfin_internal_base_url}
+                - name: JELLYFIN_ADMIN_GROUPS
+                  value: jellyfin-admins,admins
+                - name: JELLYFIN_SYNC_EXCLUDE_USERS
+                  value: ${jellyfin_admin_sync_exclude_users:=media-e2e}
+                - name: AUTHELIA_USERS_SECRET_NAMESPACE
+                  value: authelia
+                - name: AUTHELIA_USERS_SECRET_NAME
+                  value: authelia-users
+              envFrom:
+                - secretRef:
+                    name: ${jellyfin_e2e_auth_secret_name}
+              command:
+                - python
+                - -c
+                - |
+                  import base64
+                  import json
+                  import os
+                  import re
+                  import ssl
+                  import sys
+                  import urllib.error
+                  import urllib.request
+
+
+                  def log(message: str) -> None:
+                      print(f"[jellyfin-admin-sync] {message}", flush=True)
+
+
+                  def split_csv(value: str) -> set[str]:
+                      return {
+                          item.strip().lower()
+                          for item in (value or "").split(",")
+                          if item.strip()
+                      }
+
+
+                  def request_json(method: str, url: str, headers: dict[str, str], body=None):
+                      payload = None
+                      if body is not None:
+                          payload = json.dumps(body).encode("utf-8")
+                          headers = {**headers, "Content-Type": "application/json"}
+                      req = urllib.request.Request(url, method=method, data=payload, headers=headers)
+                      with urllib.request.urlopen(req, timeout=30) as response:
+                          raw = response.read()
+                          if not raw:
+                              return None
+                          return json.loads(raw.decode("utf-8"))
+
+
+                  def k8s_secret(namespace: str, name: str) -> dict:
+                      token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+                      ca_path = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+                      host = os.environ["KUBERNETES_SERVICE_HOST"]
+                      port = os.environ["KUBERNETES_SERVICE_PORT"]
+                      token = open(token_path, encoding="utf-8").read().strip()
+                      url = f"https://{host}:{port}/api/v1/namespaces/{namespace}/secrets/{name}"
+                      context = ssl.create_default_context(cafile=ca_path)
+                      req = urllib.request.Request(
+                          url,
+                          headers={"Authorization": f"Bearer {token}"},
+                      )
+                      with urllib.request.urlopen(req, timeout=30, context=context) as response:
+                          return json.loads(response.read().decode("utf-8"))
+
+
+                  def parse_authelia_groups(users_database: str) -> dict[str, set[str]]:
+                      users: dict[str, set[str]] = {}
+                      current_user = None
+                      in_groups = False
+
+                      for line in users_database.splitlines():
+                          user_match = re.match(r"^  ([^\s:#][^:]*):\s*$", line)
+                          if user_match:
+                              current_user = user_match.group(1).strip().lower()
+                              users.setdefault(current_user, set())
+                              in_groups = False
+                              continue
+
+                          if current_user and re.match(r"^    groups:\s*$", line):
+                              users[current_user] = set()
+                              in_groups = True
+                              continue
+
+                          if current_user and in_groups:
+                              group_match = re.match(r"^      -\s+(.+?)\s*$", line)
+                              if group_match:
+                                  group = group_match.group(1).strip().strip("'\"").lower()
+                                  if group:
+                                      users[current_user].add(group)
+                                  continue
+                              if line.startswith("    ") and not line.startswith("      "):
+                                  in_groups = False
+
+                      return users
+
+
+                  base_url = os.getenv("JELLYFIN_BASE_URL", "http://jellyfin:8096").rstrip("/")
+                  api_key = os.getenv("api_key", "").strip()
+                  if not api_key:
+                      log("missing api_key secret value")
+                      sys.exit(1)
+
+                  admin_groups = split_csv(os.getenv("JELLYFIN_ADMIN_GROUPS", "jellyfin-admins,admins"))
+                  excluded_users = split_csv(os.getenv("JELLYFIN_SYNC_EXCLUDE_USERS", "media-e2e"))
+                  secret_namespace = os.getenv("AUTHELIA_USERS_SECRET_NAMESPACE", "authelia")
+                  secret_name = os.getenv("AUTHELIA_USERS_SECRET_NAME", "authelia-users")
+
+                  secret = k8s_secret(secret_namespace, secret_name)
+                  encoded_database = secret.get("data", {}).get("users_database.yml", "")
+                  if not encoded_database:
+                      log("authelia users secret is missing users_database.yml")
+                      sys.exit(1)
+
+                  users_database = base64.b64decode(encoded_database).decode("utf-8")
+                  authelia_users = parse_authelia_groups(users_database)
+                  admin_users = {
+                      username
+                      for username, groups in authelia_users.items()
+                      if groups.intersection(admin_groups)
+                  }
+
+                  headers = {"X-MediaBrowser-Token": api_key}
+                  jellyfin_users = request_json("GET", f"{base_url}/Users", headers)
+                  if not isinstance(jellyfin_users, list):
+                      log("unexpected Jellyfin users response")
+                      sys.exit(1)
+
+                  updates = 0
+                  grants = 0
+                  revokes = 0
+                  skipped = 0
+
+                  for user in jellyfin_users:
+                      if not isinstance(user, dict):
+                          continue
+                      username = str(user.get("Name", "")).strip().lower()
+                      user_id = str(user.get("Id", "")).strip()
+                      policy = user.get("Policy")
+                      if not username or not user_id or not isinstance(policy, dict):
+                          continue
+                      if username in excluded_users:
+                          skipped += 1
+                          continue
+
+                      should_admin = username in admin_users
+                      is_admin = bool(policy.get("IsAdministrator"))
+                      if is_admin == should_admin:
+                          continue
+
+                      policy["IsAdministrator"] = should_admin
+                      if should_admin:
+                          policy["EnableAllFolders"] = True
+
+                      request_json("POST", f"{base_url}/Users/{user_id}/Policy", headers, policy)
+                      updates += 1
+                      if should_admin:
+                          grants += 1
+                      else:
+                          revokes += 1
+
+                  log(
+                      "groups="
+                      + ",".join(sorted(admin_groups))
+                      + f" admin_users={len(admin_users)} jellyfin_users={len(jellyfin_users)} "
+                      + f"updates={updates} grants={grants} revokes={revokes} skipped={skipped}"
+                  )

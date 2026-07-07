@@ -141,6 +141,11 @@ spec:
         existingClaim: arr-media
         globalMounts:
           - path: /media
+      downloads:
+        enabled: true
+        existingClaim: arr-downloads
+        globalMounts:
+          - path: /downloads
       transcode:
         enabled: true
         type: emptyDir

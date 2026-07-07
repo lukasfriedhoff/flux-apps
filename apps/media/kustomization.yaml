@@ -29,6 +29,7 @@ resources:
   - jellyseerr-config-sync.yaml
   - jellyseerr-admin-sync.yaml
   - jellyfin.yaml
+  - jellyfin-admin-sync.yaml
   - jellyfin-bootstrap-config.yaml
   - jellyfin-bootstrap.yaml
   - jellyfin-branding.yaml

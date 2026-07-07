@@ -51,11 +51,12 @@ spec:
                   /downloads/sonarr \
                   /downloads/lidarr \
                   /downloads/readarr \
+                  /downloads/other \
                   /downloads/metube \
                   /downloads/metube-incomplete
 
-                chown "$PUID:$PGID" /downloads/incomplete
-                chmod 0775 /downloads /downloads/incomplete
+                chown "$PUID:$PGID" /downloads/incomplete /downloads/other
+                chmod 0775 /downloads /downloads/incomplete /downloads/other
 
                 find /downloads/incomplete -mindepth 1 -maxdepth 1 -exec chown -R "$PUID:$PGID" {} \;
             env:
