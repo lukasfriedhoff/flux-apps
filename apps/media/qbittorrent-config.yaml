@@ -32,6 +32,6 @@ data:
     WebUI\AuthSubnetWhitelistEnabled=true
     WebUI\AuthSubnetWhitelist=${k8s_pod_cidr},${k8s_service_cidr}
     WebUI\Authentication\Enabled=false
-    Downloads\SavePath=/downloads
+    Downloads\SavePath=/downloads/other
     Downloads\TempPath=/downloads/incomplete
     Downloads\TempPathEnabled=true

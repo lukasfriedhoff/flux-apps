@@ -122,6 +122,9 @@ spec:
                 ensure_pref 'WebUI\\Authentication\\Enabled' 'false'
                 ensure_pref 'WebUI\\AuthSubnetWhitelistEnabled' 'true'
                 ensure_pref 'WebUI\\AuthSubnetWhitelist' '${k8s_pod_cidr},${k8s_service_cidr}'
+                ensure_pref 'Downloads\\SavePath' '/downloads/other'
+                ensure_pref 'Downloads\\TempPath' '/downloads/incomplete'
+                ensure_pref 'Downloads\\TempPathEnabled' 'true'
 
                 sed -i '/^=$/d' "$config"
         containers:
