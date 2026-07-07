@@ -109,6 +109,7 @@ spec:
                 ensure_section_pref 'BitTorrent' 'Session\\Interface' 'tun0'
                 ensure_section_pref 'BitTorrent' 'Session\\InterfaceName' 'tun0'
                 ensure_section_pref 'BitTorrent' 'Session\\InterfaceAddress' ''
+                ensure_section_pref 'BitTorrent' 'Session\\LSDEnabled' 'false'
                 ensure_section_pref 'BitTorrent' 'Session\\Port' '6881'
                 ensure_section_pref 'BitTorrent' 'Session\\MaxActiveDownloads' '${qbittorrent_max_active_downloads:=30}'
                 ensure_section_pref 'BitTorrent' 'Session\\MaxActiveTorrents' '${qbittorrent_max_active_torrents:=500}'

@@ -47,6 +47,12 @@ grep -q '"random_port": False' "$rendered" \
   || fail 'qBittorrent API policy does not disable random port'
 grep -q '"upnp": False' "$rendered" \
   || fail 'qBittorrent API policy does not disable UPnP'
+grep -q '"lsd": False' "$rendered" \
+  || fail 'qBittorrent API policy does not disable local peer discovery'
+grep -Fq 'Session\LSDEnabled=false' "$rendered" \
+  || fail 'qBittorrent static config does not disable local peer discovery'
+grep -Fq "Session\\\\LSDEnabled' 'false'" "$rendered" \
+  || fail 'qBittorrent config init does not disable local peer discovery'
 grep -q 'name: qbittorrent-egress' "$rendered" \
   || fail 'qBittorrent egress NetworkPolicy is not rendered'
 grep -q 'cidr: .*qbittorrent_vpn_endpoint_cidr' "$rendered" \
