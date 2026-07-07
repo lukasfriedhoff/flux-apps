@@ -216,6 +216,22 @@ data:
         qbt_post("/api/v2/torrents/pause", {"hashes": "|".join(incomplete_hashes)})
       return len(incomplete_hashes)
 
+    def start_incomplete_rockethd(torrents):
+      stopped_hashes = [
+        torrent["hash"]
+        for torrent in torrents
+        if torrent.get("progress", 0) < 1
+        and torrent.get("hash")
+        and str(torrent.get("state", "")).lower() in ("stoppeddl", "pauseddl")
+      ]
+      if not stopped_hashes:
+        return 0
+      try:
+        qbt_post("/api/v2/torrents/start", {"hashes": "|".join(stopped_hashes)})
+      except Exception:
+        qbt_post("/api/v2/torrents/resume", {"hashes": "|".join(stopped_hashes)})
+      return len(stopped_hashes)
+
     def rocket_hd_indexer(api_key):
       indexers = prowlarr_get(api_key, "/api/v1/indexer") or []
       for indexer in indexers:
@@ -234,6 +250,7 @@ data:
       total_size = sum(int(torrent.get("total_size") or 0) for torrent in torrents)
       over_quota = total_size >= ROCKETHD_QUOTA_BYTES
       paused_count = pause_incomplete_rockethd(torrents) if over_quota else 0
+      started_count = start_incomplete_rockethd(torrents) if not over_quota else 0
 
       api_key = prowlarr_api_key()
       indexer = rocket_hd_indexer(api_key)
@@ -252,7 +269,7 @@ data:
       log(
         "RocketHD policy: "
         f"torrents={len(torrents)} total_bytes={total_size} quota_bytes={ROCKETHD_QUOTA_BYTES} "
-        f"indexer={status} paused_incomplete={paused_count}"
+        f"indexer={status} paused_incomplete={paused_count} started_incomplete={started_count}"
       )
 
     def main():
