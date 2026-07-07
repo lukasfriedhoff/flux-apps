@@ -19,15 +19,6 @@ public_patterns=(
   'ensure_cardigann_indexer "YTS" "YTS" true'
   'ensure_cardigann_indexer "Nyaa.si" "Nyaa.si" true'
   'ensure_cardigann_indexer "Internet Archive" "Internet Archive" true'
-)
-
-for pattern in "${public_patterns[@]}"; do
-  if grep -Fq "$pattern" "$bootstrap"; then
-    fail "public indexer is enabled by bootstrap: $pattern"
-  fi
-done
-
-required_disabled=(
   'ensure_indexer "Knaben" "Knaben" false'
   'ensure_indexer "TorrentsCSV" "TorrentsCSV" false'
   'ensure_cardigann_indexer "LimeTorrents" "LimeTorrents" false'
@@ -39,6 +30,24 @@ required_disabled=(
   'ensure_cardigann_indexer "Internet Archive" "Internet Archive" false'
 )
 
-for pattern in "${required_disabled[@]}"; do
-  grep -Fq "$pattern" "$bootstrap" || fail "public indexer is not explicitly disabled: $pattern"
+for pattern in "${public_patterns[@]}"; do
+  if grep -Fq "$pattern" "$bootstrap"; then
+    fail "public indexer is managed as an indexer instead of pruned: $pattern"
+  fi
+done
+
+required_pruned=(
+  'prune_indexer "Knaben" "Knaben"'
+  'prune_indexer "TorrentsCSV" "TorrentsCSV"'
+  'prune_cardigann_indexer "LimeTorrents" "LimeTorrents"'
+  'prune_cardigann_indexer "TorrentDownload" "TorrentDownload"'
+  'prune_indexer "SubsPlease" "SubsPlease"'
+  'prune_cardigann_indexer "The Pirate Bay" "The Pirate Bay"'
+  'prune_cardigann_indexer "YTS" "YTS"'
+  'prune_cardigann_indexer "Nyaa.si" "Nyaa.si"'
+  'prune_cardigann_indexer "Internet Archive" "Internet Archive"'
+)
+
+for pattern in "${required_pruned[@]}"; do
+  grep -Fq "$pattern" "$bootstrap" || fail "public indexer is not explicitly pruned: $pattern"
 done
