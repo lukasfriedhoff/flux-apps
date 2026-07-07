@@ -105,6 +105,13 @@ data:
         "$PROWLARR_URL$path"
     }
 
+    prowlarr_delete() {
+      path="$1"
+      curl -fsS -m 30 -X DELETE \
+        -H "X-Api-Key: $PROWLARR_API_KEY" \
+        "$PROWLARR_URL$path"
+    }
+
     APP_PROFILE_ID="$(
       prowlarr_get /api/v1/appprofile 2>/dev/null \
       | jq -r 'map(select(.name == "Standard"))[0].id // .[0].id // empty' 2>/dev/null \
@@ -552,22 +559,68 @@ data:
       fi
     }
 
+    prune_indexer() {
+      impl="$1"
+      name="$2"
+
+      prowlarr_get /api/v1/indexer \
+        | jq -r --arg impl "$impl" --arg name "$name" '
+            .[]?
+            | select(.implementation == $impl and .name == $name)
+            | .id
+          ' \
+        | while IFS= read -r idx_id; do
+            [ -n "$idx_id" ] || continue
+            if prowlarr_delete "/api/v1/indexer/$idx_id" >/dev/null; then
+              log "Deleted public indexer $name ($impl)."
+            else
+              log "Failed to delete public indexer $name ($impl); will retry."
+            fi
+          done
+    }
+
+    prune_cardigann_indexer() {
+      schema_name="$1"
+      name="$2"
+
+      prowlarr_get /api/v1/indexer \
+        | jq -r --arg schemaName "$schema_name" --arg name "$name" '
+            .[]?
+            | select(
+                .implementation == "Cardigann"
+                and (
+                  .name == $name
+                  or (((.fields // []) | map(select(.name == "definitionFile" and .value == $schemaName))) | length > 0)
+                )
+              )
+            | .id
+          ' \
+        | while IFS= read -r idx_id; do
+            [ -n "$idx_id" ] || continue
+            if prowlarr_delete "/api/v1/indexer/$idx_id" >/dev/null; then
+              log "Deleted public Cardigann indexer $name."
+            else
+              log "Failed to delete public Cardigann indexer $name; will retry."
+            fi
+          done
+    }
+
     ensure_app "Sonarr" "sonarr" "http://sonarr:8989" "$SONARR_API_KEY" || log "Failed to sync Sonarr app; will retry."
     ensure_app "Radarr" "radarr" "http://radarr:7878" "$RADARR_API_KEY" || log "Failed to sync Radarr app; will retry."
     ensure_app "Lidarr" "lidarr" "http://lidarr:8686" "$LIDARR_API_KEY" || log "Failed to sync Lidarr app; will retry."
     ensure_app "Readarr" "readarr" "http://readarr:8787" "$READARR_API_KEY" || log "Failed to sync Readarr app; will retry."
 
-    # Public indexers stay present but disabled so Prowlarr can prune them from Arr apps.
-    ensure_indexer "Knaben" "Knaben" false "" || log "Failed to disable Knaben indexer; will retry."
-    ensure_indexer "TorrentsCSV" "TorrentsCSV" false "" || log "Failed to disable TorrentsCSV indexer; will retry."
-    ensure_cardigann_indexer "LimeTorrents" "LimeTorrents" false || log "Failed to disable LimeTorrents indexer; will retry."
-    ensure_cardigann_indexer "TorrentDownload" "TorrentDownload" false || log "Failed to disable TorrentDownload indexer; will retry."
-    # SubsPlease is TV/anime-only and causes repeated Radarr category mapping errors.
-    ensure_indexer "SubsPlease" "SubsPlease" false "" || log "Failed to sync SubsPlease indexer; will retry."
-    ensure_cardigann_indexer "The Pirate Bay" "The Pirate Bay" false || log "Failed to disable The Pirate Bay indexer; will retry."
-    ensure_cardigann_indexer "YTS" "YTS" false || log "Failed to disable YTS indexer; will retry."
-    ensure_cardigann_indexer "Nyaa.si" "Nyaa.si" false || log "Failed to disable Nyaa.si indexer; will retry."
-    ensure_cardigann_indexer "Internet Archive" "Internet Archive" false || log "Failed to disable Internet Archive indexer; will retry."
+    # Public indexers must not exist in Prowlarr. Delete any leftovers so Arr apps
+    # cannot use them and Prowlarr cannot re-sync them downstream.
+    prune_indexer "Knaben" "Knaben"
+    prune_indexer "TorrentsCSV" "TorrentsCSV"
+    prune_cardigann_indexer "LimeTorrents" "LimeTorrents"
+    prune_cardigann_indexer "TorrentDownload" "TorrentDownload"
+    prune_indexer "SubsPlease" "SubsPlease"
+    prune_cardigann_indexer "The Pirate Bay" "The Pirate Bay"
+    prune_cardigann_indexer "YTS" "YTS"
+    prune_cardigann_indexer "Nyaa.si" "Nyaa.si"
+    prune_cardigann_indexer "Internet Archive" "Internet Archive"
 
     # Private trackers (optional; enabled only when matching secret keys exist).
     if [ -n "$${TORRENTSYNDIKAT_API_KEY:-}" ]; then
