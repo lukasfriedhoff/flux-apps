@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${forgejo_service_name}-data
+  namespace: ${forgejo_namespace}
+  labels:
+    app.kubernetes.io/name: forgejo
+    app.kubernetes.io/component: app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${forgejo_data_storage_class_name}
+  resources:
+    requests:
+      storage: ${forgejo_data_size}

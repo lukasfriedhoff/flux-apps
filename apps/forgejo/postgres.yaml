@@ -1,0 +1,25 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ${forgejo_postgres_cluster_name}
+  namespace: ${forgejo_namespace}
+  labels:
+    app.kubernetes.io/name: forgejo
+    app.kubernetes.io/component: database
+spec:
+  imageName: ${forgejo_postgres_image}
+  instances: ${forgejo_postgres_instances}
+  primaryUpdateStrategy: unsupervised
+  bootstrap:
+    initdb:
+      database: ${forgejo_postgres_db_name}
+      owner: ${forgejo_postgres_user}
+  storage:
+    storageClass: ${forgejo_postgres_storage_class_name}
+    size: ${forgejo_postgres_size}
+  resources:
+    requests:
+      cpu: ${forgejo_postgres_requests_cpu}
+      memory: ${forgejo_postgres_requests_memory}
+    limits:
+      memory: ${forgejo_postgres_limits_memory}
