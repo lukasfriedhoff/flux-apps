@@ -32,6 +32,17 @@ data:
       ("books", "Books", "/media/books"),
       ("homevideos", "Other Downloads", "/downloads/other"),
     ]
+    LIBRARY_DISPLAY_ORDER = [
+      "Movies",
+      "TV Shows",
+      "Music",
+      "YouTube Videos",
+      "Other Downloads",
+      "Books",
+      "E2E Movies",
+      "E2E TV",
+      "E2E Music",
+    ]
 
 
     def read_api_key() -> str:
@@ -223,6 +234,76 @@ data:
           raise
 
 
+    def ensure_user_library_display_order(api_key: str) -> None:
+      if not api_key:
+        print("[jellyfin-bootstrap] no api key available for user library order; skipping.")
+        return
+
+      for attempt in range(1, MAX_RETRIES + 1):
+        try:
+          users = _request_json("GET", "/Users", api_key)
+          if not isinstance(users, list):
+            print("[jellyfin-bootstrap] unexpected Users payload; skipping library display order.")
+            return
+
+          for user in users:
+            if not isinstance(user, dict):
+              continue
+            user_id = user.get("Id")
+            user_name = user.get("Name") or user_id
+            if not user_id:
+              continue
+
+            views = _request_json("GET", f"/Users/{user_id}/Views", api_key)
+            if not isinstance(views, dict) or not isinstance(views.get("Items"), list):
+              print(f"[jellyfin-bootstrap] unexpected Views payload for {user_name}; skipping user.")
+              continue
+
+            views_by_name = {
+              view.get("Name"): view.get("Id")
+              for view in views["Items"]
+              if isinstance(view, dict) and view.get("Name") and view.get("Id")
+            }
+            ordered_view_ids = [
+              views_by_name[name]
+              for name in LIBRARY_DISPLAY_ORDER
+              if name in views_by_name
+            ]
+            ordered_view_ids.extend(
+              views_by_name[name]
+              for name in sorted(views_by_name)
+              if name not in LIBRARY_DISPLAY_ORDER
+            )
+
+            config = user.get("Configuration")
+            if not isinstance(config, dict):
+              print(f"[jellyfin-bootstrap] user {user_name} has no Configuration payload; skipping user.")
+              continue
+            if config.get("OrderedViews") == ordered_view_ids:
+              print(f"[jellyfin-bootstrap] user library display order already up to date: {user_name}")
+              continue
+
+            config["OrderedViews"] = ordered_view_ids
+            _request_json("POST", f"/Users/{user_id}/Configuration", api_key, body=config)
+            print(f"[jellyfin-bootstrap] user library display order updated: {user_name}")
+          return
+        except urllib.error.HTTPError as err:
+          if err.code == 401:
+            print("[jellyfin-bootstrap] api key unauthorized for user library order; skipping.")
+            return
+          if attempt < MAX_RETRIES:
+            print(f"[jellyfin-bootstrap] user library order API not ready (attempt {attempt}/{MAX_RETRIES}): HTTP {err.code}")
+            time.sleep(3)
+            continue
+          raise
+        except (urllib.error.URLError, TimeoutError) as err:
+          if attempt < MAX_RETRIES:
+            print(f"[jellyfin-bootstrap] user library order API unavailable (attempt {attempt}/{MAX_RETRIES}): {err}")
+            time.sleep(3)
+            continue
+          raise
+
+
     def ensure_system_configuration(api_key: str) -> None:
       if not api_key:
         print("[jellyfin-bootstrap] no api key available for system configuration; skipping.")
@@ -296,6 +377,7 @@ data:
             conn.close()
             ensure_system_configuration(api_key)
             ensure_libraries(api_key)
+            ensure_user_library_display_order(api_key)
             return 0
 
           timestamp = now_utc()
@@ -312,6 +394,7 @@ data:
           print("[jellyfin-bootstrap] api key upserted.")
           ensure_system_configuration(api_key)
           ensure_libraries(api_key)
+          ensure_user_library_display_order(api_key)
           return 0
         except sqlite3.OperationalError as err:
           if "locked" in str(err).lower() and attempt < MAX_RETRIES:
