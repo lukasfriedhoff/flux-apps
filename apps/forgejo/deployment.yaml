@@ -138,6 +138,8 @@ spec:
               value: "true"
             - name: GITEA__service__DISABLE_REGISTRATION
               value: "true"
+            - name: GITEA__service__REQUIRE_SIGNIN_VIEW
+              value: "true"
             - name: GITEA__openid__ENABLE_OPENID_SIGNIN
               value: "false"
             - name: GITEA__openid__ENABLE_OPENID_SIGNUP
