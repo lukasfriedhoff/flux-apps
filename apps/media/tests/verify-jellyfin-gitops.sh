@@ -3,7 +3,8 @@ set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
 rendered="$(mktemp)"
-trap 'rm -f "$rendered"' EXIT
+bootstrap_script="$(mktemp --suffix=.py)"
+trap 'rm -f "$rendered" "$bootstrap_script"' EXIT
 
 kustomize build "${repo_root}/apps/media" >"$rendered"
 
@@ -28,6 +29,23 @@ grep -q 'Other Downloads' "$rendered" \
   || fail 'Jellyfin bootstrap does not create the Other Downloads library'
 grep -q '/downloads/other' "$rendered" \
   || fail 'Jellyfin Other Downloads library path is not rendered'
+grep -q 'LIBRARY_DISPLAY_ORDER' "$rendered" \
+  || fail 'Jellyfin bootstrap does not define a stable library display order'
+grep -q 'E2E Movies' "$rendered" && grep -q 'E2E TV' "$rendered" && grep -q 'E2E Music' "$rendered" \
+  || fail 'Jellyfin library display order does not keep E2E libraries managed'
+grep -q 'ensure_user_library_display_order' "$rendered" \
+  || fail 'Jellyfin bootstrap does not apply the library display order'
+grep -q 'OrderedViews' "$rendered" \
+  || fail 'Jellyfin bootstrap does not update Jellyfin OrderedViews'
+awk '
+  /^  bootstrap.py: \|-$/ {flag=1; next}
+  flag && /^---$/ {flag=0}
+  flag && /^[^ ]/ {flag=0}
+  flag && /^  [^ ]/ {flag=0}
+  flag {sub(/^    /, ""); print}
+' "$rendered" >"$bootstrap_script"
+nix shell nixpkgs#python3 -c python -m py_compile "$bootstrap_script" \
+  || fail 'Jellyfin bootstrap Python does not compile'
 grep -q 'existingClaim: arr-downloads' "$rendered" \
   || fail 'Jellyfin does not mount arr-downloads'
 grep -Fq 'Downloads\SavePath=/downloads/other' "$rendered" \
