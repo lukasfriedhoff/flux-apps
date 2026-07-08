@@ -27,7 +27,7 @@ data:
   hydra_storage_class_name: longhorn-disk-rwo-1r
   hydra_storage_size: 100Gi
   hydra_requests_cpu: 500m
-  hydra_requests_memory: 2Gi
+  hydra_requests_memory: 1Gi
   hydra_requests_ephemeral_storage: 4Gi
   hydra_limits_cpu: "4"
   hydra_limits_memory: 8Gi
