@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${forgejo_service_name}
+  namespace: ${forgejo_namespace}
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: git${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ${forgejo_service_name}
+                port:
+                  name: http
+  tls:
+    - secretName: forgejo-tls
+      hosts:
+        - git${public_host_suffix}.${delegating_domain}
