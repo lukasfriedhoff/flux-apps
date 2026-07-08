@@ -12,7 +12,7 @@ Forgejo provides a self-hosted Git forge and package registry. This app deploys 
   kubectl -n forgejo get secret forgejo-admin -o jsonpath='{.data.password}' | base64 -d; echo
   ```
 
-Open registration is disabled. Create additional users from the admin UI or via Forgejo CLI/API.
+Open registration is disabled and anonymous browsing is hidden. Create additional users from the admin UI or via Forgejo CLI/API.
 
 ## Git repositories
 
@@ -86,4 +86,4 @@ Cluster overlays should override only environment-specific values:
 - `forgejo_image`: pinned Forgejo version.
 - `forgejo_admin_secret_name`: secret containing `username`, `password`, and `email`.
 
-The ingress intentionally does not use Authelia forward-auth because Git and package clients need non-browser API access. Forgejo handles authentication itself.
+The ingress intentionally does not use Authelia forward-auth because Git and package clients need non-browser API access. Forgejo handles authentication itself, with registration disabled and anonymous browsing hidden.
