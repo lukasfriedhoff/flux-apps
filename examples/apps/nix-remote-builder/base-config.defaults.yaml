@@ -13,7 +13,7 @@ data:
   nix_remote_builder_storage_class_name: longhorn-disk-rwo-1r
   nix_remote_builder_storage_size: 100Gi
   nix_remote_builder_requests_cpu: 500m
-  nix_remote_builder_requests_memory: 2Gi
+  nix_remote_builder_requests_memory: 512Mi
   nix_remote_builder_limits_cpu: 4000m
-  nix_remote_builder_limits_memory: 8Gi
+  nix_remote_builder_limits_memory: 4Gi
   nix_remote_builder_authorized_key: ssh-ed25519 AAAA... replace-me
