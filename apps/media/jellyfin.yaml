@@ -25,6 +25,24 @@ spec:
     controllers:
       main:
         replicas: 1
+        pod:
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: h4xx.io/gpu.vendor
+                        operator: In
+                        values:
+                          - amd
+                - weight: 50
+                  preference:
+                    matchExpressions:
+                      - key: h4xx.io/gpu.vendor
+                        operator: In
+                        values:
+                          - intel
         initContainers:
           install-sso-plugin:
             image:
@@ -151,3 +169,10 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /transcode
+      gpu:
+        enabled: ${jellyfin_gpu_enabled:=false}
+        type: hostPath
+        hostPath: /dev/dri
+        hostPathType: Directory
+        globalMounts:
+          - path: /dev/dri

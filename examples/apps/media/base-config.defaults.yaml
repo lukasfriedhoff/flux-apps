@@ -22,6 +22,7 @@ data:
   jellyfin_e2e_auth_secret_name: "jellyfin-e2e-auth"
   jellyfin_external_hostname: "jellyfin${public_host_suffix}.${delegating_domain}"
   jellyfin_forgot_password_url: "https://jellyfin${public_host_suffix}.${delegating_domain}/web/index.html#!/forgotpassword.html"
+  jellyfin_gpu_enabled: "false"
   jellyfin_internal_base_url: "http://jellyfin:8096"
   jellyfin_music_refresh_cron: "0/10 * * * *"
   jellyfin_server_name: "Jellyfin"
