@@ -97,6 +97,8 @@ spec:
             image:
               repository: lscr.io/linuxserver/jellyfin
               tag: 10.11.6
+            securityContext:
+              privileged: ${jellyfin_gpu_privileged:=false}
             env:
               TZ: ${media_timezone}
               PUID: ${media_puid}
