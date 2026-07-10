@@ -42,7 +42,6 @@ spec:
               JELLYFIN_SERVER_HOST: jellyfin
               JELLYFIN_SERVER_PORT: "8096"
               JELLYFIN_SERVER_USE_SSL: "false"
-              JELLYFIN_HOSTNAME: ${jellyfin_internal_base_url}
               JELLYFIN_EXTERNAL_HOSTNAME: jellyfin${public_host_suffix}.${delegating_domain}
               JELLYFIN_FORGOT_PASSWORD_URL: https://jellyfin${public_host_suffix}.${delegating_domain}/web/index.html#!/forgotpassword.html
               OIDC_PROVIDER_NAME: Authelia
@@ -102,7 +101,7 @@ spec:
 
                 settings_json="$(
                   printf '%s' "$settings_json" \
-                  | jq --arg appTitle "$${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "$${JELLYSEERR_APP_URL:-}" --arg jellyfinName "$${JELLYFIN_SERVER_NAME:-Jellyfin}" --arg jellyfinIP "$${JELLYFIN_SERVER_HOST:-jellyfin}" --arg jellyfinPort "$${JELLYFIN_SERVER_PORT:-8096}" --arg jellyfinHost "$${JELLYFIN_HOSTNAME:-http://jellyfin:8096}" --arg jellyfinExternal "$${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "$${JELLYFIN_FORGOT_PASSWORD_URL:-}" --arg oidcName "$${OIDC_PROVIDER_NAME:-Authelia}" --arg oidcSlug "$${OIDC_PROVIDER_SLUG:-authelia}" --arg oidcIssuer "$${OIDC_ISSUER_URL:-}" --arg oidcClientId "$${OIDC_CLIENT_ID:-jellyseerr}" --arg oidcScopes "$${OIDC_SCOPES:-openid profile email groups}" --argjson jellyfinUseSsl "$${JELLYFIN_SERVER_USE_SSL:-false}" '
+                  | jq --arg appTitle "$${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "$${JELLYSEERR_APP_URL:-}" --arg jellyfinName "$${JELLYFIN_SERVER_NAME:-Jellyfin}" --arg jellyfinIP "$${JELLYFIN_SERVER_HOST:-jellyfin}" --arg jellyfinPort "$${JELLYFIN_SERVER_PORT:-8096}" --arg jellyfinExternal "$${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "$${JELLYFIN_FORGOT_PASSWORD_URL:-}" --arg oidcName "$${OIDC_PROVIDER_NAME:-Authelia}" --arg oidcSlug "$${OIDC_PROVIDER_SLUG:-authelia}" --arg oidcIssuer "$${OIDC_ISSUER_URL:-}" --arg oidcClientId "$${OIDC_CLIENT_ID:-jellyseerr}" --arg oidcScopes "$${OIDC_SCOPES:-openid profile email groups}" --argjson jellyfinUseSsl "$${JELLYFIN_SERVER_USE_SSL:-false}" '
                     .main.applicationTitle = $appTitle
                     | .main.applicationUrl = $appUrl
                     | .main.mediaServerType = 4
@@ -124,7 +123,6 @@ spec:
                     | .jellyfin.ip = $jellyfinIP
                     | .jellyfin.port = $jellyfinPort
                     | .jellyfin.useSsl = $jellyfinUseSsl
-                    | .jellyfin.hostname = $jellyfinHost
                     | .jellyfin.externalHostname = $jellyfinExternal
                     | .jellyfin.jellyfinForgotPasswordUrl = $forgotPassword
                     | .public.initialized = true
