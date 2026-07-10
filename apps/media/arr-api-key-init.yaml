@@ -18,6 +18,12 @@ data:
       exit 1
     fi
 
+    if [ -d /media ] && [ -w /media ]; then
+      mkdir -p "/media/.RecycleBin/$app"
+      chown -R "${PUID:-1000}:${PGID:-1000}" "/media/.RecycleBin" || true
+      chmod -R u+rwX,g+rwX "/media/.RecycleBin" || true
+    fi
+
     wait_for_valid_xml() {
       attempts=0
       while [ "$attempts" -lt 120 ]; do
