@@ -245,14 +245,22 @@ spec:
                     settings_json="$(printf '%s' "$settings_json" | jq --argjson svc "$sonarr_service" '.sonarr = [$svc]')"
                   fi
 
-                  printf '%s\n' "$settings_json" > "$${settings_file}.tmp"
-                  if [ -s "$settings_file" ] && cmp -s "$${settings_file}.tmp" "$settings_file"; then
-                    rm -f "$${settings_file}.tmp"
+                  desired_file="$${settings_file}.tmp"
+                  current_normalized="$${settings_file}.current-normalized"
+                  desired_normalized="$${settings_file}.desired-normalized"
+
+                  printf '%s\n' "$settings_json" > "$desired_file"
+                  if [ -s "$settings_file" ] \
+                    && jq -S . "$settings_file" > "$current_normalized" \
+                    && jq -S . "$desired_file" > "$desired_normalized" \
+                    && cmp -s "$current_normalized" "$desired_normalized"; then
+                    rm -f "$desired_file" "$current_normalized" "$desired_normalized"
                     echo "[jellyseerr-config-sync] settings unchanged."
                     exit 0
                   fi
+                  rm -f "$current_normalized" "$desired_normalized"
 
-                  mv "$${settings_file}.tmp" "$settings_file"
+                  mv "$desired_file" "$settings_file"
                   kubectl -n "$${POD_NAMESPACE:-media}" rollout restart deployment/jellyseerr
                   echo "[jellyseerr-config-sync] settings updated; restarted jellyseerr."
               volumeMounts:
