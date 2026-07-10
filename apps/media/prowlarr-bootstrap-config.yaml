@@ -1077,6 +1077,32 @@ data:
       fi
     }
 
+    ensure_radarr_media_management() {
+      media_management_json="$(radarr_get /api/v3/config/mediamanagement)"
+      if [ -z "$media_management_json" ] || [ "$media_management_json" = "null" ]; then
+        log "Radarr media management config missing; skipping."
+        return 0
+      fi
+
+      media_management_id="$(printf '%s' "$media_management_json" | jq -r '.id // empty')"
+      if [ -z "$media_management_id" ]; then
+        log "Radarr media management config has no id; skipping."
+        return 0
+      fi
+
+      media_management_payload="$(printf '%s' "$media_management_json" | jq -c '
+        .recycleBin = "/media/.RecycleBin/radarr"
+        | .recycleBinCleanupDays = 30
+        | .copyUsingHardlinks = true
+        | .enableMediaInfo = true
+        | .skipFreeSpaceCheckWhenImporting = false
+        | .minimumFreeSpaceWhenImporting = 100
+      ')"
+
+      radarr_put "/api/v3/config/mediamanagement/$media_management_id" "$media_management_payload" >/dev/null
+      log "Configured Radarr media management recycle bin and import safety."
+    }
+
     ensure_radarr_qbittorrent() {
       dl_json="$(radarr_get /api/v3/downloadclient | jq -c 'map(select(.implementation == "QBittorrent"))[0]')"
       if [ "$dl_json" = "null" ]; then
@@ -1184,6 +1210,7 @@ data:
         log "Unable to reach Radarr API; deferring Radarr bootstrap."
       else
         ensure_radarr_rootfolder || log "Failed to ensure Radarr root folder; will retry."
+        ensure_radarr_media_management || log "Failed to configure Radarr media management; will retry."
         ensure_radarr_qbittorrent || log "Failed to ensure Radarr qBittorrent client; will retry."
         if [ "$ENABLE_DUAL_AUDIO_POLICY" = "true" ]; then
           ensure_radarr_dual_audio_policy || log "Failed to apply Radarr dual-audio policy; will retry."
