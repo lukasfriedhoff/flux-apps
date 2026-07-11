@@ -49,6 +49,18 @@ grep -q '"upnp": False' "$rendered" \
   || fail 'qBittorrent API policy does not disable UPnP'
 grep -q '"lsd": False' "$rendered" \
   || fail 'qBittorrent API policy does not disable local peer discovery'
+grep -q '"auto_tmm_enabled": True' "$rendered" \
+  || fail 'qBittorrent API policy does not enable automatic torrent management for category save paths'
+grep -q '"/api/v2/torrents/editCategory"' "$rendered" \
+  || fail 'qBittorrent policy does not enforce category save paths'
+grep -q '"radarr": "/downloads/radarr"' "$rendered" \
+  || fail 'qBittorrent policy does not set Radarr category save path'
+grep -q '"sonarr": "/downloads/sonarr"' "$rendered" \
+  || fail 'qBittorrent policy does not set Sonarr category save path'
+grep -q '"radarr-imported": "/media/staged/movies"' "$rendered" \
+  || fail 'qBittorrent policy does not set Radarr imported category save path'
+grep -q '"sonarr-imported": "/media/staged/tv"' "$rendered" \
+  || fail 'qBittorrent policy does not set Sonarr imported category save path'
 grep -Fq 'Session\LSDEnabled=false' "$rendered" \
   || fail 'qBittorrent static config does not disable local peer discovery'
 grep -Fq "Session\\\\LSDEnabled' 'false'" "$rendered" \
