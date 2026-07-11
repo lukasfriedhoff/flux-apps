@@ -75,6 +75,9 @@ data:
         "random_port": False,
         "upnp": False,
         "lsd": False,
+        "auto_tmm_enabled": True,
+        "category_changed_tmm_enabled": False,
+        "save_path_changed_tmm_enabled": False,
         "save_path": "/downloads/other",
         "temp_path": "/downloads/incomplete",
         "temp_path_enabled": True,
@@ -89,6 +92,26 @@ data:
         "append_trackers_from_url=false "
         "interface=tun0 random_port=false upnp=false lsd=false"
       )
+
+    def ensure_category_save_paths():
+      desired_categories = {
+        "other": "/downloads/other",
+        "radarr": "/downloads/radarr",
+        "sonarr": "/downloads/sonarr",
+        "lidarr": "/downloads/lidarr",
+        "readarr": "/downloads/readarr",
+        "radarr-imported": "/media/staged/movies",
+        "sonarr-imported": "/media/staged/tv",
+        "lidarr-imported": "/media/staged/music",
+        "readarr-imported": "/media/staged/books",
+      }
+      categories = qbt_get("/api/v2/torrents/categories") or {}
+      for category, save_path in desired_categories.items():
+        if category in categories:
+          qbt_post("/api/v2/torrents/editCategory", {"category": category, "savePath": save_path})
+        else:
+          qbt_post("/api/v2/torrents/createCategory", {"category": category, "savePath": save_path})
+      log("qBittorrent category save paths enforced.")
 
     def tracker_is_allowed(url):
       normalized = str(url or "").strip().lower()
@@ -163,6 +186,7 @@ data:
     def main():
       wait_for_qbittorrent()
       enforce_qbittorrent_defaults()
+      ensure_category_save_paths()
       prune_public_trackers()
       start_completed_torrents()
 
