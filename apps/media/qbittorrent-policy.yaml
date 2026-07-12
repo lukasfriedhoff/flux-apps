@@ -8,6 +8,7 @@ data:
     import json
     import os
     import time
+    import urllib.error
     import urllib.parse
     import urllib.request
 
@@ -44,6 +45,15 @@ data:
 
     def qbt_post(path, form):
       return request_form("POST", f"{QBITTORRENT_URL}{path}", form)
+
+    def qbt_post_ignore_conflict(path, form):
+      try:
+        return qbt_post(path, form)
+      except urllib.error.HTTPError as err:
+        if err.code == 409:
+          log(f"qBittorrent API conflict ignored for {path}: {form}")
+          return None
+        raise
 
     def wait_for_qbittorrent():
       for attempt in range(1, 21):
@@ -108,7 +118,7 @@ data:
       categories = qbt_get("/api/v2/torrents/categories") or {}
       for category, save_path in desired_categories.items():
         if category in categories:
-          qbt_post("/api/v2/torrents/editCategory", {"category": category, "savePath": save_path})
+          qbt_post_ignore_conflict("/api/v2/torrents/editCategory", {"category": category, "savePath": save_path})
         else:
           qbt_post("/api/v2/torrents/createCategory", {"category": category, "savePath": save_path})
       log("qBittorrent category save paths enforced.")

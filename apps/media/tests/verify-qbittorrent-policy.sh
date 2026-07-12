@@ -53,6 +53,8 @@ grep -q '"auto_tmm_enabled": True' "$rendered" \
   || fail 'qBittorrent API policy does not enable automatic torrent management for category save paths'
 grep -q '"/api/v2/torrents/editCategory"' "$rendered" \
   || fail 'qBittorrent policy does not enforce category save paths'
+grep -q 'qbt_post_ignore_conflict("/api/v2/torrents/editCategory"' "$rendered" \
+  || fail 'qBittorrent category edit conflicts are not handled idempotently'
 grep -q '"radarr": "/downloads/radarr"' "$rendered" \
   || fail 'qBittorrent policy does not set Radarr category save path'
 grep -q '"sonarr": "/downloads/sonarr"' "$rendered" \
