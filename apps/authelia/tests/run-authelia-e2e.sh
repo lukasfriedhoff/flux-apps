@@ -562,6 +562,21 @@ jellyfin_info_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
 jq -e '.ProductName | contains("Jellyfin")' "${WORK_DIR}/jellyfin-info.json" >/dev/null || fail "jellyfin: unexpected System/Info/Public payload"
 log "jellyfin: public info API check passed"
 
+jellyfin_quickconnect_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+  -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+  -o "${WORK_DIR}/jellyfin-quickconnect.json" -w '%{http_code}' \
+  "https://$(cluster_host jellyfin)/QuickConnect/Enabled")"
+[ "$jellyfin_quickconnect_code" = "200" ] || fail "jellyfin: QuickConnect/Enabled returned ${jellyfin_quickconnect_code}"
+jq -e 'type == "boolean"' "${WORK_DIR}/jellyfin-quickconnect.json" >/dev/null || fail "jellyfin: unexpected QuickConnect/Enabled payload"
+
+jellyfin_public_users_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+  -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+  -o "${WORK_DIR}/jellyfin-users-public.json" -w '%{http_code}' \
+  "https://$(cluster_host jellyfin)/users/public")"
+[ "$jellyfin_public_users_code" = "200" ] || fail "jellyfin: users/public returned ${jellyfin_public_users_code}"
+jq -e 'type == "array"' "${WORK_DIR}/jellyfin-users-public.json" >/dev/null || fail "jellyfin: unexpected users/public payload"
+log "jellyfin: Android login bootstrap checks passed"
+
 jellyseerr_me_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
   -o "${WORK_DIR}/jellyseerr-me.json" -w '%{http_code}' \
