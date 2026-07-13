@@ -141,6 +141,15 @@ data:
             - 'group:jellyseerr-users'
           policy: ${authelia_access_policy}
         - domain: 'jellyfin${public_host_suffix}.${delegating_domain}'
+          resources:
+            - '^/System/Info/Public'
+            - '^/System/Info$'
+            - '^/Users/AuthenticateByName'
+            - '^/sessions/capabilities'
+            - '^/Sessions/Capabilities'
+            - '^/Auth/.*'
+          policy: bypass
+        - domain: 'jellyfin${public_host_suffix}.${delegating_domain}'
           subject:
             - 'group:jellyfin-admins'
             - 'group:jellyfin-users'
