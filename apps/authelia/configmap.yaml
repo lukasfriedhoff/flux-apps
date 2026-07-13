@@ -46,6 +46,8 @@ data:
             - '^/Sessions/Capabilities.*'
             - '^/Auth/.*'
             - '^/Users/Public$'
+            - '^/users/public$'
+            - '^/QuickConnect/Enabled$'
             - '^/Branding/.*'
             - '^/$'
             - '^/web/.*'
