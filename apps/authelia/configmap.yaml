@@ -48,6 +48,7 @@ data:
             - '^/Users/Public$'
             - '^/users/public$'
             - '^/QuickConnect/Enabled$'
+            - '^/sso/OID/.*'
             - '^/Branding/.*'
             - '^/$'
             - '^/web/.*'
