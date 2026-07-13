@@ -142,12 +142,14 @@ data:
           policy: ${authelia_access_policy}
         - domain: 'jellyfin${public_host_suffix}.${delegating_domain}'
           resources:
-            - '^/System/Info/Public'
+            - '^/System/Info/Public$'
             - '^/System/Info$'
-            - '^/Users/AuthenticateByName'
-            - '^/sessions/capabilities'
-            - '^/Sessions/Capabilities'
+            - '^/Users/AuthenticateByName$'
+            - '^/sessions/capabilities.*'
+            - '^/Sessions/Capabilities.*'
             - '^/Auth/.*'
+            - '^/Users/Public$'
+            - '^/Branding/.*'
           policy: bypass
         - domain: 'jellyfin${public_host_suffix}.${delegating_domain}'
           subject:
