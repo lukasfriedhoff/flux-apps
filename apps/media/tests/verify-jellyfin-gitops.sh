@@ -15,6 +15,20 @@ fail() {
 
 grep -q 'name: jellyfin-admin-sync' "$rendered" \
   || fail 'Jellyfin admin sync job is not rendered'
+awk '
+  /^kind: HelmRelease$/ {in_hr=1; in_jellyfin=0; middleware=0}
+  in_hr && /^  name: jellyfin$/ {in_jellyfin=1}
+  in_jellyfin && /traefik\.ingress\.kubernetes\.io\/router\.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd/ {middleware=1}
+  in_hr && /^---$/ {
+    if (in_jellyfin && middleware) found=1
+    in_hr=0; in_jellyfin=0; middleware=0
+  }
+  END {
+    if (in_jellyfin && middleware) found=1
+    exit found ? 0 : 1
+  }
+' "$rendered" \
+  || fail 'Jellyfin ingress is not protected by Authelia forward-auth'
 grep -q 'kind: ClusterRole' "$rendered" \
   || fail 'Jellyfin admin sync must use a ClusterRole for cross-namespace Authelia secret reads'
 grep -q 'resourceNames:' "$rendered" && grep -q -- '- authelia-users' "$rendered" \
