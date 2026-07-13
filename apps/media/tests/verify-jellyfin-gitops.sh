@@ -25,10 +25,10 @@ awk '
   }
   END {
     if (in_jellyfin && middleware) found=1
-    exit found ? 0 : 1
+    exit found ? 1 : 0
   }
 ' "$rendered" \
-  || fail 'Jellyfin ingress is not protected by Authelia forward-auth'
+  || fail 'Jellyfin ingress must not use Authelia forward-auth; native clients use Jellyfin OIDC'
 grep -q 'kind: ClusterRole' "$rendered" \
   || fail 'Jellyfin admin sync must use a ClusterRole for cross-namespace Authelia secret reads'
 grep -q 'resourceNames:' "$rendered" && grep -q -- '- authelia-users' "$rendered" \
