@@ -396,6 +396,9 @@ assert_redirect_to_auth grafana_oidc_entry "https://$(cluster_host grafana)/logi
 assert_redirect_to_auth matrix_oidc_entry \
   "https://$(cluster_host matrix)/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2F$(cluster_host chat)%2F" \
   "matrix-synapse"
+assert_redirect_to_auth jellyfin_oidc_entry \
+  "https://$(cluster_host jellyfin)/sso/OID/start/authelia" \
+  "jellyfin"
 
 matrix_login_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" "https://$(cluster_host matrix)/_matrix/client/v3/login")"
 printf '%s' "$matrix_login_json" | jq -e '.flows[] | select(.type=="m.login.sso") | .identity_providers[] | select(.id=="oidc-authelia")' >/dev/null || \
