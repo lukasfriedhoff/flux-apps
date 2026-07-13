@@ -47,6 +47,9 @@ data:
             - '^/Auth/.*'
             - '^/Users/Public$'
             - '^/Branding/.*'
+            - '^/$'
+            - '^/web/.*'
+            - '^/favicon\.ico$'
           policy: bypass
         - domain_regex: '^.*${public_host_suffix}\.${delegating_domain}$'
           subject:
