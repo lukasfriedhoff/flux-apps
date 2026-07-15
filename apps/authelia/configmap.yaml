@@ -180,10 +180,16 @@ data:
       expiration: 1h
       inactivity: 15m
       domain: ${delegating_domain}
+      redis:
+        host: authelia-redis-master.authelia.svc.cluster.local
+        port: 6379
+        database_index: 0
 
     storage:
-      local:
-        path: /config/db.sqlite3
+      postgres:
+        address: tcp://authelia-postgres-rw.authelia.svc.cluster.local:5432
+        database: authelia
+        username: authelia
 
     identity_providers:
       oidc:

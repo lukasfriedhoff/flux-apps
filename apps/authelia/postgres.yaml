@@ -1,0 +1,27 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: authelia-postgres
+  namespace: authelia
+spec:
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: authelia
+      owner: authelia
+  storage:
+    storageClass: ${authelia_postgres_storage_class_name:=${default_sts_storage_class_name}}
+    size: ${authelia_postgres_size:=2Gi}
+  resources:
+    requests:
+      cpu: ${authelia_postgres_requests_cpu:=50m}
+      memory: ${authelia_postgres_requests_memory:=128Mi}
+    limits:
+      cpu: ${authelia_postgres_limits_cpu:=500m}
+      memory: ${authelia_postgres_limits_memory:=512Mi}
