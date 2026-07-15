@@ -3,5 +3,7 @@ kind: Kustomization
 resources:
   - configmap.yaml
   - postgres.yaml
+  - valkey-helm-repo.yaml
+  - valkey-helm-release.yaml
   - helm-repo.yaml
   - helm-release.yaml
