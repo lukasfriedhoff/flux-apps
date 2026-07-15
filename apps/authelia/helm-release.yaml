@@ -6,6 +6,9 @@ metadata:
 spec:
   interval: 10m0s
   timeout: 10m0s
+  dependsOn:
+    - name: authelia-valkey
+      namespace: authelia
   chart:
     spec:
       chart: authelia
@@ -69,8 +72,8 @@ spec:
             same_site: lax
         redis:
           enabled: true
-          deploy: true
-          host: authelia-redis-master.authelia.svc.cluster.local
+          deploy: false
+          host: authelia-valkey.authelia.svc.cluster.local
           port: 6379
           password:
             disabled: true
@@ -152,19 +155,3 @@ spec:
     podDisruptionBudget:
       enabled: true
       minAvailable: 1
-    redis:
-      architecture: standalone
-      auth:
-        enabled: false
-      master:
-        persistence:
-          enabled: true
-          storageClass: ${default_sts_storage_class_name}
-          size: 1Gi
-        resources:
-          requests:
-            cpu: 25m
-            memory: 64Mi
-          limits:
-            cpu: 250m
-            memory: 256Mi
