@@ -21,6 +21,30 @@ spec:
   upgrade:
     disableOpenAPIValidation: true
     disableSchemaValidation: true
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              group: apps
+              version: v1
+              kind: Deployment
+              name: authelia
+            patch: |
+              - op: replace
+                path: /spec/replicas
+                value: 2
+              - op: add
+                path: /spec/template/spec/affinity
+                value:
+                  podAntiAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                      - weight: 100
+                        podAffinityTerm:
+                          labelSelector:
+                            matchLabels:
+                              app.kubernetes.io/name: authelia
+                              app.kubernetes.io/instance: authelia
+                          topologyKey: kubernetes.io/hostname
   values:
     ingress:
       enabled: true
@@ -43,6 +67,13 @@ spec:
         cookies:
           - domain: ${delegating_domain}
             same_site: lax
+        redis:
+          enabled: true
+          deploy: true
+          host: authelia-redis-master.authelia.svc.cluster.local
+          port: 6379
+          password:
+            disabled: true
       notifier:
         smtp:
           enabled: true
@@ -59,17 +90,32 @@ spec:
         metrics:
           enabled: true
           port: 9959
+      storage:
+        local:
+          enabled: false
+        postgres:
+          enabled: true
+          address: tcp://authelia-postgres-rw.authelia.svc.cluster.local:5432
+          database: authelia
+          username: authelia
+          password:
+            secret_name: authelia-postgres-app
+            path: password
     secret:
       existingSecret: authelia-secrets
       additionalSecrets:
         authelia-mail-credentials: {}
         authelia-oidc: {}
         authelia-oidc-matrix: {}
+        authelia-postgres-app: {}
     pod:
       kind: Deployment
-      replicas: 1
+      replicas: 2
       strategy:
-        type: Recreate
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 1
       annotations:
         reloader.stakater.com/auto: "true"
         prometheus.io/scrape: "true"
@@ -102,6 +148,23 @@ spec:
           secret:
             secretName: authelia-users
     persistence:
+      enabled: false
+    podDisruptionBudget:
       enabled: true
-      storageClass: ${default_sts_storage_class_name}
-      size: 1Gi
+      minAvailable: 1
+    redis:
+      architecture: standalone
+      auth:
+        enabled: false
+      master:
+        persistence:
+          enabled: true
+          storageClass: ${default_sts_storage_class_name}
+          size: 1Gi
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
