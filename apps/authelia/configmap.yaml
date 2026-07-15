@@ -17,8 +17,6 @@ data:
         address: 'tcp://:9959/metrics'
 
     theme: dark
-    default_redirection_url: https://nextcloud${public_host_suffix}.${delegating_domain}
-
     authentication_backend:
       file:
         path: /config/users_database.yml
@@ -179,7 +177,10 @@ data:
       same_site: lax
       expiration: 1h
       inactivity: 15m
-      domain: ${delegating_domain}
+      cookies:
+        - domain: ${delegating_domain}
+          authelia_url: https://auth${public_host_suffix}.${delegating_domain}
+          default_redirection_url: https://nextcloud${public_host_suffix}.${delegating_domain}
       redis:
         host: authelia-valkey.authelia.svc.cluster.local
         port: 6379
@@ -277,6 +278,7 @@ data:
               - profile
               - email
               - groups
+              - offline_access
             grant_types:
               - authorization_code
               - refresh_token
@@ -340,6 +342,7 @@ data:
               - profile
               - email
               - groups
+              - offline_access
             response_types:
               - code
             grant_types:
@@ -364,6 +367,7 @@ data:
               - profile
               - email
               - groups
+              - offline_access
             response_types:
               - code
             grant_types:
@@ -385,6 +389,7 @@ data:
               - profile
               - email
               - groups
+              - offline_access
             response_types:
               - code
             grant_types:
