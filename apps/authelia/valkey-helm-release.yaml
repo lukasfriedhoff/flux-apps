@@ -26,7 +26,7 @@ spec:
       protected-mode no
     storage:
       requestedSize: 1Gi
-      className: ${default_sts_storage_class_name}
+      className: ${authelia_valkey_storage_class_name:=${default_sts_storage_class_name}}
     resources:
       requests:
         cpu: 25m
