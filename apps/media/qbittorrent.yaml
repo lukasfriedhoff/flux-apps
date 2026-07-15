@@ -4,6 +4,7 @@ metadata:
   name: qbittorrent
   namespace: media
 spec:
+  suspend: ${qbittorrent_suspended:=false}
   interval: 10m0s
   timeout: 10m0s
   driftDetection:
