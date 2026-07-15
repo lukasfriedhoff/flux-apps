@@ -131,6 +131,30 @@ spec:
         limits:
           cpu: 500m
           memory: 512Mi
+      probes:
+        startup:
+          failureThreshold: 60
+          periodSeconds: 5
+          timeoutSeconds: 5
+      initContainers:
+        - name: wait-for-valkey
+          image: docker.io/busybox:1.37.0
+          command:
+            - sh
+            - -ec
+            - |
+              until nc -z authelia-valkey.authelia.svc.cluster.local 6379; do
+                sleep 2
+              done
+        - name: wait-for-postgres
+          image: docker.io/busybox:1.37.0
+          command:
+            - sh
+            - -ec
+            - |
+              until nc -z authelia-postgres-rw.authelia.svc.cluster.local 5432; do
+                sleep 2
+              done
       env:
         - name: AUTHELIA_NOTIFIER_SMTP_USERNAME
           valueFrom:
