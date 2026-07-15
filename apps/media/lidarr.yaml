@@ -104,6 +104,6 @@ spec:
           - path: /downloads
       media:
         enabled: true
-        existingClaim: arr-media
+        existingClaim: arr-media-v2
         globalMounts:
           - path: /media

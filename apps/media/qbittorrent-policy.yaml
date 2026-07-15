@@ -110,10 +110,10 @@ data:
         "sonarr": "/downloads/sonarr",
         "lidarr": "/downloads/lidarr",
         "readarr": "/downloads/readarr",
-        "radarr-imported": "/media/staged/movies",
-        "sonarr-imported": "/media/staged/tv",
-        "lidarr-imported": "/media/staged/music",
-        "readarr-imported": "/media/staged/books",
+        "radarr-imported": "/media/movies",
+        "sonarr-imported": "/media/tv",
+        "lidarr-imported": "/media/music",
+        "readarr-imported": "/media/books",
       }
       categories = qbt_get("/api/v2/torrents/categories") or {}
       for category, save_path in desired_categories.items():

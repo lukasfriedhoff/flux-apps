@@ -39,14 +39,14 @@ data:
     cat:
       Uncategorized: "/downloads/other"
       other: "/downloads/other"
-      radarr: "/downloads"
-      sonarr: "/downloads"
-      lidarr: "/downloads"
-      readarr: "/downloads"
-      radarr-imported: "/media/staged/movies"
-      sonarr-imported: "/media/staged/tv"
-      lidarr-imported: "/media/staged/music"
-      readarr-imported: "/media/staged/books"
+      radarr: "/downloads/radarr"
+      sonarr: "/downloads/sonarr"
+      lidarr: "/downloads/lidarr"
+      readarr: "/downloads/readarr"
+      radarr-imported: "/media/movies"
+      sonarr-imported: "/media/tv"
+      lidarr-imported: "/media/music"
+      readarr-imported: "/media/books"
 
     tracker:
       other:

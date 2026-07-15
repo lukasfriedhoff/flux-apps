@@ -105,7 +105,7 @@ spec:
             readOnly: true
       media-library:
         enabled: true
-        existingClaim: arr-media
+        existingClaim: arr-media-v2
         globalMounts:
           - path: /mnt/arr-media
       private-trackers:
