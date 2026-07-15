@@ -199,4 +199,4 @@ spec:
           volumes:
             - name: media
               persistentVolumeClaim:
-                claimName: arr-media
+                claimName: arr-media-v2

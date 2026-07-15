@@ -50,10 +50,14 @@ spec:
                   mkdir -p \
                     /downloads/.RecycleBin \
                     /downloads/orphaned_data \
-                    /media/staged/movies \
-                    /media/staged/tv \
-                    /media/staged/music \
-                    /media/staged/books
+                    /downloads/radarr \
+                    /downloads/sonarr \
+                    /downloads/lidarr \
+                    /downloads/readarr \
+                    /media/movies \
+                    /media/tv \
+                    /media/music \
+                    /media/books
               volumeMounts:
                 - name: config
                   mountPath: /config
@@ -74,4 +78,4 @@ spec:
                 claimName: arr-downloads
             - name: media
               persistentVolumeClaim:
-                claimName: arr-media
+                claimName: arr-media-v2

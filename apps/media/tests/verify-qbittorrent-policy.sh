@@ -59,9 +59,9 @@ grep -q '"radarr": "/downloads/radarr"' "$rendered" \
   || fail 'qBittorrent policy does not set Radarr category save path'
 grep -q '"sonarr": "/downloads/sonarr"' "$rendered" \
   || fail 'qBittorrent policy does not set Sonarr category save path'
-grep -q '"radarr-imported": "/media/staged/movies"' "$rendered" \
+grep -q '"radarr-imported": "/media/movies"' "$rendered" \
   || fail 'qBittorrent policy does not set Radarr imported category save path'
-grep -q '"sonarr-imported": "/media/staged/tv"' "$rendered" \
+grep -q '"sonarr-imported": "/media/tv"' "$rendered" \
   || fail 'qBittorrent policy does not set Sonarr imported category save path'
 grep -Fq 'Session\LSDEnabled=false' "$rendered" \
   || fail 'qBittorrent static config does not disable local peer discovery'
