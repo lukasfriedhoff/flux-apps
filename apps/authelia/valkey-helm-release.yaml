@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: valkey
-      version: 0.9.3
+      version: 2.3.1
       sourceRef:
         kind: HelmRepository
         name: valkey
@@ -20,14 +20,11 @@ spec:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9121"
       prometheus.io/path: "/metrics"
-    auth:
-      enabled: false
     valkeyConfig: |
       save 60 1
       appendonly yes
       protected-mode no
-    dataStorage:
-      enabled: true
+    storage:
       requestedSize: 1Gi
       className: ${default_sts_storage_class_name}
     resources:
