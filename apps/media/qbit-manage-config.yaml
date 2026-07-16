@@ -43,10 +43,10 @@ data:
       sonarr: "/downloads/sonarr"
       lidarr: "/downloads/lidarr"
       readarr: "/downloads/readarr"
-      radarr-imported: "/media/movies"
-      sonarr-imported: "/media/tv"
-      lidarr-imported: "/media/music"
-      readarr-imported: "/media/books"
+      radarr-imported: "/downloads/radarr-imported"
+      sonarr-imported: "/downloads/sonarr-imported"
+      lidarr-imported: "/downloads/lidarr-imported"
+      readarr-imported: "/downloads/readarr-imported"
 
     tracker:
       other:

@@ -59,14 +59,23 @@ grep -q '"radarr": "/downloads/radarr"' "$rendered" \
   || fail 'qBittorrent policy does not set Radarr category save path'
 grep -q '"sonarr": "/downloads/sonarr"' "$rendered" \
   || fail 'qBittorrent policy does not set Sonarr category save path'
-grep -q '"radarr-imported": "/media/movies"' "$rendered" \
-  || fail 'qBittorrent policy does not set Radarr imported category save path'
-grep -q '"sonarr-imported": "/media/tv"' "$rendered" \
-  || fail 'qBittorrent policy does not set Sonarr imported category save path'
+grep -q '"radarr-imported": "/downloads/radarr-imported"' "$rendered" \
+  || fail 'qBittorrent policy does not set Radarr imported category save path outside Jellyfin library'
+grep -q '"sonarr-imported": "/downloads/sonarr-imported"' "$rendered" \
+  || fail 'qBittorrent policy does not set Sonarr imported category save path outside Jellyfin library'
 grep -Fq 'Session\LSDEnabled=false' "$rendered" \
   || fail 'qBittorrent static config does not disable local peer discovery'
 grep -Fq "Session\\\\LSDEnabled' 'false'" "$rendered" \
   || fail 'qBittorrent config init does not disable local peer discovery'
+grep -q 'replicas: .*qbittorrent_replicas' "$rendered" \
+  || fail 'qBittorrent replica count is not configurable for migrations'
+grep -q 'existingClaim: arr-media-v2' "$rendered" \
+  || fail 'qBittorrent does not mount downloads from arr-media-v2'
+grep -q 'subPath: downloads' "$rendered" \
+  || fail 'qBittorrent /downloads is not backed by arr-media-v2 downloads subPath'
+if grep -q 'existingClaim: arr-downloads' "$rendered"; then
+  fail 'media apps still mount legacy arr-downloads PVC'
+fi
 grep -q 'name: qbittorrent-egress' "$rendered" \
   || fail 'qBittorrent egress NetworkPolicy is not rendered'
 grep -q 'cidr: .*qbittorrent_vpn_endpoint_cidr' "$rendered" \

@@ -157,9 +157,10 @@ spec:
           - path: /config-presets
       downloads:
         enabled: true
-        existingClaim: arr-downloads
+        existingClaim: arr-media-v2
         globalMounts:
           - path: /downloads
+            subPath: downloads
       media:
         enabled: true
         existingClaim: arr-media-v2

@@ -36,6 +36,7 @@ spec:
                   mountPath: /config
                 - name: downloads
                   mountPath: /downloads
+                  subPath: downloads
                 - name: media
                   mountPath: /media
           initContainers:
@@ -65,6 +66,7 @@ spec:
                   mountPath: /config-template
                 - name: downloads
                   mountPath: /downloads
+                  subPath: downloads
                 - name: media
                   mountPath: /media
           volumes:
@@ -75,7 +77,7 @@ spec:
                 name: qbit-manage-config
             - name: downloads
               persistentVolumeClaim:
-                claimName: arr-downloads
+                claimName: arr-media-v2
             - name: media
               persistentVolumeClaim:
                 claimName: arr-media-v2
