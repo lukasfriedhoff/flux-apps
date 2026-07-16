@@ -60,8 +60,13 @@ awk '
 ' "$rendered" >"$bootstrap_script"
 nix shell nixpkgs#python3 -c python -m py_compile "$bootstrap_script" \
   || fail 'Jellyfin bootstrap Python does not compile'
-grep -q 'existingClaim: arr-downloads' "$rendered" \
-  || fail 'Jellyfin does not mount arr-downloads'
+grep -q 'existingClaim: arr-media-v2' "$rendered" \
+  || fail 'media apps do not mount arr-media-v2'
+grep -q 'subPath: downloads' "$rendered" \
+  || fail 'downloads are not mounted from arr-media-v2 subPath downloads'
+if grep -q 'existingClaim: arr-downloads' "$rendered"; then
+  fail 'arr-downloads must not be mounted by media apps after downloads migration'
+fi
 grep -Fq 'Downloads\SavePath=/downloads/other' "$rendered" \
   || fail 'qBittorrent static config does not default unsorted downloads to /downloads/other'
 grep -q '"save_path": "/downloads/other"' "$rendered" \
