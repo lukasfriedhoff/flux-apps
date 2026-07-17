@@ -53,8 +53,8 @@ spec:
             env:
               PUID: ${media_puid}
               PGID: ${media_pgid}
-              DOWNLOAD_DIR: "${metube_video_download_dir:=/media/downloads/metube/videos}"
-              AUDIO_DOWNLOAD_DIR: "${metube_audio_download_dir:=/media/downloads/metube/audio}"
+              DOWNLOAD_DIR: "${metube_video_download_dir:=/media/youtube/videos}"
+              AUDIO_DOWNLOAD_DIR: "${metube_audio_download_dir:=/media/music/YouTube}"
               TEMP_DIR: /media/downloads/metube-incomplete
               STATE_DIR: /config
         containers:
@@ -94,8 +94,8 @@ spec:
               UMASK: "002"
               PORT: "8081"
               HOST: 0.0.0.0
-              DOWNLOAD_DIR: "${metube_video_download_dir:=/media/downloads/metube/videos}"
-              AUDIO_DOWNLOAD_DIR: "${metube_audio_download_dir:=/media/downloads/metube/audio}"
+              DOWNLOAD_DIR: "${metube_video_download_dir:=/media/youtube/videos}"
+              AUDIO_DOWNLOAD_DIR: "${metube_audio_download_dir:=/media/music/YouTube}"
               STATE_DIR: /config
               TEMP_DIR: /media/downloads/metube-incomplete
               CUSTOM_DIRS: "true"
