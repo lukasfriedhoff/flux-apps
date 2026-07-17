@@ -106,14 +106,14 @@ data:
     def ensure_category_save_paths():
       desired_categories = {
         "other": "/media/downloads/other",
-        "radarr": "/media/downloads/radarr",
-        "sonarr": "/media/downloads/sonarr",
-        "lidarr": "/media/downloads/lidarr",
-        "readarr": "/media/downloads/readarr",
-        "radarr-imported": "/media/downloads/radarr-imported",
-        "sonarr-imported": "/media/downloads/sonarr-imported",
-        "lidarr-imported": "/media/downloads/lidarr-imported",
-        "readarr-imported": "/media/downloads/readarr-imported",
+        "radarr": "/media/downloads/movies",
+        "sonarr": "/media/downloads/tv",
+        "lidarr": "/media/downloads/music",
+        "readarr": "/media/downloads/books",
+        "radarr-imported": "/media/downloads/movies-imported",
+        "sonarr-imported": "/media/downloads/tv-imported",
+        "lidarr-imported": "/media/downloads/music-imported",
+        "readarr-imported": "/media/downloads/books-imported",
       }
       categories = qbt_get("/api/v2/torrents/categories") or {}
       for category, save_path in desired_categories.items():

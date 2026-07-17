@@ -48,14 +48,14 @@ spec:
                 set -eu
                 mkdir -p \
                   /media/downloads/incomplete \
-                  /media/downloads/radarr \
-                  /media/downloads/sonarr \
-                  /media/downloads/lidarr \
-                  /media/downloads/readarr \
-                  /media/downloads/radarr-imported \
-                  /media/downloads/sonarr-imported \
-                  /media/downloads/lidarr-imported \
-                  /media/downloads/readarr-imported \
+                  /media/downloads/movies \
+                  /media/downloads/tv \
+                  /media/downloads/music \
+                  /media/downloads/books \
+                  /media/downloads/movies-imported \
+                  /media/downloads/tv-imported \
+                  /media/downloads/music-imported \
+                  /media/downloads/books-imported \
                   /media/downloads/other \
                   /media/downloads/metube \
                   /media/downloads/metube-incomplete

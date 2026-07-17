@@ -57,14 +57,14 @@ grep -q 'qbt_post_ignore_conflict("/api/v2/torrents/editCategory"' "$rendered" \
   || fail 'qBittorrent category edit conflicts are not handled idempotently'
 grep -q '/api/v2/torrents/setLocation' "$rendered" \
   || fail 'qBittorrent policy does not migrate legacy per-torrent /downloads locations'
-grep -q '"radarr": "/media/downloads/radarr"' "$rendered" \
-  || fail 'qBittorrent policy does not set Radarr category save path under /media/downloads'
-grep -q '"sonarr": "/media/downloads/sonarr"' "$rendered" \
-  || fail 'qBittorrent policy does not set Sonarr category save path under /media/downloads'
-grep -q '"radarr-imported": "/media/downloads/radarr-imported"' "$rendered" \
-  || fail 'qBittorrent policy does not set Radarr imported category save path under /media/downloads'
-grep -q '"sonarr-imported": "/media/downloads/sonarr-imported"' "$rendered" \
-  || fail 'qBittorrent policy does not set Sonarr imported category save path under /media/downloads'
+grep -q '"radarr": "/media/downloads/movies"' "$rendered" \
+  || fail 'qBittorrent policy does not set Radarr category save path under /media/downloads/movies'
+grep -q '"sonarr": "/media/downloads/tv"' "$rendered" \
+  || fail 'qBittorrent policy does not set Sonarr category save path under /media/downloads/tv'
+grep -q '"radarr-imported": "/media/downloads/movies-imported"' "$rendered" \
+  || fail 'qBittorrent policy does not set Radarr imported category save path under /media/downloads/movies-imported'
+grep -q '"sonarr-imported": "/media/downloads/tv-imported"' "$rendered" \
+  || fail 'qBittorrent policy does not set Sonarr imported category save path under /media/downloads/tv-imported'
 grep -Fq 'Session\LSDEnabled=false' "$rendered" \
   || fail 'qBittorrent static config does not disable local peer discovery'
 grep -Fq "Session\\\\LSDEnabled' 'false'" "$rendered" \
