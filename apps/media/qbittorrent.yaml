@@ -91,8 +91,26 @@ spec:
                 link_empty_dir /media/downloads/lidarr-imported /media/downloads/music
                 link_empty_dir /media/downloads/readarr-imported /media/downloads/books
 
-                chown "$PUID:$PGID" /media/downloads/incomplete /media/downloads/other
-                chmod 0775 /media/downloads /media/downloads/incomplete /media/downloads/other
+                chown "$PUID:$PGID" \
+                  /media/downloads \
+                  /media/downloads/incomplete \
+                  /media/downloads/movies \
+                  /media/downloads/tv \
+                  /media/downloads/music \
+                  /media/downloads/books \
+                  /media/downloads/other \
+                  /media/downloads/metube \
+                  /media/downloads/metube-incomplete
+                chmod 0775 \
+                  /media/downloads \
+                  /media/downloads/incomplete \
+                  /media/downloads/movies \
+                  /media/downloads/tv \
+                  /media/downloads/music \
+                  /media/downloads/books \
+                  /media/downloads/other \
+                  /media/downloads/metube \
+                  /media/downloads/metube-incomplete
 
                 find /media/downloads/incomplete -mindepth 1 -maxdepth 1 -exec chown -R "$PUID:$PGID" {} \;
             env:
