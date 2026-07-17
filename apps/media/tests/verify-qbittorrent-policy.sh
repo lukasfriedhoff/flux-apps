@@ -77,6 +77,16 @@ grep -q '"save_path": "/media/downloads/other"' "$rendered" \
   || fail 'qBittorrent API policy does not set default save path under /media/downloads'
 grep -q 'Downloads\\SavePath=/media/downloads/other' "$rendered" \
   || fail 'qBittorrent static config does not set default save path under /media/downloads'
+grep -q 'ln -s /media/downloads /downloads' "$rendered" \
+  || fail 'qBittorrent container does not create legacy /downloads compatibility symlink'
+grep -q 'link_empty_dir /media/downloads/radarr /media/downloads/movies' "$rendered" \
+  || fail 'qBittorrent init does not alias legacy Radarr folder to movies'
+grep -q 'link_empty_dir /media/downloads/sonarr /media/downloads/tv' "$rendered" \
+  || fail 'qBittorrent init does not alias legacy Sonarr folder to tv'
+grep -q 'link_empty_dir /media/downloads/radarr-imported /media/downloads/movies-imported' "$rendered" \
+  || fail 'qBittorrent init does not alias legacy imported Radarr folder to movies-imported'
+grep -q 'link_empty_dir /media/downloads/sonarr-imported /media/downloads/tv-imported' "$rendered" \
+  || fail 'qBittorrent init does not alias legacy imported Sonarr folder to tv-imported'
 grep -q 'Deleted Radarr stale /downloads remote path mapping' "$rendered" \
   || fail 'Arr bootstrap does not prune stale /downloads remote path mappings'
 if grep -q 'mountPath: /downloads\|path: /downloads\|subPath: downloads' "$rendered"; then

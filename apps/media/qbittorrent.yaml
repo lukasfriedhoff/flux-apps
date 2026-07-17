@@ -60,6 +60,32 @@ spec:
                   /media/downloads/metube \
                   /media/downloads/metube-incomplete
 
+                link_empty_dir() {
+                  old="$1"
+                  target="$2"
+                  mkdir -p "$target"
+                  if [ -L "$old" ]; then
+                    return 0
+                  fi
+                  if [ -d "$old" ] && [ -z "$(ls -A "$old" 2>/dev/null)" ]; then
+                    rmdir "$old"
+                    ln -s "$target" "$old"
+                    return 0
+                  fi
+                  if [ ! -e "$old" ]; then
+                    ln -s "$target" "$old"
+                  fi
+                }
+
+                link_empty_dir /media/downloads/radarr /media/downloads/movies
+                link_empty_dir /media/downloads/sonarr /media/downloads/tv
+                link_empty_dir /media/downloads/lidarr /media/downloads/music
+                link_empty_dir /media/downloads/readarr /media/downloads/books
+                link_empty_dir /media/downloads/radarr-imported /media/downloads/movies-imported
+                link_empty_dir /media/downloads/sonarr-imported /media/downloads/tv-imported
+                link_empty_dir /media/downloads/lidarr-imported /media/downloads/music-imported
+                link_empty_dir /media/downloads/readarr-imported /media/downloads/books-imported
+
                 chown "$PUID:$PGID" /media/downloads/incomplete /media/downloads/other
                 chmod 0775 /media/downloads /media/downloads/incomplete /media/downloads/other
 
@@ -221,6 +247,16 @@ spec:
             image:
               repository: lscr.io/linuxserver/qbittorrent
               tag: 5.1.4
+            lifecycle:
+              postStart:
+                exec:
+                  command:
+                    - /bin/sh
+                    - -c
+                    - |
+                      if [ ! -e /downloads ]; then
+                        ln -s /media/downloads /downloads
+                      fi
             env:
               TZ: ${media_timezone}
               PUID: ${media_puid}
