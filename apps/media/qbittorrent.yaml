@@ -52,13 +52,13 @@ spec:
                   /media/downloads/tv \
                   /media/downloads/music \
                   /media/downloads/books \
-                  /media/downloads/movies-imported \
-                  /media/downloads/tv-imported \
-                  /media/downloads/music-imported \
-                  /media/downloads/books-imported \
                   /media/downloads/other \
                   /media/downloads/metube \
-                  /media/downloads/metube-incomplete
+                  /media/downloads/metube-incomplete \
+                  /media/movies \
+                  /media/tv \
+                  /media/music \
+                  /media/books
 
                 link_empty_dir() {
                   old="$1"
@@ -81,10 +81,10 @@ spec:
                 link_empty_dir /media/downloads/sonarr /media/downloads/tv
                 link_empty_dir /media/downloads/lidarr /media/downloads/music
                 link_empty_dir /media/downloads/readarr /media/downloads/books
-                link_empty_dir /media/downloads/radarr-imported /media/downloads/movies-imported
-                link_empty_dir /media/downloads/sonarr-imported /media/downloads/tv-imported
-                link_empty_dir /media/downloads/lidarr-imported /media/downloads/music-imported
-                link_empty_dir /media/downloads/readarr-imported /media/downloads/books-imported
+                link_empty_dir /media/downloads/radarr-imported /media/movies
+                link_empty_dir /media/downloads/sonarr-imported /media/tv
+                link_empty_dir /media/downloads/lidarr-imported /media/music
+                link_empty_dir /media/downloads/readarr-imported /media/books
 
                 chown "$PUID:$PGID" /media/downloads/incomplete /media/downloads/other
                 chmod 0775 /media/downloads /media/downloads/incomplete /media/downloads/other
