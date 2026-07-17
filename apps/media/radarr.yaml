@@ -95,12 +95,6 @@ spec:
         existingClaim: radarr-config-rbd
         globalMounts:
           - path: /config
-      downloads:
-        enabled: true
-        existingClaim: arr-media-v2
-        globalMounts:
-          - path: /downloads
-            subPath: downloads
       media:
         enabled: true
         existingClaim: arr-media-v2

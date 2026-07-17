@@ -47,23 +47,23 @@ spec:
               - |
                 set -eu
                 mkdir -p \
-                  /downloads/incomplete \
-                  /downloads/radarr \
-                  /downloads/sonarr \
-                  /downloads/lidarr \
-                  /downloads/readarr \
-                  /downloads/radarr-imported \
-                  /downloads/sonarr-imported \
-                  /downloads/lidarr-imported \
-                  /downloads/readarr-imported \
-                  /downloads/other \
-                  /downloads/metube \
-                  /downloads/metube-incomplete
+                  /media/downloads/incomplete \
+                  /media/downloads/radarr \
+                  /media/downloads/sonarr \
+                  /media/downloads/lidarr \
+                  /media/downloads/readarr \
+                  /media/downloads/radarr-imported \
+                  /media/downloads/sonarr-imported \
+                  /media/downloads/lidarr-imported \
+                  /media/downloads/readarr-imported \
+                  /media/downloads/other \
+                  /media/downloads/metube \
+                  /media/downloads/metube-incomplete
 
-                chown "$PUID:$PGID" /downloads/incomplete /downloads/other
-                chmod 0775 /downloads /downloads/incomplete /downloads/other
+                chown "$PUID:$PGID" /media/downloads/incomplete /media/downloads/other
+                chmod 0775 /media/downloads /media/downloads/incomplete /media/downloads/other
 
-                find /downloads/incomplete -mindepth 1 -maxdepth 1 -exec chown -R "$PUID:$PGID" {} \;
+                find /media/downloads/incomplete -mindepth 1 -maxdepth 1 -exec chown -R "$PUID:$PGID" {} \;
             env:
               PUID: ${media_puid}
               PGID: ${media_pgid}
@@ -128,8 +128,8 @@ spec:
                 ensure_pref 'WebUI\\Authentication\\Enabled' 'false'
                 ensure_pref 'WebUI\\AuthSubnetWhitelistEnabled' 'true'
                 ensure_pref 'WebUI\\AuthSubnetWhitelist' '${k8s_pod_cidr},${k8s_service_cidr}'
-                ensure_pref 'Downloads\\SavePath' '/downloads/other'
-                ensure_pref 'Downloads\\TempPath' '/downloads/incomplete'
+                ensure_pref 'Downloads\\SavePath' '/media/downloads/other'
+                ensure_pref 'Downloads\\TempPath' '/media/downloads/incomplete'
                 ensure_pref 'Downloads\\TempPathEnabled' 'true'
 
                 sed -i '/^=$/d' "$config"
@@ -340,12 +340,6 @@ spec:
         size: ${arr_config_size}
         globalMounts:
           - path: /config
-      downloads:
-        enabled: true
-        existingClaim: arr-media-v2
-        globalMounts:
-          - path: /downloads
-            subPath: downloads
       media:
         enabled: true
         existingClaim: arr-media-v2

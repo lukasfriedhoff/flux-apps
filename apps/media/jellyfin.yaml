@@ -160,12 +160,6 @@ spec:
         existingClaim: arr-media-v2
         globalMounts:
           - path: /media
-      downloads:
-        enabled: true
-        existingClaim: arr-media-v2
-        globalMounts:
-          - path: /downloads
-            subPath: downloads
       transcode:
         enabled: true
         type: emptyDir

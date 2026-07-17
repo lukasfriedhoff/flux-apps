@@ -30,17 +30,14 @@ spec:
                 - name: MEDIA_GID
                   value: "n${media_pgid}"
                 - name: AUDIO_SOURCE_DIR
-                  value: "${metube_audio_download_dir:=/downloads/metube/audio}"
+                  value: "${metube_audio_download_dir:=/media/downloads/metube/audio}"
                 - name: AUDIO_TARGET_DIR
                   value: "${metube_audio_promoted_dir:=/media/music/YouTube}"
                 - name: VIDEO_SOURCE_DIR
-                  value: "${metube_video_download_dir:=/downloads/metube/videos}"
+                  value: "${metube_video_download_dir:=/media/downloads/metube/videos}"
                 - name: VIDEO_TARGET_DIR
                   value: "${metube_video_promoted_dir:=/media/youtube/videos}"
               volumeMounts:
-                - name: downloads
-                  mountPath: /downloads
-                  subPath: downloads
                 - name: media
                   mountPath: /media
               command:
@@ -123,7 +120,7 @@ spec:
 
                   moves = 0
                   moves += promote_tree(
-                      Path(os.getenv("AUDIO_SOURCE_DIR", "/downloads/metube/audio")),
+                      Path(os.getenv("AUDIO_SOURCE_DIR", "/media/downloads/metube/audio")),
                       Path(os.getenv("AUDIO_TARGET_DIR", "/media/music/YouTube")),
                       min_age_seconds,
                       max_files,
@@ -133,7 +130,7 @@ spec:
                   if max_files <= 0 or moves < max_files:
                       remaining = max_files - moves if max_files > 0 else 0
                       moves += promote_tree(
-                          Path(os.getenv("VIDEO_SOURCE_DIR", "/downloads/metube/videos")),
+                          Path(os.getenv("VIDEO_SOURCE_DIR", "/media/downloads/metube/videos")),
                           Path(os.getenv("VIDEO_TARGET_DIR", "/media/youtube/videos")),
                           min_age_seconds,
                           remaining,
@@ -142,9 +139,6 @@ spec:
                       )
                   print(f"[metube-promoter] finished promoted={moves}")
           volumes:
-            - name: downloads
-              persistentVolumeClaim:
-                claimName: arr-media-v2
             - name: media
               persistentVolumeClaim:
                 claimName: arr-media-v2

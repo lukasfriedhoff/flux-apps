@@ -32,21 +32,21 @@ data:
       disable_qbt_default_share_limits: false
 
     directory:
-      root_dir: "/downloads"
-      recycle_bin: "/downloads/.RecycleBin"
-      orphaned_dir: "/downloads/orphaned_data"
+      root_dir: "/media/downloads"
+      recycle_bin: "/media/downloads/.RecycleBin"
+      orphaned_dir: "/media/downloads/orphaned_data"
 
     cat:
-      Uncategorized: "/downloads/other"
-      other: "/downloads/other"
-      radarr: "/downloads/radarr"
-      sonarr: "/downloads/sonarr"
-      lidarr: "/downloads/lidarr"
-      readarr: "/downloads/readarr"
-      radarr-imported: "/downloads/radarr-imported"
-      sonarr-imported: "/downloads/sonarr-imported"
-      lidarr-imported: "/downloads/lidarr-imported"
-      readarr-imported: "/downloads/readarr-imported"
+      Uncategorized: "/media/downloads/other"
+      other: "/media/downloads/other"
+      radarr: "/media/downloads/radarr"
+      sonarr: "/media/downloads/sonarr"
+      lidarr: "/media/downloads/lidarr"
+      readarr: "/media/downloads/readarr"
+      radarr-imported: "/media/downloads/radarr-imported"
+      sonarr-imported: "/media/downloads/sonarr-imported"
+      lidarr-imported: "/media/downloads/lidarr-imported"
+      readarr-imported: "/media/downloads/readarr-imported"
 
     tracker:
       other:
