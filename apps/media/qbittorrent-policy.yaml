@@ -110,10 +110,10 @@ data:
         "sonarr": "/media/downloads/tv",
         "lidarr": "/media/downloads/music",
         "readarr": "/media/downloads/books",
-        "radarr-imported": "/media/movies",
-        "sonarr-imported": "/media/tv",
-        "lidarr-imported": "/media/music",
-        "readarr-imported": "/media/books",
+        "radarr-imported": "/media/downloads/movies",
+        "sonarr-imported": "/media/downloads/tv",
+        "lidarr-imported": "/media/downloads/music",
+        "readarr-imported": "/media/downloads/books",
       }
       categories = qbt_get("/api/v2/torrents/categories") or {}
       for category, save_path in desired_categories.items():
@@ -125,38 +125,52 @@ data:
 
     def migrate_legacy_download_locations():
       legacy_prefixes = {
-        "/downloads/radarr-imported": "/media/movies",
-        "/downloads/sonarr-imported": "/media/tv",
-        "/downloads/lidarr-imported": "/media/music",
-        "/downloads/readarr-imported": "/media/books",
+        "/downloads/radarr-imported": "/media/downloads/movies",
+        "/downloads/sonarr-imported": "/media/downloads/tv",
+        "/downloads/lidarr-imported": "/media/downloads/music",
+        "/downloads/readarr-imported": "/media/downloads/books",
         "/downloads/radarr": "/media/downloads/movies",
         "/downloads/sonarr": "/media/downloads/tv",
         "/downloads/lidarr": "/media/downloads/music",
         "/downloads/readarr": "/media/downloads/books",
         "/downloads": "/media/downloads",
-        "/media/downloads/movies-imported": "/media/movies",
-        "/media/downloads/tv-imported": "/media/tv",
-        "/media/downloads/music-imported": "/media/music",
-        "/media/downloads/books-imported": "/media/books",
-        "/media/downloads/radarr-imported": "/media/movies",
-        "/media/downloads/sonarr-imported": "/media/tv",
-        "/media/downloads/lidarr-imported": "/media/music",
-        "/media/downloads/readarr-imported": "/media/books",
+        "/media/downloads/movies-imported": "/media/downloads/movies",
+        "/media/downloads/tv-imported": "/media/downloads/tv",
+        "/media/downloads/music-imported": "/media/downloads/music",
+        "/media/downloads/books-imported": "/media/downloads/books",
+        "/media/downloads/radarr-imported": "/media/downloads/movies",
+        "/media/downloads/sonarr-imported": "/media/downloads/tv",
+        "/media/downloads/lidarr-imported": "/media/downloads/music",
+        "/media/downloads/readarr-imported": "/media/downloads/books",
         "/media/downloads/radarr": "/media/downloads/movies",
         "/media/downloads/sonarr": "/media/downloads/tv",
         "/media/downloads/lidarr": "/media/downloads/music",
         "/media/downloads/readarr": "/media/downloads/books",
       }
+      imported_category_targets = {
+        "radarr-imported": "/media/downloads/movies",
+        "sonarr-imported": "/media/downloads/tv",
+        "lidarr-imported": "/media/downloads/music",
+        "readarr-imported": "/media/downloads/books",
+      }
       torrents = qbt_get("/api/v2/torrents/info?filter=all") or []
       by_target = {}
       for torrent in torrents:
         torrent_hash = torrent.get("hash")
+        category = str(torrent.get("category", "")).strip()
         save_path = str(torrent.get("save_path", "")).rstrip("/")
         if not torrent_hash:
           continue
 
         target = None
+        if category in imported_category_targets:
+          expected_target = imported_category_targets[category]
+          if save_path != expected_target and not save_path.startswith(f"{expected_target}/"):
+            target = expected_target
+
         for legacy_prefix, canonical_prefix in sorted(legacy_prefixes.items(), key=lambda item: len(item[0]), reverse=True):
+          if target:
+            break
           if save_path == legacy_prefix or save_path.startswith(f"{legacy_prefix}/"):
             suffix = save_path.removeprefix(legacy_prefix)
             target = f"{canonical_prefix}{suffix}"
