@@ -13,7 +13,6 @@ resources:
   - qbit-manage.yaml
   - metube-presets.yaml
   - metube.yaml
-  - metube-promotion.yaml
   - jellyfin-music-refresh.yaml
   - prowlarr.yaml
   - prowlarr-bootstrap-config.yaml
