@@ -269,12 +269,17 @@ data:
         fi
       else
         idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
+        current_idx_json="$(printf '%s' "$idx_json" | jq -c '.')"
         idx_json="$(printf '%s' "$idx_json" | jq -c --arg name "$name" --arg enabled "$enabled" --arg appProfileId "$APP_PROFILE_ID" '
           .name = $name
           | .enable = ($enabled == "true")
           | .appProfileId = ($appProfileId | tonumber)
         ')"
         idx_json="$(apply_indexer_fields "$idx_json" "$field_values_json")"
+        if [ "$current_idx_json" = "$idx_json" ]; then
+          log "Indexer $name ($impl) already current."
+          return 0
+        fi
         if prowlarr_put "/api/v1/indexer/$idx_id" "$idx_json" >/dev/null; then
           log "Updated indexer $name ($impl)."
         else
@@ -319,6 +324,7 @@ data:
         fi
       else
         idx_id="$(printf '%s' "$idx_json" | jq -r '.id')"
+        current_idx_json="$(printf '%s' "$idx_json" | jq -c '.')"
         idx_json="$(printf '%s' "$idx_json" | jq -c \
           --arg name "$name" \
           --arg enabled "$enabled" \
@@ -328,6 +334,10 @@ data:
             | .appProfileId = ($appProfileId | tonumber)
           ')"
         idx_json="$(apply_indexer_fields "$idx_json" "$field_values_json")"
+        if [ "$current_idx_json" = "$idx_json" ]; then
+          log "Cardigann indexer $name already current."
+          return 0
+        fi
         if prowlarr_put "/api/v1/indexer/$idx_id" "$idx_json" >/dev/null; then
           log "Updated Cardigann indexer $name."
         else
@@ -651,12 +661,20 @@ data:
     ensure_private_cardigann_api_indexer "RocketHD (API)" "RocketHD" "rockethd_api_key" "apikey" || log "Failed to sync RocketHD indexer; will retry."
     rocket_hd_json="$(prowlarr_get /api/v1/indexer | jq -c 'map(select(.implementation == "Cardigann" and (((.fields // []) | map(select(.name == "definitionFile" and .value == "rockethd"))) | length > 0)))[0]')"
     if [ "$rocket_hd_json" != "null" ]; then
-      rocket_hd_id="$(printf '%s' "$rocket_hd_json" | jq -r '.id')"
-      rocket_hd_json="$(printf '%s' "$rocket_hd_json" | jq -c --arg seedRatio "$PROWLARR_DEFAULT_SEED_RATIO" '
-        (.fields[]? | select(.name == "torrentBaseSettings.seedRatio")).value =
-          (if ($seedRatio | gsub("\\s"; "") | length) == 0 then null else ($seedRatio | tonumber) end)
-      ')"
-      prowlarr_put "/api/v1/indexer/$rocket_hd_id" "$rocket_hd_json" >/dev/null || log "Failed to set RocketHD seed ratio; will retry."
+      if [ -z "$(printf '%s' "$PROWLARR_DEFAULT_SEED_RATIO" | tr -d '[:space:]')" ]; then
+        log "RocketHD seed ratio unmanaged."
+      else
+        rocket_hd_id="$(printf '%s' "$rocket_hd_json" | jq -r '.id')"
+        current_rocket_hd_json="$(printf '%s' "$rocket_hd_json" | jq -c '.')"
+        rocket_hd_json="$(printf '%s' "$rocket_hd_json" | jq -c --arg seedRatio "$PROWLARR_DEFAULT_SEED_RATIO" '
+          (.fields[]? | select(.name == "torrentBaseSettings.seedRatio")).value = ($seedRatio | tonumber)
+        ')"
+        if [ "$current_rocket_hd_json" = "$rocket_hd_json" ]; then
+          log "RocketHD seed ratio already current."
+        else
+          prowlarr_put "/api/v1/indexer/$rocket_hd_id" "$rocket_hd_json" >/dev/null || log "Failed to set RocketHD seed ratio; will retry."
+        fi
+      fi
     fi
 
     # Push current indexer set into downstream Arr apps.
@@ -805,6 +823,21 @@ data:
       fi
     }
 
+    ensure_lidarr_download_path_mapping() {
+      mapping_json="$(lidarr_get /api/v1/remotepathmapping | jq -c 'map(select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")))[0]')"
+      payload="$(jq -cn '{host:"qbittorrent", remotePath:"/downloads/", localPath:"/media/downloads/"}')"
+
+      if [ "$mapping_json" = "null" ]; then
+        lidarr_post /api/v1/remotepathmapping "$payload" >/dev/null
+        log "Created Lidarr remote path mapping /downloads/ -> /media/downloads/."
+      else
+        mapping_id="$(printf '%s' "$mapping_json" | jq -r '.id')"
+        payload="$(printf '%s' "$payload" | jq -c --argjson id "$mapping_id" '.id = $id')"
+        lidarr_put "/api/v1/remotepathmapping/$mapping_id" "$payload" >/dev/null
+        log "Updated Lidarr remote path mapping /downloads/ -> /media/downloads/."
+      fi
+    }
+
     ensure_media_library_layout
 
     if [ -n "$LIDARR_API_KEY" ]; then
@@ -814,6 +847,7 @@ data:
       else
         ensure_lidarr_rootfolder || log "Failed to ensure Lidarr root folder; will retry."
         ensure_lidarr_qbittorrent || log "Failed to ensure Lidarr qBittorrent client; will retry."
+        ensure_lidarr_download_path_mapping || log "Failed to ensure Lidarr remote path mapping; will retry."
       fi
     else
       log "Lidarr API key missing; skipping Lidarr bootstrap."
@@ -907,6 +941,21 @@ data:
         ')"
         sonarr_put "/api/v3/downloadclient/$dl_id" "$dl_json" >/dev/null
         log "Updated Sonarr download client qBittorrent."
+      fi
+    }
+
+    ensure_sonarr_download_path_mapping() {
+      mapping_json="$(sonarr_get /api/v3/remotepathmapping | jq -c 'map(select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")))[0]')"
+      payload="$(jq -cn '{host:"qbittorrent", remotePath:"/downloads/", localPath:"/media/downloads/"}')"
+
+      if [ "$mapping_json" = "null" ]; then
+        sonarr_post /api/v3/remotepathmapping "$payload" >/dev/null
+        log "Created Sonarr remote path mapping /downloads/ -> /media/downloads/."
+      else
+        mapping_id="$(printf '%s' "$mapping_json" | jq -r '.id')"
+        payload="$(printf '%s' "$payload" | jq -c --argjson id "$mapping_id" '.id = $id')"
+        sonarr_put "/api/v3/remotepathmapping/$mapping_id" "$payload" >/dev/null
+        log "Updated Sonarr remote path mapping /downloads/ -> /media/downloads/."
       fi
     }
 
@@ -1015,6 +1064,7 @@ data:
       else
         ensure_sonarr_rootfolder || log "Failed to ensure Sonarr root folder; will retry."
         ensure_sonarr_qbittorrent || log "Failed to ensure Sonarr qBittorrent client; will retry."
+        ensure_sonarr_download_path_mapping || log "Failed to ensure Sonarr remote path mapping; will retry."
         if [ "$ENABLE_DUAL_AUDIO_POLICY" = "true" ]; then
           ensure_sonarr_dual_audio_policy || log "Failed to apply Sonarr dual-audio policy; will retry."
         fi
@@ -1140,6 +1190,21 @@ data:
       fi
     }
 
+    ensure_radarr_download_path_mapping() {
+      mapping_json="$(radarr_get /api/v3/remotepathmapping | jq -c 'map(select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")))[0]')"
+      payload="$(jq -cn '{host:"qbittorrent", remotePath:"/downloads/", localPath:"/media/downloads/"}')"
+
+      if [ "$mapping_json" = "null" ]; then
+        radarr_post /api/v3/remotepathmapping "$payload" >/dev/null
+        log "Created Radarr remote path mapping /downloads/ -> /media/downloads/."
+      else
+        mapping_id="$(printf '%s' "$mapping_json" | jq -r '.id')"
+        payload="$(printf '%s' "$payload" | jq -c --argjson id "$mapping_id" '.id = $id')"
+        radarr_put "/api/v3/remotepathmapping/$mapping_id" "$payload" >/dev/null
+        log "Updated Radarr remote path mapping /downloads/ -> /media/downloads/."
+      fi
+    }
+
     ensure_radarr_dual_audio_policy() {
       dual_cf_name="German + English Dual Audio"
 
@@ -1212,6 +1277,7 @@ data:
         ensure_radarr_rootfolder || log "Failed to ensure Radarr root folder; will retry."
         ensure_radarr_media_management || log "Failed to configure Radarr media management; will retry."
         ensure_radarr_qbittorrent || log "Failed to ensure Radarr qBittorrent client; will retry."
+        ensure_radarr_download_path_mapping || log "Failed to ensure Radarr remote path mapping; will retry."
         if [ "$ENABLE_DUAL_AUDIO_POLICY" = "true" ]; then
           ensure_radarr_dual_audio_policy || log "Failed to apply Radarr dual-audio policy; will retry."
         fi
@@ -1335,6 +1401,21 @@ data:
       fi
     }
 
+    ensure_readarr_download_path_mapping() {
+      mapping_json="$(readarr_get /api/v1/remotepathmapping | jq -c 'map(select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")))[0]')"
+      payload="$(jq -cn '{host:"qbittorrent", remotePath:"/downloads/", localPath:"/media/downloads/"}')"
+
+      if [ "$mapping_json" = "null" ]; then
+        readarr_post /api/v1/remotepathmapping "$payload" >/dev/null
+        log "Created Readarr remote path mapping /downloads/ -> /media/downloads/."
+      else
+        mapping_id="$(printf '%s' "$mapping_json" | jq -r '.id')"
+        payload="$(printf '%s' "$payload" | jq -c --argjson id "$mapping_id" '.id = $id')"
+        readarr_put "/api/v1/remotepathmapping/$mapping_id" "$payload" >/dev/null
+        log "Updated Readarr remote path mapping /downloads/ -> /media/downloads/."
+      fi
+    }
+
     if [ -n "$READARR_API_KEY" ]; then
       READARR_URL="$(discover_readarr_url || true)"
       if [ -z "$READARR_URL" ]; then
@@ -1342,6 +1423,7 @@ data:
       else
         ensure_readarr_rootfolder || log "Failed to ensure Readarr root folder; will retry."
         ensure_readarr_qbittorrent || log "Failed to ensure Readarr qBittorrent client; will retry."
+        ensure_readarr_download_path_mapping || log "Failed to ensure Readarr remote path mapping; will retry."
       fi
     else
       log "Readarr API key missing; skipping Readarr bootstrap."

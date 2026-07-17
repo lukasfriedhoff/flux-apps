@@ -73,6 +73,18 @@ grep -q 'existingClaim: arr-media-v2' "$rendered" \
   || fail 'qBittorrent does not mount downloads from arr-media-v2'
 grep -q 'subPath: downloads' "$rendered" \
   || fail 'qBittorrent /downloads is not backed by arr-media-v2 downloads subPath'
+grep -q 'remotePath:"/downloads/"' "$rendered" \
+  || fail 'Arr bootstrap does not map qBittorrent remote /downloads/ path'
+grep -q 'localPath:"/media/downloads/"' "$rendered" \
+  || fail 'Arr bootstrap does not map qBittorrent downloads into the shared /media mount'
+grep -q 'ensure_radarr_download_path_mapping' "$rendered" \
+  || fail 'Radarr remote path mapping is not bootstrapped'
+grep -q 'ensure_sonarr_download_path_mapping' "$rendered" \
+  || fail 'Sonarr remote path mapping is not bootstrapped'
+grep -q 'ensure_lidarr_download_path_mapping' "$rendered" \
+  || fail 'Lidarr remote path mapping is not bootstrapped'
+grep -q 'ensure_readarr_download_path_mapping' "$rendered" \
+  || fail 'Readarr remote path mapping is not bootstrapped'
 if grep -q 'existingClaim: arr-downloads' "$rendered"; then
   fail 'media apps still mount legacy arr-downloads PVC'
 fi
