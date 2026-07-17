@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: media
 resources:
   - helm-repo.yaml
-  - pvc-downloads.yaml
   - pvc-media.yaml
   - qbittorrent-config.yaml
   - qbittorrent.yaml
