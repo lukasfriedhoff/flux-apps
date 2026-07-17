@@ -55,6 +55,8 @@ grep -q '"/api/v2/torrents/editCategory"' "$rendered" \
   || fail 'qBittorrent policy does not enforce category save paths'
 grep -q 'qbt_post_ignore_conflict("/api/v2/torrents/editCategory"' "$rendered" \
   || fail 'qBittorrent category edit conflicts are not handled idempotently'
+grep -q '/api/v2/torrents/setLocation' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy per-torrent /downloads locations'
 grep -q '"radarr": "/media/downloads/radarr"' "$rendered" \
   || fail 'qBittorrent policy does not set Radarr category save path under /media/downloads'
 grep -q '"sonarr": "/media/downloads/sonarr"' "$rendered" \

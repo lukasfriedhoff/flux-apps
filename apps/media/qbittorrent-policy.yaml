@@ -123,6 +123,25 @@ data:
           qbt_post("/api/v2/torrents/createCategory", {"category": category, "savePath": save_path})
       log("qBittorrent category save paths enforced.")
 
+    def migrate_legacy_download_locations():
+      torrents = qbt_get("/api/v2/torrents/info?filter=all") or []
+      by_target = {}
+      for torrent in torrents:
+        torrent_hash = torrent.get("hash")
+        save_path = str(torrent.get("save_path", "")).rstrip("/")
+        if not torrent_hash or not save_path.startswith("/downloads"):
+          continue
+
+        target = f"/media/downloads{save_path.removeprefix('/downloads')}"
+        by_target.setdefault(target, []).append(torrent_hash)
+
+      moved = 0
+      for target, hashes in sorted(by_target.items()):
+        qbt_post("/api/v2/torrents/setLocation", {"hashes": "|".join(hashes), "location": target})
+        moved += len(hashes)
+
+      log(f"qBittorrent legacy /downloads save paths migrated: torrents={moved}")
+
     def tracker_is_allowed(url):
       normalized = str(url or "").strip().lower()
       if not normalized.startswith(("http://", "https://", "udp://")):
@@ -197,6 +216,7 @@ data:
       wait_for_qbittorrent()
       enforce_qbittorrent_defaults()
       ensure_category_save_paths()
+      migrate_legacy_download_locations()
       prune_public_trackers()
       start_completed_torrents()
 
