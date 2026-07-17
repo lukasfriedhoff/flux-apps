@@ -220,24 +220,23 @@ data:
         f"touched_torrents={touched_torrents} removed_trackers={removed_trackers}"
       )
 
-    def start_completed_torrents():
+    def start_stopped_torrents():
       torrents = qbt_get("/api/v2/torrents/info?filter=all") or []
       stopped_hashes = [
         torrent["hash"]
         for torrent in torrents
         if torrent.get("hash")
-        and torrent.get("progress", 0) >= 1
-        and str(torrent.get("state", "")).lower() in ("stoppedup", "pausedup")
+        and str(torrent.get("state", "")).lower() in ("stoppedup", "pausedup", "stoppeddl", "pauseddl")
       ]
       if not stopped_hashes:
-        log("qBittorrent completed torrent policy enforced: started=0")
+        log("qBittorrent stopped torrent policy enforced: started=0")
         return
 
       try:
         qbt_post("/api/v2/torrents/start", {"hashes": "|".join(stopped_hashes)})
       except Exception:
         qbt_post("/api/v2/torrents/resume", {"hashes": "|".join(stopped_hashes)})
-      log(f"qBittorrent completed torrent policy enforced: started={len(stopped_hashes)}")
+      log(f"qBittorrent stopped torrent policy enforced: started={len(stopped_hashes)}")
 
     def main():
       wait_for_qbittorrent()
@@ -245,7 +244,7 @@ data:
       ensure_category_save_paths()
       migrate_legacy_download_locations()
       prune_public_trackers()
-      start_completed_torrents()
+      start_stopped_torrents()
 
     if __name__ == "__main__":
       main()

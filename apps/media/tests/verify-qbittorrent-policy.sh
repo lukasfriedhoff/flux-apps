@@ -32,6 +32,11 @@ grep -q 'rocket-hd.cc,flood.st' "$rendered" \
   || fail 'qBittorrent tracker allowlist does not default to private tracker markers'
 grep -q '/api/v2/torrents/start' "$rendered" \
   || fail 'qBittorrent policy does not restart completed stopped torrents'
+grep -q '"stoppeddl"' "$rendered" \
+  || fail 'qBittorrent policy does not restart stopped downloads'
+if grep -q 'progress", 0) >= 1' "$rendered"; then
+  fail 'qBittorrent stopped torrent policy still only restarts completed torrents'
+fi
 if grep -q 'ROCKETHD_QUOTA_BYTES\\|pause_incomplete_rockethd\\|start_incomplete_rockethd' "$rendered"; then
   fail 'qBittorrent policy still contains RocketHD quota enforcement'
 fi
