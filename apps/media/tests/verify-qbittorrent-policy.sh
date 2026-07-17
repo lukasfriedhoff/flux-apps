@@ -66,18 +66,34 @@ grep -q '"/media/downloads/radarr": "/media/downloads/movies"' "$rendered" \
   || fail 'qBittorrent policy does not migrate legacy Radarr per-torrent save paths'
 grep -q '"/media/downloads/sonarr": "/media/downloads/tv"' "$rendered" \
   || fail 'qBittorrent policy does not migrate legacy Sonarr per-torrent save paths'
-grep -q '"/media/downloads/radarr-imported": "/media/downloads/movies-imported"' "$rendered" \
-  || fail 'qBittorrent policy does not migrate legacy Radarr imported per-torrent save paths'
-grep -q '"/media/downloads/sonarr-imported": "/media/downloads/tv-imported"' "$rendered" \
-  || fail 'qBittorrent policy does not migrate legacy Sonarr imported per-torrent save paths'
+grep -q '"/media/downloads/movies-imported": "/media/movies"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy movies-imported per-torrent save paths into the Movies library'
+grep -q '"/media/downloads/tv-imported": "/media/tv"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy tv-imported per-torrent save paths into the TV library'
+grep -q '"/media/downloads/music-imported": "/media/music"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy music-imported per-torrent save paths into the Music library'
+grep -q '"/media/downloads/books-imported": "/media/books"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy books-imported per-torrent save paths into the Books library'
+grep -q '"/media/downloads/radarr-imported": "/media/movies"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy Radarr imported per-torrent save paths into the Movies library'
+grep -q '"/media/downloads/sonarr-imported": "/media/tv"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy Sonarr imported per-torrent save paths into the TV library'
+grep -q '"/media/downloads/lidarr-imported": "/media/music"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy Lidarr imported per-torrent save paths into the Music library'
+grep -q '"/media/downloads/readarr-imported": "/media/books"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy Readarr imported per-torrent save paths into the Books library'
 grep -q '"radarr": "/media/downloads/movies"' "$rendered" \
   || fail 'qBittorrent policy does not set Radarr category save path under /media/downloads/movies'
 grep -q '"sonarr": "/media/downloads/tv"' "$rendered" \
   || fail 'qBittorrent policy does not set Sonarr category save path under /media/downloads/tv'
-grep -q '"radarr-imported": "/media/downloads/movies-imported"' "$rendered" \
-  || fail 'qBittorrent policy does not set Radarr imported category save path under /media/downloads/movies-imported'
-grep -q '"sonarr-imported": "/media/downloads/tv-imported"' "$rendered" \
-  || fail 'qBittorrent policy does not set Sonarr imported category save path under /media/downloads/tv-imported'
+grep -q '"radarr-imported": "/media/movies"' "$rendered" \
+  || fail 'qBittorrent policy does not set Radarr imported category save path under /media/movies'
+grep -q '"sonarr-imported": "/media/tv"' "$rendered" \
+  || fail 'qBittorrent policy does not set Sonarr imported category save path under /media/tv'
+grep -q '"lidarr-imported": "/media/music"' "$rendered" \
+  || fail 'qBittorrent policy does not set Lidarr imported category save path under /media/music'
+grep -q '"readarr-imported": "/media/books"' "$rendered" \
+  || fail 'qBittorrent policy does not set Readarr imported category save path under /media/books'
 grep -Fq 'Session\LSDEnabled=false' "$rendered" \
   || fail 'qBittorrent static config does not disable local peer discovery'
 grep -Fq "Session\\\\LSDEnabled' 'false'" "$rendered" \
@@ -96,10 +112,14 @@ grep -q 'link_empty_dir /media/downloads/radarr /media/downloads/movies' "$rende
   || fail 'qBittorrent init does not alias legacy Radarr folder to movies'
 grep -q 'link_empty_dir /media/downloads/sonarr /media/downloads/tv' "$rendered" \
   || fail 'qBittorrent init does not alias legacy Sonarr folder to tv'
-grep -q 'link_empty_dir /media/downloads/radarr-imported /media/downloads/movies-imported' "$rendered" \
-  || fail 'qBittorrent init does not alias legacy imported Radarr folder to movies-imported'
-grep -q 'link_empty_dir /media/downloads/sonarr-imported /media/downloads/tv-imported' "$rendered" \
-  || fail 'qBittorrent init does not alias legacy imported Sonarr folder to tv-imported'
+grep -q 'link_empty_dir /media/downloads/radarr-imported /media/movies' "$rendered" \
+  || fail 'qBittorrent init does not alias legacy imported Radarr folder to the Movies library'
+grep -q 'link_empty_dir /media/downloads/sonarr-imported /media/tv' "$rendered" \
+  || fail 'qBittorrent init does not alias legacy imported Sonarr folder to the TV library'
+grep -q 'link_empty_dir /media/downloads/lidarr-imported /media/music' "$rendered" \
+  || fail 'qBittorrent init does not alias legacy imported Lidarr folder to the Music library'
+grep -q 'link_empty_dir /media/downloads/readarr-imported /media/books' "$rendered" \
+  || fail 'qBittorrent init does not alias legacy imported Readarr folder to the Books library'
 grep -q 'Deleted Radarr stale /downloads remote path mapping' "$rendered" \
   || fail 'Arr bootstrap does not prune stale /downloads remote path mappings'
 if grep -q 'mountPath: /downloads\|path: /downloads\|subPath: downloads' "$rendered"; then
