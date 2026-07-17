@@ -57,6 +57,14 @@ grep -q 'qbt_post_ignore_conflict("/api/v2/torrents/editCategory"' "$rendered" \
   || fail 'qBittorrent category edit conflicts are not handled idempotently'
 grep -q '/api/v2/torrents/setLocation' "$rendered" \
   || fail 'qBittorrent policy does not migrate legacy per-torrent /downloads locations'
+grep -q '"/media/downloads/radarr": "/media/downloads/movies"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy Radarr per-torrent save paths'
+grep -q '"/media/downloads/sonarr": "/media/downloads/tv"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy Sonarr per-torrent save paths'
+grep -q '"/media/downloads/radarr-imported": "/media/downloads/movies-imported"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy Radarr imported per-torrent save paths'
+grep -q '"/media/downloads/sonarr-imported": "/media/downloads/tv-imported"' "$rendered" \
+  || fail 'qBittorrent policy does not migrate legacy Sonarr imported per-torrent save paths'
 grep -q '"radarr": "/media/downloads/movies"' "$rendered" \
   || fail 'qBittorrent policy does not set Radarr category save path under /media/downloads/movies'
 grep -q '"sonarr": "/media/downloads/tv"' "$rendered" \
