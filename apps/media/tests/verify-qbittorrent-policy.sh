@@ -62,6 +62,8 @@ grep -q 'qbt_post_ignore_conflict("/api/v2/torrents/editCategory"' "$rendered" \
   || fail 'qBittorrent category edit conflicts are not handled idempotently'
 grep -q '/api/v2/torrents/setLocation' "$rendered" \
   || fail 'qBittorrent policy does not migrate legacy per-torrent /downloads locations'
+grep -q '/api/v2/torrents/setAutoManagement' "$rendered" \
+  || fail 'qBittorrent policy does not enable AutoTMM for imported torrents'
 grep -q '"/media/downloads/radarr": "/media/downloads/movies"' "$rendered" \
   || fail 'qBittorrent policy does not migrate legacy Radarr per-torrent save paths'
 grep -q '"/media/downloads/sonarr": "/media/downloads/tv"' "$rendered" \

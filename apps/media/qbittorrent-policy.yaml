@@ -173,6 +173,40 @@ data:
 
       log(f"qBittorrent legacy save paths migrated: torrents={moved}")
 
+    def enable_imported_torrent_auto_management():
+      imported_categories = {"radarr-imported", "sonarr-imported", "lidarr-imported", "readarr-imported"}
+      legacy_imported_prefixes = (
+        "/downloads/radarr-imported",
+        "/downloads/sonarr-imported",
+        "/downloads/lidarr-imported",
+        "/downloads/readarr-imported",
+        "/media/downloads/movies-imported",
+        "/media/downloads/tv-imported",
+        "/media/downloads/music-imported",
+        "/media/downloads/books-imported",
+        "/media/downloads/radarr-imported",
+        "/media/downloads/sonarr-imported",
+        "/media/downloads/lidarr-imported",
+        "/media/downloads/readarr-imported",
+      )
+      torrents = qbt_get("/api/v2/torrents/info?filter=all") or []
+      hashes = [
+        torrent["hash"]
+        for torrent in torrents
+        if torrent.get("hash")
+        and (
+          torrent.get("category") in imported_categories
+          or str(torrent.get("save_path", "")).rstrip("/").startswith(legacy_imported_prefixes)
+          or str(torrent.get("content_path", "")).startswith(legacy_imported_prefixes)
+        )
+      ]
+      if not hashes:
+        log("qBittorrent imported torrent auto management enforced: torrents=0")
+        return
+
+      qbt_post("/api/v2/torrents/setAutoManagement", {"hashes": "|".join(hashes), "enable": "true"})
+      log(f"qBittorrent imported torrent auto management enforced: torrents={len(hashes)}")
+
     def tracker_is_allowed(url):
       normalized = str(url or "").strip().lower()
       if not normalized.startswith(("http://", "https://", "udp://")):
@@ -246,6 +280,7 @@ data:
       wait_for_qbittorrent()
       enforce_qbittorrent_defaults()
       ensure_category_save_paths()
+      enable_imported_torrent_auto_management()
       migrate_legacy_download_locations()
       prune_public_trackers()
       start_stopped_torrents()
