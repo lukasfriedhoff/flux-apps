@@ -97,12 +97,6 @@ spec:
         size: ${arr_config_size}
         globalMounts:
           - path: /config
-      downloads:
-        enabled: true
-        existingClaim: arr-media-v2
-        globalMounts:
-          - path: /downloads
-            subPath: downloads
       media:
         enabled: true
         existingClaim: arr-media-v2

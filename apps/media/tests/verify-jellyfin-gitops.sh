@@ -41,8 +41,8 @@ grep -q '/Users/.*/Policy' "$rendered" \
   || fail 'Jellyfin admin sync does not update Jellyfin user policy'
 grep -q 'Other Downloads' "$rendered" \
   || fail 'Jellyfin bootstrap does not create the Other Downloads library'
-grep -q '/downloads/other' "$rendered" \
-  || fail 'Jellyfin Other Downloads library path is not rendered'
+grep -q '/media/downloads/other' "$rendered" \
+  || fail 'Jellyfin Other Downloads library path is not rendered under /media/downloads'
 grep -q 'LIBRARY_DISPLAY_ORDER' "$rendered" \
   || fail 'Jellyfin bootstrap does not define a stable library display order'
 grep -q 'E2E Movies' "$rendered" && grep -q 'E2E TV' "$rendered" && grep -q 'E2E Music' "$rendered" \
@@ -62,14 +62,15 @@ nix shell nixpkgs#python3 -c python -m py_compile "$bootstrap_script" \
   || fail 'Jellyfin bootstrap Python does not compile'
 grep -q 'existingClaim: arr-media-v2' "$rendered" \
   || fail 'media apps do not mount arr-media-v2'
-grep -q 'subPath: downloads' "$rendered" \
-  || fail 'downloads are not mounted from arr-media-v2 subPath downloads'
+if grep -q 'mountPath: /downloads\|path: /downloads\|subPath: downloads' "$rendered"; then
+  fail 'downloads must not be mounted separately from arr-media-v2'
+fi
 if grep -q 'existingClaim: arr-downloads' "$rendered"; then
   fail 'arr-downloads must not be mounted by media apps after downloads migration'
 fi
-grep -Fq 'Downloads\SavePath=/downloads/other' "$rendered" \
-  || fail 'qBittorrent static config does not default unsorted downloads to /downloads/other'
-grep -q '"save_path": "/downloads/other"' "$rendered" \
-  || fail 'qBittorrent API policy does not enforce /downloads/other as default save path'
+grep -Fq 'Downloads\SavePath=/media/downloads/other' "$rendered" \
+  || fail 'qBittorrent static config does not default unsorted downloads to /media/downloads/other'
+grep -q '"save_path": "/media/downloads/other"' "$rendered" \
+  || fail 'qBittorrent API policy does not enforce /media/downloads/other as default save path'
 
 printf '[jellyfin-gitops-test] ok\n'

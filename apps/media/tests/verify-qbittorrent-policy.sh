@@ -55,14 +55,14 @@ grep -q '"/api/v2/torrents/editCategory"' "$rendered" \
   || fail 'qBittorrent policy does not enforce category save paths'
 grep -q 'qbt_post_ignore_conflict("/api/v2/torrents/editCategory"' "$rendered" \
   || fail 'qBittorrent category edit conflicts are not handled idempotently'
-grep -q '"radarr": "/downloads/radarr"' "$rendered" \
-  || fail 'qBittorrent policy does not set Radarr category save path'
-grep -q '"sonarr": "/downloads/sonarr"' "$rendered" \
-  || fail 'qBittorrent policy does not set Sonarr category save path'
-grep -q '"radarr-imported": "/downloads/radarr-imported"' "$rendered" \
-  || fail 'qBittorrent policy does not set Radarr imported category save path outside Jellyfin library'
-grep -q '"sonarr-imported": "/downloads/sonarr-imported"' "$rendered" \
-  || fail 'qBittorrent policy does not set Sonarr imported category save path outside Jellyfin library'
+grep -q '"radarr": "/media/downloads/radarr"' "$rendered" \
+  || fail 'qBittorrent policy does not set Radarr category save path under /media/downloads'
+grep -q '"sonarr": "/media/downloads/sonarr"' "$rendered" \
+  || fail 'qBittorrent policy does not set Sonarr category save path under /media/downloads'
+grep -q '"radarr-imported": "/media/downloads/radarr-imported"' "$rendered" \
+  || fail 'qBittorrent policy does not set Radarr imported category save path under /media/downloads'
+grep -q '"sonarr-imported": "/media/downloads/sonarr-imported"' "$rendered" \
+  || fail 'qBittorrent policy does not set Sonarr imported category save path under /media/downloads'
 grep -Fq 'Session\LSDEnabled=false' "$rendered" \
   || fail 'qBittorrent static config does not disable local peer discovery'
 grep -Fq "Session\\\\LSDEnabled' 'false'" "$rendered" \
@@ -70,13 +70,16 @@ grep -Fq "Session\\\\LSDEnabled' 'false'" "$rendered" \
 grep -q 'replicas: .*qbittorrent_replicas' "$rendered" \
   || fail 'qBittorrent replica count is not configurable for migrations'
 grep -q 'existingClaim: arr-media-v2' "$rendered" \
-  || fail 'qBittorrent does not mount downloads from arr-media-v2'
-grep -q 'subPath: downloads' "$rendered" \
-  || fail 'qBittorrent /downloads is not backed by arr-media-v2 downloads subPath'
-grep -q 'remotePath:"/downloads/"' "$rendered" \
-  || fail 'Arr bootstrap does not map qBittorrent remote /downloads/ path'
-grep -q 'localPath:"/media/downloads/"' "$rendered" \
-  || fail 'Arr bootstrap does not map qBittorrent downloads into the shared /media mount'
+  || fail 'qBittorrent does not mount arr-media-v2'
+grep -q '"save_path": "/media/downloads/other"' "$rendered" \
+  || fail 'qBittorrent API policy does not set default save path under /media/downloads'
+grep -q 'Downloads\\SavePath=/media/downloads/other' "$rendered" \
+  || fail 'qBittorrent static config does not set default save path under /media/downloads'
+grep -q 'Deleted Radarr stale /downloads remote path mapping' "$rendered" \
+  || fail 'Arr bootstrap does not prune stale /downloads remote path mappings'
+if grep -q 'mountPath: /downloads\|path: /downloads\|subPath: downloads' "$rendered"; then
+  fail 'media apps still mount downloads as a separate mountpoint'
+fi
 grep -q 'ensure_radarr_download_path_mapping' "$rendered" \
   || fail 'Radarr remote path mapping is not bootstrapped'
 grep -q 'ensure_sonarr_download_path_mapping' "$rendered" \

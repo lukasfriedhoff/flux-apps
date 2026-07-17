@@ -53,9 +53,9 @@ spec:
             env:
               PUID: ${media_puid}
               PGID: ${media_pgid}
-              DOWNLOAD_DIR: "${metube_video_download_dir:=/downloads/metube/videos}"
-              AUDIO_DOWNLOAD_DIR: "${metube_audio_download_dir:=/downloads/metube/audio}"
-              TEMP_DIR: /downloads/metube-incomplete
+              DOWNLOAD_DIR: "${metube_video_download_dir:=/media/downloads/metube/videos}"
+              AUDIO_DOWNLOAD_DIR: "${metube_audio_download_dir:=/media/downloads/metube/audio}"
+              TEMP_DIR: /media/downloads/metube-incomplete
               STATE_DIR: /config
         containers:
           main:
@@ -94,10 +94,10 @@ spec:
               UMASK: "002"
               PORT: "8081"
               HOST: 0.0.0.0
-              DOWNLOAD_DIR: "${metube_video_download_dir:=/downloads/metube/videos}"
-              AUDIO_DOWNLOAD_DIR: "${metube_audio_download_dir:=/downloads/metube/audio}"
+              DOWNLOAD_DIR: "${metube_video_download_dir:=/media/downloads/metube/videos}"
+              AUDIO_DOWNLOAD_DIR: "${metube_audio_download_dir:=/media/downloads/metube/audio}"
               STATE_DIR: /config
-              TEMP_DIR: /downloads/metube-incomplete
+              TEMP_DIR: /media/downloads/metube-incomplete
               CUSTOM_DIRS: "true"
               CREATE_CUSTOM_DIRS: "true"
               DOWNLOAD_DIRS_INDEXABLE: "false"
@@ -155,12 +155,6 @@ spec:
         name: metube-presets
         globalMounts:
           - path: /config-presets
-      downloads:
-        enabled: true
-        existingClaim: arr-media-v2
-        globalMounts:
-          - path: /downloads
-            subPath: downloads
       media:
         enabled: true
         existingClaim: arr-media-v2

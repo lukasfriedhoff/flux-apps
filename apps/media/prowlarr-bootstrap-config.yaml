@@ -720,6 +720,13 @@ data:
         "$LIDARR_URL$path"
     }
 
+    lidarr_delete() {
+      path="$1"
+      curl -fsS -m 30 -X DELETE \
+        -H "X-Api-Key: $LIDARR_API_KEY" \
+        "$LIDARR_URL$path"
+    }
+
     ensure_media_library_path() {
       subpath="$1"
       path="/mnt/arr-media/$subpath"
@@ -824,18 +831,17 @@ data:
     }
 
     ensure_lidarr_download_path_mapping() {
-      mapping_json="$(lidarr_get /api/v1/remotepathmapping | jq -c 'map(select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")))[0]')"
-      payload="$(jq -cn '{host:"qbittorrent", remotePath:"/downloads/", localPath:"/media/downloads/"}')"
-
-      if [ "$mapping_json" = "null" ]; then
-        lidarr_post /api/v1/remotepathmapping "$payload" >/dev/null
-        log "Created Lidarr remote path mapping /downloads/ -> /media/downloads/."
-      else
-        mapping_id="$(printf '%s' "$mapping_json" | jq -r '.id')"
-        payload="$(printf '%s' "$payload" | jq -c --argjson id "$mapping_id" '.id = $id')"
-        lidarr_put "/api/v1/remotepathmapping/$mapping_id" "$payload" >/dev/null
-        log "Updated Lidarr remote path mapping /downloads/ -> /media/downloads/."
+      mapping_ids="$(lidarr_get /api/v1/remotepathmapping | jq -r '.[] | select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")) | .id')"
+      if [ -z "$mapping_ids" ]; then
+        log "Lidarr stale /downloads remote path mapping absent."
+        return 0
       fi
+
+      printf '%s\n' "$mapping_ids" | while IFS= read -r mapping_id; do
+        [ -n "$mapping_id" ] || continue
+        lidarr_delete "/api/v1/remotepathmapping/$mapping_id" >/dev/null
+        log "Deleted Lidarr stale /downloads remote path mapping $mapping_id."
+      done
     }
 
     ensure_media_library_layout
@@ -893,6 +899,13 @@ data:
         "$SONARR_URL$path"
     }
 
+    sonarr_delete() {
+      path="$1"
+      curl -fsS -m 30 -X DELETE \
+        -H "X-Api-Key: $SONARR_API_KEY" \
+        "$SONARR_URL$path"
+    }
+
     ensure_sonarr_rootfolder() {
       root_json="$(sonarr_get /api/v3/rootfolder | jq -c 'map(select(.path == "/media/tv"))[0]')"
       if [ "$root_json" = "null" ]; then
@@ -945,18 +958,17 @@ data:
     }
 
     ensure_sonarr_download_path_mapping() {
-      mapping_json="$(sonarr_get /api/v3/remotepathmapping | jq -c 'map(select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")))[0]')"
-      payload="$(jq -cn '{host:"qbittorrent", remotePath:"/downloads/", localPath:"/media/downloads/"}')"
-
-      if [ "$mapping_json" = "null" ]; then
-        sonarr_post /api/v3/remotepathmapping "$payload" >/dev/null
-        log "Created Sonarr remote path mapping /downloads/ -> /media/downloads/."
-      else
-        mapping_id="$(printf '%s' "$mapping_json" | jq -r '.id')"
-        payload="$(printf '%s' "$payload" | jq -c --argjson id "$mapping_id" '.id = $id')"
-        sonarr_put "/api/v3/remotepathmapping/$mapping_id" "$payload" >/dev/null
-        log "Updated Sonarr remote path mapping /downloads/ -> /media/downloads/."
+      mapping_ids="$(sonarr_get /api/v3/remotepathmapping | jq -r '.[] | select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")) | .id')"
+      if [ -z "$mapping_ids" ]; then
+        log "Sonarr stale /downloads remote path mapping absent."
+        return 0
       fi
+
+      printf '%s\n' "$mapping_ids" | while IFS= read -r mapping_id; do
+        [ -n "$mapping_id" ] || continue
+        sonarr_delete "/api/v3/remotepathmapping/$mapping_id" >/dev/null
+        log "Deleted Sonarr stale /downloads remote path mapping $mapping_id."
+      done
     }
 
     ensure_sonarr_dual_audio_policy() {
@@ -1113,6 +1125,13 @@ data:
         "$RADARR_URL$path"
     }
 
+    radarr_delete() {
+      path="$1"
+      curl -fsS -m 30 -X DELETE \
+        -H "X-Api-Key: $RADARR_API_KEY" \
+        "$RADARR_URL$path"
+    }
+
     ensure_radarr_rootfolder() {
       root_json="$(radarr_get /api/v3/rootfolder | jq -c 'map(select(.path == "/media/movies"))[0]')"
       if [ "$root_json" = "null" ]; then
@@ -1191,18 +1210,17 @@ data:
     }
 
     ensure_radarr_download_path_mapping() {
-      mapping_json="$(radarr_get /api/v3/remotepathmapping | jq -c 'map(select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")))[0]')"
-      payload="$(jq -cn '{host:"qbittorrent", remotePath:"/downloads/", localPath:"/media/downloads/"}')"
-
-      if [ "$mapping_json" = "null" ]; then
-        radarr_post /api/v3/remotepathmapping "$payload" >/dev/null
-        log "Created Radarr remote path mapping /downloads/ -> /media/downloads/."
-      else
-        mapping_id="$(printf '%s' "$mapping_json" | jq -r '.id')"
-        payload="$(printf '%s' "$payload" | jq -c --argjson id "$mapping_id" '.id = $id')"
-        radarr_put "/api/v3/remotepathmapping/$mapping_id" "$payload" >/dev/null
-        log "Updated Radarr remote path mapping /downloads/ -> /media/downloads/."
+      mapping_ids="$(radarr_get /api/v3/remotepathmapping | jq -r '.[] | select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")) | .id')"
+      if [ -z "$mapping_ids" ]; then
+        log "Radarr stale /downloads remote path mapping absent."
+        return 0
       fi
+
+      printf '%s\n' "$mapping_ids" | while IFS= read -r mapping_id; do
+        [ -n "$mapping_id" ] || continue
+        radarr_delete "/api/v3/remotepathmapping/$mapping_id" >/dev/null
+        log "Deleted Radarr stale /downloads remote path mapping $mapping_id."
+      done
     }
 
     ensure_radarr_dual_audio_policy() {
@@ -1326,6 +1344,13 @@ data:
         "$READARR_URL$path"
     }
 
+    readarr_delete() {
+      path="$1"
+      curl -fsS -m 30 -X DELETE \
+        -H "X-Api-Key: $READARR_API_KEY" \
+        "$READARR_URL$path"
+    }
+
     ensure_readarr_rootfolder() {
       root_json="$(readarr_get /api/v1/rootfolder | jq -c 'map(select(.path == "/media/books"))[0]')"
       if [ "$root_json" = "null" ]; then
@@ -1402,18 +1427,17 @@ data:
     }
 
     ensure_readarr_download_path_mapping() {
-      mapping_json="$(readarr_get /api/v1/remotepathmapping | jq -c 'map(select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")))[0]')"
-      payload="$(jq -cn '{host:"qbittorrent", remotePath:"/downloads/", localPath:"/media/downloads/"}')"
-
-      if [ "$mapping_json" = "null" ]; then
-        readarr_post /api/v1/remotepathmapping "$payload" >/dev/null
-        log "Created Readarr remote path mapping /downloads/ -> /media/downloads/."
-      else
-        mapping_id="$(printf '%s' "$mapping_json" | jq -r '.id')"
-        payload="$(printf '%s' "$payload" | jq -c --argjson id "$mapping_id" '.id = $id')"
-        readarr_put "/api/v1/remotepathmapping/$mapping_id" "$payload" >/dev/null
-        log "Updated Readarr remote path mapping /downloads/ -> /media/downloads/."
+      mapping_ids="$(readarr_get /api/v1/remotepathmapping | jq -r '.[] | select(.host == "qbittorrent" and (.remotePath == "/downloads" or .remotePath == "/downloads/")) | .id')"
+      if [ -z "$mapping_ids" ]; then
+        log "Readarr stale /downloads remote path mapping absent."
+        return 0
       fi
+
+      printf '%s\n' "$mapping_ids" | while IFS= read -r mapping_id; do
+        [ -n "$mapping_id" ] || continue
+        readarr_delete "/api/v1/remotepathmapping/$mapping_id" >/dev/null
+        log "Deleted Readarr stale /downloads remote path mapping $mapping_id."
+      done
     }
 
     if [ -n "$READARR_API_KEY" ]; then

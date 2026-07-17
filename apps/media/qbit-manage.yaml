@@ -34,9 +34,6 @@ spec:
               volumeMounts:
                 - name: config
                   mountPath: /config
-                - name: downloads
-                  mountPath: /downloads
-                  subPath: downloads
                 - name: media
                   mountPath: /media
           initContainers:
@@ -49,12 +46,12 @@ spec:
                   set -eu
                   cp /config-template/config.yml /config/config.yml
                   mkdir -p \
-                    /downloads/.RecycleBin \
-                    /downloads/orphaned_data \
-                    /downloads/radarr \
-                    /downloads/sonarr \
-                    /downloads/lidarr \
-                    /downloads/readarr \
+                    /media/downloads/.RecycleBin \
+                    /media/downloads/orphaned_data \
+                    /media/downloads/radarr \
+                    /media/downloads/sonarr \
+                    /media/downloads/lidarr \
+                    /media/downloads/readarr \
                     /media/movies \
                     /media/tv \
                     /media/music \
@@ -64,9 +61,6 @@ spec:
                   mountPath: /config
                 - name: config-template
                   mountPath: /config-template
-                - name: downloads
-                  mountPath: /downloads
-                  subPath: downloads
                 - name: media
                   mountPath: /media
           volumes:
@@ -75,9 +69,6 @@ spec:
             - name: config-template
               configMap:
                 name: qbit-manage-config
-            - name: downloads
-              persistentVolumeClaim:
-                claimName: arr-media-v2
             - name: media
               persistentVolumeClaim:
                 claimName: arr-media-v2
