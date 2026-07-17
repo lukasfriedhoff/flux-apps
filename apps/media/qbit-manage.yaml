@@ -48,10 +48,10 @@ spec:
                   mkdir -p \
                     /media/downloads/.RecycleBin \
                     /media/downloads/orphaned_data \
-                    /media/downloads/radarr \
-                    /media/downloads/sonarr \
-                    /media/downloads/lidarr \
-                    /media/downloads/readarr \
+                    /media/downloads/movies \
+                    /media/downloads/tv \
+                    /media/downloads/music \
+                    /media/downloads/books \
                     /media/movies \
                     /media/tv \
                     /media/music \
