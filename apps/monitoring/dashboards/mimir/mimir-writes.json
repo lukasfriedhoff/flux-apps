@@ -35,7 +35,7 @@
       "height": "125px",
       "panels": [
         {
-          "content": "<p>\n  This dashboard shows various health metrics for the write path.\n  It is broken into sections for each service on the write path,\n  and organized by the order in which the write request flows.\n  <br/>\n  Incoming metrics data travels from the gateway \u2192 distributor \u2192 ingester.\n  <br/>\n  For each service, there are 3 panels showing\n  (1) requests per second to that service,\n  (2) average, median, and p99 latency of requests to that service, and\n  (3) p99 latency of requests to each instance of that service.\n</p>\n<p>\n  It also includes metrics for the key-value (KV) stores used to manage\n  the high-availability tracker and the ingesters.\n</p>\n",
+          "content": "<p>\n  This dashboard shows various health metrics for the write path.\n  It is broken into sections for each service on the write path,\n  and organized by the order in which the write request flows.\n  <br/>\n  Incoming metrics data travels from the gateway → distributor → ingester.\n  <br/>\n  For each service, there are 3 panels showing\n  (1) requests per second to that service,\n  (2) average, median, and p99 latency of requests to that service, and\n  (3) p99 latency of requests to each instance of that service.\n</p>\n<p>\n  It also includes metrics for the key-value (KV) stores used to manage\n  the high-availability tracker and the ingesters.\n</p>\n",
           "datasource": null,
           "description": "",
           "id": 1,
@@ -1682,7 +1682,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Ingester \u2013 Kafka records processing (ingest storage)",
+      "title": "Ingester – Kafka records processing (ingest storage)",
       "titleSize": "h6"
     },
     {
@@ -2105,7 +2105,7 @@
         },
         {
           "datasource": "$datasource",
-          "description": "### Forced TSDB head compactions in progress\nThe number of ingesters currently performing a forced TSDB head compaction. During a forced compaction,\nKafka consumption may be paused, which is a common cause of elevated \u2014 but temporary \u2014 end-to-end latency.\n\n",
+          "description": "### Forced TSDB head compactions in progress\nThe number of ingesters currently performing a forced TSDB head compaction. During a forced compaction,\nKafka consumption may be paused, which is a common cause of elevated — but temporary — end-to-end latency.\n\n",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -2157,7 +2157,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Ingester \u2013 end-to-end latency (ingest storage)",
+      "title": "Ingester – end-to-end latency (ingest storage)",
       "titleSize": "h6"
     },
     {
@@ -2322,7 +2322,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Ingester \u2013 last consumed offset (ingest storage)",
+      "title": "Ingester – last consumed offset (ingest storage)",
       "titleSize": "h6"
     },
     {
@@ -2591,7 +2591,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Distributor \u2013 autoscaling",
+      "title": "Distributor – autoscaling",
       "titleSize": "h6"
     },
     {
@@ -3729,7 +3729,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Ingester \u2013 shipper",
+      "title": "Ingester – shipper",
       "titleSize": "h6"
     },
     {
@@ -3925,7 +3925,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Ingester \u2013 TSDB head",
+      "title": "Ingester – TSDB head",
       "titleSize": "h6"
     },
     {
@@ -4245,7 +4245,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Ingester \u2013 TSDB write ahead log (WAL)",
+      "title": "Ingester – TSDB write ahead log (WAL)",
       "titleSize": "h6"
     },
     {
@@ -4588,11 +4588,11 @@
         "type": "datasource"
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "testing-srv3",
-          "value": "testing-srv3"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
@@ -4612,15 +4612,15 @@
         "useTags": false
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "monitoring",
-          "value": "monitoring"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "namespace",
         "multi": true,
         "name": "namespace",

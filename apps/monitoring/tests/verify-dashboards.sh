@@ -56,6 +56,110 @@ while IFS= read -r file; do
     ] | length == 0
   ' "$file" >/dev/null || fail "dashboard contains an empty PromQL expression: ${rel}"
 
+  jq -e '
+    [
+      .. | objects | select(has("expr")) | .expr
+      | select(type == "string")
+      | select(test("job=\\\"(node|kube-state-metrics|kubelet)\\\""))
+    ] | length == 0
+  ' "$file" >/dev/null || fail "dashboard uses stale scrape job labels; use Grafana Agent integration job names: ${rel}"
+
+  jq -e '
+    [
+      .templating.list[]?
+      | select(.type == "datasource" and ((.query | tostring) == "prometheus"))
+      | select(((.current.value // "") != "mimir") or ((.regex // "") != ""))
+    ] | length == 0
+  ' "$file" >/dev/null || fail "Prometheus datasource variables must default to Mimir without regex filters: ${rel}"
+
+  jq -e '
+    [
+      .templating.list[]?
+      | select(.type == "datasource" and ((.query | tostring) == "loki"))
+      | select((.current.value // "") != "loki")
+    ] | length == 0
+  ' "$file" >/dev/null || fail "Loki datasource variables must default to Loki: ${rel}"
+
+  jq -e '
+    [
+      .templating.list[]?
+      | select(.type == "datasource" and ((.query | tostring) == "tempo"))
+      | select((.current.value // "") != "tempo")
+    ] | length == 0
+  ' "$file" >/dev/null || fail "Tempo datasource variables must default to Tempo: ${rel}"
+
+  jq -e '
+    [
+      .. | objects | .datasource? // empty
+      | if type == "object" then (.uid? // .name? // "") elif type == "string" then . else empty end
+      | . as $uid
+      | select(["prometheus", "Prometheus", "default", "mimir-ops-03", "cortex-ops-01", "P666011C0B63BDCA4"] | index($uid))
+    ] | length == 0
+  ' "$file" >/dev/null || fail "dashboard contains hardcoded stale Prometheus datasource references: ${rel}"
+
+  jq -e '
+    [
+      .annotations.list[]? | .datasource? // empty
+      | select(type == "object" and (.uid? // "") == "grafana")
+    ] | length == 0
+  ' "$file" >/dev/null || fail "dashboard annotations must use Grafana builtin uid '-- Grafana --': ${rel}"
+
+  if grep -q '\${DS_PROMETHEUS}' "$file"; then
+    jq -e '[.templating.list[]? | select(.name == "DS_PROMETHEUS")] | length > 0' "$file" >/dev/null \
+      || fail "dashboard references \${DS_PROMETHEUS} without defining the datasource variable: ${rel}"
+  fi
+
+  jq -e '
+    [
+      .templating.list[]?
+      | select((.name | ascii_downcase) as $name | [
+          "namespace", "instance", "instances", "pod", "container", "node", "workload", "volume", "certificate", "cluster"
+        ] | index($name))
+      | select((.includeAll != true) or (.multi != true) or (((.allValue // "") == ".*" or (.allValue // "") == ".+") | not))
+    ] | length == 0
+  ' "$file" >/dev/null || fail "namespace/instance/cluster-style selectors must support multi-select All: ${rel}"
+
+  if jq -e '
+    [
+      .. | objects | select(has("expr")) | .expr
+      | select(type == "string")
+      | select(contains("|=") or contains("|~") or contains("| logfmt") or contains("|logfmt") or contains("$__auto") or ((startswith("{") and (startswith("{__name__") | not))))
+    ] | length > 0
+  ' "$file" >/dev/null; then
+    jq -e '
+      [
+        .templating.list[]?
+        | select((.name | ascii_downcase) as $name | ["namespace", "pod", "container", "cluster"] | index($name))
+        | select(.includeAll == true)
+        | select((.allValue // "") != ".+")
+      ] | length == 0
+    ' "$file" >/dev/null || fail "LogQL dashboards must use non-empty All=~.+ selectors for Loki: ${rel}"
+  fi
+
+  jq -e '
+    [
+      .. | objects | select(has("expr")) | .expr
+      | select(type == "string")
+      | select(test("[A-Za-z_:][A-Za-z0-9_:]*\\\\s*=\\\\s*\\\"\\\\$\\\\{?(namespace|Namespace|instance|instances|Instances|pod|container|node|workload|volume|Certificate|certificate|cluster)\\\\}?\\\""))
+    ] | length == 0
+  ' "$file" >/dev/null || fail "PromQL/LogQL selectors using multi-select variables must use regex matching: ${rel}"
+
+  case "$rel" in
+    apps/*|media/*)
+      jq -e '
+        [.templating.list[]? | select(.name == "namespace") | select(.includeAll == true and .multi == true)] | length == 1
+      ' "$file" >/dev/null || fail "app/media dashboard namespace variable must support All and multi-select: ${rel}"
+
+      jq -e '
+        [
+          .templating.list[]?
+          | select(.name == "pod" or .name == "container")
+          | select((.includeAll != true) or (.multi != true))
+        ] | length == 0
+      ' "$file" >/dev/null || fail "app/media dashboard pod/container variables must support All and multi-select: ${rel}"
+      ;;
+  esac
+
   if [ "$rel" = "cnpg/cnpg-backup.json" ]; then
     jq -e '
       [

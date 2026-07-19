@@ -1866,17 +1866,17 @@
         "type": "datasource"
       },
       {
-        "allValue": null,
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "testing-srv3",
-          "value": "testing-srv3"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "cluster",
-        "multi": false,
+        "multi": true,
         "name": "cluster",
         "options": [],
         "query": "label_values(loki_build_info, cluster)",
@@ -1890,17 +1890,17 @@
         "useTags": false
       },
       {
-        "allValue": null,
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "monitoring",
-          "value": "monitoring"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "namespace",
-        "multi": false,
+        "multi": true,
         "name": "namespace",
         "options": [],
         "query": "label_values(loki_build_info{cluster=~\"$cluster\"}, namespace)",

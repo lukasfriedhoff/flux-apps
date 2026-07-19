@@ -43,7 +43,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(kubelet_node_name{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\"})",
+          "expr": "sum(kubelet_node_name{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\"})",
           "instant": true
         }
       ],
@@ -78,7 +78,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(kubelet_running_pods{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"})",
+          "expr": "sum(kubelet_running_pods{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"})",
           "instant": true
         }
       ],
@@ -113,7 +113,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(kubelet_running_containers{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"})",
+          "expr": "sum(kubelet_running_containers{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"})",
           "instant": true
         }
       ],
@@ -148,7 +148,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(volume_manager_total_volumes{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\", state=\"actual_state_of_world\"})",
+          "expr": "sum(volume_manager_total_volumes{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\", state=\"actual_state_of_world\"})",
           "instant": true
         }
       ],
@@ -183,7 +183,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(volume_manager_total_volumes{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",state=\"desired_state_of_world\"})",
+          "expr": "sum(volume_manager_total_volumes{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",state=\"desired_state_of_world\"})",
           "instant": true
         }
       ],
@@ -218,7 +218,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(kubelet_node_config_error{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval]))",
+          "expr": "sum(rate(kubelet_node_config_error{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval]))",
           "instant": true
         }
       ],
@@ -269,7 +269,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(kubelet_runtime_operations_total{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (operation_type, instance)",
+          "expr": "sum(rate(kubelet_runtime_operations_total{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (operation_type, instance)",
           "legendFormat": "{{instance}} {{operation_type}}"
         }
       ],
@@ -320,7 +320,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(kubelet_runtime_operations_errors_total{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_type)",
+          "expr": "sum(rate(kubelet_runtime_operations_errors_total{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_type)",
           "legendFormat": "{{instance}} {{operation_type}}"
         }
       ],
@@ -371,7 +371,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(kubelet_runtime_operations_duration_seconds_bucket{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_type, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(kubelet_runtime_operations_duration_seconds_bucket{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_type, le))",
           "legendFormat": "{{instance}} {{operation_type}}"
         }
       ],
@@ -422,7 +422,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(kubelet_pod_start_duration_seconds_count{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance)",
+          "expr": "sum(rate(kubelet_pod_start_duration_seconds_count{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance)",
           "legendFormat": "{{instance}} pod"
         },
         {
@@ -430,7 +430,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(kubelet_pod_worker_duration_seconds_count{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance)",
+          "expr": "sum(rate(kubelet_pod_worker_duration_seconds_count{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance)",
           "legendFormat": "{{instance}} worker"
         }
       ],
@@ -481,7 +481,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(kubelet_pod_start_duration_seconds_bucket{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(kubelet_pod_start_duration_seconds_bucket{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, le))",
           "legendFormat": "{{instance}} pod"
         },
         {
@@ -489,7 +489,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, le))",
           "legendFormat": "{{instance}} worker"
         }
       ],
@@ -540,7 +540,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(storage_operation_duration_seconds_count{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_name, volume_plugin)",
+          "expr": "sum(rate(storage_operation_duration_seconds_count{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_name, volume_plugin)",
           "legendFormat": "{{instance}} {{operation_name}} {{volume_plugin}}"
         }
       ],
@@ -591,7 +591,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(storage_operation_errors_total{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_name, volume_plugin)",
+          "expr": "sum(rate(storage_operation_errors_total{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_name, volume_plugin)",
           "legendFormat": "{{instance}} {{operation_name}} {{volume_plugin}}"
         }
       ],
@@ -642,7 +642,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(storage_operation_duration_seconds_bucket{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_name, volume_plugin, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(storage_operation_duration_seconds_bucket{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_name, volume_plugin, le))",
           "legendFormat": "{{instance}} {{operation_name}} {{volume_plugin}}"
         }
       ],
@@ -693,7 +693,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(kubelet_cgroup_manager_duration_seconds_count{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_type)",
+          "expr": "sum(rate(kubelet_cgroup_manager_duration_seconds_count{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_type)",
           "legendFormat": "{{operation_type}}"
         }
       ],
@@ -744,7 +744,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(kubelet_cgroup_manager_duration_seconds_bucket{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_type, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(kubelet_cgroup_manager_duration_seconds_bucket{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance, operation_type, le))",
           "legendFormat": "{{instance}} {{operation_type}}"
         }
       ],
@@ -795,7 +795,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(kubelet_pleg_relist_duration_seconds_count{cluster=\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance)",
+          "expr": "sum(rate(kubelet_pleg_relist_duration_seconds_count{cluster=~\"$cluster\", job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance)",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -846,7 +846,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(kubelet_pleg_relist_interval_seconds_bucket{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(kubelet_pleg_relist_interval_seconds_bucket{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, le))",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -897,7 +897,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(kubelet_pleg_relist_duration_seconds_bucket{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(kubelet_pleg_relist_duration_seconds_bucket{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])) by (instance, le))",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -948,7 +948,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(rest_client_requests_total{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",code=~\"2..\"}[$__rate_interval]))",
+          "expr": "sum(rate(rest_client_requests_total{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",code=~\"2..\"}[$__rate_interval]))",
           "legendFormat": "2xx"
         },
         {
@@ -956,7 +956,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(rest_client_requests_total{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",code=~\"3..\"}[$__rate_interval]))",
+          "expr": "sum(rate(rest_client_requests_total{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",code=~\"3..\"}[$__rate_interval]))",
           "legendFormat": "3xx"
         },
         {
@@ -964,7 +964,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(rest_client_requests_total{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",code=~\"4..\"}[$__rate_interval]))",
+          "expr": "sum(rate(rest_client_requests_total{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",code=~\"4..\"}[$__rate_interval]))",
           "legendFormat": "4xx"
         },
         {
@@ -972,7 +972,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(rest_client_requests_total{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",code=~\"5..\"}[$__rate_interval]))",
+          "expr": "sum(rate(rest_client_requests_total{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\",code=~\"5..\"}[$__rate_interval]))",
           "legendFormat": "5xx"
         }
       ],
@@ -1023,7 +1023,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(rest_client_request_duration_seconds_bucket{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance, verb, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(rest_client_request_duration_seconds_bucket{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\", instance=~\"$instance\"}[$__rate_interval])) by (instance, verb, le))",
           "legendFormat": "{{instance}} {{verb}}"
         }
       ],
@@ -1074,7 +1074,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "process_resident_memory_bytes{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}",
+          "expr": "process_resident_memory_bytes{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -1125,7 +1125,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "rate(process_cpu_seconds_total{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])",
+          "expr": "rate(process_cpu_seconds_total{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}[$__rate_interval])",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -1176,7 +1176,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "go_goroutines{cluster=\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}",
+          "expr": "go_goroutines{cluster=~\"$cluster\",job=\"integrations/kubernetes/kubelet\",instance=~\"$instance\"}",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -1219,9 +1219,12 @@
         "type": "query",
         "current": {
           "selected": true,
-          "text": "testing-srv3",
-          "value": "testing-srv3"
-        }
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
       },
       {
         "datasource": {
@@ -1239,7 +1242,9 @@
           "selected": true,
           "text": "All",
           "value": "$__all"
-        }
+        },
+        "multi": true,
+        "allValue": ".*"
       }
     ]
   },

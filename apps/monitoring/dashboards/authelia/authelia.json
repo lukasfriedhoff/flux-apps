@@ -1206,7 +1206,11 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": false,
+          "text": "Mimir",
+          "value": "mimir"
+        },
         "hide": 0,
         "includeAll": false,
         "label": "datasource",
@@ -1221,7 +1225,11 @@
         "type": "datasource"
       },
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
@@ -1230,7 +1238,7 @@
         "hide": 0,
         "includeAll": true,
         "label": "instance",
-        "multi": false,
+        "multi": true,
         "name": "instance",
         "options": [],
         "query": {
@@ -1242,7 +1250,8 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "type": "query",
+        "allValue": ".*"
       }
     ]
   },

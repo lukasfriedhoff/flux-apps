@@ -1625,11 +1625,11 @@
         "type": "datasource"
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "testing-srv3",
-          "value": "testing-srv3"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
@@ -1649,15 +1649,15 @@
         "useTags": false
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "monitoring",
-          "value": "monitoring"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "namespace",
         "multi": true,
         "name": "namespace",

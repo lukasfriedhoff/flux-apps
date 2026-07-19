@@ -48,7 +48,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum(rate(container_network_receive_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(sum(rate(container_network_receive_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -88,7 +88,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum(rate(container_network_transmit_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(sum(rate(container_network_transmit_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -128,7 +128,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(avg(rate(container_network_receive_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(avg(rate(container_network_receive_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -168,7 +168,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(avg(rate(container_network_transmit_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(avg(rate(container_network_transmit_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -219,7 +219,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum(rate(container_network_receive_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(sum(rate(container_network_receive_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -270,7 +270,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum(rate(container_network_transmit_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(sum(rate(container_network_transmit_bytes_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -321,7 +321,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum(rate(container_network_receive_packets_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(sum(rate(container_network_receive_packets_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -372,7 +372,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum(rate(container_network_transmit_packets_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(sum(rate(container_network_transmit_packets_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -423,7 +423,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum(rate(container_network_receive_packets_dropped_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(sum(rate(container_network_receive_packets_dropped_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -474,7 +474,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum(rate(container_network_transmit_packets_dropped_total{job=\"integrations/kubernetes/cadvisor\", cluster=\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
+          "expr": "sort_desc(sum(rate(container_network_transmit_packets_dropped_total{job=\"integrations/kubernetes/cadvisor\", cluster=~\"$cluster\",namespace=~\"$namespace\"}[$__rate_interval])\n* on (namespace,pod)\ngroup_left(workload,workload_type) namespace_workload_pod:kube_pod_owner:relabel{cluster=~\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\", workload_type=~\"$type\"}) by (pod))\n",
           "legendFormat": "__auto"
         }
       ],
@@ -517,12 +517,15 @@
         "type": "query",
         "current": {
           "selected": true,
-          "text": "testing-srv3",
-          "value": "testing-srv3"
-        }
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": "All",
@@ -539,7 +542,8 @@
         "query": "label_values(container_network_receive_packets_total{cluster=\"$cluster\"}, namespace)",
         "refresh": 2,
         "sort": 1,
-        "type": "query"
+        "type": "query",
+        "multi": true
       },
       {
         "datasource": {
@@ -557,7 +561,10 @@
           "selected": true,
           "text": ".*",
           "value": ".*"
-        }
+        },
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
       },
       {
         "allValue": ".+",

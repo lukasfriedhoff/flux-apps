@@ -708,7 +708,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Query-frontend \u2013 query splitting and results cache",
+      "title": "Query-frontend – query splitting and results cache",
       "titleSize": "h6"
     },
     {
@@ -868,7 +868,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Query-frontend \u2013 query sharding",
+      "title": "Query-frontend – query sharding",
       "titleSize": "h6"
     },
     {
@@ -889,7 +889,7 @@
           "span": 6,
           "targets": [
             {
-              "expr": "sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=\"$namespace\"}[$__rate_interval]))",
+              "expr": "sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=~\"$namespace\"}[$__rate_interval]))",
               "format": "time_series",
               "legendFormat": "Bytes",
               "legendLink": null
@@ -937,19 +937,19 @@
           "span": 6,
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=\"$namespace\"}[$__rate_interval])))",
+              "expr": "histogram_quantile(0.99, sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=~\"$namespace\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "99th Percentile",
               "legendLink": null
             },
             {
-              "expr": "histogram_quantile(0.90, sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=\"$namespace\"}[$__rate_interval])))",
+              "expr": "histogram_quantile(0.90, sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=~\"$namespace\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "90th Percentile",
               "legendLink": null
             },
             {
-              "expr": "histogram_avg(sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=\"$namespace\"}[$__rate_interval])))",
+              "expr": "histogram_avg(sum(rate(cortex_query_frontend_queries_expression_bytes{namespace=~\"$namespace\"}[$__rate_interval])))",
               "format": "time_series",
               "legendFormat": "Average",
               "legendLink": null
@@ -1108,7 +1108,7 @@
         },
         {
           "datasource": "$datasource",
-          "description": "### Strong read consistency queries \u2014 wait latency\nHow long does the request wait to guarantee strong read consistency.\n",
+          "description": "### Strong read consistency queries — wait latency\nHow long does the request wait to guarantee strong read consistency.\n",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -1170,7 +1170,7 @@
               "legendLink": null
             }
           ],
-          "title": "Strong read consistency queries \u2014 wait latency",
+          "title": "Strong read consistency queries — wait latency",
           "type": "timeseries"
         }
       ],
@@ -1178,7 +1178,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Query-frontend \u2013 strong consistency (ingest storage)",
+      "title": "Query-frontend – strong consistency (ingest storage)",
       "titleSize": "h6"
     },
     {
@@ -1890,7 +1890,7 @@
         },
         {
           "datasource": "$datasource",
-          "description": "### Strong read consistency queries \u2014 wait latency\nHow long does the request wait to guarantee strong read consistency.\n",
+          "description": "### Strong read consistency queries — wait latency\nHow long does the request wait to guarantee strong read consistency.\n",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -1952,7 +1952,7 @@
               "legendLink": null
             }
           ],
-          "title": "Strong read consistency queries \u2014 wait latency",
+          "title": "Strong read consistency queries — wait latency",
           "type": "timeseries"
         }
       ],
@@ -1960,7 +1960,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Ingester \u2013 strong consistency (ingest storage)",
+      "title": "Ingester – strong consistency (ingest storage)",
       "titleSize": "h6"
     },
     {
@@ -3889,11 +3889,11 @@
         "type": "datasource"
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "testing-srv3",
-          "value": "testing-srv3"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
@@ -3913,15 +3913,15 @@
         "useTags": false
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "monitoring",
-          "value": "monitoring"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "namespace",
         "multi": true,
         "name": "namespace",

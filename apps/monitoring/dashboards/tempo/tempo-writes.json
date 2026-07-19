@@ -304,7 +304,7 @@
           "span": 6,
           "targets": [
             {
-              "expr": "sum(rate(envoy_http_downstream_cx_destroy{namespace=\"$namespace\"}[5m])) by(job)\n/\nsum(envoy_cluster_upstream_rq_active{namespace=\"$namespace\"}) by(job)\n* 100\n",
+              "expr": "sum(rate(envoy_http_downstream_cx_destroy{namespace=~\"$namespace\"}[5m])) by(job)\n/\nsum(envoy_cluster_upstream_rq_active{namespace=~\"$namespace\"}) by(job)\n* 100\n",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{job}}",
@@ -352,14 +352,14 @@
           "span": 6,
           "targets": [
             {
-              "expr": "min(envoy_cluster_circuit_breakers_default_remaining_rq{namespace=\"$namespace\"}) by(job)",
+              "expr": "min(envoy_cluster_circuit_breakers_default_remaining_rq{namespace=~\"$namespace\"}) by(job)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{job}} rq",
               "legendLink": null
             },
             {
-              "expr": "min(envoy_cluster_circuit_breakers_default_remaining_cx{namespace=\"$namespace\"}) by(job)",
+              "expr": "min(envoy_cluster_circuit_breakers_default_remaining_cx{namespace=~\"$namespace\"}) by(job)",
               "format": "time_series",
               "interval": "1m",
               "legendFormat": "{{job}} cx",
@@ -1329,11 +1329,11 @@
         "type": "datasource"
       },
       {
-        "allValue": null,
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "testing-srv3",
-          "value": "testing-srv3"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
@@ -1353,7 +1353,7 @@
         "useTags": false
       },
       {
-        "allValue": null,
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": "All",
