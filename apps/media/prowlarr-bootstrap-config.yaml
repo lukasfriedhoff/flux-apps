@@ -18,6 +18,7 @@ data:
     MEDIA_PUID="$${MEDIA_PUID:-1000}"
     MEDIA_PGID="$${MEDIA_PGID:-1000}"
     ENABLE_DUAL_AUDIO_POLICY="$${ENABLE_DUAL_AUDIO_POLICY:-false}"
+    ARR_QUALITY_PROFILE_NAME="$${ARR_QUALITY_PROFILE_NAME:-HD/4K - German+English}"
 
     log() {
       printf '[prowlarr-bootstrap] %s\n' "$*"
@@ -1017,21 +1018,74 @@ data:
         log "Updated Sonarr custom format $dual_cf_name."
       fi
 
-      qp_json="$(sonarr_get /api/v3/qualityprofile | jq -c 'map(select(.name == "HD - 720p/1080p"))[0] // .[0]')"
+      profiles_json="$(sonarr_get /api/v3/qualityprofile)"
+      existing_qp_json="$(printf '%s' "$profiles_json" | jq -c --arg name "$ARR_QUALITY_PROFILE_NAME" 'map(select(.name == $name))[0]')"
+      if [ "$existing_qp_json" = "null" ]; then
+        qp_json="$(printf '%s' "$profiles_json" | jq -c 'map(select(.name == "HD - 720p/1080p"))[0] // .[0]')"
+      else
+        qp_json="$existing_qp_json"
+      fi
       if [ "$qp_json" = "null" ]; then
         log "Sonarr quality profile not found; skipping dual-audio quality gate."
         return 0
       fi
-      qp_id="$(printf '%s' "$qp_json" | jq -r '.id')"
-      qp_payload="$(printf '%s' "$qp_json" | jq -c --arg cfId "$cf_id" --arg cfName "$dual_cf_name" '
-        .upgradeAllowed = true
+      qp_payload="$(printf '%s' "$qp_json" | jq -c --arg profileName "$ARR_QUALITY_PROFILE_NAME" --arg cfId "$cf_id" --arg cfName "$dual_cf_name" '
+        def item_text:
+          [
+            (.name? // empty),
+            (.quality.name? // empty),
+            (.items[]?.name? // empty),
+            (.items[]?.quality.name? // empty)
+          ] | join(" ");
+        def wanted_hd_4k:
+          item_text | test("(720p|1080p|2160p|4k|uhd|ultra[-_. ]?hd)"; "i");
+        def rank:
+          (item_text | ascii_downcase) as $t
+          | if ($t | test("remux.*2160|2160.*remux")) then 900
+            elif ($t | test("bluray.*2160|2160.*blu")) then 850
+            elif ($t | test("web.*2160|2160.*web")) then 820
+            elif ($t | test("hdtv.*2160|2160.*hdtv|2160|4k|uhd|ultra[-_. ]?hd")) then 800
+            elif ($t | test("remux.*1080|1080.*remux")) then 700
+            elif ($t | test("bluray.*1080|1080.*blu")) then 650
+            elif ($t | test("web.*1080|1080.*web")) then 620
+            elif ($t | test("hdtv.*1080|1080.*hdtv|1080p")) then 600
+            elif ($t | test("bluray.*720|720.*blu")) then 450
+            elif ($t | test("web.*720|720.*web")) then 420
+            elif ($t | test("hdtv.*720|720.*hdtv|720p")) then 400
+            else 0 end;
+        def cutoff_id:
+          ([ .items[]? | select(wanted_hd_4k) | {id: (.id // .quality.id // null), rank: rank} | select(.id != null) ]
+            | max_by(.rank).id) // .cutoff;
+        .name = $profileName
+        | .upgradeAllowed = true
+        | .cutoff = cutoff_id
+        | .items = ((.items // []) | map(
+            if wanted_hd_4k then
+              .allowed = true
+              | if has("items") then .items = (.items | map(if wanted_hd_4k then .allowed = true else .allowed = false end)) else . end
+            else
+              .allowed = false
+              | if has("items") then .items = (.items | map(.allowed = false)) else . end
+            end
+          ))
         | .cutoffFormatScore = 100
         | .minFormatScore = 100
         | .minUpgradeFormatScore = 100
         | .formatItems = (((.formatItems // []) | map(select(.format != ($cfId | tonumber)))) + [{format: ($cfId | tonumber), name: $cfName, score: 100}])
       ')"
-      sonarr_put "/api/v3/qualityprofile/$qp_id" "$qp_payload" >/dev/null
-      log "Applied Sonarr dual-audio gate to quality profile $(printf '%s' "$qp_json" | jq -r '.name')."
+      if [ "$existing_qp_json" = "null" ]; then
+        qp_payload="$(printf '%s' "$qp_payload" | jq -c 'del(.id)')"
+        qp_id="$(sonarr_post /api/v3/qualityprofile "$qp_payload" | jq -r '.id // empty')"
+        if [ -z "$qp_id" ]; then
+          log "Failed to create Sonarr quality profile $ARR_QUALITY_PROFILE_NAME."
+          return 1
+        fi
+        log "Created Sonarr quality profile $ARR_QUALITY_PROFILE_NAME."
+      else
+        qp_id="$(printf '%s' "$existing_qp_json" | jq -r '.id')"
+        sonarr_put "/api/v3/qualityprofile/$qp_id" "$qp_payload" >/dev/null
+        log "Updated Sonarr quality profile $ARR_QUALITY_PROFILE_NAME."
+      fi
 
       lp_name="German + English"
       lp_json="$(sonarr_get /api/v3/languageprofile | jq -c --arg name "$lp_name" 'map(select(.name == $name))[0]')"
@@ -1269,22 +1323,75 @@ data:
         log "Updated Radarr custom format $dual_cf_name."
       fi
 
-      qp_json="$(radarr_get /api/v3/qualityprofile | jq -c 'map(select(.name == "HD - 720p/1080p"))[0] // .[0]')"
+      profiles_json="$(radarr_get /api/v3/qualityprofile)"
+      existing_qp_json="$(printf '%s' "$profiles_json" | jq -c --arg name "$ARR_QUALITY_PROFILE_NAME" 'map(select(.name == $name))[0]')"
+      if [ "$existing_qp_json" = "null" ]; then
+        qp_json="$(printf '%s' "$profiles_json" | jq -c 'map(select(.name == "HD - 720p/1080p"))[0] // .[0]')"
+      else
+        qp_json="$existing_qp_json"
+      fi
       if [ "$qp_json" = "null" ]; then
         log "Radarr quality profile not found; skipping dual-audio quality gate."
         return 0
       fi
-      qp_id="$(printf '%s' "$qp_json" | jq -r '.id')"
-      qp_payload="$(printf '%s' "$qp_json" | jq -c --arg cfId "$cf_id" --arg cfName "$dual_cf_name" '
-        .language = {id: 4, name: "German"}
+      qp_payload="$(printf '%s' "$qp_json" | jq -c --arg profileName "$ARR_QUALITY_PROFILE_NAME" --arg cfId "$cf_id" --arg cfName "$dual_cf_name" '
+        def item_text:
+          [
+            (.name? // empty),
+            (.quality.name? // empty),
+            (.items[]?.name? // empty),
+            (.items[]?.quality.name? // empty)
+          ] | join(" ");
+        def wanted_hd_4k:
+          item_text | test("(720p|1080p|2160p|4k|uhd|ultra[-_. ]?hd)"; "i");
+        def rank:
+          (item_text | ascii_downcase) as $t
+          | if ($t | test("remux.*2160|2160.*remux")) then 900
+            elif ($t | test("bluray.*2160|2160.*blu")) then 850
+            elif ($t | test("web.*2160|2160.*web")) then 820
+            elif ($t | test("hdtv.*2160|2160.*hdtv|2160|4k|uhd|ultra[-_. ]?hd")) then 800
+            elif ($t | test("remux.*1080|1080.*remux")) then 700
+            elif ($t | test("bluray.*1080|1080.*blu")) then 650
+            elif ($t | test("web.*1080|1080.*web")) then 620
+            elif ($t | test("hdtv.*1080|1080.*hdtv|1080p")) then 600
+            elif ($t | test("bluray.*720|720.*blu")) then 450
+            elif ($t | test("web.*720|720.*web")) then 420
+            elif ($t | test("hdtv.*720|720.*hdtv|720p")) then 400
+            else 0 end;
+        def cutoff_id:
+          ([ .items[]? | select(wanted_hd_4k) | {id: (.id // .quality.id // null), rank: rank} | select(.id != null) ]
+            | max_by(.rank).id) // .cutoff;
+        .name = $profileName
+        | .language = {id: 4, name: "German"}
         | .upgradeAllowed = true
+        | .cutoff = cutoff_id
+        | .items = ((.items // []) | map(
+            if wanted_hd_4k then
+              .allowed = true
+              | if has("items") then .items = (.items | map(if wanted_hd_4k then .allowed = true else .allowed = false end)) else . end
+            else
+              .allowed = false
+              | if has("items") then .items = (.items | map(.allowed = false)) else . end
+            end
+          ))
         | .cutoffFormatScore = 100
         | .minFormatScore = 100
         | .minUpgradeFormatScore = 100
         | .formatItems = (((.formatItems // []) | map(select(.format != ($cfId | tonumber)))) + [{format: ($cfId | tonumber), name: $cfName, score: 100}])
       ')"
-      radarr_put "/api/v3/qualityprofile/$qp_id" "$qp_payload" >/dev/null
-      log "Applied Radarr dual-audio gate to quality profile $(printf '%s' "$qp_json" | jq -r '.name')."
+      if [ "$existing_qp_json" = "null" ]; then
+        qp_payload="$(printf '%s' "$qp_payload" | jq -c 'del(.id)')"
+        qp_id="$(radarr_post /api/v3/qualityprofile "$qp_payload" | jq -r '.id // empty')"
+        if [ -z "$qp_id" ]; then
+          log "Failed to create Radarr quality profile $ARR_QUALITY_PROFILE_NAME."
+          return 1
+        fi
+        log "Created Radarr quality profile $ARR_QUALITY_PROFILE_NAME."
+      else
+        qp_id="$(printf '%s' "$existing_qp_json" | jq -r '.id')"
+        radarr_put "/api/v3/qualityprofile/$qp_id" "$qp_payload" >/dev/null
+        log "Updated Radarr quality profile $ARR_QUALITY_PROFILE_NAME."
+      fi
     }
 
     if [ -n "$RADARR_API_KEY" ]; then
