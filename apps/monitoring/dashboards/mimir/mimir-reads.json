@@ -35,7 +35,7 @@
       "height": "175px",
       "panels": [
         {
-          "content": "<p>\n  This dashboard shows health metrics for the read path.\n  It is broken into sections for each service on the read path, and organized by the order in which the read request flows.\n  <br/>\n  Incoming queries travel from the gateway \u2192 query frontend \u2192 query scheduler \u2192 querier \u2192 ingester and/or store-gateway (depending on the time range of the query).\n  <br/>\n  For each service, there are 3 panels showing (1) requests per second to that service, (2) average, median, and p99 latency of requests to that service, and (3) p99 latency of requests to each instance of that service.\n</p>\n<p>\n  The dashboard also shows metrics for the 4 optional caches that can be deployed:\n  the query results cache, the metadata cache, the chunks cache, and the index cache.\n  <br/>\n  These panels will show \u201cno data\u201d if the caches are not deployed.\n</p>\n<p>\n  Lastly, it also includes metrics for how the ingester and store-gateway interact with object storage.\n</p>\n",
+          "content": "<p>\n  This dashboard shows health metrics for the read path.\n  It is broken into sections for each service on the read path, and organized by the order in which the read request flows.\n  <br/>\n  Incoming queries travel from the gateway → query frontend → query scheduler → querier → ingester and/or store-gateway (depending on the time range of the query).\n  <br/>\n  For each service, there are 3 panels showing (1) requests per second to that service, (2) average, median, and p99 latency of requests to that service, and (3) p99 latency of requests to each instance of that service.\n</p>\n<p>\n  The dashboard also shows metrics for the 4 optional caches that can be deployed:\n  the query results cache, the metadata cache, the chunks cache, and the index cache.\n  <br/>\n  These panels will show “no data” if the caches are not deployed.\n</p>\n<p>\n  Lastly, it also includes metrics for how the ingester and store-gateway interact with object storage.\n</p>\n",
           "datasource": null,
           "description": "",
           "id": 1,
@@ -1445,7 +1445,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Cache \u2013 query results",
+      "title": "Cache – query results",
       "titleSize": "h6"
     },
     {
@@ -3478,7 +3478,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Querier \u2013 autoscaling",
+      "title": "Querier – autoscaling",
       "titleSize": "h6"
     },
     {
@@ -3792,7 +3792,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Store-gateway \u2013 key-value store for store-gateways ring",
+      "title": "Store-gateway – key-value store for store-gateways ring",
       "titleSize": "h6"
     },
     {
@@ -3998,7 +3998,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Memcached \u2013 block index cache (store-gateway accesses)",
+      "title": "Memcached – block index cache (store-gateway accesses)",
       "titleSize": "h6"
     },
     {
@@ -4203,7 +4203,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Memcached \u2013 chunks cache (store-gateway accesses)",
+      "title": "Memcached – chunks cache (store-gateway accesses)",
       "titleSize": "h6"
     },
     {
@@ -4408,7 +4408,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Memcached \u2013 metadata cache (store-gateway accesses)",
+      "title": "Memcached – metadata cache (store-gateway accesses)",
       "titleSize": "h6"
     },
     {
@@ -4613,7 +4613,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Memcached \u2013 metadata cache (querier accesses)",
+      "title": "Memcached – metadata cache (querier accesses)",
       "titleSize": "h6"
     },
     {
@@ -6014,11 +6014,11 @@
         "type": "datasource"
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "testing-srv3",
-          "value": "testing-srv3"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
@@ -6038,15 +6038,15 @@
         "useTags": false
       },
       {
-        "allValue": ".+",
+        "allValue": ".*",
         "current": {
           "selected": true,
-          "text": "monitoring",
-          "value": "monitoring"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "$datasource",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "namespace",
         "multi": true,
         "name": "namespace",

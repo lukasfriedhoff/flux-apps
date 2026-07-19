@@ -29,7 +29,7 @@
       {
         "datasource": {
           "type": "datasource",
-          "uid": "grafana"
+          "uid": "-- Grafana --"
         },
         "enable": true,
         "iconColor": "red",
@@ -128,7 +128,7 @@
       "targets": [
         {
           "datasource": "${DS_LOKI}",
-          "expr": "sum(count_over_time({namespace=~\"$namespace\", stream=~\"$stream\", app =~\"$controller\"} | json | __error__!=\"JSONParserErr\" | level=~\"$level\" |= \"$query\" [$__interval]))",
+          "expr": "sum(count_over_time({namespace=~\"$namespace\", service_name=~\"$controller\"} | json | __error__!=\"JSONParserErr\" | level=~\"$level\" |= \"$query\" [$__interval]))",
           "instant": false,
           "legendFormat": "Log count",
           "range": true,
@@ -160,7 +160,7 @@
       "targets": [
         {
           "datasource": "${DS_LOKI}",
-          "expr": "{namespace=~\"$namespace\", stream=~\"$stream\", app =~\"$controller\"} | json | __error__!=\"JSONParserErr\" | level=~\"$level\" |= \"$query\"",
+          "expr": "{namespace=~\"$namespace\", service_name=~\"$controller\"} | json | __error__!=\"JSONParserErr\" | level=~\"$level\" |= \"$query\"",
           "refId": "A"
         }
       ],
@@ -247,7 +247,7 @@
         "multi": true,
         "name": "controller",
         "options": [],
-        "query": "label_values(app)",
+        "query": "label_values(service_name)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -304,7 +304,7 @@
         "current": {
           "selected": false,
           "text": "Loki",
-          "value": "Loki"
+          "value": "loki"
         },
         "hide": 0,
         "includeAll": false,

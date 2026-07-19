@@ -90,7 +90,7 @@
         "builtIn": 1,
         "datasource": {
           "type": "datasource",
-          "uid": "grafana"
+          "uid": "-- Grafana --"
         },
         "enable": true,
         "hide": true,
@@ -607,7 +607,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "max((max(max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"}))) OR (max by(persistentvolumeclaim) (kubelet_volume_stats_inodes_used{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_inodes{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"})))",
+          "expr": "max((max(max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_capacity_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"}))) OR (max by(persistentvolumeclaim) (kubelet_volume_stats_inodes_used{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_inodes{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"})))",
           "hide": false,
           "legendFormat": "Storage",
           "range": true,
@@ -836,7 +836,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=\"$namespace\", pod=~\"$instances\"}) / sum(kube_pod_container_resource_requests{job=\"kube-state-metrics\",  namespace=\"$namespace\", resource=\"cpu\", pod=~\"$instances\"})",
+          "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"$namespace\", pod=~\"$instances\"}) / sum(kube_pod_container_resource_requests{job=\"integrations/kubernetes/kube-state-metrics\",  namespace=~\"$namespace\", resource=\"cpu\", pod=~\"$instances\"})",
           "format": "time_series",
           "instant": true,
           "intervalFactor": 2,
@@ -926,7 +926,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", namespace=\"$namespace\",container!=\"\", image!=\"\", pod=~\"$instances\"}) / sum(max by(pod) (kube_pod_container_resource_requests{job=\"kube-state-metrics\", namespace=\"$namespace\", resource=\"memory\", pod=~\"$instances\"}))",
+          "expr": "sum(container_memory_working_set_bytes{job=\"integrations/kubernetes/cadvisor\", metrics_path=\"/metrics/cadvisor\", namespace=~\"$namespace\",container!=\"\", image!=\"\", pod=~\"$instances\"}) / sum(max by(pod) (kube_pod_container_resource_requests{job=\"integrations/kubernetes/kube-state-metrics\", namespace=~\"$namespace\", resource=\"memory\", pod=~\"$instances\"}))",
           "format": "time_series",
           "instant": true,
           "intervalFactor": 2,
@@ -1160,7 +1160,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"}))",
+          "expr": "max(max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_capacity_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"}))",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1175,7 +1175,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"} / kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"}))",
+          "expr": "max(max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"} / kubelet_volume_stats_capacity_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"}))",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1190,7 +1190,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(\n    sum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-tbs.*\"}) \n    /\n    sum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-tbs.*\"}) \n    *\n    on(namespace, persistentvolumeclaim) group_left(volume)\n    kube_pod_spec_volumes_persistentvolumeclaims_info{pod=~\"$instances\"}\n)",
+          "expr": "max(\n    sum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-tbs.*\"}) \n    /\n    sum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-tbs.*\"}) \n    *\n    on(namespace, persistentvolumeclaim) group_left(volume)\n    kube_pod_spec_volumes_persistentvolumeclaims_info{pod=~\"$instances\"}\n)",
           "hide": false,
           "instant": true,
           "legendFormat": "Tablespaces (max)",
@@ -1221,7 +1221,7 @@
                   "index": 0,
                   "text": "Invalid date"
                 },
-                "to": 1E+42
+                "to": 1e+42
               },
               "type": "range"
             },
@@ -1300,7 +1300,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "-(time() - max({__name__=~\"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp\",namespace=\"$namespace\",pod=~\"$instances\"}))",
+          "expr": "-(time() - max({__name__=~\"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp\",namespace=~\"$namespace\",pod=~\"$instances\"}))",
           "instant": true,
           "legendFormat": "__auto",
           "range": false,
@@ -1426,7 +1426,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{ namespace=\"$namespace\", pod=~\"$instances\"}) / sum(kube_pod_container_resource_requests{job=\"kube-state-metrics\", namespace=\"$namespace\", resource=\"cpu\", pod=~\"$instances\"}))",
+          "expr": "(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{ namespace=~\"$namespace\", pod=~\"$instances\"}) / sum(kube_pod_container_resource_requests{job=\"integrations/kubernetes/kube-state-metrics\", namespace=~\"$namespace\", resource=\"cpu\", pod=~\"$instances\"}))",
           "hide": false,
           "legendFormat": "CPU",
           "range": true,
@@ -1438,7 +1438,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "(sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", namespace=\"$namespace\",container!=\"\", image!=\"\", pod=~\"$instances\"}) / sum(max by(pod) (kube_pod_container_resource_requests{job=\"kube-state-metrics\", namespace=\"$namespace\", resource=\"memory\", pod=~\"$instances\"})))",
+          "expr": "(sum(container_memory_working_set_bytes{job=\"integrations/kubernetes/cadvisor\", metrics_path=\"/metrics/cadvisor\", namespace=~\"$namespace\",container!=\"\", image!=\"\", pod=~\"$instances\"}) / sum(max by(pod) (kube_pod_container_resource_requests{job=\"integrations/kubernetes/kube-state-metrics\", namespace=~\"$namespace\", resource=\"memory\", pod=~\"$instances\"})))",
           "hide": false,
           "instant": false,
           "legendFormat": "Memory",
@@ -1486,7 +1486,7 @@
             },
             {
               "options": {
-                "from": -1E+22,
+                "from": -1e+22,
                 "result": {
                   "color": "text",
                   "index": 1,
@@ -1949,7 +1949,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "time() - max({__name__=~\"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp\",namespace=\"$namespace\", pod=~\"$instances\"})",
+          "expr": "time() - max({__name__=~\"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp\",namespace=~\"$namespace\", pod=~\"$instances\"})",
           "legendFormat": "Backups",
           "range": true,
           "refId": "BACKUPS"
@@ -2485,7 +2485,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=\"$namespace\", pod=~\"$instances\"})",
+          "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"$namespace\", pod=~\"$instances\"})",
           "hide": false,
           "interval": "",
           "legendFormat": "Total",
@@ -2562,7 +2562,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "sum(container_memory_working_set_bytes{pod=~\"$instances\", namespace=\"$namespace\", container!=\"\", image!=\"\"})",
+          "expr": "sum(container_memory_working_set_bytes{pod=~\"$instances\", namespace=~\"$namespace\", container!=\"\", image!=\"\"})",
           "hide": false,
           "interval": "",
           "legendFormat": "Total",
@@ -2640,7 +2640,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "cnpg_pg_database_size_bytes{namespace=\"$namespace\", pod=~\"$instances\"}",
+          "expr": "cnpg_pg_database_size_bytes{namespace=~\"$namespace\", pod=~\"$instances\"}",
           "format": "table",
           "instant": false,
           "legendFormat": "__auto",
@@ -2764,7 +2764,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -2777,7 +2778,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -3923,7 +3925,8 @@
     {
       "collapsed": true,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -4892,7 +4895,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -4903,7 +4907,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -4916,7 +4921,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -5198,7 +5204,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
-          "expr": "sum(container_memory_working_set_bytes{pod=~\"$instances\", namespace=\"$namespace\", container!=\"\", image!=\"\"}) by (pod)",
+          "expr": "sum(container_memory_working_set_bytes{pod=~\"$instances\", namespace=~\"$namespace\", container!=\"\", image!=\"\"}) by (pod)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -5713,7 +5719,8 @@
     {
       "collapsed": true,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -5788,7 +5795,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"})",
+              "expr": "max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_capacity_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"})",
               "format": "time_series",
               "interval": "",
               "legendFormat": "{{persistentvolumeclaim}}",
@@ -5801,7 +5808,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"} / kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"})",
+              "expr": "max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"} / kubelet_volume_stats_capacity_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"})",
               "format": "time_series",
               "interval": "",
               "legendFormat": "{{persistentvolumeclaim}}",
@@ -5878,7 +5885,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "max by(persistentvolumeclaim) (kubelet_volume_stats_inodes_used{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_inodes{namespace=\"$namespace\", persistentvolumeclaim=~\"$instances\"})",
+              "expr": "max by(persistentvolumeclaim) (kubelet_volume_stats_inodes_used{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"} / kubelet_volume_stats_inodes{namespace=~\"$namespace\", persistentvolumeclaim=~\"$instances\"})",
               "format": "time_series",
               "interval": "",
               "legendFormat": "{{persistentvolumeclaim}}",
@@ -5891,7 +5898,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "max by(persistentvolumeclaim) (kubelet_volume_stats_inodes_used{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"} / kubelet_volume_stats_inodes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"})",
+              "expr": "max by(persistentvolumeclaim) (kubelet_volume_stats_inodes_used{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"} / kubelet_volume_stats_inodes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-wal\"})",
               "format": "time_series",
               "interval": "",
               "legendFormat": "{{persistentvolumeclaim}}",
@@ -5968,7 +5975,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "sum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-tbs.*\"}) \n/\nsum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\"(${instances})-tbs.*\"}) \n*\non(namespace, persistentvolumeclaim) group_left(volume,pod)\nkube_pod_spec_volumes_persistentvolumeclaims_info{pod=~\"$instances\"}",
+              "expr": "sum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-tbs.*\"}) \n/\nsum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace=~\"$namespace\", persistentvolumeclaim=~\"(${instances})-tbs.*\"}) \n*\non(namespace, persistentvolumeclaim) group_left(volume,pod)\nkube_pod_spec_volumes_persistentvolumeclaims_info{pod=~\"$instances\"}",
               "format": "time_series",
               "interval": "",
               "legendFormat": "{{volume}}-{{pod}}",
@@ -6436,7 +6443,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -6447,7 +6455,8 @@
     {
       "collapsed": true,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -6864,7 +6873,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -6875,7 +6885,8 @@
     {
       "collapsed": true,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -7281,7 +7292,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -7292,7 +7304,8 @@
     {
       "collapsed": true,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -7363,7 +7376,7 @@
               "color": "rgba(255,0,255,0.7)"
             },
             "filterValues": {
-              "le": 1E-9
+              "le": 1e-09
             },
             "legend": {
               "show": false
@@ -7512,7 +7525,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -7523,7 +7537,8 @@
     {
       "collapsed": true,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -7633,7 +7648,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -7644,7 +7660,8 @@
     {
       "collapsed": true,
       "datasource": {
-        "uid": "prometheus"
+        "uid": "mimir",
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -7886,7 +7903,8 @@
       "targets": [
         {
           "datasource": {
-            "uid": "prometheus"
+            "uid": "mimir",
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -9204,8 +9222,8 @@
       {
         "current": {
           "selected": false,
-          "text": "Prometheus",
-          "value": "prometheus"
+          "text": "Mimir",
+          "value": "mimir"
         },
         "hide": 0,
         "includeAll": false,
@@ -9246,7 +9264,11 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
@@ -9254,9 +9276,9 @@
         "definition": "cnpg_collector_up",
         "description": "Namespace where the database cluster is located",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "Database Namespace",
-        "multi": false,
+        "multi": true,
         "name": "namespace",
         "options": [],
         "query": {
@@ -9267,10 +9289,15 @@
         "regex": "/namespace=\"(?<text>[^\"]+)/g",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "type": "query",
+        "allValue": ".*"
       },
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
@@ -9278,9 +9305,9 @@
         "definition": "cnpg_collector_up{namespace=~\"$namespace\"}",
         "description": "CNPG Cluster",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "Cluster",
-        "multi": false,
+        "multi": true,
         "name": "cluster",
         "options": [],
         "query": {
@@ -9291,11 +9318,16 @@
         "regex": "/\\bcluster\\b=\"(?<text>[^\"]+)/g",
         "skipUrlSync": false,
         "sort": 1,
-        "type": "query"
+        "type": "query",
+        "allValue": ".*"
       },
       {
-        "allValue": "$cluster-([1-9][0-9]*)",
-        "current": {},
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
