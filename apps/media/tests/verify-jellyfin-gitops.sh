@@ -62,6 +62,12 @@ nix shell nixpkgs#python3 -c python -m py_compile "$bootstrap_script" \
   || fail 'Jellyfin bootstrap Python does not compile'
 grep -q 'existingClaim: arr-media-v2' "$rendered" \
   || fail 'media apps do not mount arr-media-v2'
+grep -q 'path: /config/cache/transcodes' "$rendered" \
+  || fail 'Jellyfin transcode cache must be mounted outside the config PVC'
+grep -Fq 'sizeLimit: ${jellyfin_transcode_cache_size:=20Gi}' "$rendered" \
+  || fail 'Jellyfin transcode cache emptyDir must have a sane size limit'
+grep -Fq 'size: ${jellyfin_config_size:=10Gi}' "$rendered" \
+  || fail 'Jellyfin config PVC must default to 10Gi'
 if grep -q 'mountPath: /downloads\|path: /downloads\|subPath: downloads' "$rendered"; then
   fail 'downloads must not be mounted separately from arr-media-v2'
 fi
