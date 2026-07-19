@@ -109,6 +109,13 @@ kubectl -n media create secret generic jellyseerr-e2e-auth \
 When `mode=local`, the test now bootstraps/updates a local Jellyseerr user from
 that secret before executing the login check.
 
+### Static policy checks
+
+`verify-arr-quality-policy.sh` renders the media manifests and verifies that
+Radarr/Sonarr bootstrap a managed `HD/4K - German+English` profile, keep the
+German + English custom-format gate mandatory, and make Jellyseerr prefer that
+profile for new requests.
+
 ## Run
 
 ```bash
