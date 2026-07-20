@@ -244,24 +244,94 @@ spec:
                     settings_json="$(printf '%s' "$settings_json" | jq --argjson svc "$sonarr_service" '.sonarr = [$svc]')"
                   fi
 
+                  managed_settings_projection='
+                    {
+                      public: {
+                        initialized: (.public.initialized // null)
+                      },
+                      main: {
+                        applicationTitle: (.main.applicationTitle // null),
+                        applicationUrl: (.main.applicationUrl // null),
+                        mediaServerType: (.main.mediaServerType // null),
+                        oidcLogin: (.main.oidcLogin // null),
+                        localLogin: (.main.localLogin // null),
+                        mediaServerLogin: (.main.mediaServerLogin // null)
+                      },
+                      oidc: {
+                        providers: ((.oidc.providers // []) | map({
+                          slug,
+                          name,
+                          issuerUrl,
+                          clientId,
+                          scopes,
+                          newUserLogin
+                        }))
+                      },
+                      jellyfin: {
+                        name: (.jellyfin.name // null),
+                        ip: (.jellyfin.ip // null),
+                        port: (.jellyfin.port // null),
+                        useSsl: (.jellyfin.useSsl // null),
+                        externalHostname: (.jellyfin.externalHostname // null),
+                        jellyfinForgotPasswordUrl: (.jellyfin.jellyfinForgotPasswordUrl // null)
+                      },
+                      radarr: ((.radarr // []) | map({
+                        name,
+                        hostname,
+                        port,
+                        apiKey,
+                        useSsl,
+                        baseUrl,
+                        activeProfileId,
+                        activeProfileName,
+                        activeDirectory,
+                        is4k,
+                        minimumAvailability,
+                        isDefault,
+                        externalUrl,
+                        syncEnabled,
+                        preventSearch
+                      })),
+                      sonarr: ((.sonarr // []) | map({
+                        name,
+                        hostname,
+                        port,
+                        apiKey,
+                        useSsl,
+                        baseUrl,
+                        activeProfileId,
+                        activeProfileName,
+                        activeDirectory,
+                        activeLanguageProfileId,
+                        is4k,
+                        enableSeasonFolders,
+                        isDefault,
+                        externalUrl,
+                        syncEnabled,
+                        preventSearch
+                      }))
+                    }
+                  '
+
                   desired_file="$${settings_file}.tmp"
                   current_normalized="$${settings_file}.current-normalized"
                   desired_normalized="$${settings_file}.desired-normalized"
 
                   printf '%s\n' "$settings_json" > "$desired_file"
                   if [ -s "$settings_file" ] \
-                    && jq -S . "$settings_file" > "$current_normalized" \
-                    && jq -S . "$desired_file" > "$desired_normalized" \
+                    && jq -S "$managed_settings_projection" "$settings_file" > "$current_normalized" \
+                    && jq -S "$managed_settings_projection" "$desired_file" > "$desired_normalized" \
                     && cmp -s "$current_normalized" "$desired_normalized"; then
                     rm -f "$desired_file" "$current_normalized" "$desired_normalized"
-                    echo "[jellyseerr-config-sync] settings unchanged."
+                    echo "[jellyseerr-config-sync] managed settings unchanged."
                     exit 0
                   fi
                   rm -f "$current_normalized" "$desired_normalized"
 
                   mv "$desired_file" "$settings_file"
+                  chown 1000:1000 "$settings_file" 2>/dev/null || true
                   kubectl -n "$${POD_NAMESPACE:-media}" rollout restart deployment/jellyseerr
-                  echo "[jellyseerr-config-sync] settings updated; restarted jellyseerr."
+                  echo "[jellyseerr-config-sync] managed settings updated; restarted jellyseerr."
               volumeMounts:
                 - name: jellyseerr-config
                   mountPath: /app/config
