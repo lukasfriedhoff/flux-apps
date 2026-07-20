@@ -99,6 +99,8 @@ spec:
                   return 1
                 }
 
+                arr_quality_profile_name="$${ARR_QUALITY_PROFILE_NAME:-HD/4K - German+English}"
+
                 settings_json="$(
                   printf '%s' "$settings_json" \
                   | jq --arg appTitle "$${JELLYSEERR_APP_TITLE:-Jellyseerr}" --arg appUrl "$${JELLYSEERR_APP_URL:-}" --arg jellyfinName "$${JELLYFIN_SERVER_NAME:-Jellyfin}" --arg jellyfinIP "$${JELLYFIN_SERVER_HOST:-jellyfin}" --arg jellyfinPort "$${JELLYFIN_SERVER_PORT:-8096}" --arg jellyfinExternal "$${JELLYFIN_EXTERNAL_HOSTNAME:-}" --arg forgotPassword "$${JELLYFIN_FORGOT_PASSWORD_URL:-}" --arg oidcName "$${OIDC_PROVIDER_NAME:-Authelia}" --arg oidcSlug "$${OIDC_PROVIDER_SLUG:-authelia}" --arg oidcIssuer "$${OIDC_ISSUER_URL:-}" --arg oidcClientId "$${OIDC_CLIENT_ID:-jellyseerr}" --arg oidcScopes "$${OIDC_SCOPES:-openid profile email groups}" --argjson jellyfinUseSsl "$${JELLYFIN_SERVER_USE_SSL:-false}" '
@@ -132,8 +134,8 @@ spec:
                 if [ -n "$${RADARR_API_KEY:-}" ] && wait_for_arr "http://radarr:7878/api/v3" "$RADARR_API_KEY"; then
                   radarr_profile_json="$(curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "http://radarr:7878/api/v3/qualityprofile")"
                   radarr_root_json="$(curl -fsS -m 20 -H "X-Api-Key: $RADARR_API_KEY" "http://radarr:7878/api/v3/rootfolder")"
-                  radarr_profile_id="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].id // map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
-                  radarr_profile_name="$(printf '%s' "$radarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].name // map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
+                  radarr_profile_id="$(printf '%s' "$radarr_profile_json" | jq -r --arg preferred "$arr_quality_profile_name" 'map(select(.name == $preferred))[0].id // map(select(.name | test("4k|2160|uhd"; "i")))[0].id // map(select(.name == "HD - 720p/1080p"))[0].id // map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
+                  radarr_profile_name="$(printf '%s' "$radarr_profile_json" | jq -r --arg preferred "$arr_quality_profile_name" 'map(select(.name == $preferred))[0].name // map(select(.name | test("4k|2160|uhd"; "i")))[0].name // map(select(.name == "HD - 720p/1080p"))[0].name // map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
                   radarr_root_dir="$(printf '%s' "$radarr_root_json" | jq -r '.[0].path // "/media/movies"')"
                   radarr_service="$(
                     jq -cn \
@@ -167,8 +169,8 @@ spec:
                   sonarr_profile_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/qualityprofile")"
                   sonarr_language_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/languageprofile")"
                   sonarr_root_json="$(curl -fsS -m 20 -H "X-Api-Key: $SONARR_API_KEY" "http://sonarr:8989/api/v3/rootfolder")"
-                  sonarr_profile_id="$(printf '%s' "$sonarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].id // map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
-                  sonarr_profile_name="$(printf '%s' "$sonarr_profile_json" | jq -r 'map(select(.name == "HD - 720p/1080p"))[0].name // map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
+                  sonarr_profile_id="$(printf '%s' "$sonarr_profile_json" | jq -r --arg preferred "$arr_quality_profile_name" 'map(select(.name == $preferred))[0].id // map(select(.name | test("4k|2160|uhd"; "i")))[0].id // map(select(.name == "HD - 720p/1080p"))[0].id // map(select(.name | test("1080|HD"; "i")))[0].id // .[0].id // 0')"
+                  sonarr_profile_name="$(printf '%s' "$sonarr_profile_json" | jq -r --arg preferred "$arr_quality_profile_name" 'map(select(.name == $preferred))[0].name // map(select(.name | test("4k|2160|uhd"; "i")))[0].name // map(select(.name == "HD - 720p/1080p"))[0].name // map(select(.name | test("1080|HD"; "i")))[0].name // .[0].name // "Any"')"
                   sonarr_language_id="$(printf '%s' "$sonarr_language_json" | jq -r 'map(select(.name == "German + English"))[0].id // .[0].id // 1')"
                   sonarr_root_dir="$(printf '%s' "$sonarr_root_json" | jq -r '.[0].path // "/media/tv"')"
                   sonarr_service="$(
