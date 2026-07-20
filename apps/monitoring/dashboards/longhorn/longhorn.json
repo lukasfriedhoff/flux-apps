@@ -1,157 +1,42 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "7.1.5"
-    },
-    {
-      "type": "panel",
-      "id": "graph",
-      "name": "Graph",
-      "version": ""
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "text",
-      "name": "Text",
-      "version": "7.1.0"
-    }
-  ],
   "annotations": {
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
   },
   "editable": true,
-  "gnetId": 13032,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
   "links": [],
   "panels": [
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Longhorn disks with condition=ready. Filter by node and disk at the top of the dashboard.",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 4,
-      "options": {
-        "content": "<div class=\"dashboard-header text-center\">\n<span>VOLUMES</span>\n</div>",
-        "mode": "html"
-      },
-      "pluginVersion": "7.1.0",
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "",
-      "transparent": true,
-      "type": "text"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "The total number of volumes in the Longhorn storage system",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 0,
-        "y": 3
-      },
-      "id": 8,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "count(longhorn_volume_capacity_bytes) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Total Number Of Volumes",
-      "type": "stat"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Healthy volumes are volumes that are attaching to a node and have the number of healthy replicas equals to the expected number of replicas.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
+          "color": {
+            "mode": "thresholds"
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -165,17 +50,152 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "unit": "short"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(max by (node, disk) (longhorn_disk_status{condition=\"ready\",node=~\"$node\",disk=~\"$disk\"}))",
+          "instant": true,
+          "legendFormat": "ready",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Ready Disks",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Longhorn disks with condition=schedulable. A mounted disk that stays false normally has filesystem/device errors or a Longhorn disk config problem.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
         "w": 4,
         "x": 4,
-        "y": 3
+        "y": 0
       },
-      "id": 13,
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(max by (node, disk) (longhorn_disk_status{condition=\"schedulable\",node=~\"$node\",disk=~\"$disk\"}))",
+          "instant": true,
+          "legendFormat": "schedulable",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Schedulable Disks",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Configured Longhorn disk capacity for the selected nodes/disks.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 3,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -183,140 +203,185 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.1.5",
       "targets": [
         {
-          "expr": "count(longhorn_volume_robustness==1) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(max by (node, disk) (longhorn_disk_capacity_bytes{node=~\"$node\",disk=~\"$disk\"}))",
+          "instant": true,
+          "legendFormat": "capacity",
+          "range": false,
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Number Of Healthy Volumes",
+      "title": "Disk Capacity",
       "type": "stat"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Note that Longhorn volume actual size is not the size of the filesystem inside a Longhorn volume.  See more at : https://longhorn.io/docs/1.0.2/volumes-and-nodes/volume-size/#volume-actual-size",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Longhorn data usage on the selected nodes/disks.",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "bytes"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 9,
-        "w": 15,
-        "x": 9,
-        "y": 3
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 0
       },
-      "hiddenSeries": false,
-      "id": 12,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
-          "expr": "( (avg by (volume) (longhorn_volume_actual_size_bytes))/ (avg by (volume) (longhorn_volume_capacity_bytes)) ) *100",
-          "interval": "",
-          "legendFormat": "{{volume}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(max by (node, disk) (longhorn_disk_usage_bytes{node=~\"$node\",disk=~\"$disk\"}))",
+          "instant": true,
+          "legendFormat": "used",
+          "range": false,
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "$$hashKey": "object:649",
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 90,
-          "yaxis": "left"
-        }
-      ],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Volume Actual Size/Capacity",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:476",
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:477",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Disk Used",
+      "type": "stat"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Degraded volumes are volumes that have the number of healthy replicas smaller than the expected number of replicas. e.g. User creates a volume with 2 replicas but 1 replicas is failed.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Volumes whose Longhorn state is detached or whose robustness is unknown. These are the first place to look for stale retained PVs.",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "count(count by (volume, pvc_namespace, pvc) ((longhorn_volume_state{state=\"detached\",volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"} == 1) or (longhorn_volume_robustness{state=\"unknown\",volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"} == 1)))",
+          "instant": true,
+          "legendFormat": "detached/unknown",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Detached / Unknown Volumes",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Longhorn volumes with robustness state=degraded. This should include arr-media-v2 while it is rebuilding or missing a replica.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -328,993 +393,180 @@
               {
                 "color": "orange",
                 "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 0,
-        "y": 9
-      },
-      "id": 15,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "count(longhorn_volume_robustness==2) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Number Of Degraded Volumes",
-      "type": "stat"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Fault volumes are volumes that doesn't have any healthy replica.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
               },
               {
                 "color": "red",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 4,
-        "y": 9
-      },
-      "id": 16,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "count(longhorn_volume_robustness==3) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Number Of Fault Volumes",
-      "type": "stat"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "The capacity of each Longhorn volume",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": null,
-            "displayMode": "auto"
-          },
-          "decimals": 1,
-          "mappings": [
-            {
-              "from": "",
-              "id": 0,
-              "text": "",
-              "to": "",
-              "type": 1,
-              "value": ""
-            }
-          ],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
+                "value": 2
               }
             ]
           },
-          "unit": "bytes"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "volume"
-            },
-            "properties": [
-              {
-                "id": "custom.displayMode",
-                "value": "auto"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Capacity"
-            },
-            "properties": [
-              {
-                "id": "custom.displayMode",
-                "value": "lcd-gauge"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 15,
-        "x": 9,
-        "y": 12
-      },
-      "id": 10,
-      "options": {
-        "frameIndex": 4,
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Capacity"
-          }
-        ]
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "avg by (volume) (longhorn_volume_capacity_bytes)",
-          "format": "table",
-          "instant": true,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{volume}}",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Volume Capacity",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "Value": "Capacity"
-            }
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Attached volumes are volumes that are currently attaching to a node",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
+          "unit": "short"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 4,
-        "x": 0,
-        "y": 15
-      },
-      "id": 34,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "count(longhorn_volume_state==2) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Number Of Attached Volumes",
-      "type": "stat"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Detached volumes are volumes that aren't currently attaching to a node",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 4,
-        "y": 15
-      },
-      "id": 14,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "count(longhorn_volume_state==3) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Number Of Detached Volumes",
-      "type": "stat"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 24,
-        "x": 0,
-        "y": 21
+        "x": 20,
+        "y": 0
       },
       "id": 6,
       "options": {
-        "content": "<div class=\"dashboard-header text-center\">\n<span>NODES</span>\n</div>",
-        "mode": "html"
-      },
-      "pluginVersion": "7.1.0",
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "",
-      "transparent": true,
-      "type": "text"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "The total number of nodes in the Longhorn storage system",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 0,
-        "y": 24
-      },
-      "id": 18,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.1.5",
       "targets": [
         {
-          "expr": "avg(longhorn_node_count_total) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Total Number Of Nodes",
-      "type": "stat"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Disabled nodes are nodes that are disabled by the user.  When users disable a node, Longhorn will not use the node's storage for replica scheduling. Note that Longhorn can still attach a volume to disabled nodes because the actual data of the volume could be on a different node.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 4,
-        "y": 24
-      },
-      "id": 21,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "count(longhorn_node_status{condition=\"allowScheduling\"}==0) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Number Of Disabled Nodes",
-      "type": "stat"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 10,
-        "w": 15,
-        "x": 9,
-        "y": 24
-      },
-      "hiddenSeries": false,
-      "id": 24,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "(longhorn_node_storage_usage_bytes/longhorn_node_storage_capacity_bytes) * 100",
-          "interval": "",
-          "legendFormat": "{{node}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Node Storage Usage/Capacity",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:530",
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:531",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Schedulable nodes are nodes that Longhorn can use their storage for replica scheduling.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 0,
-        "y": 30
-      },
-      "id": 20,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "(count(longhorn_node_status{condition=\"schedulable\"}==1) OR on() vector(0)) - (count(longhorn_node_status{condition=\"allowScheduling\"}==0) OR on() vector(0))",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Number Of Schedulable Nodes",
-      "type": "stat"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Failed Nodes are nodes that Longhorn cannot attach volumes to and cannot schedule replicas onto. e.g: when the nodes went down.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 4,
-        "y": 30
-      },
-      "id": 22,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "(avg(longhorn_node_count_total) OR on() vector(0)) - (count(longhorn_node_status{condition=\"ready\"}==1) OR on() vector(0))",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Number Of Failed Nodes",
-      "type": "stat"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": null
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
           },
-          "decimals": 1,
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "bytes"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Storage Capacity"
-            },
-            "properties": [
-              {
-                "id": "custom.displayMode",
-                "value": "lcd-gauge"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 15,
-        "x": 9,
-        "y": 34
-      },
-      "id": 23,
-      "options": {
-        "showHeader": true
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "expr": "longhorn_node_storage_capacity_bytes",
-          "format": "table",
+          "editorMode": "code",
+          "expr": "count(count by (volume, pvc_namespace, pvc) (longhorn_volume_robustness{state=\"degraded\",volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"} == 1))",
           "instant": true,
-          "interval": "",
-          "legendFormat": "{{node}}",
+          "legendFormat": "degraded",
+          "range": false,
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Node Capacity",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "endpoint": true,
-              "instance": true,
-              "job": true,
-              "namespace": true,
-              "pod": true,
-              "service": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "Value": "Storage Capacity"
-            }
-          }
-        }
-      ],
-      "type": "table"
+      "title": "Degraded Volumes",
+      "type": "stat"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Per-disk Longhorn usage. The disk label is the Longhorn disk name; replica placement below shows the host path.",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "percentunit"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 36
-      },
-      "hiddenSeries": false,
-      "id": 26,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "count by (node) (longhorn_volume_state==2)",
-          "interval": "",
-          "legendFormat": "{{node}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Number of Volumes Per Node",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:422",
-          "decimals": 0,
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:423",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 24,
-        "x": 0,
-        "y": 44
-      },
-      "id": 17,
-      "options": {
-        "content": "<div class=\"dashboard-header text-center\">\n<span>DISKS</span>\n</div>",
-        "mode": "html"
-      },
-      "pluginVersion": "7.1.0",
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "",
-      "transparent": true,
-      "type": "text"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "The capacity of each Longhorn volume",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 10,
         "w": 12,
         "x": 0,
-        "y": 47
+        "y": 5
       },
-      "hiddenSeries": false,
-      "id": 32,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
       },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
-          "expr": "(longhorn_disk_usage_bytes/longhorn_disk_capacity_bytes)*100",
-          "interval": "",
-          "legendFormat": "{{disk}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "max by (node, disk) (longhorn_disk_usage_bytes{node=~\"$node\",disk=~\"$disk\"}) / max by (node, disk) (longhorn_disk_capacity_bytes{node=~\"$node\",disk=~\"$disk\"})",
+          "legendFormat": "{{node}} / {{disk}}",
+          "range": true,
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Disk Space Usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:530",
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:531",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Disk Usage by Host / Disk",
+      "type": "timeseries"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Node-level Longhorn storage. Scheduled can exceed current actual usage while replicas rebuild or when sparse images are provisioned.",
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
+          "color": {
+            "mode": "palette-classic"
           },
-          "decimals": 1,
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1326,810 +578,725 @@
           },
           "unit": "bytes"
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "max by (node) (longhorn_node_storage_capacity_bytes{node=~\"$node\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "capacity",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "max by (node) (longhorn_node_storage_usage_bytes{node=~\"$node\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "used",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "max by (node) (longhorn_node_storage_scheduled_bytes{node=~\"$node\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "scheduled",
+          "range": false,
+          "refId": "C"
+        }
+      ],
+      "title": "Node Storage Inventory",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Disk health rows with condition labels. If Ready/Schedulable is 0, Longhorn's condition_reason label normally explains the reason.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "Capacity"
+              "options": "Value"
             },
             "properties": [
               {
-                "id": "custom.displayMode",
-                "value": "lcd-gauge"
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
               }
             ]
           }
         ]
       },
       "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 47
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 13
       },
-      "id": 33,
+      "id": 9,
       "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
         "showHeader": true
       },
-      "pluginVersion": "7.1.5",
       "targets": [
         {
-          "expr": "longhorn_disk_capacity_bytes",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "max by (node, disk, condition, condition_reason) (longhorn_disk_status{node=~\"$node\",disk=~\"$disk\"})",
           "format": "table",
           "instant": true,
-          "interval": "",
-          "legendFormat": "{{disk}}",
+          "legendFormat": "{{node}} / {{disk}} / {{condition}}",
+          "range": false,
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Disk Capacity",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "Value": false,
-              "__name__": true,
-              "disk": false,
-              "endpoint": true,
-              "instance": true,
-              "job": true,
-              "namespace": true,
-              "pod": true,
-              "service": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "Value": "Capacity"
-            }
-          }
-        }
-      ],
+      "title": "Disk Health Details",
       "type": "table"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Provisioned capacity is the requested PVC/Longhorn volume size grouped by StorageClass. This is allocation intent, not physical bytes currently used on disk.",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (storageclass) (max by (volume, pvc_namespace, pvc) (longhorn_volume_capacity_bytes{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) * on(volume) group_left(storageclass) label_replace(max by (namespace, persistentvolumeclaim, storageclass, volumename) (kube_persistentvolumeclaim_info{storageclass=~\"$storageclass\"}), \"volume\", \"$1\", \"volumename\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{storageclass}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Provisioned Capacity by StorageClass (PVC requested)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Actual size is the sparse Longhorn data currently stored for volumes, grouped by StorageClass. This is closer to consumed Longhorn data than provisioned PVC size.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (storageclass) (max by (volume, pvc_namespace, pvc) (longhorn_volume_actual_size_bytes{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) * on(volume) group_left(storageclass) label_replace(max by (namespace, persistentvolumeclaim, storageclass, volumename) (kube_persistentvolumeclaim_info{storageclass=~\"$storageclass\"}), \"volume\", \"$1\", \"volumename\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{storageclass}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Actual Longhorn Data Size by StorageClass",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Longhorn volumes keyed by namespace/PVC, with the raw Longhorn volume ID retained for correlation. Provisioned capacity is PVC requested size; actual size is sparse Longhorn data currently stored.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 30
       },
-      "id": 5,
+      "id": 12,
       "options": {
-        "content": "<div class=\"dashboard-header text-center\">\n<span>CPU & MEMORY</span>\n</div>",
-        "mode": "html"
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
       },
-      "pluginVersion": "7.1.0",
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "",
-      "transparent": true,
-      "type": "text"
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "label_join(max by (volume, pvc_namespace, pvc) (longhorn_volume_capacity_bytes{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) * on(volume) group_left(storageclass) label_replace(max by (namespace, persistentvolumeclaim, storageclass, volumename) (kube_persistentvolumeclaim_info{namespace=~\"$pvc_namespace\",persistentvolumeclaim=~\"$pvc\",storageclass=~\"$storageclass\"}), \"volume\", \"$1\", \"volumename\", \"(.*)\"), \"claim\", \"/\", \"pvc_namespace\", \"pvc\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{claim}} provisioned",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "label_join(max by (volume, pvc_namespace, pvc) (longhorn_volume_actual_size_bytes{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) * on(volume) group_left(storageclass) label_replace(max by (namespace, persistentvolumeclaim, storageclass, volumename) (kube_persistentvolumeclaim_info{namespace=~\"$pvc_namespace\",persistentvolumeclaim=~\"$pvc\",storageclass=~\"$storageclass\"}), \"volume\", \"$1\", \"volumename\", \"(.*)\"), \"claim\", \"/\", \"pvc_namespace\", \"pvc\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{claim}} actual",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "PVC Volume Inventory",
+      "type": "table"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Longhorn volume attachment state and robustness state. Detached/unknown volumes without matching live PVCs are usually retained/stale Longhorn volumes.",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 10,
-        "w": 12,
+        "w": 24,
         "x": 0,
-        "y": 60
+        "y": 40
       },
-      "hiddenSeries": false,
-      "id": 36,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
       },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
-          "expr": "(longhorn_node_cpu_usage_millicpu / longhorn_node_cpu_capacity_millicpu) * 100",
-          "interval": "",
-          "legendFormat": "{{node}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "label_join(max by (volume, pvc_namespace, pvc, state) (longhorn_volume_state{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) == 1, \"claim\", \"/\", \"pvc_namespace\", \"pvc\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{claim}} attachment={{state}}",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "label_join(max by (volume, pvc_namespace, pvc, state) (longhorn_volume_robustness{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) == 1, \"claim\", \"/\", \"pvc_namespace\", \"pvc\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{claim}} robustness={{state}}",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "Volume State and Robustness",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Replica placement by node and Longhorn disk path. Disk type is encoded by your Longhorn disk naming/path convention and storage class.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      },
+      "id": 14,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "label_join(max by (node, disk_path, replica, volume, data_engine) (longhorn_replica_info{node=~\"$node\",disk_path=~\"$disk_path\",volume=~\"$volume\"}) * on(volume) group_left(pvc_namespace,pvc,storageclass) ((max by (volume, pvc_namespace, pvc) (longhorn_volume_capacity_bytes{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) > bool -1) * on(volume) group_left(storageclass) label_replace(max by (namespace, persistentvolumeclaim, storageclass, volumename) (kube_persistentvolumeclaim_info{namespace=~\"$pvc_namespace\",persistentvolumeclaim=~\"$pvc\",storageclass=~\"$storageclass\"}), \"volume\", \"$1\", \"volumename\", \"(.*)\")), \"claim\", \"/\", \"pvc_namespace\", \"pvc\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{node}} / {{disk_path}} / {{claim}}",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "label_join(max by (node, replica, volume, state) (longhorn_replica_state{node=~\"$node\",volume=~\"$volume\"}) * on(volume) group_left(pvc_namespace,pvc) (max by (volume, pvc_namespace, pvc) (longhorn_volume_capacity_bytes{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) > bool -1), \"claim\", \"/\", \"pvc_namespace\", \"pvc\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{node}} / {{claim}} / replica={{state}}",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "Replica Placement by Node / Disk Path",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Replica rebuild progress and mode. Use this when volumes are degraded and Longhorn is rebuilding replicas.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 62
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "label_join(max by (node, volume, instance_manager) (longhorn_engine_rebuild_progress{node=~\"$node\",volume=~\"$volume\"}) * on(volume) group_left(pvc_namespace,pvc) (max by (volume, pvc_namespace, pvc) (longhorn_volume_capacity_bytes{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) > bool -1), \"claim\", \"/\", \"pvc_namespace\", \"pvc\")",
+          "legendFormat": "{{node}} / {{claim}} / {{instance_manager}}",
+          "range": true,
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "$$hashKey": "object:1092",
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 80,
-          "yaxis": "left"
-        }
-      ],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Node CPU Usage/Capacity",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:865",
-          "decimals": 0,
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:866",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Rebuild Progress",
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Longhorn backup footprint grouped by PVC claim and recurring job. Volumes without a live Longhorn volume only have the raw Longhorn volume ID available.",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 12,
         "x": 12,
-        "y": 60
+        "y": 62
       },
-      "hiddenSeries": false,
-      "id": 38,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
+      "id": 16,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
       },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
-          "expr": "( longhorn_node_memory_usage_bytes / longhorn_node_memory_capacity_bytes ) * 100",
-          "interval": "",
-          "legendFormat": "{{node}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (volume, pvc_namespace, pvc, recurring_job) (max by (volume, backup, recurring_job) (longhorn_backup_actual_size_bytes{volume=~\"$volume\"}) * on(volume) group_left(pvc_namespace,pvc) (max by (volume, pvc_namespace, pvc) (longhorn_volume_capacity_bytes{volume=~\"$volume\",pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}) > bool -1)), \"claim\", \"/\", \"pvc_namespace\", \"pvc\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{claim}} / {{recurring_job}}",
+          "range": false,
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "$$hashKey": "object:1092",
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 80,
-          "yaxis": "left"
-        }
-      ],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Node Memory Usage/Capacity",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:865",
-          "decimals": 0,
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:866",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "Instance managers are pods that contains the engine and replica processes of Longhorn volumes. See more at https://longhorn.io/docs/1.0.2/concepts/#11-the-longhorn-manager-and-the-longhorn-engine ",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 0,
-        "y": 70
-      },
-      "hiddenSeries": false,
-      "id": 28,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "longhorn_instance_manager_cpu_usage_millicpu",
-          "interval": "",
-          "legendFormat": "{{instance_manager}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Instance Manager CPU Usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:865",
-          "decimals": 0,
-          "format": "milicpu",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:866",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Instance managers are pods that contains the engine and replica processes of Longhorn volumes. See more at https://longhorn.io/docs/1.0.2/concepts/#11-the-longhorn-manager-and-the-longhorn-engine ",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 8,
-        "y": 70
-      },
-      "hiddenSeries": false,
-      "id": 30,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "(longhorn_instance_manager_cpu_usage_millicpu/longhorn_instance_manager_cpu_requests_millicpu)*100",
-          "interval": "",
-          "legendFormat": "{{instance_manager}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [
-        {
-          "$$hashKey": "object:1092",
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 100,
-          "yaxis": "left"
-        }
-      ],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Instance Manager CPU Usage/Request",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:865",
-          "decimals": 0,
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:866",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Instance managers are pods that contains the engine and replica processes of Longhorn volumes. See more at https://longhorn.io/docs/1.0.2/concepts/#11-the-longhorn-manager-and-the-longhorn-engine ",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 16,
-        "y": 70
-      },
-      "hiddenSeries": false,
-      "id": 29,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "longhorn_instance_manager_memory_usage_bytes",
-          "interval": "",
-          "legendFormat": "{{instance_manager}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Instance Manager Memory Usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:865",
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:866",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "Longhorn manager pods manage the control plane of the Longhorn system. e.g. Volume scheduling, attaching, detaching, backup, etc,..",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 80
-      },
-      "hiddenSeries": false,
-      "id": 2,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "longhorn_manager_cpu_usage_millicpu",
-          "interval": "",
-          "legendFormat": "{{manager}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Longhorn Manager CPU Usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:1500",
-          "decimals": 0,
-          "format": "milicpu",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:1501",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": null,
-      "description": "Longhorn manager pods manage the control plane of the Longhorn system. e.g. Volume scheduling, attaching, detaching, backup, etc,..",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 80
-      },
-      "hiddenSeries": false,
-      "id": 31,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "longhorn_manager_memory_usage_bytes",
-          "interval": "",
-          "legendFormat": "{{manager}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Longhorn Manager Memory Usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:1500",
-          "decimals": null,
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:1501",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Backup Size by Volume",
+      "type": "table"
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 26,
-  "style": "dark",
-  "tags": [],
+  "schemaVersion": 39,
+  "tags": [
+    "longhorn",
+    "storage",
+    "inventory"
+  ],
   "templating": {
     "list": [
       {
@@ -2142,35 +1309,210 @@
         "includeAll": false,
         "label": "Datasource",
         "multi": false,
-        "name": "DS_PROMETHEUS",
+        "name": "datasource",
         "options": [],
         "query": "prometheus",
         "refresh": 1,
         "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(longhorn_node_status, node)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Node",
+        "multi": true,
+        "name": "node",
+        "options": [],
+        "query": {
+          "query": "label_values(longhorn_node_status, node)",
+          "refId": "LonghornNodeVariable"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(longhorn_disk_capacity_bytes{node=~\"$node\"}, disk)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Disk",
+        "multi": true,
+        "name": "disk",
+        "options": [],
+        "query": {
+          "query": "label_values(longhorn_disk_capacity_bytes{node=~\"$node\"}, disk)",
+          "refId": "LonghornDiskVariable"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(longhorn_replica_info{node=~\"$node\"}, disk_path)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Disk Path",
+        "multi": true,
+        "name": "disk_path",
+        "options": [],
+        "query": {
+          "query": "label_values(longhorn_replica_info{node=~\"$node\"}, disk_path)",
+          "refId": "LonghornDiskPathVariable"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(kube_persistentvolumeclaim_info, storageclass)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "StorageClass",
+        "multi": true,
+        "name": "storageclass",
+        "options": [],
+        "query": {
+          "query": "label_values(kube_persistentvolumeclaim_info, storageclass)",
+          "refId": "StorageClassVariable"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(longhorn_volume_capacity_bytes, pvc_namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "PVC Namespace",
+        "multi": true,
+        "name": "pvc_namespace",
+        "options": [],
+        "query": {
+          "query": "label_values(longhorn_volume_capacity_bytes, pvc_namespace)",
+          "refId": "LonghornPVCNamespaceVariable"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(longhorn_volume_capacity_bytes{pvc_namespace=~\"$pvc_namespace\"}, pvc)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "PVC",
+        "multi": true,
+        "name": "pvc",
+        "options": [],
+        "query": {
+          "query": "label_values(longhorn_volume_capacity_bytes{pvc_namespace=~\"$pvc_namespace\"}, pvc)",
+          "refId": "LonghornPVCVariable"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(longhorn_volume_capacity_bytes{pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}, volume)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Longhorn Volume",
+        "multi": true,
+        "name": "volume",
+        "options": [],
+        "query": {
+          "query": "label_values(longhorn_volume_capacity_bytes{pvc_namespace=~\"$pvc_namespace\",pvc=~\"$pvc\"}, volume)",
+          "refId": "LonghornVolumeVariable"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
-  "timepicker": {
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ]
-  },
-  "timezone": "",
-  "title": "Longhorn Example v1.1.0",
+  "timezone": "browser",
+  "title": "Longhorn Storage",
   "uid": "2BCgsldGz",
-  "version": 101,
-  "description": "An example dashboard for Longhorn v1.1.0"
+  "version": 1,
+  "weekStart": ""
 }

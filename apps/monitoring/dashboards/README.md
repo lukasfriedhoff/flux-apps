@@ -16,7 +16,7 @@ This directory provides GitOps-managed dashboards loaded by Grafana's sidecar.
 - Tempo dashboards from `grafana/tempo` mixin-compiled outputs.
 - Nextcloud dashboard from `xperimental/nextcloud-exporter`.
 - Valkey dashboard from `oliver006/redis_exporter`.
-- Longhorn dashboard from Grafana.com dashboard ID 13032, referenced by Longhorn monitoring docs.
+- Longhorn storage dashboard maintained locally around Longhorn manager metrics and kube-state-metrics PVC ownership data.
 
 ## Notes
 - `kube-state-metrics` currently ships alerts/rules in its mixin, not Grafana dashboards.

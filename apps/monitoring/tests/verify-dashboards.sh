@@ -190,6 +190,29 @@ while IFS= read -r file; do
     ' "$file" >/dev/null || fail "CNPG backup dashboard must use cnpg_pg_stat_archiver_seconds_since_last_archival for WAL age"
   fi
 
+  if [ "$rel" = "longhorn/longhorn.json" ]; then
+    jq -e '.title == "Longhorn Storage"' "$file" >/dev/null \
+      || fail "Longhorn dashboard must be the local storage inventory dashboard"
+
+    jq -e '
+      [
+        .. | objects | select(has("expr")) | .expr
+        | select(type == "string")
+        | select(test("longhorn_volume_robustness\\s*==\\s*[0-9]"))
+      ] | length == 0
+    ' "$file" >/dev/null || fail "Longhorn dashboard must use robustness state labels, not numeric robustness comparisons"
+
+    jq -e '
+      [
+        .. | objects | select(has("expr")) | .expr
+        | select(type == "string")
+        | select(test("longhorn_(volume|replica|engine|backup)"))
+        | select(test("volume_capacity_bytes|volume_actual_size_bytes|volume_state|volume_robustness|replica_info|replica_state|engine_rebuild_progress|backup_actual_size_bytes"))
+        | select(test("label_join\\(") and test("\"claim\",\\s*\"/\",\\s*\"pvc_namespace\",\\s*\"pvc\""))
+      ] | length >= 8
+    ' "$file" >/dev/null || fail "Longhorn volume-level panels must expose claim=namespace/pvc labels"
+  fi
+
   printf '[dashboard-test] %s ok\n' "$rel"
 done < <(find "$dashboards_dir" -type f -name '*.json' | sort)
 
