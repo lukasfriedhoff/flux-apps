@@ -26,9 +26,9 @@ data:
         nextcloud_is_admin:
           expression: '"nextcloud-admins" in groups'
         immich_meme_role:
-          expression: '"meme-admins" in groups ? "admin" : ""'
+          expression: '"meme-admins" in groups ? "admin" : "user"'
         immich_photos_role:
-          expression: '"photos-admins" in groups ? "admin" : ""'
+          expression: '"photos-admins" in groups ? "admin" : "user"'
 
     access_control:
       default_policy: deny
