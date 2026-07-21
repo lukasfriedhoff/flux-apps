@@ -86,7 +86,7 @@ authelia_login() {
     --arg username "$AUTHELIA_USER" \
     --arg password "$AUTHELIA_PASSWORD" \
     --arg target "$AUTHELIA_TARGET_URL" \
-    '{username:$username,password:$password,targetURL:$target}')"
+    '{username:$username,password:$password,keepMeLoggedIn:false,targetURL:$target}')"
 
   login_code="$(curl -ksS \
     --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
@@ -277,6 +277,61 @@ complete_oidc_consent_from_json_start() {
   log "${app_name}: OIDC callback complete"
 }
 
+complete_immich_oidc_callback() {
+  local host="$1"
+  local app_name="$2"
+  local redirect_uri start_payload start_body_file start_code authorize_url headers_file auth_body_file auth_code callback_url callback_body_file callback_code
+
+  redirect_uri="https://${host}/auth/login"
+  start_payload="$(jq -cn --arg redirectUri "$redirect_uri" '{redirectUri:$redirectUri}')"
+  start_body_file="${WORK_DIR}/${app_name}-immich-oauth-start.json"
+  start_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -H 'Content-Type: application/json' \
+    -o "$start_body_file" -w '%{http_code}' \
+    --data "$start_payload" \
+    "https://${host}/api/oauth/authorize")"
+  [ "$start_code" = "201" ] || fail "${app_name}: Immich OAuth authorize returned ${start_code}"
+
+  authorize_url="$(jq -r '.url // empty' "$start_body_file")"
+  [ -n "$authorize_url" ] || fail "${app_name}: Immich OAuth authorize did not return URL"
+
+  headers_file="$(mktemp)"
+  auth_body_file="${WORK_DIR}/${app_name}-immich-oauth-auth.html"
+  auth_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+    -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -D "$headers_file" -o "$auth_body_file" -w '%{http_code}' \
+    "$authorize_url")"
+
+  case "$auth_code" in
+    302|303)
+      callback_url="$(location_from_headers "$headers_file")"
+      ;;
+    *)
+      rm -f "$headers_file"
+      fail "${app_name}: Immich OAuth authorization returned ${auth_code}, expected redirect"
+      ;;
+  esac
+  rm -f "$headers_file"
+
+  [ -n "$callback_url" ] || fail "${app_name}: Immich OAuth authorization did not include callback URI"
+  [ "$(host_from_url "$callback_url")" = "$host" ] || fail "${app_name}: Immich OAuth callback host mismatch (${callback_url})"
+
+  callback_body_file="${WORK_DIR}/${app_name}-immich-oauth-callback.json"
+  callback_code="$(jq -cn --arg url "$callback_url" '{url:$url}' \
+    | curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
+      -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+      -H 'Content-Type: application/json' \
+      -o "$callback_body_file" -w '%{http_code}' \
+      --data @- \
+      "https://${host}/api/oauth/callback")"
+
+  [ "$callback_code" = "201" ] || fail "${app_name}: Immich OAuth callback returned ${callback_code}"
+  jq -e '.accessToken != null and .userEmail != null' "$callback_body_file" >/dev/null || \
+    fail "${app_name}: Immich OAuth callback response missing login fields"
+  log "${app_name}: Immich OAuth callback complete"
+}
+
 assert_http_200() {
   local name="$1"
   local url="$2"
@@ -408,6 +463,7 @@ log "matrix: login flows expose oidc-authelia provider"
 assert_public_http_200 status_dashboard "https://${STATUS_HOST}/"
 assert_public_http_200 element_web "https://$(cluster_host chat)/"
 assert_public_http_200 immich_login "https://$(cluster_host meme)/auth/login"
+assert_public_http_200 immich_photos_login "https://$(cluster_host photos)/auth/login"
 assert_public_http_200 collabora_public "https://$(cluster_host collabora)/"
 check_jellyseerr_oidc_public_settings
 
@@ -537,6 +593,9 @@ complete_oidc_consent_from_json_start \
   "https://$(cluster_host jellyseerr)/api/v1/auth/oidc/login/authelia?returnUrl=%2F" \
   "$(cluster_host jellyseerr)" \
   "jellyseerr"
+
+complete_immich_oidc_callback "$(cluster_host meme)" "immich_meme"
+complete_immich_oidc_callback "$(cluster_host photos)" "immich_photos"
 
 # Application-specific smoke checks after auth.
 grafana_health_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
