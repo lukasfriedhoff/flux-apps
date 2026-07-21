@@ -104,6 +104,23 @@ grep -q 'replicas: .*qbittorrent_replicas' "$rendered" \
   || fail 'qBittorrent replica count is not configurable for migrations'
 grep -q 'existingClaim: arr-media-v2' "$rendered" \
   || fail 'qBittorrent does not mount arr-media-v2'
+awk '
+  /^---$/ {
+    if (doc ~ /kind: PersistentVolumeClaim/ &&
+        doc ~ /name: arr-media-v2/ &&
+        doc ~ /recurring-job-group.longhorn.io\/default: disabled/) found=1
+    doc=""
+    next
+  }
+  { doc = doc $0 "\n" }
+  END {
+    if (doc ~ /kind: PersistentVolumeClaim/ &&
+        doc ~ /name: arr-media-v2/ &&
+        doc ~ /recurring-job-group.longhorn.io\/default: disabled/) found=1
+    exit found ? 0 : 1
+  }
+' "$rendered" \
+  || fail 'arr-media-v2 does not disable Longhorn default recurring backups'
 grep -q '"save_path": "/media/downloads/other"' "$rendered" \
   || fail 'qBittorrent API policy does not set default save path under /media/downloads'
 grep -q 'Downloads\\SavePath=/media/downloads/other' "$rendered" \
