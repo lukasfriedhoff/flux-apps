@@ -111,61 +111,6 @@ spec:
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: wadb
-  namespace: matrix
-spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
-  instances: 1
-  primaryUpdateStrategy: unsupervised
-  inheritedMetadata:
-    annotations:
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "9187"
-      prometheus.io/path: "/metrics"
-  bootstrap:
-    initdb:
-      database: ${matrix_wa_postgres_source_dbname:=mautrixwhatsapp}
-      owner: ${matrix_wa_postgres_source_user:=mautrixwhatsapp}
-      secret:
-        name: wadb-app
-  managed:
-    roles:
-      - name: ${matrix_wa_postgres_source_user:=mautrixwhatsapp}
-        ensure: present
-        login: true
-        passwordSecret:
-          name: wadb-app
-  storage:
-    storageClass: ${matrix_postgres_storage_class_name}
-    size: ${matrix_wa_postgres_size:=${matrix_postgres_size}}
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_wadb_backup_generation:=}wadb/"
-      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
-      serverName: ${matrix_wadb_backup_server_name:=wadb}
-      s3Credentials:
-        accessKeyId:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "30d"
-  resources:
-    requests:
-      cpu: ${matrix_postgres_requests_cpu}
-      memory: ${matrix_postgres_requests_memory}
-    limits:
-      cpu: ${matrix_postgres_limits_cpu}
-      memory: ${matrix_postgres_limits_memory}
----
-apiVersion: postgresql.cnpg.io/v1
-kind: Cluster
-metadata:
   name: telegramdb
   namespace: matrix
 spec:
@@ -296,18 +241,6 @@ spec:
   immediate: true
   cluster:
     name: whatsappdb
----
-apiVersion: postgresql.cnpg.io/v1
-kind: ScheduledBackup
-metadata:
-  name: wadb
-  namespace: matrix
-spec:
-  schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
-  backupOwnerReference: self
-  immediate: true
-  cluster:
-    name: wadb
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
