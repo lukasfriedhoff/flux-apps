@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: matrix${public_host_suffix}.${delegating_domain}
+    - host: ${matrix_public_hostname}
       http:
         paths:
           - path: /_matrix
@@ -38,4 +38,4 @@ spec:
   tls:
     - secretName: matrix-tls
       hosts:
-        - matrix${public_host_suffix}.${delegating_domain}
+        - ${matrix_public_hostname}
