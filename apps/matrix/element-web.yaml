@@ -8,8 +8,8 @@ data:
     {
       "default_server_config": {
         "m.homeserver": {
-          "base_url": "https://matrix${public_host_suffix}.${delegating_domain}",
-          "server_name": "matrix${public_host_suffix}.${delegating_domain}"
+          "base_url": "${matrix_public_baseurl}",
+          "server_name": "${matrix_server_name}"
         }
       },
       "default_theme": "dark",
@@ -19,7 +19,7 @@ data:
       "brand": "h4xx Matrix",
       "room_directory": {
         "servers": [
-          "matrix${public_host_suffix}.${delegating_domain}"
+          "${matrix_server_name}"
         ]
       }
     }

@@ -44,6 +44,16 @@ spec:
             - -ce
             - |
               cp /seed/server.yaml /config/server.yaml
+              if grep -Eq '^[[:space:]]*server_name:[[:space:]]*' /config/server.yaml; then
+                sed -i "s#^[[:space:]]*server_name:[[:space:]].*#server_name: \"$MATRIX_SERVER_NAME\"#" /config/server.yaml
+              else
+                printf '%s\n' "server_name: \"$MATRIX_SERVER_NAME\"" >> /config/server.yaml
+              fi
+              if grep -Eq '^[[:space:]]*public_baseurl:[[:space:]]*' /config/server.yaml; then
+                sed -i "s#^[[:space:]]*public_baseurl:[[:space:]].*#public_baseurl: \"$MATRIX_PUBLIC_BASEURL\"#" /config/server.yaml
+              else
+                printf '%s\n' "public_baseurl: \"$MATRIX_PUBLIC_BASEURL\"" >> /config/server.yaml
+              fi
               sed -i '\#^[[:space:]]*-[[:space:]]*/wadata/registration.yaml[[:space:]]*$#d' /config/server.yaml
               # Some historical secret revisions contain signing-key spillover in
               # homeserver.log.config. Keep only the expected logging config.
@@ -127,6 +137,10 @@ spec:
           env:
             - name: MATRIX_OIDC_PROVIDER
               value: ${matrix_oidc:=none}
+            - name: MATRIX_SERVER_NAME
+              value: ${matrix_server_name}
+            - name: MATRIX_PUBLIC_BASEURL
+              value: ${matrix_public_baseurl}
             - name: MATRIX_OIDC_ISSUER_URL
               value: https://auth${public_host_suffix}.${delegating_domain}
             - name: MATRIX_OIDC_CLIENT_ID
