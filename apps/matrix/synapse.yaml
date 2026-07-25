@@ -44,6 +44,7 @@ spec:
             - -ce
             - |
               cp /seed/server.yaml /config/server.yaml
+              sed -i '\#^[[:space:]]*-[[:space:]]*/wadata/registration.yaml[[:space:]]*$#d' /config/server.yaml
               # Some historical secret revisions contain signing-key spillover in
               # homeserver.log.config. Keep only the expected logging config.
               awk '
@@ -229,10 +230,6 @@ spec:
               mountPath: /whatsappdata/registration.yaml
               subPath: registration.yaml
               readOnly: true
-            - name: wa-config
-              mountPath: /wadata/registration.yaml
-              subPath: registration.yaml
-              readOnly: true
       volumes:
         - name: synapse-data
           persistentVolumeClaim:
@@ -254,6 +251,3 @@ spec:
         - name: whatsapp-config
           secret:
             secretName: matrix-whatsapp-config
-        - name: wa-config
-          secret:
-            secretName: matrix-wa-config
