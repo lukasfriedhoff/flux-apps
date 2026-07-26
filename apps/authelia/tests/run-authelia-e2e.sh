@@ -20,6 +20,13 @@ AUTHELIA_REQUIRE_PASSWORD="${AUTHELIA_REQUIRE_PASSWORD:-false}"
 AUTHELIA_EXPECTED_POLICY="${AUTHELIA_EXPECTED_POLICY:-one_factor}"
 JELLYSEERR_PORT_FORWARD_NAMESPACE="${JELLYSEERR_PORT_FORWARD_NAMESPACE:-media}"
 JELLYSEERR_PORT_FORWARD_LOCAL_PORT="${JELLYSEERR_PORT_FORWARD_LOCAL_PORT:-15075}"
+if [ -z "${MATRIX_HOST:-}" ]; then
+  if [ -z "$PUBLIC_HOST_SUFFIX" ]; then
+    MATRIX_HOST="$DELEGATING_DOMAIN"
+  else
+    MATRIX_HOST="matrix${PUBLIC_HOST_SUFFIX}.${DELEGATING_DOMAIN}"
+  fi
+fi
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -449,13 +456,13 @@ done
 assert_redirect_to_auth nextcloud_oidc_entry "https://$(cluster_host nextcloud)/index.php/apps/oidc_login/oidc" "nextcloud"
 assert_redirect_to_auth grafana_oidc_entry "https://$(cluster_host grafana)/login/generic_oauth" "grafana"
 assert_redirect_to_auth matrix_oidc_entry \
-  "https://$(cluster_host matrix)/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2F$(cluster_host chat)%2F" \
+  "https://${MATRIX_HOST}/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2F$(cluster_host chat)%2F" \
   "matrix-synapse"
 assert_redirect_to_auth jellyfin_oidc_entry \
   "https://$(cluster_host jellyfin)/sso/OID/start/authelia" \
   "jellyfin"
 
-matrix_login_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" "https://$(cluster_host matrix)/_matrix/client/v3/login")"
+matrix_login_json="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" "https://${MATRIX_HOST}/_matrix/client/v3/login")"
 printf '%s' "$matrix_login_json" | jq -e '.flows[] | select(.type=="m.login.sso") | .identity_providers[] | select(.id=="oidc-authelia")' >/dev/null || \
   fail "matrix: missing oidc-authelia provider in login flows"
 log "matrix: login flows expose oidc-authelia provider"
@@ -522,7 +529,7 @@ if [ "$AUTHELIA_EXPECTED_POLICY" = "two_factor" ]; then
 
   matrix_versions_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
     -o "${WORK_DIR}/matrix-versions.json" -w '%{http_code}' \
-    "https://$(cluster_host matrix)/_matrix/client/versions")"
+    "https://${MATRIX_HOST}/_matrix/client/versions")"
   [ "$matrix_versions_code" = "200" ] || fail "matrix: client versions returned ${matrix_versions_code}"
   jq -e '.versions | length > 0' "${WORK_DIR}/matrix-versions.json" >/dev/null || fail "matrix: versions payload is empty"
   log "matrix: versions API check passed"
@@ -531,7 +538,7 @@ if [ "$AUTHELIA_EXPECTED_POLICY" = "two_factor" ]; then
     -o "${WORK_DIR}/element-config.json" -w '%{http_code}' \
     "https://$(cluster_host chat)/config.json")"
   [ "$element_config_code" = "200" ] || fail "element: config.json returned ${element_config_code}"
-  jq -e '.default_server_config."m.homeserver".base_url == "https://'"$(cluster_host matrix)"'"' "${WORK_DIR}/element-config.json" >/dev/null \
+  jq -e '.default_server_config."m.homeserver".base_url == "https://'"${MATRIX_HOST}"'"' "${WORK_DIR}/element-config.json" >/dev/null \
     || fail "element: config.json homeserver does not point to expected matrix host"
   log "element: config check passed"
 
@@ -585,7 +592,7 @@ complete_oidc_consent \
   "grafana"
 
 complete_oidc_consent \
-  "https://$(cluster_host matrix)/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2F$(cluster_host chat)%2F" \
+  "https://${MATRIX_HOST}/_matrix/client/v3/login/sso/redirect?redirectUrl=https%3A%2F%2F$(cluster_host chat)%2F" \
   "$(cluster_host chat)" \
   "matrix"
 
@@ -649,7 +656,7 @@ log "jellyseerr: auth/me check passed"
 
 matrix_versions_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -o "${WORK_DIR}/matrix-versions.json" -w '%{http_code}' \
-  "https://$(cluster_host matrix)/_matrix/client/versions")"
+  "https://${MATRIX_HOST}/_matrix/client/versions")"
 [ "$matrix_versions_code" = "200" ] || fail "matrix: client versions returned ${matrix_versions_code}"
 jq -e '.versions | length > 0' "${WORK_DIR}/matrix-versions.json" >/dev/null || fail "matrix: versions payload is empty"
 log "matrix: versions API check passed"
@@ -658,7 +665,7 @@ element_config_code="$(curl -ksS --connect-timeout "$AUTHELIA_LOCAL_TIMEOUT" \
   -o "${WORK_DIR}/element-config.json" -w '%{http_code}' \
   "https://$(cluster_host chat)/config.json")"
 [ "$element_config_code" = "200" ] || fail "element: config.json returned ${element_config_code}"
-jq -e '.default_server_config."m.homeserver".base_url == "https://'"$(cluster_host matrix)"'"' "${WORK_DIR}/element-config.json" >/dev/null \
+jq -e '.default_server_config."m.homeserver".base_url == "https://'"${MATRIX_HOST}"'"' "${WORK_DIR}/element-config.json" >/dev/null \
   || fail "element: config.json homeserver does not point to expected matrix host"
 log "element: config check passed"
 
