@@ -54,5 +54,6 @@ Optional environment overrides:
 - `AUTHELIA_TARGET_URL` (default: `https://testing.h4xx.io/`)
 - `AUTHELIA_LOCAL_TIMEOUT` (default: `30`)
 - `AUTHELIA_REQUIRE_PASSWORD` (default: `false`; set `true` to fail if password is missing)
+- `MATRIX_HOST` (defaults to `matrix<suffix>.h4xx.io`, or apex `h4xx.io` when the suffix is empty)
 - `JELLYSEERR_PORT_FORWARD_NAMESPACE` (default: `media`)
 - `JELLYSEERR_PORT_FORWARD_LOCAL_PORT` (default: `15075`)
