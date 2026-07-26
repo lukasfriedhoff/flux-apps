@@ -10,6 +10,8 @@ data:
   authelia_oidc_policy: "two_factor"
   immich_oidc_client_id: "immich"
   immich_photos_oidc_client_id: "immich-photos"
+  matrix_oidc_client_id: "matrix-synapse"
+  matrix_public_baseurl: "https://matrix.h4xx.io"
   cloudflare_tunnel_hostname: "03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com"
   default_cluster_issuer: "letsencrypt-prod"
   default_sts_storage_class_name: "ssd-rbd-2r"

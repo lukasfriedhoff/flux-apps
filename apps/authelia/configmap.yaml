@@ -383,7 +383,7 @@ data:
             authorization_policy: testuser_one_factor
             consent_mode: implicit
             redirect_uris:
-              - https://matrix${public_host_suffix}.${delegating_domain}/_synapse/client/oidc/callback
+              - ${matrix_public_baseurl}/_synapse/client/oidc/callback
             scopes:
               - openid
               - profile
