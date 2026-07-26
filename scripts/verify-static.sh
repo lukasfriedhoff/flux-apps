@@ -8,6 +8,7 @@ cd "$repo_root"
 ./scripts/verify-app-manifests.sh
 ./apps/monitoring/tests/verify-dashboards.sh
 
+./apps/cloudflared/tests/verify-ingress-hosts.sh
 ./apps/immich/tests/verify-nextcloud-storage.sh
 ./apps/immich/tests/verify-reloader-annotations.sh
 ./apps/nextcloud/tests/verify-shared-media.sh
