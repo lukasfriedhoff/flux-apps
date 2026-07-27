@@ -22,6 +22,8 @@ reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: ${quote}${longhorn_rwo_storage_class_2r_replicas:=2}${quote}
+  replicaSoftAntiAffinity: ${quote}${longhorn_2r_replica_soft_anti_affinity:=disabled}${quote}
+  replicaDiskSoftAntiAffinity: ${quote}${longhorn_2r_replica_disk_soft_anti_affinity:=disabled}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -63,6 +65,8 @@ reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: ${quote}${longhorn_rwx_storage_class_2r_replicas:=2}${quote}
+  replicaSoftAntiAffinity: ${quote}${longhorn_2r_replica_soft_anti_affinity:=disabled}${quote}
+  replicaDiskSoftAntiAffinity: ${quote}${longhorn_2r_replica_disk_soft_anti_affinity:=disabled}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
 ---
@@ -103,6 +107,8 @@ reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: ${quote}${longhorn_nvme_rwo_storage_class_2r_replicas:=2}${quote}
+  replicaSoftAntiAffinity: ${quote}${longhorn_2r_replica_soft_anti_affinity:=disabled}${quote}
+  replicaDiskSoftAntiAffinity: ${quote}${longhorn_2r_replica_disk_soft_anti_affinity:=disabled}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_nvme_disk_selector:=nvme}"
@@ -145,6 +151,8 @@ reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: ${quote}${longhorn_nvme_rwx_storage_class_2r_replicas:=2}${quote}
+  replicaSoftAntiAffinity: ${quote}${longhorn_2r_replica_soft_anti_affinity:=disabled}${quote}
+  replicaDiskSoftAntiAffinity: ${quote}${longhorn_2r_replica_disk_soft_anti_affinity:=disabled}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_nvme_disk_selector:=nvme}"
@@ -187,6 +195,8 @@ reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: ${quote}${longhorn_ssd_rwo_storage_class_2r_replicas:=2}${quote}
+  replicaSoftAntiAffinity: ${quote}${longhorn_2r_replica_soft_anti_affinity:=disabled}${quote}
+  replicaDiskSoftAntiAffinity: ${quote}${longhorn_2r_replica_disk_soft_anti_affinity:=disabled}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_ssd_disk_selector:=ssd}"
@@ -229,6 +239,8 @@ reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: ${quote}${longhorn_ssd_rwx_storage_class_2r_replicas:=2}${quote}
+  replicaSoftAntiAffinity: ${quote}${longhorn_2r_replica_soft_anti_affinity:=disabled}${quote}
+  replicaDiskSoftAntiAffinity: ${quote}${longhorn_2r_replica_disk_soft_anti_affinity:=disabled}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_ssd_disk_selector:=ssd}"
@@ -271,6 +283,8 @@ reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: ${quote}${longhorn_disk_rwo_storage_class_2r_replicas:=2}${quote}
+  replicaSoftAntiAffinity: ${quote}${longhorn_2r_replica_soft_anti_affinity:=disabled}${quote}
+  replicaDiskSoftAntiAffinity: ${quote}${longhorn_2r_replica_disk_soft_anti_affinity:=disabled}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_disk_disk_selector:=disk}"
@@ -313,6 +327,8 @@ reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: ${quote}${longhorn_disk_rwx_storage_class_2r_replicas:=2}${quote}
+  replicaSoftAntiAffinity: ${quote}${longhorn_2r_replica_soft_anti_affinity:=disabled}${quote}
+  replicaDiskSoftAntiAffinity: ${quote}${longhorn_2r_replica_disk_soft_anti_affinity:=disabled}${quote}
   staleReplicaTimeout: "30"
   fsType: ext4
   diskSelector: "${longhorn_disk_disk_selector:=disk}"

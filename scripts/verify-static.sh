@@ -12,6 +12,7 @@ cd "$repo_root"
 ./apps/cloudflared/tests/verify-ingress-hosts.sh
 ./apps/immich/tests/verify-nextcloud-storage.sh
 ./apps/immich/tests/verify-reloader-annotations.sh
+./apps/longhorn/tests/verify-storageclasses.sh
 ./apps/nextcloud/tests/verify-shared-media.sh
 ./apps/media/tests/verify-prowlarr-private-only.sh
 ./apps/media/tests/verify-qbittorrent-policy.sh
