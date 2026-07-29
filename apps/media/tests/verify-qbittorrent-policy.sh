@@ -105,6 +105,14 @@ grep -q 'replicas: .*qbittorrent_replicas' "$rendered" \
 grep -q 'existingClaim: arr-media-v2' "$rendered" \
   || fail 'qBittorrent does not mount arr-media-v2'
 awk '
+  /name: qbittorrent$/ { in_qbittorrent=1 }
+  in_qbittorrent && /existingClaim: arr-media-v2/ { in_media=1 }
+  in_media && /readOnly: false/ { found=1 }
+  in_media && /^[[:space:]]+[a-zA-Z0-9_-]+:$/ && $1 != "globalMounts:" { in_media=0 }
+  END { exit found ? 0 : 1 }
+' "$rendered" \
+  || fail 'qBittorrent arr-media-v2 mount is not explicitly writable'
+awk '
   /^---$/ {
     if (doc ~ /kind: PersistentVolumeClaim/ &&
         doc ~ /name: arr-media-v2/ &&
