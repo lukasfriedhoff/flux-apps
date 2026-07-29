@@ -117,12 +117,8 @@ spec:
             - /bin/sh
             - -ceu
             - |
-              if [ ! -s /data/config.yaml ]; then
-                cp /seed/config.yaml /data/config.yaml
-              fi
-              if [ ! -s /data/registration.yaml ]; then
-                cp /seed/registration.yaml /data/registration.yaml
-              fi
+              cp /seed/config.yaml /data/config.yaml
+              cp /seed/registration.yaml /data/registration.yaml
               # Normalize legacy permission values for current mautrix-telegram releases.
               sed -i "s/relaybot/relay/g" /data/config.yaml
               sed -E -i "s/^([[:space:]]*[^#].*:[[:space:]]*)full$/\\1admin/" /data/config.yaml
