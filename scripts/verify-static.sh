@@ -7,6 +7,7 @@ cd "$repo_root"
 
 ./scripts/verify-app-manifests.sh
 ./apps/authelia/tests/verify-oidc-redirects.sh
+./apps/monitoring/tests/verify-alerts.sh
 ./apps/monitoring/tests/verify-dashboards.sh
 
 ./apps/cloudflared/tests/verify-ingress-hosts.sh
