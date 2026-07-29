@@ -26,7 +26,6 @@ spec:
       main:
         replicas: 1
         pod:
-          shareProcessNamespace: true
           securityContext:
             fsGroup: ${media_pgid}
             fsGroupChangePolicy: OnRootMismatch
@@ -126,7 +125,6 @@ spec:
             env:
               PYTHONDONTWRITEBYTECODE: "1"
               TRANSCODE_CACHE_DIR: /transcode
-              TRANSCODE_CACHE_ALIASES: /transcode:/config/cache/transcodes
               TRANSCODE_CLEANUP_INTERVAL_SECONDS: ${jellyfin_transcode_cleanup_interval_seconds:=3600}
               TRANSCODE_MAX_AGE_SECONDS: ${jellyfin_transcode_cleanup_max_age_seconds:=86400}
             resources:

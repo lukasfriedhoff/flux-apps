@@ -8,7 +8,6 @@ jellyfin_release="$(mktemp)"
 transcode_cache_pvc="$(mktemp)"
 cleanup_script="$(mktemp --suffix=.py)"
 cleanup_test_directory="$(mktemp -d)"
-active_process_pid=""
 if command -v python3 >/dev/null 2>&1; then
   python_command=(python3)
 elif command -v python >/dev/null 2>&1; then
@@ -18,10 +17,6 @@ else
 fi
 
 cleanup() {
-  if [[ -n "$active_process_pid" ]]; then
-    kill "$active_process_pid" 2>/dev/null || true
-    wait "$active_process_pid" 2>/dev/null || true
-  fi
   rm -f \
     "$rendered" \
     "$bootstrap_script" \
@@ -102,8 +97,9 @@ grep -q 'path: /transcode' "$jellyfin_release" \
   || fail 'Jellyfin transcode cache is not mounted at /transcode'
 grep -q 'path: /config/cache/transcodes' "$jellyfin_release" \
   || fail 'Jellyfin transcode cache is not mounted at /config/cache/transcodes'
-grep -q 'shareProcessNamespace: true' "$jellyfin_release" \
-  || fail 'Jellyfin cleanup sidecar cannot inspect active transcode processes'
+if grep -q 'shareProcessNamespace: true' "$jellyfin_release"; then
+  fail 'LinuxServer Jellyfin must remain PID 1; shared process namespaces break s6-overlay'
+fi
 grep -q 'transcode-cleanup:' "$jellyfin_release" \
   || fail 'Jellyfin transcode cleanup sidecar is not configured'
 grep -q 'name: jellyfin-transcode-cleanup' "$jellyfin_release" \
@@ -119,6 +115,12 @@ grep -q -- '- ReadWriteOnce' "$transcode_cache_pvc" \
   || fail 'Jellyfin transcode cache PVC must be single-writer'
 grep -q 'recurring-job-group.longhorn.io/default: disabled' "$transcode_cache_pvc" \
   || fail 'Disposable Jellyfin transcode cache must not receive Longhorn backups'
+grep -Fq 'TRANSCODE_MAX_AGE_SECONDS: ${jellyfin_transcode_cleanup_max_age_seconds:=86400}' "$jellyfin_release" \
+  || fail 'Jellyfin transcode cleanup must conservatively retain files for 24 hours by default'
+grep -q 'current_status.st_ino != inode' "$cleanup_script" \
+  || fail 'Jellyfin transcode cleanup does not protect against replaced files'
+grep -q 'current_status.st_mtime_ns != observed_mtime_ns' "$cleanup_script" \
+  || fail 'Jellyfin transcode cleanup does not protect files modified after collection'
 grep -Fq 'size: ${jellyfin_config_size:=10Gi}' "$rendered" \
   || fail 'Jellyfin config PVC must default to 10Gi'
 if grep -q 'mountPath: /downloads\|path: /downloads\|subPath: downloads' "$rendered"; then
@@ -134,37 +136,17 @@ grep -q '"save_path": "/media/downloads/other"' "$rendered" \
 
 stale_file="${cleanup_test_directory}/stale.ts"
 fresh_file="${cleanup_test_directory}/fresh.ts"
-active_file="${cleanup_test_directory}/active-session.m3u8"
 printf 'stale\n' >"$stale_file"
 printf 'fresh\n' >"$fresh_file"
 touch -d '2 minutes ago' "$stale_file"
 
-"${python_command[@]}" -c \
-  'import time; time.sleep(30)' "$active_file" &
-active_process_pid=$!
-sleep 1
-
 TRANSCODE_CACHE_DIR="$cleanup_test_directory" \
-TRANSCODE_CACHE_ALIASES="$cleanup_test_directory" \
-TRANSCODE_MAX_AGE_SECONDS=60 \
-TRANSCODE_CLEANUP_INTERVAL_SECONDS=1 \
-  "${python_command[@]}" "$cleanup_script" --once
-
-[[ -f "$stale_file" ]] \
-  || fail 'Jellyfin cleanup deleted stale files while a transcode process was active'
-
-kill "$active_process_pid"
-wait "$active_process_pid" 2>/dev/null || true
-active_process_pid=""
-
-TRANSCODE_CACHE_DIR="$cleanup_test_directory" \
-TRANSCODE_CACHE_ALIASES="$cleanup_test_directory" \
 TRANSCODE_MAX_AGE_SECONDS=60 \
 TRANSCODE_CLEANUP_INTERVAL_SECONDS=1 \
   "${python_command[@]}" "$cleanup_script" --once
 
 [[ ! -e "$stale_file" ]] \
-  || fail 'Jellyfin cleanup did not remove an inactive stale transcode file'
+  || fail 'Jellyfin cleanup did not remove a stale transcode file'
 [[ -f "$fresh_file" ]] \
   || fail 'Jellyfin cleanup removed a fresh transcode file'
 
