@@ -803,6 +803,42 @@ groups:
           summary: PVC free space is critical.
           description: PersistentVolumeClaim {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has less than 3% free space for more than 10 minutes.
           runbook_url: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+      - alert: LonghornVolumeDegraded
+        expr: |
+          max by (volume, pvc_namespace, pvc) (
+            longhorn_volume_robustness{state="degraded"} == 1
+          ) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Longhorn volume is degraded.
+          description: Longhorn volume {{ $labels.volume }} ({{ $labels.pvc_namespace }}/{{ $labels.pvc }}) has been degraded for more than 15 minutes.
+          runbook_url: https://longhorn.io/docs/latest/troubleshooting/
+      - alert: LonghornVolumeDegradedTooLong
+        expr: |
+          max by (volume, pvc_namespace, pvc) (
+            longhorn_volume_robustness{state="degraded"} == 1
+          ) > 0
+        for: 6h
+        labels:
+          severity: critical
+        annotations:
+          summary: Longhorn volume rebuild is taking too long.
+          description: Longhorn volume {{ $labels.volume }} ({{ $labels.pvc_namespace }}/{{ $labels.pvc }}) has remained degraded for more than six hours.
+          runbook_url: https://longhorn.io/docs/latest/troubleshooting/
+      - alert: LonghornVolumeFaulted
+        expr: |
+          max by (volume, pvc_namespace, pvc) (
+            longhorn_volume_robustness{state="faulted"} == 1
+          ) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Longhorn volume is faulted.
+          description: Longhorn volume {{ $labels.volume }} ({{ $labels.pvc_namespace }}/{{ $labels.pvc }}) is faulted.
+          runbook_url: https://longhorn.io/docs/latest/troubleshooting/
   - name: homelab-backups
     rules:
       - alert: CNPGBackupStale
