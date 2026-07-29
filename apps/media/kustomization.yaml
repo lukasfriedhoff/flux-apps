@@ -4,6 +4,7 @@ namespace: media
 resources:
   - helm-repo.yaml
   - pvc-media.yaml
+  - jellyfin-transcode-cache.yaml
   - qbittorrent-config.yaml
   - qbittorrent.yaml
   - qbittorrent-network-policy.yaml
