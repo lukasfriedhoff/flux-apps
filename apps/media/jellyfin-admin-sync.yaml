@@ -39,6 +39,8 @@ spec:
   failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 420
       template:
         spec:
           serviceAccountName: jellyfin-admin-sync
@@ -53,6 +55,8 @@ spec:
                   value: jellyfin-admins,admins
                 - name: JELLYFIN_SYNC_EXCLUDE_USERS
                   value: ${jellyfin_admin_sync_exclude_users:=media-e2e}
+                - name: JELLYFIN_WAIT_TIMEOUT_SECONDS
+                  value: "${jellyfin_sync_wait_timeout_seconds:=300}"
                 - name: AUTHELIA_USERS_SECRET_NAMESPACE
                   value: authelia
                 - name: AUTHELIA_USERS_SECRET_NAME
@@ -70,6 +74,7 @@ spec:
                   import re
                   import ssl
                   import sys
+                  import time
                   import urllib.error
                   import urllib.request
 
@@ -97,6 +102,26 @@ spec:
                           if not raw:
                               return None
                           return json.loads(raw.decode("utf-8"))
+
+
+                  def wait_for_jellyfin(base_url: str, timeout_seconds: int) -> None:
+                      deadline = time.monotonic() + timeout_seconds
+                      health_url = f"{base_url}/health"
+                      last_error = "not ready"
+
+                      while time.monotonic() < deadline:
+                          try:
+                              with urllib.request.urlopen(health_url, timeout=10) as response:
+                                  if response.status == 200:
+                                      log("Jellyfin is ready")
+                                      return
+                                  last_error = f"HTTP {response.status}"
+                          except (OSError, urllib.error.URLError) as error:
+                              last_error = str(error)
+                          time.sleep(5)
+
+                      log(f"Jellyfin did not become ready within {timeout_seconds}s: {last_error}")
+                      sys.exit(1)
 
 
                   def k8s_secret(namespace: str, name: str) -> dict:
@@ -154,9 +179,11 @@ spec:
 
                   admin_groups = split_csv(os.getenv("JELLYFIN_ADMIN_GROUPS", "jellyfin-admins,admins"))
                   excluded_users = split_csv(os.getenv("JELLYFIN_SYNC_EXCLUDE_USERS", "media-e2e"))
+                  wait_timeout_seconds = int(os.getenv("JELLYFIN_WAIT_TIMEOUT_SECONDS", "300"))
                   secret_namespace = os.getenv("AUTHELIA_USERS_SECRET_NAMESPACE", "authelia")
                   secret_name = os.getenv("AUTHELIA_USERS_SECRET_NAME", "authelia-users")
 
+                  wait_for_jellyfin(base_url, wait_timeout_seconds)
                   secret = k8s_secret(secret_namespace, secret_name)
                   encoded_database = secret.get("data", {}).get("users_database.yml", "")
                   if not encoded_database:
