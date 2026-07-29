@@ -27,7 +27,7 @@ spec:
                       name: ${jellyfin_e2e_auth_secret_name}
                       key: api_key
                 - name: JELLYFIN_WAIT_TIMEOUT_SECONDS
-                  value: "${jellyfin_sync_wait_timeout_seconds:=300}"
+                  value: "300"
               command:
                 - /bin/sh
                 - -c
