@@ -1,0 +1,264 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    recurring-job-group.longhorn.io/default: disabled
+  name: jellyfin-transcode-cache
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: ${jellyfin_transcode_cache_size:=100Gi}
+  storageClassName: ${arr_config_storage_class_name}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jellyfin-transcode-cleanup
+  namespace: media
+data:
+  cleanup.py: |
+    import os
+    import stat
+    import sys
+    import time
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+
+    def log(message):
+        timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        print(f"{timestamp} {message}", flush=True)
+
+
+    def positive_integer(name, default):
+        raw_value = os.environ.get(name, str(default))
+        try:
+            value = int(raw_value)
+        except ValueError as error:
+            raise SystemExit(f"{name} must be an integer, got {raw_value!r}") from error
+        if value <= 0:
+            raise SystemExit(f"{name} must be greater than zero, got {value}")
+        return value
+
+
+    cache_root = Path(
+        os.environ.get("TRANSCODE_CACHE_DIR", "/transcode")
+    ).resolve(strict=False)
+    cache_aliases = tuple(
+        dict.fromkeys(
+            alias.rstrip("/")
+            for alias in os.environ.get(
+                "TRANSCODE_CACHE_ALIASES",
+                "/transcode:/config/cache/transcodes",
+            ).split(":")
+            if alias.rstrip("/")
+        )
+    )
+    cleanup_interval = positive_integer(
+        "TRANSCODE_CLEANUP_INTERVAL_SECONDS",
+        3600,
+    )
+    maximum_age = positive_integer("TRANSCODE_MAX_AGE_SECONDS", 86400)
+
+
+    def references_cache(value):
+        return any(alias in value for alias in cache_aliases)
+
+
+    def active_transcode_process():
+        proc_root = Path("/proc")
+        own_pid = os.getpid()
+
+        for process_path in proc_root.iterdir():
+            if not process_path.name.isdigit():
+                continue
+            process_id = int(process_path.name)
+            if process_id == own_pid:
+                continue
+
+            try:
+                command_line = (process_path / "cmdline").read_bytes()
+            except (FileNotFoundError, PermissionError, ProcessLookupError):
+                command_line = b""
+
+            for argument in command_line.split(b"\0"):
+                if argument and references_cache(
+                    argument.decode("utf-8", errors="replace")
+                ):
+                    return process_id, "command line"
+
+            file_descriptors = process_path / "fd"
+            try:
+                descriptors = list(file_descriptors.iterdir())
+            except (FileNotFoundError, PermissionError, ProcessLookupError):
+                continue
+
+            for descriptor in descriptors:
+                try:
+                    target = os.readlink(descriptor)
+                except (FileNotFoundError, PermissionError, ProcessLookupError):
+                    continue
+                if references_cache(target):
+                    return process_id, "open file"
+
+        return None
+
+
+    def collect_stale_files(cutoff_ns):
+        candidates = []
+
+        for directory, child_directories, filenames in os.walk(
+            cache_root,
+            topdown=True,
+            followlinks=False,
+        ):
+            directory_path = Path(directory)
+            retained_directories = []
+            for child_directory in child_directories:
+                child_path = directory_path / child_directory
+                try:
+                    child_status = child_path.lstat()
+                except FileNotFoundError:
+                    continue
+                if stat.S_ISDIR(child_status.st_mode):
+                    retained_directories.append(child_directory)
+            child_directories[:] = retained_directories
+
+            for filename in filenames:
+                candidate = directory_path / filename
+                try:
+                    candidate_status = candidate.lstat()
+                except FileNotFoundError:
+                    continue
+                if not stat.S_ISREG(candidate_status.st_mode):
+                    continue
+                if candidate_status.st_mtime_ns > cutoff_ns:
+                    continue
+                candidates.append(
+                    (
+                        candidate,
+                        candidate_status.st_dev,
+                        candidate_status.st_ino,
+                        candidate_status.st_mtime_ns,
+                        candidate_status.st_size,
+                    )
+                )
+
+        return candidates
+
+
+    def remove_empty_stale_directories(cutoff_ns):
+        removed = 0
+        for directory, _, _ in os.walk(cache_root, topdown=False, followlinks=False):
+            directory_path = Path(directory)
+            if directory_path == cache_root:
+                continue
+            try:
+                directory_status = directory_path.lstat()
+                if not stat.S_ISDIR(directory_status.st_mode):
+                    continue
+                if directory_status.st_mtime_ns > cutoff_ns:
+                    continue
+                directory_path.rmdir()
+                removed += 1
+            except (FileNotFoundError, OSError):
+                continue
+        return removed
+
+
+    def cleanup_once():
+        if not cache_root.is_dir():
+            log(f"cache directory {cache_root} is not available; skipping")
+            return
+
+        active_process = active_transcode_process()
+        if active_process is not None:
+            process_id, reference_type = active_process
+            log(
+                "active transcode cache reference detected "
+                f"for pid {process_id} via {reference_type}; skipping cleanup"
+            )
+            return
+
+        cutoff_ns = time.time_ns() - maximum_age * 1_000_000_000
+        candidates = collect_stale_files(cutoff_ns)
+
+        active_process = active_transcode_process()
+        if active_process is not None:
+            process_id, reference_type = active_process
+            log(
+                "transcode cache became active "
+                f"for pid {process_id} via {reference_type}; aborting cleanup"
+            )
+            return
+
+        removed_files = 0
+        removed_bytes = 0
+        last_active_check = 0.0
+        for candidate_index, (
+            candidate,
+            device,
+            inode,
+            observed_mtime_ns,
+            size,
+        ) in enumerate(candidates):
+            current_time = time.monotonic()
+            if candidate_index % 64 == 0 or current_time - last_active_check >= 1:
+                active_process = active_transcode_process()
+                last_active_check = current_time
+                if active_process is not None:
+                    process_id, reference_type = active_process
+                    log(
+                        "transcode cache became active "
+                        f"for pid {process_id} via {reference_type}; "
+                        f"stopping after {removed_files} stale files"
+                    )
+                    return
+            try:
+                current_status = candidate.lstat()
+            except FileNotFoundError:
+                continue
+            if not stat.S_ISREG(current_status.st_mode):
+                continue
+            if current_status.st_dev != device or current_status.st_ino != inode:
+                continue
+            if current_status.st_mtime_ns != observed_mtime_ns:
+                continue
+            if current_status.st_mtime_ns > cutoff_ns:
+                continue
+            try:
+                candidate.unlink()
+            except FileNotFoundError:
+                continue
+            removed_files += 1
+            removed_bytes += size
+
+        active_process = active_transcode_process()
+        removed_directories = 0
+        if active_process is None:
+            removed_directories = remove_empty_stale_directories(cutoff_ns)
+        else:
+            process_id, reference_type = active_process
+            log(
+                "transcode cache became active "
+                f"for pid {process_id} via {reference_type}; preserving directories"
+            )
+
+        log(
+            f"cleanup complete: removed {removed_files} stale files "
+            f"({removed_bytes} bytes) and {removed_directories} empty directories"
+        )
+
+
+    run_once = "--once" in sys.argv[1:]
+    while True:
+        try:
+            cleanup_once()
+        except Exception as error:
+            log(f"cleanup failed safely: {error!r}")
+        if run_once:
+            break
+        time.sleep(cleanup_interval)

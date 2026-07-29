@@ -18,3 +18,4 @@ cd "$repo_root"
 ./apps/nextcloud/tests/verify-shared-media.sh
 ./apps/media/tests/verify-prowlarr-private-only.sh
 ./apps/media/tests/verify-qbittorrent-policy.sh
+./apps/media/tests/verify-jellyfin-gitops.sh

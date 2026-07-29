@@ -26,6 +26,10 @@ spec:
       main:
         replicas: 1
         pod:
+          shareProcessNamespace: true
+          securityContext:
+            fsGroup: ${media_pgid}
+            fsGroupChangePolicy: OnRootMismatch
           affinity:
             nodeAffinity:
               preferredDuringSchedulingIgnoredDuringExecution:
@@ -110,6 +114,37 @@ spec:
               limits:
                 cpu: 4000m
                 memory: 4Gi
+          transcode-cleanup:
+            image:
+              repository: python
+              tag: 3.12.11-alpine3.21
+              pullPolicy: IfNotPresent
+            command:
+              - python3
+              - -u
+              - /opt/jellyfin-transcode-cleanup/cleanup.py
+            env:
+              PYTHONDONTWRITEBYTECODE: "1"
+              TRANSCODE_CACHE_DIR: /transcode
+              TRANSCODE_CACHE_ALIASES: /transcode:/config/cache/transcodes
+              TRANSCODE_CLEANUP_INTERVAL_SECONDS: ${jellyfin_transcode_cleanup_interval_seconds:=3600}
+              TRANSCODE_MAX_AGE_SECONDS: ${jellyfin_transcode_cleanup_max_age_seconds:=86400}
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                cpu: 100m
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: ${media_pgid}
+              runAsNonRoot: true
+              runAsUser: ${media_puid}
     service:
       main:
         ports:
@@ -139,42 +174,63 @@ spec:
         accessMode: ReadWriteOnce
         storageClass: ${arr_config_storage_class_name}
         size: ${jellyfin_config_size:=10Gi}
-        globalMounts:
-          - path: /config
+        advancedMounts:
+          main:
+            main:
+              - path: /config
+            install-sso-plugin:
+              - path: /config
       branding:
         enabled: true
         type: configMap
         name: jellyfin-branding
-        globalMounts:
-          - path: /config/branding.xml
-            subPath: branding.xml
+        advancedMounts:
+          main:
+            main:
+              - path: /config/branding.xml
+                subPath: branding.xml
       sso-seed:
         enabled: true
         type: secret
         name: jellyfin-sso
-        globalMounts:
-          - path: /config-seed/SSO-Auth.xml
-            subPath: SSO-Auth.xml
+        advancedMounts:
+          main:
+            install-sso-plugin:
+              - path: /config-seed/SSO-Auth.xml
+                subPath: SSO-Auth.xml
       media:
         enabled: true
         existingClaim: arr-media-v2
-        globalMounts:
-          - path: /media
-      transcode:
-        enabled: true
-        type: emptyDir
-        globalMounts:
-          - path: /transcode
+        advancedMounts:
+          main:
+            main:
+              - path: /media
       transcode-cache:
         enabled: true
-        type: emptyDir
-        sizeLimit: ${jellyfin_transcode_cache_size:=20Gi}
-        globalMounts:
-          - path: /config/cache/transcodes
+        existingClaim: jellyfin-transcode-cache
+        advancedMounts:
+          main:
+            main:
+              - path: /transcode
+              - path: /config/cache/transcodes
+            transcode-cleanup:
+              - path: /transcode
+      transcode-cleanup-script:
+        enabled: true
+        type: configMap
+        name: jellyfin-transcode-cleanup
+        advancedMounts:
+          main:
+            transcode-cleanup:
+              - path: /opt/jellyfin-transcode-cleanup/cleanup.py
+                subPath: cleanup.py
+                readOnly: true
       gpu:
         enabled: ${jellyfin_gpu_enabled:=false}
         type: hostPath
         hostPath: /dev/dri
         hostPathType: Directory
-        globalMounts:
-          - path: /dev/dri
+        advancedMounts:
+          main:
+            main:
+              - path: /dev/dri
