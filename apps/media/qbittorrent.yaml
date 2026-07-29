@@ -404,6 +404,7 @@ spec:
         existingClaim: arr-media-v2
         globalMounts:
           - path: /media
+            readOnly: false
       config-template:
         enabled: true
         type: configMap
