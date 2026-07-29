@@ -16,6 +16,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_rwo_storage_class_2r_name:=longhorn-rwo-2r}"
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
@@ -59,6 +61,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_rwx_storage_class_2r_name:=longhorn-rwx-2r}"
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
@@ -101,6 +105,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_nvme_rwo_storage_class_2r_name:=longhorn-nvme-rwo-2r}"
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
@@ -145,6 +151,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_nvme_rwx_storage_class_2r_name:=longhorn-nvme-rwx-2r}"
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
@@ -189,6 +197,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_ssd_rwo_storage_class_2r_name:=longhorn-ssd-rwo-2r}"
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
@@ -233,6 +243,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_ssd_rwx_storage_class_2r_name:=longhorn-ssd-rwx-2r}"
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
@@ -277,6 +289,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_disk_rwo_storage_class_2r_name:=longhorn-disk-rwo-2r}"
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"
@@ -321,6 +335,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "${longhorn_disk_rwx_storage_class_2r_name:=longhorn-disk-rwx-2r}"
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: "${longhorn_storage_class_reclaim_policy:=Retain}"

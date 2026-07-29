@@ -29,6 +29,7 @@ invalid_two_replica_count="$(
       and (
         .parameters.replicaSoftAntiAffinity != "disabled"
         or .parameters.replicaDiskSoftAntiAffinity != "disabled"
+        or .metadata.annotations."kustomize.toolkit.fluxcd.io/force" != "enabled"
       )
     )] | length' \
     "$rendered"
