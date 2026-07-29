@@ -62,6 +62,12 @@ grep -q 'resourceNames:' "$rendered" && grep -q -- '- authelia-users' "$rendered
   || fail 'Jellyfin admin sync cannot read the Authelia users secret'
 grep -q 'JELLYFIN_ADMIN_GROUPS' "$rendered" \
   || fail 'Jellyfin admin sync has no admin group configuration'
+grep -q 'JELLYFIN_WAIT_TIMEOUT_SECONDS' "$rendered" \
+  || fail 'Jellyfin sync jobs do not wait for Jellyfin readiness'
+grep -q 'wait_for_jellyfin(base_url, wait_timeout_seconds)' "$rendered" \
+  || fail 'Jellyfin admin sync does not wait for Jellyfin readiness'
+grep -q 'until curl -fsS -m 10 "$JELLYFIN_BASE_URL/health"' "$rendered" \
+  || fail 'Jellyfin music refresh does not wait for Jellyfin readiness'
 grep -q 'jellyfin-admins,admins' "$rendered" \
   || fail 'Jellyfin admin sync does not default to jellyfin-admins/admins'
 grep -q '/Users/.*/Policy' "$rendered" \
