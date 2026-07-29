@@ -47,64 +47,11 @@ data:
     cache_root = Path(
         os.environ.get("TRANSCODE_CACHE_DIR", "/transcode")
     ).resolve(strict=False)
-    cache_aliases = tuple(
-        dict.fromkeys(
-            alias.rstrip("/")
-            for alias in os.environ.get(
-                "TRANSCODE_CACHE_ALIASES",
-                "/transcode:/config/cache/transcodes",
-            ).split(":")
-            if alias.rstrip("/")
-        )
-    )
     cleanup_interval = positive_integer(
         "TRANSCODE_CLEANUP_INTERVAL_SECONDS",
         3600,
     )
     maximum_age = positive_integer("TRANSCODE_MAX_AGE_SECONDS", 86400)
-
-
-    def references_cache(value):
-        return any(alias in value for alias in cache_aliases)
-
-
-    def active_transcode_process():
-        proc_root = Path("/proc")
-        own_pid = os.getpid()
-
-        for process_path in proc_root.iterdir():
-            if not process_path.name.isdigit():
-                continue
-            process_id = int(process_path.name)
-            if process_id == own_pid:
-                continue
-
-            try:
-                command_line = (process_path / "cmdline").read_bytes()
-            except (FileNotFoundError, PermissionError, ProcessLookupError):
-                command_line = b""
-
-            for argument in command_line.split(b"\0"):
-                if argument and references_cache(
-                    argument.decode("utf-8", errors="replace")
-                ):
-                    return process_id, "command line"
-
-            file_descriptors = process_path / "fd"
-            try:
-                descriptors = list(file_descriptors.iterdir())
-            except (FileNotFoundError, PermissionError, ProcessLookupError):
-                continue
-
-            for descriptor in descriptors:
-                try:
-                    target = os.readlink(descriptor)
-                except (FileNotFoundError, PermissionError, ProcessLookupError):
-                    continue
-                if references_cache(target):
-                    return process_id, "open file"
-
-        return None
 
 
     def collect_stale_files(cutoff_ns):
@@ -174,49 +121,18 @@ data:
             log(f"cache directory {cache_root} is not available; skipping")
             return
 
-        active_process = active_transcode_process()
-        if active_process is not None:
-            process_id, reference_type = active_process
-            log(
-                "active transcode cache reference detected "
-                f"for pid {process_id} via {reference_type}; skipping cleanup"
-            )
-            return
-
         cutoff_ns = time.time_ns() - maximum_age * 1_000_000_000
         candidates = collect_stale_files(cutoff_ns)
 
-        active_process = active_transcode_process()
-        if active_process is not None:
-            process_id, reference_type = active_process
-            log(
-                "transcode cache became active "
-                f"for pid {process_id} via {reference_type}; aborting cleanup"
-            )
-            return
-
         removed_files = 0
         removed_bytes = 0
-        last_active_check = 0.0
-        for candidate_index, (
+        for (
             candidate,
             device,
             inode,
             observed_mtime_ns,
             size,
-        ) in enumerate(candidates):
-            current_time = time.monotonic()
-            if candidate_index % 64 == 0 or current_time - last_active_check >= 1:
-                active_process = active_transcode_process()
-                last_active_check = current_time
-                if active_process is not None:
-                    process_id, reference_type = active_process
-                    log(
-                        "transcode cache became active "
-                        f"for pid {process_id} via {reference_type}; "
-                        f"stopping after {removed_files} stale files"
-                    )
-                    return
+        ) in candidates:
             try:
                 current_status = candidate.lstat()
             except FileNotFoundError:
@@ -236,16 +152,7 @@ data:
             removed_files += 1
             removed_bytes += size
 
-        active_process = active_transcode_process()
-        removed_directories = 0
-        if active_process is None:
-            removed_directories = remove_empty_stale_directories(cutoff_ns)
-        else:
-            process_id, reference_type = active_process
-            log(
-                "transcode cache became active "
-                f"for pid {process_id} via {reference_type}; preserving directories"
-            )
+        removed_directories = remove_empty_stale_directories(cutoff_ns)
 
         log(
             f"cleanup complete: removed {removed_files} stale files "

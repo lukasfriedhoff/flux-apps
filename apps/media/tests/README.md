@@ -117,8 +117,8 @@ German + English custom-format gate mandatory, and make Jellyseerr prefer that
 profile for new requests.
 
 `verify-jellyfin-gitops.sh` verifies the reusable Jellyfin bootstrap and admin
-policy, the 100 GiB SSD-backed transcode cache, and the cleanup guard that
-preserves stale files whenever a process is actively using the transcode path.
+policy, the 100 GiB SSD-backed transcode cache, and the conservative cleanup
+guard that only removes unchanged files older than 24 hours by default.
 
 ## Run
 
