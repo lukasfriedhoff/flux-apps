@@ -56,7 +56,7 @@ spec:
                 - name: JELLYFIN_SYNC_EXCLUDE_USERS
                   value: ${jellyfin_admin_sync_exclude_users:=media-e2e}
                 - name: JELLYFIN_WAIT_TIMEOUT_SECONDS
-                  value: "${jellyfin_sync_wait_timeout_seconds:=300}"
+                  value: "300"
                 - name: AUTHELIA_USERS_SECRET_NAMESPACE
                   value: authelia
                 - name: AUTHELIA_USERS_SECRET_NAME
