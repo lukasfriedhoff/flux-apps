@@ -54,6 +54,9 @@ spec:
               else
                 printf '%s\n' "public_baseurl: \"$MATRIX_PUBLIC_BASEURL\"" >> /config/server.yaml
               fi
+              # Some encrypted seed configs do not end with a newline. Normalize
+              # before appending generated top-level keys.
+              printf '\n' >> /config/server.yaml
               if grep -Eq '^[[:space:]]*enable_authenticated_media:[[:space:]]*' /config/server.yaml; then
                 sed -i 's/^[[:space:]]*enable_authenticated_media:[[:space:]]*.*/enable_authenticated_media: false/' /config/server.yaml
               else
