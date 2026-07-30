@@ -54,6 +54,11 @@ spec:
               else
                 printf '%s\n' "public_baseurl: \"$MATRIX_PUBLIC_BASEURL\"" >> /config/server.yaml
               fi
+              if grep -Eq '^[[:space:]]*enable_authenticated_media:[[:space:]]*' /config/server.yaml; then
+                sed -i 's/^[[:space:]]*enable_authenticated_media:[[:space:]]*.*/enable_authenticated_media: false/' /config/server.yaml
+              else
+                printf '%s\n' 'enable_authenticated_media: false' >> /config/server.yaml
+              fi
               sed -i '\#^[[:space:]]*-[[:space:]]*/wadata/registration.yaml[[:space:]]*$#d' /config/server.yaml
               # Some historical secret revisions contain signing-key spillover in
               # homeserver.log.config. Keep only the expected logging config.
