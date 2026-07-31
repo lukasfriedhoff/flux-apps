@@ -100,6 +100,19 @@ spec:
             image:
               repository: lscr.io/linuxserver/jellyfin
               tag: 10.11.6
+            command:
+              - /bin/sh
+              - -c
+            args:
+              - |
+                set -eu
+                bundle=/usr/share/jellyfin/web/main.jellyfin.bundle.js
+                if [ -f "$bundle" ] && ! grep -q 'return!a\.A\.firefox' "$bundle"; then
+                  orig='function y(e,t){return!!(a.A.tizen||a.A.xboxOne||a.A.web0s||t.supportsHevc)||!a.A.ps4&&!!e.canPlayType&&(e.canPlayType('\''video/mp4; codecs="hvc1.1.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hev1.1.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hvc1.1.0.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hev1.1.0.L120"'''\'').replace(/no/,"")))}'
+                  repl='function y(e,t){return!a.A.firefox&&(!!(a.A.tizen||a.A.xboxOne||a.A.web0s||t.supportsHevc)||!a.A.ps4&&!!e.canPlayType&&(e.canPlayType('\''video/mp4; codecs="hvc1.1.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hev1.1.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hvc1.1.0.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hev1.1.0.L120"'''\'').replace(/no/,"")))}'
+                  ORIG="$orig" REPL="$repl" perl -0pi -e 's/\Q$ENV{ORIG}\E/$ENV{REPL}/g' "$bundle"
+                fi
+                exec /init
             securityContext:
               privileged: ${jellyfin_gpu_privileged:=false}
             env:
