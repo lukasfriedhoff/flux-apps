@@ -82,6 +82,12 @@ grep -q 'h4xx-firefox-hevc-20260731' "$rendered" \
   || fail 'Jellyfin web bundle patch must cache-bust the patched bundle URL'
 grep -q '/Users/.*/Policy' "$rendered" \
   || fail 'Jellyfin admin sync does not update Jellyfin user policy'
+grep -q '"EnablePlaybackRemuxing": True' "$rendered" \
+  || fail 'Jellyfin admin sync must keep playback remuxing enabled'
+grep -q '"EnableVideoPlaybackTranscoding": True' "$rendered" \
+  || fail 'Jellyfin admin sync must keep video transcoding enabled'
+grep -q '"EnableAudioPlaybackTranscoding": True' "$rendered" \
+  || fail 'Jellyfin admin sync must keep audio transcoding enabled'
 grep -q 'Other Downloads' "$rendered" \
   || fail 'Jellyfin bootstrap does not create the Other Downloads library'
 grep -q '/media/downloads/other' "$rendered" \
