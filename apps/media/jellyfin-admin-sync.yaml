@@ -212,6 +212,7 @@ spec:
                   grants = 0
                   revokes = 0
                   auth_provider_fixes = 0
+                  playback_policy_fixes = 0
                   skipped = 0
 
                   for user in jellyfin_users:
@@ -246,6 +247,17 @@ spec:
                           auth_provider_fixes += 1
                           changed = True
 
+                      expected_playback_policy = {
+                          "EnableVideoPlaybackTranscoding": True,
+                          "EnableAudioPlaybackTranscoding": True,
+                          "EnablePlaybackRemuxing": True,
+                      }
+                      for key, expected_value in expected_playback_policy.items():
+                          if policy.get(key) != expected_value:
+                              policy[key] = expected_value
+                              playback_policy_fixes += 1
+                              changed = True
+
                       if not changed:
                           continue
 
@@ -257,5 +269,6 @@ spec:
                       + ",".join(sorted(admin_groups))
                       + f" admin_users={len(admin_users)} jellyfin_users={len(jellyfin_users)} "
                       + f"updates={updates} grants={grants} revokes={revokes} "
-                      + f"auth_provider_fixes={auth_provider_fixes} skipped={skipped}"
+                      + f"auth_provider_fixes={auth_provider_fixes} "
+                      + f"playback_policy_fixes={playback_policy_fixes} skipped={skipped}"
                   )
