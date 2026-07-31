@@ -25,6 +25,15 @@ data:
     JELLYFIN_BASE_URL = os.getenv("JELLYFIN_BASE_URL", "http://jellyfin:8096")
     JELLYFIN_ENABLE_GPU = os.getenv("JELLYFIN_ENABLE_GPU", "false").lower() in ("1", "true", "yes", "on")
     JELLYFIN_SERVER_NAME = os.getenv("JELLYFIN_SERVER_NAME", "Jellyfin")
+
+
+    def split_csv(value: str) -> list[str]:
+      return [item.strip() for item in (value or "").split(",") if item.strip()]
+
+
+    JELLYFIN_KNOWN_PROXIES = split_csv(os.getenv("JELLYFIN_KNOWN_PROXIES", ""))
+    JELLYFIN_LOCAL_NETWORK_ADDRESSES = split_csv(os.getenv("JELLYFIN_LOCAL_NETWORK_ADDRESSES", ""))
+    JELLYFIN_LOCAL_NETWORK_SUBNETS = split_csv(os.getenv("JELLYFIN_LOCAL_NETWORK_SUBNETS", ""))
     LIBRARIES = [
       ("movies", "Movies", "/media/movies"),
       ("tvshows", "TV Shows", "/media/tv"),
@@ -84,6 +93,7 @@ data:
         if not raw:
           return None
         return json.loads(raw.decode("utf-8"))
+
 
 
     def _post_startup(path: str, body: dict | None = None) -> bool:
@@ -345,6 +355,54 @@ data:
           raise
 
 
+    def ensure_network_configuration(api_key: str) -> None:
+      if not api_key:
+        print("[jellyfin-bootstrap] no api key available for network configuration; skipping.")
+        return
+
+      for attempt in range(1, MAX_RETRIES + 1):
+        try:
+          config = _request_json("GET", "/System/Configuration/Network", api_key)
+          if not isinstance(config, dict):
+            print("[jellyfin-bootstrap] unexpected Network configuration payload; skipping.")
+            return
+
+          changed = False
+          desired = {
+            "KnownProxies": JELLYFIN_KNOWN_PROXIES,
+            "LocalNetworkAddresses": JELLYFIN_LOCAL_NETWORK_ADDRESSES,
+            "LocalNetworkSubnets": JELLYFIN_LOCAL_NETWORK_SUBNETS,
+          }
+
+          for key, value in desired.items():
+            if config.get(key) != value:
+              config[key] = value
+              changed = True
+
+          if not changed:
+            print("[jellyfin-bootstrap] network configuration already up to date.")
+            return
+
+          _request_json("POST", "/System/Configuration/Network", api_key, body=config)
+          print("[jellyfin-bootstrap] network configuration updated.")
+          return
+        except urllib.error.HTTPError as err:
+          if err.code == 401:
+            print("[jellyfin-bootstrap] api key unauthorized for network configuration; skipping.")
+            return
+          if attempt < MAX_RETRIES:
+            print(f"[jellyfin-bootstrap] network configuration API not ready (attempt {attempt}/{MAX_RETRIES}): HTTP {err.code}")
+            time.sleep(3)
+            continue
+          raise
+        except (urllib.error.URLError, TimeoutError) as err:
+          if attempt < MAX_RETRIES:
+            print(f"[jellyfin-bootstrap] network configuration API unavailable (attempt {attempt}/{MAX_RETRIES}): {err}")
+            time.sleep(3)
+            continue
+          raise
+
+
     def ensure_system_configuration(api_key: str) -> None:
       if not api_key:
         print("[jellyfin-bootstrap] no api key available for system configuration; skipping.")
@@ -475,6 +533,7 @@ data:
           if row and row[0] == api_key:
             print("[jellyfin-bootstrap] api key already up to date.")
             conn.close()
+            ensure_network_configuration(api_key)
             ensure_system_configuration(api_key)
             ensure_encoding_configuration(api_key)
             ensure_libraries(api_key)
@@ -493,6 +552,7 @@ data:
           conn.commit()
           conn.close()
           print("[jellyfin-bootstrap] api key upserted.")
+          ensure_network_configuration(api_key)
           ensure_system_configuration(api_key)
           ensure_encoding_configuration(api_key)
           ensure_libraries(api_key)

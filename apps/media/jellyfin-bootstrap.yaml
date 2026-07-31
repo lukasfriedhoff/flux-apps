@@ -53,6 +53,9 @@ spec:
               JELLYFIN_BASE_URL: ${jellyfin_internal_base_url}
               JELLYFIN_ENABLE_GPU: ${jellyfin_gpu_enabled:=false}
               JELLYFIN_SERVER_NAME: ${jellyfin_server_name}
+              JELLYFIN_KNOWN_PROXIES: ${jellyfin_known_proxies:=10.42.0.0/16}
+              JELLYFIN_LOCAL_NETWORK_ADDRESSES: ${jellyfin_local_network_addresses:=}
+              JELLYFIN_LOCAL_NETWORK_SUBNETS: ${jellyfin_local_network_subnets:=}
             command:
               - /bin/sh
               - -c
