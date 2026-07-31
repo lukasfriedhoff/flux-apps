@@ -74,6 +74,10 @@ grep -q '/usr/share/jellyfin/web/main.jellyfin.bundle.js' "$rendered" \
   || fail 'Jellyfin web bundle patch is not rendered'
 grep -q 'return!a.A.firefox' "$rendered" \
   || fail 'Jellyfin web bundle patch must disable browser-side HEVC direct playback for Firefox'
+grep -Fq 'return!a.A.firefox&&($1)' "$rendered" \
+  || fail 'Jellyfin web bundle patch must wrap the full HEVC detection expression for Firefox'
+grep -q 'failed to patch Jellyfin web HEVC direct-play detection for Firefox' "$rendered" \
+  || fail 'Jellyfin web bundle patch must fail closed when the runtime patch no longer matches'
 grep -q '/Users/.*/Policy' "$rendered" \
   || fail 'Jellyfin admin sync does not update Jellyfin user policy'
 grep -q 'Other Downloads' "$rendered" \
