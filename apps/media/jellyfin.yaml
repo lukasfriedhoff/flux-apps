@@ -107,10 +107,12 @@ spec:
               - |
                 set -eu
                 bundle=/usr/share/jellyfin/web/main.jellyfin.bundle.js
-                if [ -f "$bundle" ] && ! grep -q 'return!a\.A\.firefox' "$bundle"; then
-                  orig='function y(e,t){return!!(a.A.tizen||a.A.xboxOne||a.A.web0s||t.supportsHevc)||!a.A.ps4&&!!e.canPlayType&&(e.canPlayType('\''video/mp4; codecs="hvc1.1.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hev1.1.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hvc1.1.0.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hev1.1.0.L120"'''\'').replace(/no/,"")))}'
-                  repl='function y(e,t){return!a.A.firefox&&(!!(a.A.tizen||a.A.xboxOne||a.A.web0s||t.supportsHevc)||!a.A.ps4&&!!e.canPlayType&&(e.canPlayType('\''video/mp4; codecs="hvc1.1.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hev1.1.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hvc1.1.0.L120"'''\'').replace(/no/,"")||e.canPlayType('\''video/mp4; codecs="hev1.1.0.L120"'''\'').replace(/no/,"")))}'
-                  ORIG="$orig" REPL="$repl" perl -0pi -e 's/\Q$ENV{ORIG}\E/$ENV{REPL}/g' "$bundle"
+                if [ -f "$bundle" ] && ! grep -q 'return!a\.A\.firefox&&([^)]*supportsHevc' "$bundle"; then
+                  perl -0pi -e 's/function y\(e,t\)\{return([^{}]*?supportsHevc[^{}]*?)\}function h\(e\)/function y(e,t){return!a.A.firefox&&($1)}function h(e)/s' "$bundle"
+                fi
+                if [ -f "$bundle" ] && ! grep -q 'return!a\.A\.firefox&&([^)]*supportsHevc' "$bundle"; then
+                  echo "failed to patch Jellyfin web HEVC direct-play detection for Firefox" >&2
+                  exit 1
                 fi
                 exec /init
             securityContext:
