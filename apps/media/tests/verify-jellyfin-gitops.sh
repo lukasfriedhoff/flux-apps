@@ -70,6 +70,10 @@ grep -q 'until curl -fsS -m 10 "$JELLYFIN_BASE_URL/health"' "$rendered" \
   || fail 'Jellyfin music refresh does not wait for Jellyfin readiness'
 grep -q 'jellyfin-admins,admins' "$rendered" \
   || fail 'Jellyfin admin sync does not default to jellyfin-admins/admins'
+grep -q '/usr/share/jellyfin/web/main.jellyfin.bundle.js' "$rendered" \
+  || fail 'Jellyfin web bundle patch is not rendered'
+grep -q 'return!a.A.firefox' "$rendered" \
+  || fail 'Jellyfin web bundle patch must disable browser-side HEVC direct playback for Firefox'
 grep -q '/Users/.*/Policy' "$rendered" \
   || fail 'Jellyfin admin sync does not update Jellyfin user policy'
 grep -q 'Other Downloads' "$rendered" \
