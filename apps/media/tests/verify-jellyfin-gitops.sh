@@ -66,6 +66,16 @@ grep -q 'JELLYFIN_WAIT_TIMEOUT_SECONDS' "$rendered" \
   || fail 'Jellyfin sync jobs do not wait for Jellyfin readiness'
 grep -q 'wait_for_jellyfin(base_url, wait_timeout_seconds)' "$rendered" \
   || fail 'Jellyfin admin sync does not wait for Jellyfin readiness'
+grep -Fq 'JELLYFIN_KNOWN_PROXIES: ${jellyfin_known_proxies:=10.42.0.0/16}' "$rendered" \
+  || fail 'Jellyfin bootstrap must trust the cluster reverse proxy pod CIDR by default'
+grep -q '/System/Configuration/Network' "$rendered" \
+  || fail 'Jellyfin bootstrap does not manage network/proxy configuration'
+grep -q '"KnownProxies": JELLYFIN_KNOWN_PROXIES' "$rendered" \
+  || fail 'Jellyfin bootstrap must persist known proxies'
+grep -q '"LocalNetworkAddresses": JELLYFIN_LOCAL_NETWORK_ADDRESSES' "$rendered" \
+  || fail 'Jellyfin bootstrap must persist local network addresses'
+grep -q '"LocalNetworkSubnets": JELLYFIN_LOCAL_NETWORK_SUBNETS' "$rendered" \
+  || fail 'Jellyfin bootstrap must persist local network subnets'
 grep -q 'until curl -fsS -m 10 "$JELLYFIN_BASE_URL/health"' "$rendered" \
   || fail 'Jellyfin music refresh does not wait for Jellyfin readiness'
 grep -q 'jellyfin-admins,admins' "$rendered" \
