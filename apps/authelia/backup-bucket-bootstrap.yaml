@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: authelia-postgres-backup-bucket-bootstrap
+  namespace: authelia
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: quay.io/minio/mc:latest
+          env:
+            - name: AWS_ENDPOINTS
+              valueFrom:
+                secretKeyRef:
+                  name: ${authelia_postgres_backup_credential_secret_name:=authelia-postgres-backup-credentials}
+                  key: AWS_ENDPOINTS
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ${authelia_postgres_backup_credential_secret_name:=authelia-postgres-backup-credentials}
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${authelia_postgres_backup_credential_secret_name:=authelia-postgres-backup-credentials}
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: BACKUP_BUCKET
+              value: ${authelia_postgres_backup_bucket:=authelia-postgres-backup}
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              until mc alias set backup "$${AWS_ENDPOINTS}" "$${AWS_ACCESS_KEY_ID}" "$${AWS_SECRET_ACCESS_KEY}" >/dev/null 2>&1; do
+                sleep 5
+              done
+
+              mc mb --ignore-existing "backup/$${BACKUP_BUCKET}"
