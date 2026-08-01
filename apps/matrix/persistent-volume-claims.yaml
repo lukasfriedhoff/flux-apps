@@ -40,19 +40,6 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: matrix-wa-data
-  namespace: matrix
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: ${matrix_bridge_storage_class_name}
-  resources:
-    requests:
-      storage: ${matrix_bridge_data_size}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
   name: matrix-telegram-data
   namespace: matrix
 spec:
