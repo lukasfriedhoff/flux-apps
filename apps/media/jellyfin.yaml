@@ -100,25 +100,6 @@ spec:
             image:
               repository: lscr.io/linuxserver/jellyfin
               tag: 10.11.6
-            command:
-              - /bin/sh
-              - -c
-            args:
-              - |
-                set -eu
-                index=/usr/share/jellyfin/web/index.html
-                bundle=/usr/share/jellyfin/web/main.jellyfin.bundle.js
-                if [ -f "$bundle" ] && ! grep -q 'return!a\.A\.firefox&&([^)]*supportsHevc' "$bundle"; then
-                  perl -0pi -e 's/function y\(e,t\)\{return([^{}]*?supportsHevc[^{}]*?)\}function h\(e\)/function y(e,t){return!a.A.firefox&&($1)}function h(e)/s' "$bundle"
-                fi
-                if [ -f "$bundle" ] && ! grep -q 'return!a\.A\.firefox&&([^)]*supportsHevc' "$bundle"; then
-                  echo "failed to patch Jellyfin web HEVC direct-play detection for Firefox" >&2
-                  exit 1
-                fi
-                if [ -f "$index" ]; then
-                  perl -0pi -e 's#(main\.jellyfin\.bundle\.js\?)[^"]+#${1}h4xx-firefox-hevc-20260731#g' "$index"
-                fi
-                exec /init
             securityContext:
               privileged: ${jellyfin_gpu_privileged:=false}
             env:
