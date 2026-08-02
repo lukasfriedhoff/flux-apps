@@ -1,0 +1,66 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: matrix-mas-postgres
+  namespace: matrix
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+  instances: ${matrix_mas_postgres_instances:=1}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: ${matrix_mas_postgres_database:=mas}
+      owner: ${matrix_mas_postgres_user:=mas}
+      secret:
+        name: matrix-mas-postgres-app
+  managed:
+    roles:
+      - name: ${matrix_mas_postgres_user:=mas}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: matrix-mas-postgres-app
+  storage:
+    storageClass: ${matrix_mas_postgres_storage_class_name}
+    size: ${matrix_mas_postgres_size}
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_masdb_backup_generation:=}matrix-mas/"
+      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
+      serverName: ${matrix_masdb_backup_server_name:=matrix-mas-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${matrix_postgres_backup_credential_secret_name}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${matrix_postgres_backup_credential_secret_name}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${matrix_mas_postgres_backup_retention:=30d}"
+  resources:
+    requests:
+      cpu: ${matrix_mas_postgres_requests_cpu}
+      memory: ${matrix_mas_postgres_requests_memory}
+    limits:
+      cpu: ${matrix_mas_postgres_limits_cpu}
+      memory: ${matrix_mas_postgres_limits_memory}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: matrix-mas-postgres
+  namespace: matrix
+spec:
+  schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: matrix-mas-postgres

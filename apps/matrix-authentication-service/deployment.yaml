@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: matrix-authentication-service
+  namespace: matrix
+  labels:
+    app.kubernetes.io/name: matrix-authentication-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+    prometheus.io/path: "/metrics"
+spec:
+  selector:
+    app.kubernetes.io/name: matrix-authentication-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+    - name: internal
+      port: 8081
+      targetPort: internal
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matrix-authentication-service
+  namespace: matrix
+  labels:
+    app.kubernetes.io/name: matrix-authentication-service
+spec:
+  replicas: ${matrix_mas_replicas:=0}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: matrix-authentication-service
+  template:
+    metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
+      labels:
+        app.kubernetes.io/name: matrix-authentication-service
+    spec:
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: render-config
+          image: busybox:1.36.1
+          command:
+            - /bin/sh
+            - -ce
+            - |
+              password="$(tr -d '\r\n' < /database/password)"
+              test -n "$password"
+              sed "s|__MAS_DATABASE_PASSWORD__|$password|g" \
+                /config-template/config.yaml > /config/config.yaml
+              chmod 0440 /config/config.yaml
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config-template
+              mountPath: /config-template
+              readOnly: true
+            - name: config
+              mountPath: /config
+            - name: database
+              mountPath: /database
+              readOnly: true
+        - name: migrate-database
+          image: ${matrix_mas_image}
+          args:
+            - -c
+            - /config/config.yaml
+            - database
+            - migrate
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+            - name: oidc
+              mountPath: /oidc/client_secret
+              subPath: MATRIX_OIDC_CLIENT_SECRET
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: matrix-authentication-service
+          image: ${matrix_mas_image}
+          args:
+            - -c
+            - /config/config.yaml
+            - server
+            - --no-migrate
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: internal
+              containerPort: 8081
+          startupProbe:
+            httpGet:
+              path: /health
+              port: internal
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: internal
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: internal
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: ${matrix_mas_requests_cpu}
+              memory: ${matrix_mas_requests_memory}
+            limits:
+              cpu: ${matrix_mas_limits_cpu}
+              memory: ${matrix_mas_limits_memory}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+            - name: oidc
+              mountPath: /oidc/client_secret
+              subPath: MATRIX_OIDC_CLIENT_SECRET
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config-template
+          configMap:
+            name: matrix-authentication-service-config
+        - name: config
+          emptyDir: {}
+        - name: database
+          secret:
+            secretName: matrix-mas-postgres-app
+            defaultMode: 0440
+        - name: secrets
+          secret:
+            secretName: matrix-mas-secrets
+            defaultMode: 0440
+        - name: oidc
+          secret:
+            secretName: matrix-oidc
+            defaultMode: 0440
+        - name: tmp
+          emptyDir: {}

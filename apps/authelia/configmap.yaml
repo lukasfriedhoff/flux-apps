@@ -384,6 +384,7 @@ data:
             consent_mode: implicit
             redirect_uris:
               - ${matrix_public_baseurl}/_synapse/client/oidc/callback
+              - https://matrix-auth${public_host_suffix}.${delegating_domain}/upstream/callback/${matrix_mas_upstream_provider_id:=01K1ZQ2A9S7F4P8K6W3C5D0R1T}
             scopes:
               - openid
               - profile
