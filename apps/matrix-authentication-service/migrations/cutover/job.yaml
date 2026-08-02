@@ -25,21 +25,52 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       initContainers:
         - name: assert-services-stopped
-          image: registry.k8s.io/kubectl:v1.34.1
+          image: matrixdotorg/synapse:${matrix_synapse_image_tag}
           command:
-            - /bin/sh
-            - -ce
+            - python3
+            - -c
             - |
-              for deployment in synapse matrix-authentication-service; do
-                desired="$(kubectl -n matrix get deployment "$deployment" -o jsonpath='{.spec.replicas}')"
-                ready="$(kubectl -n matrix get deployment "$deployment" -o jsonpath='{.status.readyReplicas}')"
-                test "$${desired:-0}" = "0"
-                test "$${ready:-0}" = "0"
-              done
+              import json
+              import os
+              import ssl
+              import urllib.request
+
+              service_account_path = "/var/run/secrets/kubernetes.io/serviceaccount"
+              with open(f"{service_account_path}/token", encoding="utf-8") as token_file:
+                  token = token_file.read().strip()
+
+              context = ssl.create_default_context(
+                  cafile=f"{service_account_path}/ca.crt"
+              )
+              api_url = (
+                  f"https://{os.environ['KUBERNETES_SERVICE_HOST']}:"
+                  f"{os.environ['KUBERNETES_SERVICE_PORT_HTTPS']}"
+                  "/apis/apps/v1/namespaces/matrix/deployments"
+              )
+
+              for deployment_name in ("synapse", "matrix-authentication-service"):
+                  request = urllib.request.Request(
+                      f"{api_url}/{deployment_name}",
+                      headers={"Authorization": f"Bearer {token}"},
+                  )
+                  with urllib.request.urlopen(request, context=context) as response:
+                      deployment = json.load(response)
+
+                  desired = deployment.get("spec", {}).get("replicas") or 0
+                  ready = deployment.get("status", {}).get("readyReplicas") or 0
+                  print(
+                      f"{deployment_name}: desired={desired}, ready={ready}",
+                      flush=True,
+                  )
+                  if desired != 0 or ready != 0:
+                      raise SystemExit(
+                          f"{deployment_name} must be fully stopped before migration"
+                      )
           securityContext:
             runAsUser: 10001
             runAsGroup: 10001
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
