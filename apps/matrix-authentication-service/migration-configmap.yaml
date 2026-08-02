@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: matrix-mas-migration-tools
+  namespace: matrix
+data:
+  render-synapse-config.py: |
+    import os
+    from pathlib import Path
+
+    import yaml
+
+
+    source_path = Path("/synapse-seed/server.yaml")
+    target_path = Path("/synapse-config/server.yaml")
+    config = yaml.safe_load(source_path.read_text()) or {}
+
+    for nullable_section in ("cas_config", "oidc_providers"):
+        if config.get(nullable_section) is None:
+            config.pop(nullable_section, None)
+
+    issuer = os.environ["MATRIX_OIDC_ISSUER_URL"]
+    client_id = os.environ["MATRIX_OIDC_CLIENT_ID"]
+    client_secret = os.environ["MATRIX_OIDC_CLIENT_SECRET"]
+    if not issuer or not client_id or not client_secret:
+        raise RuntimeError("Matrix OIDC issuer, client ID, and client secret are required")
+
+    config["oidc_providers"] = [
+        {
+            "idp_id": "authelia",
+            "idp_name": "Authelia",
+            "discover": True,
+            "issuer": issuer,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "client_auth_method": "client_secret_post",
+            "scopes": ["openid", "profile", "email", "groups"],
+            "user_profile_method": "userinfo_endpoint",
+            "allow_existing_users": True,
+            "user_mapping_provider": {
+                "config": {
+                    "localpart_template": (
+                        "{{ user.preferred_username or user.nickname "
+                        "or user.email.split('@')[0] }}"
+                    ),
+                    "display_name_template": (
+                        "{{ user.name or user.preferred_username }}"
+                    ),
+                }
+            },
+        }
+    ]
+
+    target_path.write_text(yaml.safe_dump(config, sort_keys=False))

@@ -48,6 +48,36 @@ spec:
             - name: database
               mountPath: /database
               readOnly: true
+        - name: render-synapse-config
+          image: matrixdotorg/synapse:${matrix_synapse_image_tag}
+          command:
+            - python3
+            - /migration-tools/render-synapse-config.py
+          env:
+            - name: MATRIX_OIDC_ISSUER_URL
+              value: https://auth${public_host_suffix}.${delegating_domain}
+            - name: MATRIX_OIDC_CLIENT_ID
+              value: ${matrix_oidc_client_id:=matrix-synapse}
+            - name: MATRIX_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-oidc
+                  key: MATRIX_OIDC_CLIENT_SECRET
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: migration-tools
+              mountPath: /migration-tools
+              readOnly: true
+            - name: synapse-seed
+              mountPath: /synapse-seed
+              readOnly: true
+            - name: synapse-config
+              mountPath: /synapse-config
         - name: migrate-database
           image: ${matrix_mas_image}
           args: ["-c", "/config/config.yaml", "database", "migrate"]
@@ -115,9 +145,15 @@ spec:
           secret:
             secretName: matrix-oidc
             defaultMode: 0440
-        - name: synapse-config
+        - name: migration-tools
+          configMap:
+            name: matrix-mas-migration-tools
+            defaultMode: 0440
+        - name: synapse-seed
           secret:
             secretName: matrix-synapse-config
             defaultMode: 0440
+        - name: synapse-config
+          emptyDir: {}
         - name: tmp
           emptyDir: {}
