@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: matrix-mas-cutover
+  namespace: matrix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: matrix-mas-cutover
+  namespace: matrix
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - deployments/scale
+    resourceNames:
+      - synapse
+      - matrix-authentication-service
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: matrix-mas-cutover
+  namespace: matrix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: matrix-mas-cutover
+subjects:
+  - kind: ServiceAccount
+    name: matrix-mas-cutover
+    namespace: matrix

@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: matrix-authentication-service
+  namespace: matrix
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: matrix-auth${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: matrix-authentication-service
+                port:
+                  number: 8080
+  tls:
+    - secretName: matrix-authentication-service-tls
+      hosts:
+        - matrix-auth${public_host_suffix}.${delegating_domain}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: matrix-authentication-service-compat
+  namespace: matrix
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`matrix${public_host_suffix}.${delegating_domain}`) && PathRegexp(`^/_matrix/client/[^/]+/(login|logout|refresh)(/.*)?$`)
+      priority: 200
+      services:
+        - name: matrix-authentication-service
+          port: 8080
+  tls:
+    secretName: matrix-tls

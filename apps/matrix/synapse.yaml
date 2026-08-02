@@ -92,7 +92,7 @@ spec:
                 cp /config/homeserver.signing.key /data/homeserver.signing.key
                 chmod 600 /data/homeserver.signing.key
               fi
-              if [ "$MATRIX_OIDC_PROVIDER" = "authelia" ]; then
+              if [ "$MATRIX_AUTH_MODE" = "legacy" ] && [ "$MATRIX_OIDC_PROVIDER" = "authelia" ]; then
                 if [ -z "$MATRIX_OIDC_ISSUER_URL" ] || [ -z "$MATRIX_OIDC_CLIENT_ID" ] || [ -z "$MATRIX_OIDC_CLIENT_SECRET" ]; then
                   echo "Matrix OIDC is enabled but issuer/client settings are missing." >&2
                   exit 1
@@ -141,8 +141,25 @@ spec:
                     cat /tmp/matrix-oidc-provider.yaml >> /config/server.yaml
                   fi
                 fi
+              elif [ "$MATRIX_AUTH_MODE" = "delegated" ]; then
+                if [ ! -s /mas-secrets/SYNAPSE_SHARED_SECRET ]; then
+                  echo "Matrix delegated auth is enabled but the MAS shared secret is missing." >&2
+                  exit 1
+                fi
+                cat >> /config/server.yaml <<'EOF'
+              matrix_authentication_service:
+                enabled: true
+                endpoint: http://matrix-authentication-service.matrix.svc.cluster.local:8080
+                force_http2: false
+                secret_path: /mas-secrets/SYNAPSE_SHARED_SECRET
+              password_config:
+                enabled: false
+                localdb_enabled: false
+              EOF
               fi
           env:
+            - name: MATRIX_AUTH_MODE
+              value: ${matrix_auth_mode:=legacy}
             - name: MATRIX_OIDC_PROVIDER
               value: ${matrix_oidc:=none}
             - name: MATRIX_SERVER_NAME
@@ -167,6 +184,9 @@ spec:
               mountPath: /data
             - name: synapse-config-dir
               mountPath: /config
+            - name: mas-secrets
+              mountPath: /mas-secrets
+              readOnly: true
       containers:
         - name: synapse
           image: matrixdotorg/synapse:${matrix_synapse_image_tag}
@@ -240,6 +260,9 @@ spec:
               mountPath: /media_store
             - name: synapse-config-dir
               mountPath: /config
+            - name: mas-secrets
+              mountPath: /mas-secrets
+              readOnly: true
             - name: telegram-config
               mountPath: /telegramdata/registration.yaml
               subPath: registration.yaml
@@ -264,6 +287,11 @@ spec:
             secretName: matrix-synapse-config
         - name: synapse-config-dir
           emptyDir: {}
+        - name: mas-secrets
+          secret:
+            secretName: matrix-mas-secrets
+            optional: true
+            defaultMode: 0440
         - name: telegram-config
           secret:
             secretName: matrix-telegram-config

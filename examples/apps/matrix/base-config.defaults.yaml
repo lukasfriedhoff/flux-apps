@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 data:
   matrix_suspend: "true"
+  matrix_auth_mode: "legacy"
 
   matrix_synapse_image_tag: "latest"
   matrix_element_image_tag: "latest"
