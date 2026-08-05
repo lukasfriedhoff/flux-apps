@@ -126,6 +126,28 @@ spec:
           $CONFIG = array (
             // 0=Debug, 1=Info, 2=Warning, 3=Error, 4=Fatal
             'loglevel' => 2,
+            // Temporary: debug-level logging for a single user, to catch the
+            // half-completed writes that leave filecache rows without any
+            // file on disk (seen from the Android app on 2026-08-04 and
+            // 2026-08-05). Scoped via log.condition so the rest of the
+            // instance stays at warning level and the log volume stays sane.
+            // Remove this block once the root cause is identified.
+            'log.condition' => array (
+              'users' => array (
+                '${nextcloud_debug_user:=__none__}',
+              ),
+            ),
+          );
+        uploads.config.php: |-
+          <?php
+          $CONFIG = array (
+            // Cloudflare terminates proxied requests at ~100s (HTTP 524).
+            // Measured throughput through the tunnel is ~690 KB/s, so any
+            // single request carrying more than ~65 MB is cut mid-body and
+            // Nextcloud reports "Expected filesize of X but read/wrote Y".
+            // Cap the chunk size clients use so no one request gets near that
+            // window: 10 MiB is ~15s on the same path.
+            'max_chunk_size' => ${nextcloud_max_chunk_size:=10485760},
           );
         apps-paths.config.php: |-
           <?php
