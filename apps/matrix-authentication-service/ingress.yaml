@@ -35,8 +35,14 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Host is deliberately indirected through matrix_mas_compat_host so the
+    # compat layer stays inert until cutover. Until MAS owns the user database,
+    # routing login/logout/refresh here would break clients that still
+    # authenticate against Synapse. The default resolves to an unroutable
+    # sentinel; set matrix_mas_compat_host to the real client-facing host
+    # (the one advertised in /.well-known/matrix/client) during cutover.
     - kind: Rule
-      match: Host(`matrix${public_host_suffix}.${delegating_domain}`) && PathRegexp(`^/_matrix/client/[^/]+/(login|logout|refresh)(/.*)?$`)
+      match: Host(`${matrix_mas_compat_host:=mas-compat-disabled.invalid}`) && PathRegexp(`^/_matrix/client/[^/]+/(login|logout|refresh)(/.*)?$`)
       priority: 200
       services:
         - name: matrix-authentication-service
