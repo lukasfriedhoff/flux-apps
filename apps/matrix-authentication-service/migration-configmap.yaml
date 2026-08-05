@@ -19,6 +19,18 @@ data:
         if config.get(nullable_section) is None:
             config.pop(nullable_section, None)
 
+    # The seed secret is not authoritative for these: the Synapse Deployment
+    # rewrites them at boot from the same cluster variables. syn2mas keys user
+    # IDs off server_name, so rendering the stale seed value here would compare
+    # (and migrate) against the wrong homeserver. Mirror the runtime override.
+    for key, env_name in (
+        ("server_name", "MATRIX_SERVER_NAME"),
+        ("public_baseurl", "MATRIX_PUBLIC_BASEURL"),
+    ):
+        value = os.environ.get(env_name, "")
+        if value:
+            config[key] = value
+
     issuer = os.environ["MATRIX_OIDC_ISSUER_URL"]
     client_id = os.environ["MATRIX_OIDC_CLIENT_ID"]
     client_secret = os.environ["MATRIX_OIDC_CLIENT_SECRET"]
