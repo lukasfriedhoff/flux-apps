@@ -107,6 +107,10 @@ spec:
             - python3
             - /migration-tools/render-synapse-config.py
           env:
+            - name: MATRIX_SERVER_NAME
+              value: ${matrix_server_name}
+            - name: MATRIX_PUBLIC_BASEURL
+              value: ${matrix_public_baseurl}
             - name: MATRIX_OIDC_ISSUER_URL
               value: https://auth${public_host_suffix}.${delegating_domain}
             - name: MATRIX_OIDC_CLIENT_ID
