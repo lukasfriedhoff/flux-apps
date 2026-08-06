@@ -197,6 +197,15 @@ spec:
               value: "true"
             - name: GITEA__repository__ENABLE_PUSH_CREATE_ORG
               value: "false"
+            # Prometheus endpoint on /metrics. REQUIRE_SIGNIN_VIEW does not
+            # cover it, so leave the token unset only because the service is
+            # ClusterIP and the ingress never routes /metrics.
+            - name: GITEA__metrics__ENABLED
+              value: "${forgejo_metrics_enabled:=true}"
+            - name: GITEA__metrics__ENABLED_ISSUE_BY_REPOSITORY
+              value: "true"
+            - name: GITEA__metrics__ENABLED_ISSUE_BY_LABEL
+              value: "true"
             - name: GITEA__packages__ENABLED
               value: "true"
             - name: GITEA__actions__ENABLED
