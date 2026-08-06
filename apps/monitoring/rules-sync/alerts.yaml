@@ -921,3 +921,114 @@ groups:
           summary: Backup-related CronJob missed its next schedule.
           description: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is more than 2 hours past its next scheduled run.
           runbook_url: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+  # Scrape-target availability. The kubernetes-mixin alerts on pods, but a pod
+  # can be Running while the service behind it stops answering, so alert on the
+  # scrape itself. Restricted to jobs we own; infrastructure jobs are already
+  # covered by their own mixins.
+  - name: homelab-service-availability
+    rules:
+      - alert: HomelabServiceDown
+        expr: |
+          up{job=~"synapse|forgejo|authelia|traefik|nextcloud-exporter|matrix-authentication-service|collabora-online|cloudflared|external-dns|longhorn"} == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Homelab service is not answering scrapes.
+          description: '{{ $labels.job }} at {{ $labels.instance }} has failed every scrape for more than 10 minutes.'
+          runbook_url: https://prometheus.io/docs/prometheus/latest/querying/basics/
+      - alert: HomelabServiceFlapping
+        expr: |
+          changes(up{job=~"synapse|forgejo|authelia|traefik|nextcloud-exporter|matrix-authentication-service"}[30m]) > 6
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Homelab service scrape target is flapping.
+          description: '{{ $labels.job }} at {{ $labels.instance }} changed up/down state more than 6 times in 30 minutes.'
+          runbook_url: https://prometheus.io/docs/prometheus/latest/querying/basics/
+
+  # Node and Longhorn disk capacity. A full Longhorn disk cannot be grown and
+  # blocks volume expansion outright, which is how the media stack broke: both
+  # replicas sat on full 3TB disks and the admission webhook rejected the PVC.
+  # These fire long before that point.
+  - name: homelab-node-and-disk-capacity
+    rules:
+      - alert: NodeFilesystemAlmostFull
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|overlay|squashfs|iso9660"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|ramfs|overlay|squashfs|iso9660"}
+          ) < 0.10
+          and node_filesystem_readonly == 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Node filesystem is almost full.
+          description: '{{ $labels.instance }} {{ $labels.mountpoint }} has less than 10% free.'
+          runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/nodefilesystemalmostoutofspace
+      - alert: NodeFilesystemCriticallyFull
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|overlay|squashfs|iso9660"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|ramfs|overlay|squashfs|iso9660"}
+          ) < 0.05
+          and node_filesystem_readonly == 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Node filesystem is critically full.
+          description: '{{ $labels.instance }} {{ $labels.mountpoint }} has less than 5% free.'
+          runbook_url: https://github.com/prometheus-operator/kube-prometheus/wiki/nodefilesystemalmostoutofspace
+      - alert: LonghornDiskAlmostFull
+        expr: |
+          (longhorn_disk_usage_bytes / longhorn_disk_capacity_bytes) > 0.85
+          and longhorn_disk_capacity_bytes > 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Longhorn disk is almost full.
+          description: 'Longhorn disk {{ $labels.disk }} on {{ $labels.node }} is above 85% used. Volume expansion and replica rebuilds will fail once it fills.'
+          runbook_url: https://longhorn.io/docs/latest/nodes-and-volumes/nodes/multidisk/
+      - alert: LonghornDiskCriticallyFull
+        expr: |
+          (longhorn_disk_usage_bytes / longhorn_disk_capacity_bytes) > 0.95
+          and longhorn_disk_capacity_bytes > 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Longhorn disk is critically full.
+          description: 'Longhorn disk {{ $labels.disk }} on {{ $labels.node }} is above 95% used. Replica scheduling and PVC expansion on this disk will be rejected.'
+          runbook_url: https://longhorn.io/docs/latest/nodes-and-volumes/nodes/multidisk/
+
+  # Matrix. Synapse only started exporting metrics on 2026-08-06, so these are
+  # the first signals we have for the busiest service in the cluster.
+  - name: homelab-matrix
+    rules:
+      - alert: SynapseDown
+        expr: |
+          up{job="synapse"} == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Synapse is not answering scrapes.
+          description: Synapse has failed every scrape for more than 10 minutes; Matrix is very likely down.
+          runbook_url: https://element-hq.github.io/synapse/latest/metrics-howto.html
+      - alert: SynapseHighRequestErrorRate
+        expr: |
+          sum(rate(synapse_http_server_responses_total{job="synapse",code=~"5.."}[10m]))
+          /
+          clamp_min(sum(rate(synapse_http_server_responses_total{job="synapse"}[10m])), 0.001)
+          > 0.05
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Synapse is returning 5xx for more than 5% of requests.
+          description: Synapse served more than 5% server errors over the last 10 minutes.
+          runbook_url: https://element-hq.github.io/synapse/latest/metrics-howto.html
