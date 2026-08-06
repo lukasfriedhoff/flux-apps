@@ -111,13 +111,15 @@ spec:
           memory: 512Mi
     querier:
       replicas: ${mimir_querier_replicas}
+      # 256Mi produced 114 restarts on one replica alone. Queries fan out over
+      # many blocks and briefly hold a lot of series in memory.
       resources:
         requests:
-          cpu: 50m
-          memory: 128Mi
+          cpu: ${mimir_querier_requests_cpu:=100m}
+          memory: ${mimir_querier_requests_memory:=512Mi}
         limits:
-          cpu: 500m
-          memory: 256Mi
+          cpu: ${mimir_querier_limits_cpu:=2000m}
+          memory: ${mimir_querier_limits_memory:=2Gi}
     query_scheduler:
       replicas: ${mimir_query_scheduler_replicas}
       resources:
@@ -136,13 +138,16 @@ spec:
           cpu: 200m
           memory: 128Mi
     distributor:
+      # Was pinned at its 300m CPU ceiling and OOMKilled (exit 137) while
+      # draining the write backlog, which is what kept every remote-write push
+      # returning context deadline exceeded.
       resources:
         requests:
-          cpu: 50m
-          memory: 256Mi
+          cpu: ${mimir_distributor_requests_cpu:=100m}
+          memory: ${mimir_distributor_requests_memory:=512Mi}
         limits:
-          cpu: 300m
-          memory: 768Mi
+          cpu: ${mimir_distributor_limits_cpu:=1500m}
+          memory: ${mimir_distributor_limits_memory:=2Gi}
     compactor:
       persistentVolume:
         storageClass: ${monitoring_storage_class_name}
@@ -172,13 +177,15 @@ spec:
           cpu: 300m
           memory: 256Mi
     ruler:
+      # 125 restarts at 256Mi. The ruler evaluates every recording and alerting
+      # group on an interval, so it needs comparable headroom to a querier.
       resources:
         requests:
-          cpu: 50m
-          memory: 128Mi
+          cpu: ${mimir_ruler_requests_cpu:=100m}
+          memory: ${mimir_ruler_requests_memory:=512Mi}
         limits:
-          cpu: 300m
-          memory: 256Mi
+          cpu: ${mimir_ruler_limits_cpu:=1500m}
+          memory: ${mimir_ruler_limits_memory:=2Gi}
     overrides_exporter:
       resources:
         requests:
