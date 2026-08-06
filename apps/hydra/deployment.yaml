@@ -73,6 +73,12 @@ spec:
                 allowed-uris = github: git+https://github.com/ https://github.com/
                 extra-substituters = ${hydra_nix_substituters}
                 extra-trusted-public-keys = ${hydra_nix_trusted_public_keys}
+                # Builds run through ssh://localhost, so the build machine is a
+                # remote builder. Left false it never consults a substituter and
+                # tries to build inputs instead, which is fatal for nixpkgs
+                # minimal-bootstrap sources like stage0-posix whose builder only
+                # prints instructions. Every job died with a dependency failure.
+                builders-use-substitutes = true
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -247,6 +253,7 @@ spec:
               allowed-uris = github: git+https://github.com/ https://github.com/
               extra-substituters = ${hydra_nix_substituters}
               extra-trusted-public-keys = ${hydra_nix_trusted_public_keys}
+              builders-use-substitutes = true
               post-build-hook = /state/root/bin/hydra-attic-upload-hook
               EOF_NIX
 
