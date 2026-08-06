@@ -122,6 +122,35 @@ configMapGenerator:
       # grafana.com dashboard 13192 (Gitea). Forgejo is a Gitea fork and keeps
       # the gitea_ metric prefix, so only the job label needed rewriting.
       - forgejo/forgejo.json
+  - name: grafana-dashboard-immich
+    options:
+      annotations:
+        grafana_folder: Apps
+    files:
+      # grafana.com dashboard 22555, Immich Overview.
+      - immich/immich.json
+  - name: grafana-dashboard-s3
+    options:
+      annotations:
+        grafana_folder: Storage
+    files:
+      # Upstream MinIO dashboard from minio/minio docs/metrics/prometheus.
+      # grafana.com 13502 is gone (404), so this comes from the repo.
+      - s3/minio.json
+  - name: grafana-dashboard-cloudflared
+    options:
+      annotations:
+        grafana_folder: Networking
+    files:
+      # grafana.com dashboard 24874, Cloudflare Tunnel.
+      - cloudflared/cloudflare-tunnel.json
+  - name: grafana-dashboard-external-dns
+    options:
+      annotations:
+        grafana_folder: Networking
+    files:
+      # grafana.com dashboard 15038, External DNS.
+      - external-dns/external-dns.json
   - name: grafana-dashboard-nextcloud
     options:
       annotations:
