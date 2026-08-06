@@ -7,6 +7,27 @@
 # This route matches the public /metrics path at a higher priority than the
 # Ingress and puts Authelia in front of it. Scraping is unaffected: Alloy
 # talks to the ClusterIP Service directly and never passes through Traefik.
+# Traefik runs with allowCrossNamespace disabled, so an IngressRoute cannot
+# reference traefik/authelia-forwardauth. Keep a local copy pointing at the
+# same Authelia endpoint.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: forgejo-authelia-forwardauth
+  namespace: ${forgejo_namespace}
+spec:
+  forwardAuth:
+    address: http://authelia.authelia.svc.cluster.local/api/verify
+    trustForwardHeader: true
+    authRequestHeaders:
+      - Authorization
+      - Cookie
+    authResponseHeaders:
+      - Remote-User
+      - Remote-Groups
+      - Remote-Name
+      - Remote-Email
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -23,8 +44,7 @@ spec:
       match: Host(`git${public_host_suffix}.${delegating_domain}`) && PathPrefix(`/metrics`)
       priority: 200
       middlewares:
-        - name: authelia-forwardauth
-          namespace: traefik
+        - name: forgejo-authelia-forwardauth
       services:
         - name: ${forgejo_service_name}
           port: 3000
