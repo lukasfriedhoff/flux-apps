@@ -22,6 +22,12 @@ spec:
             - /data
             - --console-address=:9001
           env:
+            # MinIO serves /minio/v2/metrics/* behind JWT by default, which
+            # annotation-based scraping cannot satisfy. Safe to open here: the
+            # object-storage namespace has no Ingress, so the endpoint is only
+            # reachable from inside the cluster.
+            - name: MINIO_PROMETHEUS_AUTH_TYPE
+              value: "public"
             - name: MINIO_ROOT_USER
               valueFrom:
                 secretKeyRef:

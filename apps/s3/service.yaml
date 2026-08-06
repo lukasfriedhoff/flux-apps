@@ -3,6 +3,10 @@ kind: Service
 metadata:
   name: ${s3_service_name}
   namespace: ${s3_namespace}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9000"
+    prometheus.io/path: "/minio/v2/metrics/cluster"
 spec:
   selector:
     app.kubernetes.io/name: s3

@@ -185,6 +185,16 @@ data:
         server_name_node.text = JELLYFIN_SERVER_NAME
         changed = True
 
+      # Jellyfin keeps /metrics off by default so it is not leaked on a public
+      # instance. It is served on the normal 8096 listener, so the ingress
+      # blocks the path separately; Alloy scrapes the pod directly.
+      metrics_node = root.find("EnableMetrics")
+      if metrics_node is None:
+        metrics_node = ET.SubElement(root, "EnableMetrics")
+      if (metrics_node.text or "").strip().lower() != "true":
+        metrics_node.text = "true"
+        changed = True
+
       if changed:
         tree.write(SYSTEM_XML_PATH, encoding="utf-8", xml_declaration=True)
         print("[jellyfin-bootstrap] startup wizard marked completed in system.xml.")

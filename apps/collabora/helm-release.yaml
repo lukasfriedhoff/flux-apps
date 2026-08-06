@@ -31,7 +31,12 @@ spec:
         cpu: 1000m
         memory: 2048Mi
     collabora:
-      extra_params: --o:ssl.enable=false --o:ssl.termination=true
+      # enable_metrics_unauthenticated lets Alloy read /cool/getMetrics, which
+      # otherwise requires the admin credentials and answered 401 to every
+      # scrape. Externally the path stays protected: ingress-admin routes it
+      # through traefik-authelia-forwardauth, and Alloy reaches the pod
+      # directly without passing through Traefik.
+      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:security.enable_metrics_unauthenticated=true
       server_name: collabora${public_host_suffix}.${delegating_domain}
       aliasgroups:
         - host: "https://nextcloud${public_host_suffix}.${delegating_domain}:443"
