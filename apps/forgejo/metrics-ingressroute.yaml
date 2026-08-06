@@ -1,0 +1,32 @@
+---
+# Forgejo serves /metrics on the same HTTP port as the web UI, and the Ingress
+# routes / for that host, so enabling metrics also published them to the
+# internet. Synapse avoids this with a dedicated metrics listener, but Gitea
+# and Forgejo have no equivalent option.
+#
+# This route matches the public /metrics path at a higher priority than the
+# Ingress and puts Authelia in front of it. Scraping is unaffected: Alloy
+# talks to the ClusterIP Service directly and never passes through Traefik.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: forgejo-metrics-protected
+  namespace: ${forgejo_namespace}
+  labels:
+    app.kubernetes.io/name: forgejo
+    app.kubernetes.io/component: metrics
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`git${public_host_suffix}.${delegating_domain}`) && PathPrefix(`/metrics`)
+      priority: 200
+      middlewares:
+        - name: authelia-forwardauth
+          namespace: traefik
+      services:
+        - name: ${forgejo_service_name}
+          port: 3000
+  tls:
+    secretName: forgejo-tls
