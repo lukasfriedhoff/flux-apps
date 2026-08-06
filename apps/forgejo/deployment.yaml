@@ -45,7 +45,42 @@ spec:
                 --password "$${FORGEJO_ADMIN_PASSWORD}" \
                 --email "$${FORGEJO_ADMIN_EMAIL}" \
                 --must-change-password=false || true
+              # Register Authelia as an OAuth2 login source. add-oauth errors if
+              # the source already exists and update-oauth needs its numeric id,
+              # so look the id up first and pick the matching subcommand. This
+              # keeps the container safe to re-run on every pod start.
+              if [ -n "$${FORGEJO_OIDC_CLIENT_SECRET}" ]; then
+                auth_id="$(/usr/local/bin/docker-entrypoint.sh forgejo admin auth list \
+                  --config /var/lib/gitea/custom/conf/app.ini \
+                  --work-path /var/lib/gitea 2>/dev/null \
+                  | awk '$2 == "authelia" { print $1; exit }')"
+                if [ -n "$${auth_id}" ]; then
+                  set -- update-oauth --id "$${auth_id}"
+                else
+                  set -- add-oauth
+                fi
+                /usr/local/bin/docker-entrypoint.sh forgejo admin auth "$@" \
+                  --config /var/lib/gitea/custom/conf/app.ini \
+                  --work-path /var/lib/gitea \
+                  --name authelia \
+                  --provider openidConnect \
+                  --key forgejo \
+                  --secret "$${FORGEJO_OIDC_CLIENT_SECRET}" \
+                  --auto-discover-url "$${FORGEJO_OIDC_DISCOVERY_URL}" \
+                  --scopes "openid profile email groups" \
+                  --group-claim-name groups \
+                  --admin-group forgejo-admins \
+                  --skip-local-2fa
+              fi
           env:
+            - name: FORGEJO_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-oidc
+                  key: FORGEJO_OIDC_CLIENT_SECRET
+                  optional: true
+            - name: FORGEJO_OIDC_DISCOVERY_URL
+              value: https://auth${public_host_suffix}.${delegating_domain}/.well-known/openid-configuration
             - name: FORGEJO_ADMIN_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -136,10 +171,24 @@ spec:
               value: "2222"
             - name: GITEA__server__LFS_START_SERVER
               value: "true"
+            # Self-service registration stays closed, but DISABLE_REGISTRATION
+            # on its own also blocks account creation through OAuth2. Pair it
+            # with ALLOW_ONLY_EXTERNAL_REGISTRATION so Authelia is the only way
+            # to get an account.
             - name: GITEA__service__DISABLE_REGISTRATION
+              value: "false"
+            - name: GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION
               value: "true"
+            - name: GITEA__service__SHOW_REGISTRATION_BUTTON
+              value: "false"
             - name: GITEA__service__REQUIRE_SIGNIN_VIEW
               value: "true"
+            - name: GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION
+              value: "true"
+            - name: GITEA__oauth2_client__ACCOUNT_LINKING
+              value: "auto"
+            - name: GITEA__oauth2_client__USERNAME
+              value: preferred_username
             - name: GITEA__openid__ENABLE_OPENID_SIGNIN
               value: "false"
             - name: GITEA__openid__ENABLE_OPENID_SIGNUP

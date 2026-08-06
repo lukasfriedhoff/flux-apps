@@ -284,6 +284,24 @@ data:
               - refresh_token
             response_types:
               - code
+          - client_id: forgejo
+            client_name: Forgejo
+            client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.forgejo.secret" | msquote }}
+            authorization_policy: one_factor
+            consent_mode: implicit
+            redirect_uris:
+              - https://git${public_host_suffix}.${delegating_domain}/user/oauth2/authelia/callback
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+              - offline_access
+            grant_types:
+              - authorization_code
+              - refresh_token
+            response_types:
+              - code
           - client_id: jellyfin
             client_name: Jellyfin
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.jellyfin.secret" | msquote }}
