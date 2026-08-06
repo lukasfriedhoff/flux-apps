@@ -84,13 +84,18 @@ spec:
         enabled: ${mimir_ingester_zone_aware_replication}
       persistentVolume:
         storageClass: ${monitoring_storage_class_name}
+      # An ingester holds its TSDB head in memory, so 512Mi was far too tight:
+      # all three sat at 420-460Mi steady state and OOMed under any burst,
+      # which is where the 40+ restarts each over 9 days came from. Recovery
+      # made it obvious -- after the object-storage outage they could not drain
+      # the buffered write backlog and every remote-write push timed out.
       resources:
         requests:
-          cpu: 100m
-          memory: 256Mi
+          cpu: ${mimir_ingester_requests_cpu:=200m}
+          memory: ${mimir_ingester_requests_memory:=1Gi}
         limits:
-          cpu: 600m
-          memory: 512Mi
+          cpu: ${mimir_ingester_limits_cpu:=2000m}
+          memory: ${mimir_ingester_limits_memory:=3Gi}
     store_gateway:
       replicas: ${mimir_store_gateway_replicas}
       zoneAwareReplication:
