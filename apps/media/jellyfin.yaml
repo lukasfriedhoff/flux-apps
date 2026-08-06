@@ -145,6 +145,14 @@ spec:
               runAsUser: ${media_puid}
     service:
       main:
+        annotations:
+          # Jellyfin serves /metrics on the normal 8096 listener once
+          # EnableMetrics is set in system.xml. Alloy reaches the pod directly;
+          # the public path is blocked by the IngressRoute in
+          # jellyfin-metrics-ingressroute.yaml.
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8096"
+          prometheus.io/path: "/metrics"
         ports:
           http:
             port: 8096
