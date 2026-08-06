@@ -3,6 +3,14 @@ kind: Service
 metadata:
   name: synapse
   namespace: matrix
+  annotations:
+    # Literal rather than a substitution: kustomize drops the quotes around a
+    # bare ${var} and the value then parses as a boolean, which server-side
+    # apply rejects because annotations are string-typed. Keep this in step
+    # with matrix_metrics_enabled, which gates the listener itself.
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9000"
+    prometheus.io/path: "/_synapse/metrics"
 spec:
   selector:
     app.kubernetes.io/name: synapse
@@ -10,6 +18,9 @@ spec:
     - name: http
       port: 8008
       targetPort: 8008
+    - name: metrics
+      port: 9000
+      targetPort: 9000
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -63,6 +74,37 @@ spec:
                 printf '%s\n' 'enable_authenticated_media: false' >> /config/server.yaml
               fi
               sed -i '\#^[[:space:]]*-[[:space:]]*/wadata/registration.yaml[[:space:]]*$#d' /config/server.yaml
+              # Prometheus metrics on a listener of their own. They must not go
+              # on the 8008 listener: the ingress routes /_synapse publicly, so
+              # enabling the metrics resource there would publish
+              # /_synapse/metrics to the internet. Port 9000 is reachable only
+              # through the Service, which is what Alloy scrapes.
+              if [ "$MATRIX_METRICS_ENABLED" = "true" ]; then
+                if grep -Eq '^[[:space:]]*enable_metrics:[[:space:]]*' /config/server.yaml; then
+                  sed -i 's/^[[:space:]]*enable_metrics:[[:space:]]*.*/enable_metrics: true/' /config/server.yaml
+                else
+                  printf '%s\n' 'enable_metrics: true' >> /config/server.yaml
+                fi
+                if grep -Eq '^[[:space:]]*-[[:space:]]*port:[[:space:]]*9000[[:space:]]*$' /config/server.yaml; then
+                  echo "Synapse metrics listener already present; skipping."
+                elif grep -q '^listeners:[[:space:]]*$' /config/server.yaml; then
+                  awk '
+                    {
+                      print
+                      if (!inserted && $0 ~ /^listeners:[[:space:]]*$/) {
+                        print "  - port: 9000"
+                        print "    type: metrics"
+                        print "    bind_addresses: [\"0.0.0.0\"]"
+                        inserted = 1
+                      }
+                    }
+                  ' /config/server.yaml > /config/server.yaml.tmp
+                  mv /config/server.yaml.tmp /config/server.yaml
+                else
+                  echo "Synapse metrics requested but no listeners block was found." >&2
+                  exit 1
+                fi
+              fi
               # Some historical secret revisions contain signing-key spillover in
               # homeserver.log.config. Keep only the expected logging config.
               awk '
@@ -158,6 +200,8 @@ spec:
               EOF
               fi
           env:
+            - name: MATRIX_METRICS_ENABLED
+              value: "${matrix_metrics_enabled:=true}"
             - name: MATRIX_AUTH_MODE
               value: ${matrix_auth_mode:=legacy}
             - name: MATRIX_OIDC_PROVIDER
@@ -193,6 +237,8 @@ spec:
           ports:
             - name: http
               containerPort: 8008
+            - name: metrics
+              containerPort: 9000
           env:
             - name: SYNAPSE_CONFIG_DIR
               value: /config
