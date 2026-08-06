@@ -102,13 +102,26 @@ configMapGenerator:
         grafana_folder: Apps
     files:
       - cert-manager/cert-manager.json
-  - name: grafana-dashboard-media
+  # The media dashboards are deliberately not shipped. Nothing in the cluster
+  # exports jellyfin_ or *arr metrics, so every panel rendered "No data" and
+  # made the Media folder look broken. Re-add them together with the exporters
+  # that back them.
+  - name: grafana-dashboard-matrix
     options:
       annotations:
-        grafana_folder: Media
+        grafana_folder: Apps
     files:
-      - media/jellyfin.json
-      - media/media-stack.json
+      # Upstream dashboard from element-hq/synapse contrib/grafana, retargeted
+      # at the mimir datasource. job="synapse" already matches our scrape.
+      - matrix/synapse.json
+  - name: grafana-dashboard-forgejo
+    options:
+      annotations:
+        grafana_folder: Apps
+    files:
+      # grafana.com dashboard 13192 (Gitea). Forgejo is a Gitea fork and keeps
+      # the gitea_ metric prefix, so only the job label needed rewriting.
+      - forgejo/forgejo.json
   - name: grafana-dashboard-nextcloud
     options:
       annotations:
