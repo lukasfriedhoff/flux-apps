@@ -233,6 +233,12 @@ spec:
 
               cat > /state/hydra/hydra.conf <<EOF_CONFIG
               store_uri = auto
+              # The queue runner builds every derivation from scratch unless
+              # this is set, which is fatal for nixpkgs' minimal-bootstrap
+              # sources: stage0-posix has no real builder, only a placeholder
+              # that prints instructions, so it can only ever be substituted.
+              # Its output is in cache.nixos.org the whole time.
+              use-substitutes = 1
               binary_cache_public_uri = ${hydra_binary_cache_public_uri}
               binary_cache_secret_key_file =
               max_output_size = ${hydra_max_output_size}
