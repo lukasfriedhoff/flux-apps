@@ -130,6 +130,16 @@ spec:
                   name: ${hydra_github_credentials_secret_name}
                   key: password
                   optional: true
+            # Read-only deploy key for the private nix-secrets flake input.
+            # The token above authenticates the fetch of the nix repo itself;
+            # flake inputs are fetched separately by nix and need their own
+            # credential. SSH here so it matches how the servers reach it.
+            - name: NIX_SECRETS_DEPLOY_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${hydra_nix_secrets_key_secret_name:=hydra-nix-secrets-deploy-key}
+                  key: identity
+                  optional: true
           command:
             - /bin/sh
             - -ec
@@ -161,6 +171,24 @@ spec:
               mkdir -p /state/root /state/root/bin /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
               ln -sfn /state/hydra /var/lib/hydra
               chown -R hydra:hydra /state/hydra /nix/var/nix/gcroots/hydra
+              # Deploy key for the private nix-secrets flake input. Written to
+              # state rather than mounted from the secret so the mode can be
+              # 0400: ssh refuses a key it considers group- or world-readable,
+              # and projected secret volumes are 0444 by default.
+              if [ -n "$${NIX_SECRETS_DEPLOY_KEY:-}" ]; then
+                install -d -m 0700 /root/.ssh
+                install -m 0400 -o root -g root /dev/null /state/root/nix-secrets-deploy.key
+                printf '%s' "$${NIX_SECRETS_DEPLOY_KEY}" > /state/root/nix-secrets-deploy.key
+                chmod 0400 /state/root/nix-secrets-deploy.key
+                ssh-keyscan -t ed25519 github.com > /root/.ssh/known_hosts_github 2>/dev/null
+                cat > /root/.ssh/config <<'EOF_SSHCFG'
+              Host github.com
+                IdentityFile /state/root/nix-secrets-deploy.key
+                IdentitiesOnly yes
+                UserKnownHostsFile /root/.ssh/known_hosts_github
+              EOF_SSHCFG
+                chmod 0600 /root/.ssh/config
+              fi
               if [ -n "$${HYDRA_GITHUB_TOKEN:-}" ]; then
                 install -m 0600 -o root -g root /dev/null /state/root/github-token
                 printf '%s' "$${HYDRA_GITHUB_TOKEN}" > /state/root/github-token
