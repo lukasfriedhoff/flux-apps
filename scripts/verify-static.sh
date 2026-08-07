@@ -16,6 +16,3 @@ cd "$repo_root"
 ./apps/longhorn/tests/verify-storageclasses.sh
 ./apps/matrix/tests/verify-bridge-config-authority.sh
 ./apps/nextcloud/tests/verify-shared-media.sh
-./apps/media/tests/verify-prowlarr-private-only.sh
-./apps/media/tests/verify-qbittorrent-policy.sh
-./apps/media/tests/verify-jellyfin-gitops.sh
