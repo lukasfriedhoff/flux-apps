@@ -895,6 +895,9 @@ spec:
           enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
           enable_custom_app_if_present contacts /var/www/html/custom_apps/contacts/appinfo/info.xml || true
           enable_custom_app_if_present calendar /var/www/html/custom_apps/calendar/appinfo/info.xml || true
+          enable_custom_app_if_present cookbook /var/www/html/custom_apps/cookbook/vendor/autoload.php || true
+          enable_custom_app_if_present maps /var/www/html/custom_apps/maps/vendor/autoload.php || true
+          enable_custom_app_if_present passwords /var/www/html/custom_apps/passwords/appinfo/info.xml || true
           ensure_app_enabled serverinfo
           if enable_custom_app_if_present richdocuments /var/www/html/custom_apps/richdocuments/appinfo/info.xml; then
             occ_safe app:disable -n richdocumentscode
@@ -1059,6 +1062,28 @@ spec:
                 86c7d9c5d0455b3e23154e44b12c92458663577285e59778a03825c8436ab143 \
                 calendar/appinfo/info.xml \
                 6.5.2
+              # cookbook and maps ship a vendored autoloader, so that file is
+              # the marker: a truncated extraction would leave info.xml in
+              # place but break the app at runtime. passwords has no vendor
+              # tree, hence info.xml there.
+              fetch_app \
+                cookbook \
+                https://github.com/christianlupus-nextcloud/cookbook-releases/releases/download/v0.11.9/cookbook-0.11.9.tar.gz \
+                017e3c44d0d1888925e0e654e7c4bf8ed31604f919b8e3d32da8ecd0f5639b80 \
+                cookbook/vendor/autoload.php \
+                0.11.9
+              fetch_app \
+                maps \
+                https://github.com/nextcloud-releases/maps/releases/download/v1.7.1/maps-v1.7.1.tar.gz \
+                470b73a2ecf834415954ee95f18bc873d0b29ff28167e800632e427050ef46f7 \
+                maps/vendor/autoload.php \
+                1.7.1
+              fetch_app \
+                passwords \
+                https://git.mdns.eu/api/v4/projects/45/packages/generic/passwords/2026.7.0/passwords.tar.gz \
+                f0447632ac9e3e91110fb4517f0f07ab9c4dc7eb3cbd484f6c3c89d89bd4fe1a \
+                passwords/appinfo/info.xml \
+                2026.7.20
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www/html/custom_apps
