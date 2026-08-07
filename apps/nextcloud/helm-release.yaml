@@ -893,6 +893,8 @@ spec:
           configure_external_photos_link
           configure_external_memes_link
           enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
+          enable_custom_app_if_present contacts /var/www/html/custom_apps/contacts/appinfo/info.xml || true
+          enable_custom_app_if_present calendar /var/www/html/custom_apps/calendar/appinfo/info.xml || true
           ensure_app_enabled serverinfo
           if enable_custom_app_if_present richdocuments /var/www/html/custom_apps/richdocuments/appinfo/info.xml; then
             occ_safe app:disable -n richdocumentscode
@@ -1039,6 +1041,24 @@ spec:
                 b18a55b6a0e12d4a1ced0d74b6e5ef6927f322c8b9b3409dae4ea68717e422d9 \
                 external/appinfo/info.xml \
                 9.0.1
+              # Contacts and Calendar are only the web UIs; CalDAV/CardDAV data
+              # lives in the bundled dav app either way. They were installed
+              # from the appstore before 'appstoreenabled' was turned off, so
+              # nothing recreated them after the 33 -> 34 upgrade and they
+              # simply vanished from the UI. Pinned here like every other
+              # custom app so they survive the next major upgrade.
+              fetch_app \
+                contacts \
+                https://github.com/nextcloud-releases/contacts/releases/download/v8.7.5/contacts-v8.7.5.tar.gz \
+                9935218201ce3f8d06b3be31a0b6df9fbba23f6993724ff3799686dd873c3ea9 \
+                contacts/appinfo/info.xml \
+                8.7.5
+              fetch_app \
+                calendar \
+                https://github.com/nextcloud-releases/calendar/releases/download/v6.5.2/calendar-v6.5.2.tar.gz \
+                86c7d9c5d0455b3e23154e44b12c92458663577285e59778a03825c8436ab143 \
+                calendar/appinfo/info.xml \
+                6.5.2
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www/html/custom_apps
