@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valhalla
+  namespace: ${navigation_namespace:=navigation}
+  labels:
+    app.kubernetes.io/name: valhalla
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: valhalla
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: valhalla
+    spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: reset-data
+          image: alpine:3.20
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              marker="$${VALHALLA_RESET_MARKER:-none}"
+              marker_file="/custom_files/.h4xx-reset-marker"
+              if [ "$marker" = "none" ] || [ -z "$marker" ]; then
+                echo "[valhalla-reset] disabled"
+                exit 0
+              fi
+              current="$(cat "$marker_file" 2>/dev/null || true)"
+              if [ "$current" = "$marker" ]; then
+                echo "[valhalla-reset] marker $marker already applied"
+                exit 0
+              fi
+              echo "[valhalla-reset] applying marker $marker"
+              rm -rf \
+                /custom_files/valhalla_tiles \
+                /custom_files/valhalla_tiles.tar \
+                /custom_files/*.osm.pbf \
+                /custom_files/file_hashes.txt \
+                /custom_files/admins.sqlite \
+                /custom_files/timezones.sqlite \
+                /custom_files/*.sqlite-shm \
+                /custom_files/*.sqlite-wal
+              printf '%s\n' "$marker" > "$marker_file"
+          env:
+            - name: VALHALLA_RESET_MARKER
+              value: ${valhalla_reset_marker:=none}
+          volumeMounts:
+            - name: data
+              mountPath: /custom_files
+      containers:
+        - name: valhalla
+          image: ghcr.io/valhalla/valhalla-scripted:${valhalla_image_tag:=3.7.0}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8002
+              protocol: TCP
+          env:
+            - name: tile_urls
+              value: !!str ${valhalla_tile_urls:=https://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf}
+            - name: server_threads
+              value: !!str ${valhalla_server_threads:=2}
+            - name: use_tiles_ignore_pbf
+              value: !!str ${valhalla_use_tiles_ignore_pbf:=True}
+            - name: force_rebuild
+              value: !!str ${valhalla_force_rebuild:=False}
+            - name: build_elevation
+              value: !!str ${valhalla_build_elevation:=False}
+            - name: build_admins
+              value: !!str ${valhalla_build_admins:=True}
+            - name: build_time_zones
+              value: !!str ${valhalla_build_time_zones:=True}
+            - name: build_tar
+              value: !!str ${valhalla_build_tar:=True}
+            - name: traffic_name
+              value: !!str ${valhalla_traffic_name:=}
+          startupProbe:
+            httpGet:
+              path: /status
+              port: http
+            failureThreshold: ${valhalla_startup_failure_threshold:=120}
+            periodSeconds: ${valhalla_startup_period_seconds:=10}
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: http
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: ${valhalla_requests_cpu:=500m}
+              memory: ${valhalla_requests_memory:=1Gi}
+            limits:
+              cpu: ${valhalla_limits_cpu:=4000m}
+              memory: ${valhalla_limits_memory:=8Gi}
+          volumeMounts:
+            - name: data
+              mountPath: /custom_files
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: valhalla-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: valhalla
+  namespace: ${navigation_namespace:=navigation}
+  labels:
+    app.kubernetes.io/name: valhalla
+spec:
+  selector:
+    app.kubernetes.io/name: valhalla
+  ports:
+    - name: http
+      port: 8002
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: valhalla
+  namespace: ${navigation_namespace:=navigation}
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: ${valhalla_ingress_middlewares:=traefik-authelia-forwardauth-redirect@kubernetescrd}
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: valhalla${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: valhalla
+                port:
+                  name: http
+  tls:
+    - secretName: valhalla-tls
+      hosts:
+        - valhalla${public_host_suffix}.${delegating_domain}

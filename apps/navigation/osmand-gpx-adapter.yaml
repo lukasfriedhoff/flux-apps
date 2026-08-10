@@ -1,0 +1,520 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: valhalla-osmand-adapter
+  namespace: ${navigation_namespace:=navigation}
+data:
+  speed-cameras.geojson: |
+    {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "name": "Demo speed camera",
+            "source": "synthetic-poc",
+            "notice": "Demonstration only; not for real driving."
+          },
+          "geometry": {
+            "type": "Point",
+            "coordinates": [9.521540, 47.141030]
+          }
+        }
+      ]
+    }
+  construction-sites.geojson: |
+    {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "name": "Demo construction site",
+            "source": "synthetic-poc",
+            "notice": "Demonstration only; not for real driving."
+          },
+          "geometry": {
+            "type": "Point",
+            "coordinates": [9.510820, 47.166870]
+          }
+        }
+      ]
+    }
+  traffic-demo.geojson: |
+    {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "name": "Demo slowdown",
+            "source": "synthetic-poc",
+            "notice": "Display-only traffic overlay; not wired into Valhalla live traffic routing."
+          },
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [9.521540, 47.141030],
+              [9.510820, 47.166870]
+            ]
+          }
+        }
+      ]
+    }
+  server.js: |
+    const fs = require("fs");
+    const http = require("http");
+    const crypto = require("crypto");
+    const { URL } = require("url");
+
+    const port = Number(process.env.PORT || "8080");
+    const valhallaUrl = process.env.VALHALLA_URL || "http://valhalla:8002";
+    const requireToken = String(process.env.REQUIRE_TOKEN || "false").toLowerCase() === "true";
+    const routeToken = process.env.ROUTE_TOKEN || "";
+    const rateLimitWindowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || "60000");
+    const rateLimitMax = Number(process.env.RATE_LIMIT_MAX || "120");
+    const rateLimits = new Map();
+    const demoNotice = "POC only. Do not use for real driving or safety-critical navigation.";
+
+    function send(res, status, body, contentType = "text/plain; charset=utf-8", extraHeaders = {}) {
+      res.writeHead(status, {
+        "content-type": contentType,
+        "cache-control": "no-store",
+        ...extraHeaders,
+      });
+      res.end(body);
+    }
+
+    function clientIp(req) {
+      const forwardedFor = req.headers["x-forwarded-for"];
+      if (forwardedFor) {
+        return String(forwardedFor).split(",")[0].trim();
+      }
+      return req.socket.remoteAddress || "unknown";
+    }
+
+    function checkRateLimit(req, res) {
+      if (!rateLimitMax || !rateLimitWindowMs) {
+        return true;
+      }
+
+      const now = Date.now();
+      const key = clientIp(req);
+      const current = rateLimits.get(key);
+      if (!current || now >= current.resetAt) {
+        rateLimits.set(key, { count: 1, resetAt: now + rateLimitWindowMs });
+        return true;
+      }
+
+      current.count += 1;
+      if (current.count <= rateLimitMax) {
+        return true;
+      }
+
+      const retryAfter = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
+      send(res, 429, "rate limit exceeded\n", "text/plain; charset=utf-8", {
+        "retry-after": String(retryAfter),
+      });
+      return false;
+    }
+
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, current] of rateLimits.entries()) {
+        if (now >= current.resetAt) {
+          rateLimits.delete(key);
+        }
+      }
+    }, Math.max(10000, rateLimitWindowMs)).unref();
+
+    function tokenMatches(provided) {
+      if (!routeToken || !provided) {
+        return false;
+      }
+
+      const expected = Buffer.from(routeToken);
+      const actual = Buffer.from(String(provided));
+      if (expected.length !== actual.length) {
+        return false;
+      }
+      return crypto.timingSafeEqual(expected, actual);
+    }
+
+    function isAuthorized(req, requestUrl, res) {
+      if (!requireToken) {
+        return true;
+      }
+
+      const authHeader = req.headers.authorization || "";
+      const bearerToken = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7) : "";
+      const queryToken = requestUrl.searchParams.get("token") || "";
+      if (tokenMatches(bearerToken) || tokenMatches(queryToken)) {
+        return true;
+      }
+
+      send(res, 401, "unauthorized\n", "text/plain; charset=utf-8", {
+        "www-authenticate": "Bearer",
+      });
+      return false;
+    }
+
+    function parsePoint(value, name) {
+      if (!value) {
+        throw new Error(`Missing $${name}; expected lat,lon`);
+      }
+      const parts = String(value).split(",").map((part) => Number(part.trim()));
+      if (parts.length !== 2 || parts.some((part) => Number.isNaN(part))) {
+        throw new Error(`Invalid $${name}; expected lat,lon`);
+      }
+      return { lat: parts[0], lon: parts[1] };
+    }
+
+    function parseLocations(searchParams) {
+      if (searchParams.has("locations")) {
+        const locations = searchParams
+          .get("locations")
+          .split(/[|;]/)
+          .map((point, index) => parsePoint(point, `locations[$${index}]`));
+        if (locations.length < 2) {
+          throw new Error("At least two locations are required");
+        }
+        return locations;
+      }
+
+      const points = searchParams.getAll("point");
+      if (points.length >= 2) {
+        return points.map((point, index) => parsePoint(point, `point[$${index}]`));
+      }
+
+      if (searchParams.has("from") || searchParams.has("to")) {
+        return [
+          parsePoint(searchParams.get("from"), "from"),
+          parsePoint(searchParams.get("to"), "to"),
+        ];
+      }
+
+      if (
+        searchParams.has("start_lat") &&
+        searchParams.has("start_lon") &&
+        searchParams.has("end_lat") &&
+        searchParams.has("end_lon")
+      ) {
+        return [
+          { lat: Number(searchParams.get("start_lat")), lon: Number(searchParams.get("start_lon")) },
+          { lat: Number(searchParams.get("end_lat")), lon: Number(searchParams.get("end_lon")) },
+        ];
+      }
+
+      throw new Error("Provide from=lat,lon&to=lat,lon, repeated point=lat,lon, or locations=lat,lon|lat,lon");
+    }
+
+    function decodePolyline6(shape) {
+      const coordinates = [];
+      let index = 0;
+      let lat = 0;
+      let lon = 0;
+      const precision = 1e6;
+
+      while (index < shape.length) {
+        let result = 0;
+        let shift = 0;
+        let byte = null;
+        do {
+          byte = shape.charCodeAt(index++) - 63;
+          result |= (byte & 0x1f) << shift;
+          shift += 5;
+        } while (byte >= 0x20);
+        lat += result & 1 ? ~(result >> 1) : result >> 1;
+
+        result = 0;
+        shift = 0;
+        do {
+          byte = shape.charCodeAt(index++) - 63;
+          result |= (byte & 0x1f) << shift;
+          shift += 5;
+        } while (byte >= 0x20);
+        lon += result & 1 ? ~(result >> 1) : result >> 1;
+
+        coordinates.push({ lat: lat / precision, lon: lon / precision });
+      }
+
+      return coordinates;
+    }
+
+    function xmlEscape(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function routeToGpx(routeJson, name) {
+      const points = [];
+      for (const leg of routeJson.trip?.legs || []) {
+        const decoded = decodePolyline6(leg.shape || "");
+        if (points.length > 0 && decoded.length > 0) {
+          decoded.shift();
+        }
+        points.push(...decoded);
+      }
+
+      if (points.length === 0) {
+        throw new Error("Valhalla returned no route shape");
+      }
+
+      const trackPoints = points
+        .map((point) => `      <trkpt lat="$${point.lat.toFixed(6)}" lon="$${point.lon.toFixed(6)}" />`)
+        .join("\n");
+      const routePoints = points
+        .filter((_, index) => index === 0 || index === points.length - 1)
+        .map((point) => `    <rtept lat="$${point.lat.toFixed(6)}" lon="$${point.lon.toFixed(6)}" />`)
+        .join("\n");
+
+      return `<?xml version="1.0" encoding="UTF-8"?>
+    <gpx version="1.1" creator="h4xx-valhalla-osmand-adapter" xmlns="http://www.topografix.com/GPX/1/1">
+      <metadata>
+        <name>$${xmlEscape(name)}</name>
+        <desc>$${xmlEscape(demoNotice)}</desc>
+      </metadata>
+      <rte>
+        <name>$${xmlEscape(name)}</name>
+    $${routePoints}
+      </rte>
+      <trk>
+        <name>$${xmlEscape(name)}</name>
+        <trkseg>
+    $${trackPoints}
+        </trkseg>
+      </trk>
+    </gpx>
+    `;
+    }
+
+    function requestValhalla(path, payload) {
+      const target = new URL(path, valhallaUrl);
+      return fetch(target, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(async (response) => {
+        const text = await response.text();
+        if (!response.ok) {
+          throw new Error(`Valhalla $${response.status}: $${text}`);
+        }
+        return JSON.parse(text);
+      });
+    }
+
+    async function handleRoute(requestUrl, res, asGpx) {
+      const locations = parseLocations(requestUrl.searchParams);
+      const costing = requestUrl.searchParams.get("costing") || "auto";
+      const payload = {
+        locations,
+        costing,
+        directions_options: {
+          units: requestUrl.searchParams.get("units") || "kilometers",
+          language: requestUrl.searchParams.get("language") || "de-DE",
+        },
+      };
+      const route = await requestValhalla("/route", payload);
+      if (!asGpx) {
+        send(res, 200, JSON.stringify(route, null, 2), "application/json; charset=utf-8");
+        return;
+      }
+      const routeName = requestUrl.searchParams.get("name") || `Valhalla $${costing} route`;
+      send(res, 200, routeToGpx(route, routeName), "application/gpx+xml; charset=utf-8");
+    }
+
+    async function handleStatus(res) {
+      const response = await fetch(new URL("/status", valhallaUrl));
+      const body = await response.text();
+      send(res, response.status, body, response.headers.get("content-type") || "application/json; charset=utf-8");
+    }
+
+    function serveFile(res, fileName) {
+      send(res, 200, fs.readFileSync(`/overlays/$${fileName}`, "utf8"), "application/geo+json; charset=utf-8");
+    }
+
+    function index(res) {
+      send(
+        res,
+        200,
+        JSON.stringify(
+          {
+            service: "h4xx Valhalla OsmAnd POC adapter",
+            notice: demoNotice,
+            auth: requireToken ? "token query parameter or Authorization bearer token required" : "disabled",
+            endpoints: {
+              health: "/healthz",
+              valhallaStatus: "/status",
+              routeGpx: "/route.gpx?from=51.430920,7.003720&to=51.450450,7.013480&costing=auto",
+              routeJson: "/route.json?from=51.430920,7.003720&to=51.450450,7.013480&costing=auto",
+              routeGpxOsmAnd: "/route.gpx?point=51.430920,7.003720&point=51.450450,7.013480&costing=auto",
+              speedCameras: "/speed-cameras.geojson",
+              constructionSites: "/construction-sites.geojson",
+              trafficDemo: "/traffic-demo.geojson",
+            },
+          },
+          null,
+          2
+        ),
+        "application/json; charset=utf-8"
+      );
+    }
+
+    http
+      .createServer(async (req, res) => {
+        try {
+          const requestUrl = new URL(req.url, `http://$${req.headers.host || "localhost"}`);
+          if (requestUrl.pathname === "/healthz") {
+            send(res, 200, "ok\n");
+            return;
+          }
+
+          if (!checkRateLimit(req, res) || !isAuthorized(req, requestUrl, res)) {
+            return;
+          }
+
+          if (requestUrl.pathname === "/" || requestUrl.pathname === "/index.json") {
+            index(res);
+          } else if (requestUrl.pathname === "/status") {
+            await handleStatus(res);
+          } else if (requestUrl.pathname === "/route.gpx") {
+            await handleRoute(requestUrl, res, true);
+          } else if (requestUrl.pathname === "/route.json") {
+            await handleRoute(requestUrl, res, false);
+          } else if (requestUrl.pathname === "/speed-cameras.geojson") {
+            serveFile(res, "speed-cameras.geojson");
+          } else if (requestUrl.pathname === "/construction-sites.geojson") {
+            serveFile(res, "construction-sites.geojson");
+          } else if (requestUrl.pathname === "/traffic-demo.geojson") {
+            serveFile(res, "traffic-demo.geojson");
+          } else {
+            send(res, 404, "not found\n");
+          }
+        } catch (err) {
+          send(res, 500, `$${err.stack || err.message || err}\n`);
+        }
+      })
+      .listen(port, "0.0.0.0", () => {
+        console.log(`valhalla-osmand-adapter listening on :$${port}`);
+      });
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valhalla-osmand-adapter
+  namespace: ${navigation_namespace:=navigation}
+  labels:
+    app.kubernetes.io/name: valhalla-osmand-adapter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: valhalla-osmand-adapter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: valhalla-osmand-adapter
+    spec:
+      containers:
+        - name: adapter
+          image: node:${valhalla_osmand_adapter_node_tag:=22-alpine}
+          imagePullPolicy: IfNotPresent
+          command:
+            - node
+            - /app/server.js
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: VALHALLA_URL
+              value: http://valhalla:8002
+            - name: PORT
+              value: "8080"
+            - name: REQUIRE_TOKEN
+              value: !!str ${valhalla_adapter_require_token:=false}
+            - name: RATE_LIMIT_WINDOW_MS
+              value: !!str ${valhalla_adapter_rate_limit_window_ms:=60000}
+            - name: RATE_LIMIT_MAX
+              value: !!str ${valhalla_adapter_rate_limit_max:=120}
+            - name: ROUTE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ${valhalla_adapter_token_secret_name:=valhalla-osmand-token}
+                  key: token
+                  optional: true
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${valhalla_adapter_requests_cpu:=50m}
+              memory: ${valhalla_adapter_requests_memory:=128Mi}
+            limits:
+              cpu: ${valhalla_adapter_limits_cpu:=500m}
+              memory: ${valhalla_adapter_limits_memory:=512Mi}
+          volumeMounts:
+            - name: adapter
+              mountPath: /app
+            - name: adapter
+              mountPath: /overlays
+      volumes:
+        - name: adapter
+          configMap:
+            name: valhalla-osmand-adapter
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: valhalla-osmand-adapter
+  namespace: ${navigation_namespace:=navigation}
+  labels:
+    app.kubernetes.io/name: valhalla-osmand-adapter
+spec:
+  selector:
+    app.kubernetes.io/name: valhalla-osmand-adapter
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: valhalla-osmand-adapter
+  namespace: ${navigation_namespace:=navigation}
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: ${valhalla_adapter_ingress_middlewares:=traefik-authelia-forwardauth-redirect@kubernetescrd}
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: valhalla-gpx${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: valhalla-osmand-adapter
+                port:
+                  name: http
+  tls:
+    - secretName: valhalla-osmand-adapter-tls
+      hosts:
+        - valhalla-gpx${public_host_suffix}.${delegating_domain}

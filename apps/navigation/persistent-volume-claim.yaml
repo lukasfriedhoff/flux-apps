@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: valhalla-data
+  namespace: ${navigation_namespace:=navigation}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${valhalla_storage_class_name:=${default_sts_storage_class_name}}
+  resources:
+    requests:
+      storage: ${valhalla_data_size:=20Gi}
+
