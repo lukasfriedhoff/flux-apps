@@ -291,6 +291,24 @@ spec:
               post-build-hook = /state/root/bin/hydra-attic-upload-hook
               EOF_NIX
 
+              # hydra-queue-runner assigns every build step to a machine from
+              # this file. nix.conf's max-jobs does not apply to it — that only
+              # governs the nix daemon. With no machines file the queue runner
+              # can claim nothing and reports "unsupported system type" (step
+              # status 8) even for plain x86_64-linux, which then fails every
+              # build as a dependency failure. That is why 84 builds ran with
+              # a 0% success rate and the first failing derivation was always
+              # a bootstrap one (gnused-4.2): nothing could be dispatched.
+              #
+              # localhost is the special entry that builds through the local
+              # daemon. Fields: uri system sshKey maxJobs speedFactor
+              # supportedFeatures mandatoryFeatures publicHostKey.
+              # kvm/nixos-test are deliberately absent — this is a container.
+              mkdir -p /etc/nix
+              cat > /etc/nix/machines <<EOF_MACHINES
+              localhost x86_64-linux - ${hydra_nix_max_jobs} 1 big-parallel - -
+              EOF_MACHINES
+
               if ! command -v hydra-init >/dev/null 2>&1; then
                 nix profile install --refresh ${hydra_nix_packages}
               fi
