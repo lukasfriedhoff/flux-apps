@@ -177,3 +177,9 @@ configMapGenerator:
         grafana_folder: Storage
     files:
       - longhorn/longhorn.json
+  - name: grafana-dashboard-nix-cache
+    options:
+      annotations:
+        grafana_folder: Nix
+    files:
+      - nix-cache/nix-build-pipeline.json

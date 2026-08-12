@@ -1,0 +1,286 @@
+{
+  "uid": "nix-build-pipeline",
+  "title": "Nix Build Pipeline",
+  "description": "Hydra queue runner, Attic cache and remote builder. Built after a 0% build success rate went unnoticed for weeks: the process was up and the queue was full, but no steps were ever dispatched. 'Build steps created' is the panel that would have shown it.",
+  "schemaVersion": 22,
+  "version": 1,
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "tags": ["nix", "hydra", "attic", "pipeline"],
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Pipeline health",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Build steps created (6h)",
+      "description": "The signal that matters. Zero here while builds are queued means the queue runner cannot dispatch — a missing /etc/nix/machines, or a cached failure short-circuiting dependents. Liveness alone stays green throughout.",
+      "datasource": "mimir",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "increase(hydraqueuerunner_queue_steps_created_total[6h])",
+          "refId": "A",
+          "legendFormat": "steps"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Hydra queue runner",
+      "description": "Scrape health of hydra-queue-runner's own metrics endpoint on :9198.",
+      "datasource": "mimir",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        { "expr": "max(up{job=~\".*hydra.*\"})", "refId": "A", "legendFormat": "up" }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green", "index": 1 } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Attic cache",
+      "description": "Available replicas. If Attic is down every host silently falls back to cache.nixos.org and rebuilds from source — builds still succeed, so nothing else surfaces it.",
+      "datasource": "mimir",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_available{namespace=\"nix-cache\",deployment=\"attic\"}",
+          "refId": "A",
+          "legendFormat": "available"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Remote builder",
+      "description": "Available replicas of nix-remote-builder. When absent, workstations and servers fall back to building locally, which starves the small nodes.",
+      "datasource": "mimir",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_available{namespace=\"nix-cache\",deployment=\"nix-remote-builder\"}",
+          "refId": "A",
+          "legendFormat": "available"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Queue",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Work arriving vs work dispatched",
+      "description": "Builds loaded into the queue against build steps created. The two tracking together is healthy. Loads climbing while steps stay flat is the exact failure mode this dashboard exists for.",
+      "datasource": "mimir",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "targets": [
+        {
+          "expr": "rate(hydraqueuerunner_queue_build_loads_total[10m])",
+          "refId": "A",
+          "legendFormat": "builds loaded"
+        },
+        {
+          "expr": "rate(hydraqueuerunner_queue_steps_created_total[10m])",
+          "refId": "B",
+          "legendFormat": "steps created"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "pointSize": 8
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue checks",
+      "description": "Checks started against checks finished. A persistent gap means checks are being abandoned early rather than completing.",
+      "datasource": "mimir",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "targets": [
+        {
+          "expr": "rate(hydraqueuerunner_queue_checks_started_total[10m])",
+          "refId": "A",
+          "legendFormat": "started"
+        },
+        {
+          "expr": "rate(hydraqueuerunner_queue_checks_finished_total[10m])",
+          "refId": "B",
+          "legendFormat": "finished"
+        },
+        {
+          "expr": "rate(hydraqueuerunner_queue_checks_early_exits_total[10m])",
+          "refId": "C",
+          "legendFormat": "early exits"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "pointSize": 8
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Dispatcher",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Dispatcher time: running vs waiting",
+      "description": "Where the dispatcher spends its time. All waiting with work in the queue means it has nowhere to place steps — check /etc/nix/machines and the failedpaths table.",
+      "datasource": "mimir",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(hydraqueuerunner_dispatcher_time_spent_running[10m])",
+          "refId": "A",
+          "legendFormat": "running"
+        },
+        {
+          "expr": "rate(hydraqueuerunner_dispatcher_time_spent_waiting[10m])",
+          "refId": "B",
+          "legendFormat": "waiting"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "pointSize": 8
+          }
+        },
+        "overrides": []
+      }
+    }
+  ]
+}

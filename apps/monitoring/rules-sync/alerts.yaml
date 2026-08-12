@@ -1032,3 +1032,69 @@ groups:
           summary: Synapse is returning 5xx for more than 5% of requests.
           description: Synapse served more than 5% server errors over the last 10 minutes.
           runbook_url: https://element-hq.github.io/synapse/latest/metrics-howto.html
+
+  - name: homelab-nix-build-pipeline
+    rules:
+      # The failure that went unnoticed for weeks: the process is up, the
+      # queue is full, and nothing is dispatched. Liveness alone said healthy.
+      - alert: HydraQueueRunnerNotDispatching
+        expr: |
+          increase(hydraqueuerunner_queue_steps_created_total[6h]) == 0
+          and on() hydraqueuerunner_queue_checks_started_total > 0
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: Hydra has created no build steps in 6 hours.
+          description: >-
+            hydra-queue-runner is polling but has not created a single build
+            step for 6h. It cannot dispatch — typically a missing or empty
+            /etc/nix/machines, or a cached failure in the failedpaths table
+            short-circuiting every dependent build.
+          runbook_url: https://github.com/lukasfriedhoff/flux-apps/blob/main/apps/hydra/README.md
+      - alert: HydraQueueRunnerDown
+        expr: |
+          up{job=~".*hydra.*"} == 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Hydra queue runner is not answering scrapes.
+          description: No successful scrape of hydra-queue-runner metrics for 15 minutes.
+      - alert: HydraQueueStalled
+        expr: |
+          rate(hydraqueuerunner_dispatcher_time_spent_running[1h]) == 0
+          and on() rate(hydraqueuerunner_queue_build_loads_total[1h]) > 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: Hydra is loading builds but the dispatcher is idle.
+          description: >-
+            Builds are being loaded into the queue while the dispatcher spends
+            no time running. Work is arriving and not being picked up.
+      # Attic is the whole point of the build pipeline: if it is unreachable,
+      # every host silently falls back to cache.nixos.org and builds locally.
+      # That is exactly how attic-testing stayed dead without any alert.
+      - alert: AtticCacheDown
+        expr: |
+          kube_deployment_status_replicas_available{namespace="nix-cache",deployment="attic"} < 1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Attic binary cache has no available replica.
+          description: >-
+            Hosts will fall back to cache.nixos.org and rebuild from source.
+            Builds keep succeeding, so nothing else will surface this.
+      - alert: NixRemoteBuilderDown
+        expr: |
+          kube_deployment_status_replicas_available{namespace="nix-cache",deployment="nix-remote-builder"} < 1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: nix-remote-builder has no available replica.
+          description: >-
+            Workstations and servers configured to offload builds will fall
+            back to building locally, which starves small nodes.
