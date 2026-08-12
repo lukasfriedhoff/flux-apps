@@ -180,6 +180,21 @@ spec:
               mkdir -p /state/root /state/root/bin /state/hydra /state/hydra/www /state/hydra/queue-runner /state/hydra/build-logs /state/hydra/runcommand-logs /nix/var/nix/gcroots/hydra /etc/nix /var/lib
               ln -sfn /state/hydra /var/lib/hydra
               chown -R hydra:hydra /state/hydra /nix/var/nix/gcroots/hydra
+
+              # fsGroup stamps the setgid bit on the root of the /nix volume, and
+              # nix's default build-dir (/nix/var/nix/builds) inherits it, as does
+              # every build directory created underneath. Nix's seccomp filter
+              # (filter-syscalls, on by default) denies chmod with S_ISGID so that
+              # setgid binaries can never be created in the store — so any build
+              # that preserves directory modes fails. The first one to hit it is
+              # gcc's install-headers-tar:
+              #   tar: .: Cannot change mode to rwxr-sr-x: Operation not permitted
+              # gcc is a bootstrap package, so that single failure cascaded into a
+              # dependency failure for every other job and pinned the build success
+              # rate at 0%. Clearing the bit is the fix; turning off filter-syscalls
+              # would also stop the error but would give up a real protection.
+              mkdir -p /nix/var/nix/builds
+              chmod g-s /nix /nix/var/nix/builds
               # Deploy key for the private nix-secrets flake input. Written to
               # state rather than mounted from the secret so the mode can be
               # 0400: ssh refuses a key it considers group- or world-readable,
