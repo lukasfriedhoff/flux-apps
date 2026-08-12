@@ -4,6 +4,13 @@ metadata:
   name: ${attic_service_name}-storage
   namespace: ${attic_namespace}
   annotations:
+    # This claim was rebound to a retained PV after a forced replace, so its
+    # spec now carries a volumeName the manifest does not declare. A PVC spec is
+    # immutable once bound, so Flux's server-side apply cannot reconcile that
+    # difference and fails with "spec is immutable after creation". Ignoring
+    # SSA here leaves the bound claim alone; the same treatment the media PVCs
+    # already get.
+    kustomize.toolkit.fluxcd.io/ssa: ignore
     # longhorn-replica-policy resets every volume's replica count from its
     # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
     # declared here. storageClassName cannot be used for this: it is immutable
