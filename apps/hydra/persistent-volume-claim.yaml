@@ -9,7 +9,10 @@ metadata:
     # declared here. storageClassName cannot be used for this: it is immutable
     # on a bound PVC, and changing it on a StatefulSet's volumeClaimTemplates
     # is rejected outright.
-    longhorn.h4xx.io/replica-count: "${longhorn_pvc_replica_count:=2}"
+    # Keep this a literal quoted string: a ${var} here loses its quotes during
+    # kustomize build and substitutes back as an int, which the API server
+    # rejects with "expected string, got 2".
+    longhorn.h4xx.io/replica-count: "2"
 spec:
   accessModes:
     - ReadWriteOnce
