@@ -76,6 +76,8 @@ spec:
                 experimental-features = nix-command flakes
                 sandbox = false
                 require-sigs = false
+                # nixpkgs' minimal-bootstrap derivations are i686-linux.
+                extra-platforms = i686-linux
                 max-jobs = ${hydra_nix_max_jobs}
                 cores = ${hydra_nix_cores}
                 trusted-users = root
@@ -305,6 +307,8 @@ spec:
               experimental-features = nix-command flakes
               sandbox = false
               require-sigs = false
+              # nixpkgs' minimal-bootstrap derivations are i686-linux.
+              extra-platforms = i686-linux
               max-jobs = ${hydra_nix_max_jobs}
               cores = ${hydra_nix_cores}
               trusted-users = root
@@ -328,9 +332,18 @@ spec:
               # daemon. Fields: uri system sshKey maxJobs speedFactor
               # supportedFeatures mandatoryFeatures publicHostKey.
               # kvm/nixos-test are deliberately absent — this is a container.
+              #
+              # i686-linux is required, not optional. nixpkgs' minimal-bootstrap
+              # chain (stage0-posix, mes and friends) is i686-linux, so with only
+              # x86_64-linux advertised the queue runner logs
+              #   aborting unsupported build step '...-mes.drv' (type 'i686-linux')
+              # and every nixosConfigurations job ends as bsUnsupported (status 9).
+              # The kernel has 32-bit emulation (/proc/sys/abi/vsyscall32), and
+              # builders-use-substitutes means most of these come from the binary
+              # cache rather than being built here at all.
               mkdir -p /etc/nix
               cat > /etc/nix/machines <<EOF_MACHINES
-              localhost x86_64-linux - ${hydra_nix_max_jobs} 1 big-parallel - -
+              localhost x86_64-linux,i686-linux - ${hydra_nix_max_jobs} 1 big-parallel - -
               EOF_MACHINES
 
               if ! command -v hydra-init >/dev/null 2>&1; then
