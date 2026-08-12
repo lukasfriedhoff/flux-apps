@@ -17,6 +17,15 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: hydra
+      annotations:
+        # hydra-queue-runner has always exposed these on 9198; nothing was
+        # scraping them, which is why a 0% build success rate went unnoticed
+        # for weeks. queue_steps_created_total is the signal that matters:
+        # it stays flat when the runner cannot dispatch, even though the
+        # process is up and the queue is full.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9198"
+        prometheus.io/path: /metrics
     spec:
       securityContext:
         fsGroup: 1000
