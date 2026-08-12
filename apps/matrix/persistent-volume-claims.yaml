@@ -3,6 +3,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: matrix-synapse-data
   namespace: matrix
+  annotations:
+    # longhorn-replica-policy resets every volume's replica count from its
+    # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
+    # declared here. storageClassName cannot be used for this: it is immutable
+    # on a bound PVC, and changing it on a StatefulSet's volumeClaimTemplates
+    # is rejected outright.
+    longhorn.h4xx.io/replica-count: "${longhorn_pvc_replica_count:=2}"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -16,6 +23,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: matrix-synapse-media
   namespace: matrix
+  annotations:
+    # longhorn-replica-policy resets every volume's replica count from its
+    # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
+    # declared here. storageClassName cannot be used for this: it is immutable
+    # on a bound PVC, and changing it on a StatefulSet's volumeClaimTemplates
+    # is rejected outright.
+    longhorn.h4xx.io/replica-count: "${longhorn_pvc_replica_count:=2}"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -29,6 +43,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: matrix-whatsapp-data
   namespace: matrix
+  annotations:
+    # longhorn-replica-policy resets every volume's replica count from its
+    # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
+    # declared here. storageClassName cannot be used for this: it is immutable
+    # on a bound PVC, and changing it on a StatefulSet's volumeClaimTemplates
+    # is rejected outright.
+    longhorn.h4xx.io/replica-count: "${longhorn_pvc_replica_count:=2}"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -42,6 +63,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: matrix-telegram-data
   namespace: matrix
+  annotations:
+    # longhorn-replica-policy resets every volume's replica count from its
+    # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
+    # declared here. storageClassName cannot be used for this: it is immutable
+    # on a bound PVC, and changing it on a StatefulSet's volumeClaimTemplates
+    # is rejected outright.
+    longhorn.h4xx.io/replica-count: "${longhorn_pvc_replica_count:=2}"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -55,6 +83,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: matrix-signal-data
   namespace: matrix
+  annotations:
+    # longhorn-replica-policy resets every volume's replica count from its
+    # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
+    # declared here. storageClassName cannot be used for this: it is immutable
+    # on a bound PVC, and changing it on a StatefulSet's volumeClaimTemplates
+    # is rejected outright.
+    longhorn.h4xx.io/replica-count: "${longhorn_pvc_replica_count:=2}"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -68,6 +103,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: matrix-signald-data
   namespace: matrix
+  annotations:
+    # longhorn-replica-policy resets every volume's replica count from its
+    # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
+    # declared here. storageClassName cannot be used for this: it is immutable
+    # on a bound PVC, and changing it on a StatefulSet's volumeClaimTemplates
+    # is rejected outright.
+    longhorn.h4xx.io/replica-count: "${longhorn_pvc_replica_count:=2}"
 spec:
   accessModes:
     - ReadWriteOnce
