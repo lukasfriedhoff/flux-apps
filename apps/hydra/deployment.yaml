@@ -285,6 +285,16 @@ spec:
               EOF_HOOK
               chmod +x /state/root/bin/hydra-attic-upload-hook
 
+              # queue_runner_metrics_address below overrides hydra-queue-runner's
+              # default of 127.0.0.1:9198, which no collector outside the pod can
+              # reach: Alloy discovered the target from the scrape annotations and
+              # polled it on schedule, but every scrape came back empty and Mimir
+              # holds no hydraqueuerunner series at all, so the nix-build-pipeline
+              # dashboard and its alerts were blind. The endpoint answers HTTP 200
+              # from inside the pod, which is what made it look healthy.
+              #
+              # Keep prose out of the heredoc. Hydra splits each config line on the
+              # first "=", so a comment containing one parses as a bogus key.
               cat > /state/hydra/hydra.conf <<EOF_CONFIG
               store_uri = auto
               # The queue runner builds every derivation from scratch unless
@@ -300,13 +310,6 @@ spec:
               hydra_url = $${HYDRA_PUBLIC_URL}
               notification_sender = ${hydra_notification_sender}
               gc_roots_dir = /nix/var/nix/gcroots/hydra
-              # hydra-queue-runner binds its Prometheus exporter to
-              # 127.0.0.1:9198 by default, which no collector outside the pod
-              # can reach. The scrape annotations below are then satisfied by
-              # discovery but every scrape fails: up=0, scrape_samples_scraped=0
-              # and not one hydraqueuerunner_* series, while the endpoint answers
-              # HTTP 200 from inside the pod. Bind to all interfaces so Alloy can
-              # actually collect it.
               queue_runner_metrics_address = 0.0.0.0:9198
               EOF_CONFIG
               ln -sf /state/hydra/hydra.conf /etc/hydra.conf
