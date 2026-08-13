@@ -90,14 +90,14 @@
     {
       "type": "stat",
       "title": "Attic cache",
-      "description": "Available replicas. If Attic is down every host silently falls back to cache.nixos.org and rebuilds from source — builds still succeed, so nothing else surfaces it.",
+      "description": "Blackbox HTTP probe, not replica count. Attic exports no metrics of its own, and an available replica only proves a pod exists — an Attic accepting no connections still counts as one. If Attic is unreachable every host silently falls back to cache.nixos.org and rebuilds from source, and builds still succeed, so nothing else surfaces it.",
       "datasource": "mimir",
       "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
       "targets": [
         {
-          "expr": "kube_deployment_status_replicas_available{namespace=\"nix-cache\",deployment=\"attic\"}",
+          "expr": "probe_success{service=\"attic\"}",
           "refId": "A",
-          "legendFormat": "available"
+          "legendFormat": "reachable"
         }
       ],
       "options": {
@@ -110,6 +110,10 @@
         "defaults": {
           "unit": "short",
           "decimals": 0,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green", "index": 1 } } }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -124,14 +128,14 @@
     {
       "type": "stat",
       "title": "Remote builder",
-      "description": "Available replicas of nix-remote-builder. When absent, workstations and servers fall back to building locally, which starves the small nodes.",
+      "description": "Blackbox TCP probe against the builder's ssh port. nix-remote-builder is a bare sshd with no metrics to scrape, and a running pod says nothing about whether sshd accepts connections. When it is unreachable, workstations and servers fall back to building locally, which starves the small nodes.",
       "datasource": "mimir",
       "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
       "targets": [
         {
-          "expr": "kube_deployment_status_replicas_available{namespace=\"nix-cache\",deployment=\"nix-remote-builder\"}",
+          "expr": "probe_success{service=\"nix-remote-builder\"}",
           "refId": "A",
-          "legendFormat": "available"
+          "legendFormat": "reachable"
         }
       ],
       "options": {
@@ -144,6 +148,10 @@
         "defaults": {
           "unit": "short",
           "decimals": 0,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green", "index": 1 } } }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -271,6 +279,80 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "pointSize": 8
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Reachability",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Probe success",
+      "description": "Blackbox probes for the three pieces of the pipeline. Attic and the remote builder publish no metrics at all, so this is the only direct evidence either one is actually answering rather than merely scheduled.",
+      "datasource": "mimir",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "targets": [
+        {
+          "expr": "probe_success{component=\"nix-pipeline\"}",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1,
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "pointSize": 8
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Probe latency",
+      "description": "How long each endpoint takes to answer. A climbing latency here is the early warning that precedes an outright probe failure — usually storage pressure or a saturated node.",
+      "datasource": "mimir",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+      "targets": [
+        {
+          "expr": "probe_duration_seconds{component=\"nix-pipeline\"}",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
