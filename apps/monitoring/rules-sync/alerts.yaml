@@ -1076,25 +1076,56 @@ groups:
       # Attic is the whole point of the build pipeline: if it is unreachable,
       # every host silently falls back to cache.nixos.org and builds locally.
       # That is exactly how attic-testing stayed dead without any alert.
+      #
+      # These fire on a blackbox probe rather than a replica count. Attic exports
+      # no metrics of its own, and an available replica only proves a pod object
+      # exists — an Attic accepting no connections still counts as one. The probe
+      # answers the question that actually matters: does it respond?
       - alert: AtticCacheDown
         expr: |
-          kube_deployment_status_replicas_available{namespace="nix-cache",deployment="attic"} < 1
+          probe_success{service="attic"} == 0
         for: 10m
         labels:
           severity: critical
         annotations:
-          summary: Attic binary cache has no available replica.
+          summary: Attic binary cache is not responding.
           description: >-
-            Hosts will fall back to cache.nixos.org and rebuild from source.
-            Builds keep succeeding, so nothing else will surface this.
+            The HTTP probe against attic has failed for 10 minutes. Hosts will
+            fall back to cache.nixos.org and rebuild from source. Builds keep
+            succeeding, so nothing else will surface this.
       - alert: NixRemoteBuilderDown
         expr: |
-          kube_deployment_status_replicas_available{namespace="nix-cache",deployment="nix-remote-builder"} < 1
+          probe_success{service="nix-remote-builder"} == 0
         for: 15m
         labels:
           severity: warning
         annotations:
-          summary: nix-remote-builder has no available replica.
+          summary: nix-remote-builder is not accepting ssh connections.
           description: >-
-            Workstations and servers configured to offload builds will fall
-            back to building locally, which starves small nodes.
+            The TCP probe against the builder's ssh port has failed for 15
+            minutes. Workstations and servers configured to offload builds will
+            fall back to building locally, which starves small nodes.
+      # The queue runner's exporter and the web server are separate listeners, so
+      # the UI can be unreachable while HydraQueueRunnerDown stays quiet.
+      - alert: HydraWebUnreachable
+        expr: |
+          probe_success{service="hydra"} == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: The Hydra web interface is not responding.
+          description: >-
+            The HTTP probe against hydra has failed for 15 minutes. Builds may
+            still be running; this is the UI and REST API being unavailable.
+      - alert: NixPipelineProbeSlow
+        expr: |
+          probe_duration_seconds{component="nix-pipeline"} > 5
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: A nix pipeline endpoint is responding slowly.
+          description: >-
+            {{ $labels.service }} has taken over 5s to answer its probe for 30
+            minutes. Usually storage pressure or a saturated node.
