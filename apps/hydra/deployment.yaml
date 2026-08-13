@@ -163,6 +163,18 @@ spec:
               export XDG_CONFIG_HOME=/state/root/.config
               export HYDRA_HOME=/state/hydra
               export HYDRA_DATA=/state/hydra
+              # hydra-queue-runner is C++ and reads hydra.conf ONLY from
+              # $HYDRA_CONFIG. It has no /etc/hydra.conf fallback and does not
+              # derive the path from HYDRA_HOME or HYDRA_DATA, so without this
+              # every hydra.conf setting was silently ignored by the queue runner
+              # — use-substitutes, max_output_size, gc_roots_dir and the metrics
+              # address alike. Verified by running the same binary against the
+              # same file with and without the variable:
+              #   unset  -> Starting the Prometheus exporter on 127.0.0.1:9198
+              #   export -> Starting the Prometheus exporter on 0.0.0.0:9198
+              # The Perl components find /etc/hydra.conf on their own, which is
+              # why the web UI always looked correctly configured.
+              export HYDRA_CONFIG=/state/hydra/hydra.conf
               export HYDRA_DBI="dbi:Pg:dbname=$${POSTGRES_DB};host=$${POSTGRES_HOST};port=$${POSTGRES_PORT};user=$${POSTGRES_USER};password=$${POSTGRES_PASSWORD}"
               export HYDRA_PORT="${hydra_service_port}"
               export HYDRA_JOBSET_CHECK_INTERVAL="${hydra_jobset_check_interval}"
