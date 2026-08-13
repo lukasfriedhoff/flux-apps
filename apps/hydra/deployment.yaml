@@ -300,6 +300,14 @@ spec:
               hydra_url = $${HYDRA_PUBLIC_URL}
               notification_sender = ${hydra_notification_sender}
               gc_roots_dir = /nix/var/nix/gcroots/hydra
+              # hydra-queue-runner binds its Prometheus exporter to
+              # 127.0.0.1:9198 by default, which no collector outside the pod
+              # can reach. The scrape annotations below are then satisfied by
+              # discovery but every scrape fails: up=0, scrape_samples_scraped=0
+              # and not one hydraqueuerunner_* series, while the endpoint answers
+              # HTTP 200 from inside the pod. Bind to all interfaces so Alloy can
+              # actually collect it.
+              queue_runner_metrics_address = 0.0.0.0:9198
               EOF_CONFIG
               ln -sf /state/hydra/hydra.conf /etc/hydra.conf
 
