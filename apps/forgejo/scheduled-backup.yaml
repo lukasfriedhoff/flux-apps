@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: ${forgejo_postgres_cluster_name}
+  namespace: ${forgejo_namespace}
+spec:
+  schedule: "${forgejo_postgres_backup_cron:=0 0 2 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: ${forgejo_postgres_cluster_name}

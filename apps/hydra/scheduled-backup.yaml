@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: ${hydra_postgres_cluster_name}
+  namespace: ${hydra_namespace}
+spec:
+  schedule: "${hydra_postgres_backup_cron:=0 0 2 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: ${hydra_postgres_cluster_name}
