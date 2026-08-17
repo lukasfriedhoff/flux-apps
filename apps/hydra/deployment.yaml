@@ -27,9 +27,11 @@ spec:
         prometheus.io/port: "9198"
         prometheus.io/path: /metrics
     spec:
-      securityContext:
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
+      # No fsGroup: kubelet's group-ownership pass stamps setgid on the /nix
+      # volume root, and any build that recreates the /nix path component
+      # with cp --parents (the initrd builder does) then tries to preserve
+      # that mode — which nix's seccomp filter forbids, dep-failing every
+      # host closure. The root init script chowns what hydra needs instead.
       initContainers:
         - name: seed-nix-store
           image: nixos/nix:${hydra_nix_image_tag}
@@ -208,13 +210,13 @@ spec:
               # rate at 0%. Clearing the bit is the fix; turning off filter-syscalls
               # would also stop the error but would give up a real protection.
               #
-              # Clear it ONLY on the build dir, never on /nix itself: kubelet's
-              # fsGroupChangePolicy=OnRootMismatch checks the volume root for
-              # gid+setgid, and stripping the root bit makes every pod restart
-              # re-chown the entire seeded store (20+ min stalls). Build dirs
-              # created under a setgid-free builds dir do not inherit the bit.
+              # With fsGroup removed from the pod spec, kubelet no longer
+              # stamps setgid anywhere; clear any bit left from earlier
+              # generations (including the /nix root — initrd builds copy
+              # the /nix path component with --parents and must be able to
+              # reproduce its mode without S_ISGID).
               mkdir -p /nix/var/nix/builds
-              chmod g-s /nix/var/nix/builds
+              chmod g-s /nix /nix/var/nix/builds
               # Deploy key for the private nix-secrets flake input. Written to
               # state rather than mounted from the secret so the mode can be
               # 0400: ssh refuses a key it considers group- or world-readable,
