@@ -4,7 +4,7 @@ metadata:
   name: nextcloud-postgres
   namespace: nextcloud
 spec:
-  instances: 1
+  instances: ${nextcloud_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
     annotations:
