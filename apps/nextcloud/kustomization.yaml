@@ -6,6 +6,7 @@ resources:
   - pvc-app.yaml
   - pvc-data.yaml
   - pvc-photos.yaml
+  - pdb.yaml
   - postgres-repair-acl-rbac.yaml
   - postgres-repair-acl-job.yaml
   - migrate-app-pvc-job.yaml

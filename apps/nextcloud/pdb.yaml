@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  # 0 disables the budget (single-replica clusters must not block drains);
+  # clusters running multiple app replicas set this to 1 in their overlay.
+  minAvailable: ${nextcloud_pdb_min_available:=0}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud
+      app.kubernetes.io/component: app

@@ -27,6 +27,18 @@ spec:
       cputhreshold: ${nextcloud_hpa_cpu_threshold}
       minPods: ${nextcloud_hpa_min_pods}
       maxPods: ${nextcloud_hpa_max_pods}
+    # Soft anti-affinity: spread app replicas across nodes when possible,
+    # without blocking scheduling on single-node clusters.
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nextcloud
+                  app.kubernetes.io/component: app
+              topologyKey: kubernetes.io/hostname
     livenessProbe:
       enabled: true
       initialDelaySeconds: 30

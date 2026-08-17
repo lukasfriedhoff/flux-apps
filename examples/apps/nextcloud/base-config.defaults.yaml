@@ -19,6 +19,11 @@ data:
   nextcloud_hpa_cpu_threshold: "60"
   nextcloud_hpa_max_pods: "3"
   nextcloud_hpa_min_pods: "1"
+  # PodDisruptionBudget for the app pods; 0 disables (never block drains on
+  # single-replica clusters), set to 1 where multiple replicas run.
+  nextcloud_pdb_min_available: "0"
+  # CNPG cluster size; 2 enables automated failover where HA is wanted.
+  nextcloud_postgres_instances: "1"
   nextcloud_resources_limits_memory: "2Gi"
   nextcloud_resources_requests_cpu: "200m"
   nextcloud_resources_requests_memory: "256Mi"
