@@ -41,7 +41,7 @@ spec:
               echo "game present, skipping Steam (set icarus_update_on_start to force)"
           env:
             - name: ICARUS_UPDATE_ON_START
-              value: "${icarus_update_on_start:=false}"
+              value: ${quote}${icarus_update_on_start:=false}${quote}
             - name: BRANCH
               value: ${icarus_branch:=public}
           volumeMounts:
@@ -66,7 +66,7 @@ spec:
             - name: SHUTDOWN_EMPTY_FOR
               value: ${quote}${icarus_shutdown_empty_for:=-1}${quote}
             - name: RESUME_PROSPECT
-              value: "${icarus_resume_prospect:=True}"
+              value: ${quote}${icarus_resume_prospect:=True}${quote}
             - name: JOIN_PASSWORD
               valueFrom:
                 secretKeyRef:
