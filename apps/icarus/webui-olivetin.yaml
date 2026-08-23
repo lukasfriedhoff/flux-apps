@@ -75,7 +75,7 @@ spec:
               mountPath: /tools
       containers:
         - name: olivetin
-          image: ${icarus_olivetin_image:=ghcr.io/olivetin/olivetin:2025.11.13}
+          image: ${icarus_olivetin_image:=ghcr.io/olivetin/olivetin:2024.05.27}
           ports:
             - containerPort: 1337
           env:
