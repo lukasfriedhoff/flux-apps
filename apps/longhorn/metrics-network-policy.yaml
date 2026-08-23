@@ -1,0 +1,23 @@
+# Longhorn 1.12 ships NetworkPolicies restricting the manager to its own
+# components, which cut off the monitoring scraper on 2026-08-14 and left
+# HomelabServiceDown firing while storage itself was healthy. Policies are
+# additive, so this grants just the metrics path back.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: longhorn-manager-metrics-scrape
+  namespace: longhorn-system
+spec:
+  podSelector:
+    matchLabels:
+      app: longhorn-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9500

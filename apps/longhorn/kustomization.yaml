@@ -6,3 +6,4 @@ resources:
   - helm-release.yaml
   - backup-target-bootstrap-cronjob.yaml
   - storageclasses.yaml
+  - metrics-network-policy.yaml
