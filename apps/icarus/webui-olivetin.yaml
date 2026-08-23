@@ -62,8 +62,8 @@ spec:
         # The OliveTin image ships neither kubectl nor restic; stage both
         # into a shared tools dir the actions can use.
         - name: stage-kubectl
-          image: ${icarus_kubectl_image:=registry.k8s.io/kubectl:v1.35.0}
-          command: ["cp", "/bin/kubectl", "/tools/kubectl"]
+          image: ${icarus_kubectl_image:=docker.io/alpine/k8s:1.34.1}
+          command: ["cp", "/usr/bin/kubectl", "/tools/kubectl"]
           volumeMounts:
             - name: tools
               mountPath: /tools
