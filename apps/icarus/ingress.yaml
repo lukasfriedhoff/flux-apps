@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: icarus-webui
+  namespace: ${icarus_namespace}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: icarus${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: icarus-olivetin
+                port:
+                  number: 80
+    - host: icarus-files${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: icarus-filebrowser
+                port:
+                  number: 80

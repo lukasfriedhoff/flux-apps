@@ -1,0 +1,14 @@
+# The ~10-15 GiB Steam install. Rebuildable at any time by the update
+# initContainer, so a single replica on fast storage is enough.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: icarus-game
+  namespace: ${icarus_namespace}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: ${icarus_game_size:=40Gi}
+  storageClassName: ${icarus_game_storage_class_name:=longhorn-ssd-rwo-1r}

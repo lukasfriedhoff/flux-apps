@@ -1,0 +1,122 @@
+# Operations UI: one-click backup, snapshot listing and guarded restore.
+# Exposed only behind the authelia forwardauth middleware (see ingress).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: icarus-olivetin-config
+  namespace: ${icarus_namespace}
+data:
+  config.yaml: |
+    listenAddressSingleHTTPFrontend: 0.0.0.0:1337
+    logLevel: INFO
+    actions:
+      - title: Backup now
+        icon: box
+        shell: |
+          kubectl -n ${icarus_namespace} create job --from=cronjob/icarus-backup icarus-backup-manual-$(date +%s)
+        timeout: 30
+      - title: List snapshots
+        icon: search
+        shell: restic snapshots --compact
+        timeout: 120
+      - title: Restart server
+        icon: restart
+        shell: |
+          kubectl -n ${icarus_namespace} rollout restart deployment/icarus
+        timeout: 30
+      - title: Restore snapshot (STOPS the server)
+        icon: warning
+        timeout: 900
+        arguments:
+          - name: snapshot
+            title: restic snapshot ID (see List snapshots)
+            type: ascii_identifier
+        shell: |
+          set -e
+          kubectl -n ${icarus_namespace} scale deployment/icarus --replicas=0
+          kubectl -n ${icarus_namespace} wait --for=delete pod -l app.kubernetes.io/name=icarus --timeout=180s || true
+          restic restore {{ snapshot }} --target /restore-data --delete
+          kubectl -n ${icarus_namespace} scale deployment/icarus --replicas=${icarus_replicas:=1}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icarus-olivetin
+  namespace: ${icarus_namespace}
+  labels:
+    app.kubernetes.io/name: icarus-olivetin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: icarus-olivetin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: icarus-olivetin
+    spec:
+      serviceAccountName: icarus-olivetin
+      nodeSelector:
+        kubernetes.io/hostname: ${icarus_node}
+      initContainers:
+        # The OliveTin image ships neither kubectl nor restic; stage both
+        # into a shared tools dir the actions can use.
+        - name: stage-kubectl
+          image: ${icarus_kubectl_image:=registry.k8s.io/kubectl:v1.35.0}
+          command: ["cp", "/bin/kubectl", "/tools/kubectl"]
+          volumeMounts:
+            - name: tools
+              mountPath: /tools
+        - name: stage-restic
+          image: restic/restic:0.18.1
+          command: ["cp", "/usr/bin/restic", "/tools/restic"]
+          volumeMounts:
+            - name: tools
+              mountPath: /tools
+      containers:
+        - name: olivetin
+          image: ${icarus_olivetin_image:=ghcr.io/olivetin/olivetin:2025.11.13}
+          ports:
+            - containerPort: 1337
+          env:
+            - name: PATH
+              value: /tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            - name: RESTIC_CACHE_DIR
+              value: /tmp/restic-cache
+          envFrom:
+            - secretRef:
+                name: ${icarus_backup_secret_name:=icarus-backup-credentials}
+          volumeMounts:
+            - name: tools
+              mountPath: /tools
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /restore-data
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: tools
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: icarus-olivetin-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: icarus-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: icarus-olivetin
+  namespace: ${icarus_namespace}
+spec:
+  selector:
+    app.kubernetes.io/name: icarus-olivetin
+  ports:
+    - port: 80
+      targetPort: 1337

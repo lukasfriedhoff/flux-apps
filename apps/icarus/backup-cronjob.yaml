@@ -1,0 +1,45 @@
+# Nightly restic backup of the data volume (saves/prospects/config) to S3.
+# restic gives encrypted, deduplicated snapshots with retention and a
+# first-class restore path — the web UI drives both.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: icarus-backup
+  namespace: ${icarus_namespace}
+spec:
+  schedule: "${icarus_backup_cron:=45 3 * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: icarus-backup
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: ${icarus_node}
+          containers:
+            - name: restic
+              image: restic/restic:0.18.1
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  restic snapshots >/dev/null 2>&1 || restic init
+                  restic backup /data --tag scheduled
+                  restic forget --keep-daily ${icarus_backup_keep_daily:=14} --keep-weekly ${icarus_backup_keep_weekly:=8} --prune
+              envFrom:
+                - secretRef:
+                    name: ${icarus_backup_secret_name:=icarus-backup-credentials}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                  readOnly: true
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: icarus-data

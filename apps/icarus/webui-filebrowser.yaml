@@ -1,0 +1,59 @@
+# Config-file editing UI over the data volume (server settings, prospects).
+# Auth is delegated entirely to authelia at the ingress; filebrowser itself
+# runs with authentication disabled and must never be exposed without the
+# forwardauth middleware.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icarus-filebrowser
+  namespace: ${icarus_namespace}
+  labels:
+    app.kubernetes.io/name: icarus-filebrowser
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: icarus-filebrowser
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: icarus-filebrowser
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${icarus_node}
+      containers:
+        - name: filebrowser
+          image: ${icarus_filebrowser_image:=docker.io/filebrowser/filebrowser:v2.44.0}
+          args:
+            - --noauth
+            - --root=/data
+            - --database=/tmp/filebrowser.db
+            - --address=0.0.0.0
+            - --port=8080
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: icarus-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: icarus-filebrowser
+  namespace: ${icarus_namespace}
+spec:
+  selector:
+    app.kubernetes.io/name: icarus-filebrowser
+  ports:
+    - port: 80
+      targetPort: 8080
