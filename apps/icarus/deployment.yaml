@@ -35,7 +35,7 @@ spec:
             - /bin/bash
             - -ec
             - |
-              if [ -z "$(ls -A /game 2>/dev/null)" ] || [ "${ICARUS_UPDATE_ON_START}" = "true" ]; then
+              if [ ! -f "/game/icarus/Icarus/Binaries/Win64/IcarusServer-Win64-Shipping.exe" ] || [ "${ICARUS_UPDATE_ON_START}" = "true" ]; then
                 exec /usr/local/bin/update-icarus.sh
               fi
               echo "game present, skipping Steam (set icarus_update_on_start to force)"
