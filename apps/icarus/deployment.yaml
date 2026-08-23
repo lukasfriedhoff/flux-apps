@@ -1,0 +1,117 @@
+# Icarus dedicated server (Windows build under wine). The image is built
+# from the icarus-server repo and imported node-locally (no registry pull
+# path can move multi-GB wine layers through the tunnel), which is why the
+# deployment pins to ${icarus_node} and uses pullPolicy Never.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icarus
+  namespace: ${icarus_namespace}
+  labels:
+    app.kubernetes.io/name: icarus
+spec:
+  replicas: ${icarus_replicas:=1}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: icarus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: icarus
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${icarus_node}
+      initContainers:
+        # Mirrors the stack's core design rule: Steam stays OFF the server's
+        # startup path. The updater only runs when the game is missing or an
+        # update is explicitly requested — a Steam outage must never block a
+        # plain server restart (that failure took the old stack down).
+        - name: update
+          image: ${icarus_image}
+          imagePullPolicy: Never
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              if [ -z "$(ls -A /game 2>/dev/null)" ] || [ "${ICARUS_UPDATE_ON_START}" = "true" ]; then
+                exec /usr/local/bin/update-icarus.sh
+              fi
+              echo "game present, skipping Steam (set icarus_update_on_start to force)"
+          env:
+            - name: ICARUS_UPDATE_ON_START
+              value: "${icarus_update_on_start:=false}"
+            - name: BRANCH
+              value: ${icarus_branch:=public}
+          volumeMounts:
+            - name: game
+              mountPath: /game
+      containers:
+        - name: icarus
+          image: ${icarus_image}
+          imagePullPolicy: Never
+          command: ["/bin/bash", "/usr/local/bin/runicarus.sh"]
+          env:
+            - name: SERVERNAME
+              value: "${icarus_server_name}"
+            - name: PORT
+              value: "${icarus_game_port:=17777}"
+            - name: QUERYPORT
+              value: "${icarus_query_port:=27015}"
+            - name: MAX_PLAYERS
+              value: "${icarus_max_players:=8}"
+            - name: SHUTDOWN_NOT_JOINED_FOR
+              value: "${icarus_shutdown_not_joined_for:=-1}"
+            - name: SHUTDOWN_EMPTY_FOR
+              value: "${icarus_shutdown_empty_for:=-1}"
+            - name: RESUME_PROSPECT
+              value: "${icarus_resume_prospect:=True}"
+            - name: JOIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${icarus_credentials_secret_name:=icarus-credentials}
+                  key: join_password
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${icarus_credentials_secret_name:=icarus-credentials}
+                  key: admin_password
+          ports:
+            # In-container port must match the published port or Steam
+            # advertises the wrong endpoint; hostPort keeps them identical.
+            - containerPort: ${icarus_game_port:=17777}
+              hostPort: ${icarus_game_port:=17777}
+              protocol: UDP
+            - containerPort: ${icarus_query_port:=27015}
+              hostPort: ${icarus_query_port:=27015}
+              protocol: UDP
+          startupProbe:
+            exec:
+              command: ["/usr/local/bin/healthcheck.sh"]
+            periodSeconds: 15
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command: ["/usr/local/bin/healthcheck.sh"]
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: ${icarus_requests_cpu:=1}
+              memory: ${icarus_requests_memory:=6Gi}
+            limits:
+              memory: ${icarus_limits_memory:=12Gi}
+          volumeMounts:
+            - name: game
+              mountPath: /game
+            - name: data
+              mountPath: /home/steam/.wine/drive_c/icarus
+      volumes:
+        - name: game
+          persistentVolumeClaim:
+            claimName: icarus-game
+        - name: data
+          persistentVolumeClaim:
+            claimName: icarus-data

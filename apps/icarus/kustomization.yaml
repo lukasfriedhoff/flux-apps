@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - pvc-game.yaml
+  - pvc-data.yaml
+  - deployment.yaml
+  - backup-cronjob.yaml
+  - webui-rbac.yaml
+  - webui-olivetin.yaml
+  - webui-filebrowser.yaml
+  - ingress.yaml
