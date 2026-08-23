@@ -56,15 +56,15 @@ spec:
             - name: SERVERNAME
               value: "${icarus_server_name}"
             - name: PORT
-              value: "${icarus_game_port:=17777}"
+              value: ${quote}${icarus_game_port:=17777}${quote}
             - name: QUERYPORT
-              value: "${icarus_query_port:=27015}"
+              value: ${quote}${icarus_query_port:=27015}${quote}
             - name: MAX_PLAYERS
-              value: "${icarus_max_players:=8}"
+              value: ${quote}${icarus_max_players:=8}${quote}
             - name: SHUTDOWN_NOT_JOINED_FOR
-              value: "${icarus_shutdown_not_joined_for:=-1}"
+              value: ${quote}${icarus_shutdown_not_joined_for:=-1}${quote}
             - name: SHUTDOWN_EMPTY_FOR
-              value: "${icarus_shutdown_empty_for:=-1}"
+              value: ${quote}${icarus_shutdown_empty_for:=-1}${quote}
             - name: RESUME_PROSPECT
               value: "${icarus_resume_prospect:=True}"
             - name: JOIN_PASSWORD
