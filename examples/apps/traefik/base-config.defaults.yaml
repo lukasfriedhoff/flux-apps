@@ -8,3 +8,6 @@ data:
   # on the node IPs via k3s servicelb for a direct LAN entry point
   # (pair with split-horizon DNS on the LAN resolver).
   traefik_service_type: "ClusterIP"
+  # Ingress replicas; hard anti-affinity spreads them across nodes, so
+  # single-node clusters must set this to "1".
+  traefik_replicas: "2"
