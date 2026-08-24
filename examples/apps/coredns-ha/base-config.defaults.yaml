@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Floor/ceiling for the k3s-bundled coredns deployment in kube-system.
+  # Single-node clusters must set coredns_min_replicas to "1".
+  coredns_min_replicas: "2"
+  coredns_max_replicas: "3"

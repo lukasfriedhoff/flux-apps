@@ -1,0 +1,25 @@
+---
+# coredns is deployed by k3s itself (kube-system), not by flux, and every k3s
+# restart re-applies its manifest with replicas: 1. This HPA continuously
+# enforces a floor instead of fighting the k3s deploy controller directly.
+# 2026-08-24: the single coredns replica died with srv2 and every in-cluster
+# DNS lookup (authelia forwardauth, synapse, ...) hung cluster-wide.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: coredns
+  minReplicas: ${coredns_min_replicas:=2}
+  maxReplicas: ${coredns_max_replicas:=3}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80

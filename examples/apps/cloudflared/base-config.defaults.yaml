@@ -7,3 +7,6 @@ data:
   cloudflare_tunnel_id: "03ed4283-aa2e-4781-8236-fd69a38e130a"
   cloudflare_tunnel_secret_name: "cloudflare-tunnel-credentials"
   delegating_domain: "h4xx.io"
+  # Tunnel connectors; hard anti-affinity spreads them across nodes, so
+  # single-node clusters must set this to "1".
+  cloudflared_replicas: "2"

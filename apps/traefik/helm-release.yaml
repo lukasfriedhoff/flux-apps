@@ -24,6 +24,7 @@ spec:
       # Nextcloud files) are not cut off by Traefik's default 60s limit.
       - "--entrypoints.websecure.transport.respondingTimeouts.readTimeout=0"
     deployment:
+      replicas: ${traefik_replicas:=2}
       podAnnotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
@@ -59,6 +60,18 @@ spec:
             prometheus.io/scrape: "true"
             prometheus.io/port: "9100"
             prometheus.io/path: "/metrics"
+    # Spread across nodes; single-node clusters must set traefik_replicas
+    # to 1. Certificates come from cert-manager, so replicas share no state.
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: traefik
+            topologyKey: kubernetes.io/hostname
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
     resources:
       requests:
         cpu: 100m

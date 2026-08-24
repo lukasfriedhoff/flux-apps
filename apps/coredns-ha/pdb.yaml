@@ -1,0 +1,13 @@
+---
+# maxUnavailable 1 keeps at least one resolver alive through drains when two
+# replicas run, while still allowing eviction on single-replica clusters.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      k8s-app: kube-dns
