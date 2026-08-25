@@ -905,6 +905,9 @@ spec:
           configure_external_photos_link
           configure_external_memes_link
           enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
+          # Nextcloud Office; store is disabled, so the app is a manual tarball
+          # in custom_apps (v11.1.0 for NC 34, replaced 10.1.2 on 2026-08-25).
+          enable_custom_app_if_present richdocuments /var/www/html/custom_apps/richdocuments/appinfo/info.xml || true
           enable_custom_app_if_present contacts /var/www/html/custom_apps/contacts/appinfo/info.xml || true
           enable_custom_app_if_present calendar /var/www/html/custom_apps/calendar/appinfo/info.xml || true
           enable_custom_app_if_present cookbook /var/www/html/custom_apps/cookbook/vendor/autoload.php || true
