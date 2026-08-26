@@ -35,6 +35,11 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            # Mod paks surface as /data/mods in the UI: upload a new
+            # IMM_Merged_Mod_P.pak here, then use OliveTin's restart action.
+            - name: game
+              mountPath: /data/mods
+              subPath: icarus/Icarus/Content/Paks/mods
           resources:
             requests:
               cpu: 10m
@@ -45,6 +50,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: icarus-data
+        - name: game
+          persistentVolumeClaim:
+            claimName: icarus-game
 ---
 apiVersion: v1
 kind: Service
