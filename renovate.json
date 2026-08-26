@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits", ":disableRateLimiting"],
+  "labels": ["renovate"],
+  "flux": {
+    "managerFilePatterns": ["/apps/.+\\.ya?ml$/"]
+  },
+  "kubernetes": {
+    "managerFilePatterns": ["/apps/.+\\.ya?ml$/"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Pinned app tarballs seeded by initContainers (URL version bumps only; sha256 must be refreshed manually, so these PRs act as update notifications)",
+      "managerFilePatterns": ["/apps/nextcloud/(helm-release|verify-custom-apps)\\.ya?ml$/"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/v(?<currentValue>[0-9.]+)/"
+      ],
+      "datasourceTemplate": "github-releases"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["kubernetes"],
+      "groupName": "container images"
+    }
+  ]
+}

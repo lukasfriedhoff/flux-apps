@@ -1,0 +1,20 @@
+# Dependency update PRs for flux-apps and flux-cluster. Needs a classic PAT
+# with repo scope stored as the RENOVATE_TOKEN actions secret on this repo:
+#   gh secret set RENOVATE_TOKEN --repo lukasfriedhoff/flux-apps
+name: renovate
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: renovatebot/github-action@v43.0.5
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_REPOSITORIES: "lukasfriedhoff/flux-apps,lukasfriedhoff/flux-cluster"
+          RENOVATE_PLATFORM: github
+          RENOVATE_ONBOARDING: "false"
+          RENOVATE_REQUIRE_CONFIG: optional
