@@ -6,6 +6,12 @@ metadata:
 spec:
   interval: 10m0s
   timeout: 15m0s
+  # Helm skips CRD changes on upgrade by default; CreateReplace keeps chart
+  # CRDs current so operator upgrades don't silently run on stale schemas.
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   install:
     remediation:
       retries: 3
