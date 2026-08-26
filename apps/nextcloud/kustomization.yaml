@@ -16,5 +16,6 @@ resources:
   - upgrade-check-rbac.yaml
   - upgrade-check-cronjob.yaml
   - verify-custom-apps.yaml
+  - office-check.yaml
   - metrics-exporter.yaml
   - helm-release.yaml

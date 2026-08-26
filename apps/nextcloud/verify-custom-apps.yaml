@@ -37,8 +37,8 @@ spec:
                 mail/vendor/autoload.php
               verify_app \
                 richdocuments \
-                https://github.com/nextcloud-releases/richdocuments/releases/download/v10.1.2/richdocuments-v10.1.2.tar.gz \
-                5bb91dd34ff98e666531143fc43077f961e52a30aafe18115d1c9e5b2bb62ca2 \
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v11.1.0/richdocuments-v11.1.0.tar.gz \
+                113507ed80870aa1d7cf7a4ab3c6d11aa9d4d1788eab0fb0e12f60cfca12da4f \
                 richdocuments/appinfo/info.xml
               verify_app \
                 oidc_login \
