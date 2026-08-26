@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  coturn_suspend: "true"
+  coturn_image: "docker.io/coturn/coturn:4.17.2"
+  coturn_node: "srv9"
+  coturn_node_ip: "10.1.30.31"
+  # Dynamic-IP setups: hostname whose A record tracks the WAN IP
+  coturn_public_hostname: "example.dyndns.org"
+  coturn_realm: "turn.example.com"
+  coturn_min_port: "49500"
+  coturn_max_port: "49999"

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backrest-state
+  namespace: backrest
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: ${backrest_storage_class:=longhorn-ssd-rwo-1r}
+  resources:
+    requests:
+      storage: ${backrest_state_size:=5Gi}

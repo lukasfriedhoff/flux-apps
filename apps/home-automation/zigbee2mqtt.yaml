@@ -1,0 +1,81 @@
+# Needs the Zigbee coordinator USB stick on the target node. Replicas stay 0
+# until the dongle physically moves from srv4 to ${ha_node} (see the
+# migration plan); the serial path is the stable /dev/serial/by-id link.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zigbee2mqtt-data
+  namespace: home-automation
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: ${ha_storage_class:=longhorn-ssd-rwo-1r}
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zigbee2mqtt
+  namespace: home-automation
+  labels:
+    app.kubernetes.io/name: zigbee2mqtt
+spec:
+  replicas: ${ha_zigbee2mqtt_replicas:=0}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zigbee2mqtt
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zigbee2mqtt
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${ha_node:=srv9}
+      containers:
+        - name: zigbee2mqtt
+          image: ${ha_zigbee2mqtt_image:=docker.io/koenkk/zigbee2mqtt:2.13.0}
+          securityContext:
+            privileged: true
+          env:
+            - name: ZIGBEE2MQTT_CONFIG_MQTT_SERVER
+              value: "mqtt://mosquitto.home-automation.svc.cluster.local:1883"
+            - name: ZIGBEE2MQTT_CONFIG_SERIAL_PORT
+              value: "${ha_zigbee_serial}"
+            - name: ZIGBEE2MQTT_CONFIG_FRONTEND_PORT
+              value: "8080"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: serial
+              mountPath: "${ha_zigbee_serial}"
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: zigbee2mqtt-data
+        - name: serial
+          hostPath:
+            path: "${ha_zigbee_serial}"
+            type: CharDevice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zigbee2mqtt
+  namespace: home-automation
+spec:
+  selector:
+    app.kubernetes.io/name: zigbee2mqtt
+  ports:
+    - port: 80
+      targetPort: 8080

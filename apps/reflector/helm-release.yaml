@@ -1,0 +1,35 @@
+# Replicates annotated Secrets/ConfigMaps across namespaces. Replaces the
+# hand-maintained per-namespace sops copies (e.g. the MinIO backup creds
+# duplicated into attic/authelia/forgejo/hydra/icarus): annotate one source
+# secret with
+#   reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+#   reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+#   reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "ns1,ns2"
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: reflector
+  namespace: reflector
+spec:
+  interval: 10m0s
+  timeout: 10m0s
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  chart:
+    spec:
+      chart: reflector
+      version: ">=7.0.0 <10.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: emberstack
+        namespace: reflector
+      interval: 1h0m0s
+  values:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

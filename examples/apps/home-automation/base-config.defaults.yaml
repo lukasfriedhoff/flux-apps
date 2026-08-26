@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  home_automation_suspend: "true"
+  ha_node: "srv9"
+  ha_storage_class: "longhorn-ssd-rwo-1r"
+  ha_image: "docker.io/homeassistant/home-assistant:stable"
+  ha_mosquitto_image: "docker.io/library/eclipse-mosquitto:2.1.2-alpine"
+  ha_zigbee2mqtt_image: "docker.io/koenkk/zigbee2mqtt:2.13.0"
+  ha_zigbee2mqtt_replicas: "0"
+  ha_config_size: "10Gi"
+  # Stable serial path of the Zigbee coordinator once attached to ha_node,
+  # e.g. /dev/serial/by-id/usb-Silicon_Labs_CP2102N...-if00-port0
+  ha_zigbee_serial: "/dev/null"
