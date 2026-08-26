@@ -1,0 +1,61 @@
+# Web UI over restic repositories (snapshots, browse, restore, schedules).
+# Repos (e.g. the icarus MinIO bucket) are added in the UI; their access
+# keys live in backrest's own state volume.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backrest
+  namespace: backrest
+  labels:
+    app.kubernetes.io/name: backrest
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backrest
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backrest
+    spec:
+      containers:
+        - name: backrest
+          image: ${backrest_image:=docker.io/garethgeorge/backrest:v1.14.1-alpine}
+          env:
+            - name: BACKREST_PORT
+              value: "9898"
+            - name: BACKREST_DATA
+              value: /data
+            - name: BACKREST_CONFIG
+              value: /data/config/config.json
+            - name: XDG_CACHE_HOME
+              value: /data/cache
+          ports:
+            - containerPort: 9898
+          volumeMounts:
+            - name: state
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: backrest-state
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backrest
+  namespace: backrest
+spec:
+  selector:
+    app.kubernetes.io/name: backrest
+  ports:
+    - port: 80
+      targetPort: 9898
