@@ -32,8 +32,8 @@ spec:
               }
               verify_app \
                 mail \
-                https://github.com/nextcloud-releases/mail/releases/download/v5.7.4/mail-v5.7.4.tar.gz \
-                4975770bd441349169dceb9d0dc6dd9d6c2e85e0d095ed5a536c117ce52d2eaa \
+                https://github.com/nextcloud-releases/mail/releases/download/v5.9.3/mail-v5.9.3.tar.gz \
+                0f653c4611213315a96fc4096f2b67b6443f1a62678ac6cceccd00e460373852 \
                 mail/vendor/autoload.php
               verify_app \
                 richdocuments \
@@ -42,16 +42,39 @@ spec:
                 richdocuments/appinfo/info.xml
               verify_app \
                 oidc_login \
-                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.1/oidc_login.tar.gz \
-                2816bc03b682d2e4ba150a0e49aee722469a61ef80d8a780b737eaa0ac341a7e \
+                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.4/oidc_login.tar.gz \
+                10d5610fd5b12fab763bb3c59fc1195011a5d6fcbf310991bc0c9fb504541fc7 \
                 oidc_login/appinfo/info.xml
-              sed -i 's/max-version="33"/max-version="34"/' /custom_apps/oidc_login/appinfo/info.xml
-              grep -q 'max-version="34"' /custom_apps/oidc_login/appinfo/info.xml
               verify_app \
                 external \
                 https://github.com/nextcloud-releases/external/releases/download/v9.0.1/external-v9.0.1.tar.gz \
                 b18a55b6a0e12d4a1ced0d74b6e5ef6927f322c8b9b3409dae4ea68717e422d9 \
                 external/appinfo/info.xml
+              verify_app \
+                contacts \
+                https://github.com/nextcloud-releases/contacts/releases/download/v8.7.5/contacts-v8.7.5.tar.gz \
+                9935218201ce3f8d06b3be31a0b6df9fbba23f6993724ff3799686dd873c3ea9 \
+                contacts/appinfo/info.xml
+              verify_app \
+                calendar \
+                https://github.com/nextcloud-releases/calendar/releases/download/v6.5.4/calendar-v6.5.4.tar.gz \
+                67c777a6ea974409e9d228c23fc60f2be8e675d376531b6b1b125f2f0365738d \
+                calendar/appinfo/info.xml
+              verify_app \
+                cookbook \
+                https://github.com/christianlupus-nextcloud/cookbook-releases/releases/download/v0.11.9/cookbook-0.11.9.tar.gz \
+                017e3c44d0d1888925e0e654e7c4bf8ed31604f919b8e3d32da8ecd0f5639b80 \
+                cookbook/appinfo/info.xml
+              verify_app \
+                maps \
+                https://github.com/nextcloud-releases/maps/releases/download/v1.8.0/maps-v1.8.0.tar.gz \
+                4e44ea40268d2f942967b847840e18c37318a0d1ca1c1572e7f635ce3ac32c04 \
+                maps/appinfo/info.xml
+              verify_app \
+                passwords \
+                https://git.mdns.eu/api/v4/projects/45/packages/generic/passwords/2026.7.0/passwords.tar.gz \
+                f0447632ac9e3e91110fb4517f0f07ab9c4dc7eb3cbd484f6c3c89d89bd4fe1a \
+                passwords/appinfo/info.xml
           volumeMounts:
             - name: nextcloud-custom-apps
               mountPath: /custom_apps
