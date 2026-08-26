@@ -10,12 +10,10 @@ spec:
   # CRDs current so operator upgrades don't silently run on stale schemas.
   install:
     crds: CreateReplace
-  upgrade:
-    crds: CreateReplace
-  install:
     remediation:
       retries: 3
   upgrade:
+    crds: CreateReplace
     remediation:
       retries: 3
   chart:
