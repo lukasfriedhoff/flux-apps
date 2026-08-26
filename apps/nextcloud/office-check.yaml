@@ -1,0 +1,81 @@
+# Hourly canary for Nextcloud Office: fails (and thereby fires the existing
+# KubeJobFailed alert) when richdocuments is disabled or Collabora's WOPI
+# discovery stops answering — the two failure modes that silently removed
+# document creation in the past (NC upgrades auto-disable incompatible
+# apps; the seed initContainer pins the app version).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nextcloud-office-check
+  namespace: nextcloud
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nextcloud-office-check
+  namespace: nextcloud
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nextcloud-office-check
+  namespace: nextcloud
+subjects:
+  - kind: ServiceAccount
+    name: nextcloud-office-check
+    namespace: nextcloud
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: nextcloud-office-check
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-office-check
+  namespace: nextcloud
+spec:
+  schedule: "17 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 180
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: nextcloud-office-check
+          containers:
+            - name: check
+              image: docker.io/alpine/k8s:1.34.1
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  pod=$(kubectl get pods -l app.kubernetes.io/name=nextcloud \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')
+                  enabled=$(kubectl exec "$pod" -c nextcloud -- \
+                    php occ config:app:get richdocuments enabled)
+                  echo "richdocuments enabled: $enabled"
+                  [ "$enabled" = "yes" ]
+                  kubectl exec "$pod" -c nextcloud -- sh -c \
+                    'curl -sf --max-time 20 "$(php occ config:app:get richdocuments wopi_url)/hosting/discovery" | grep -q urlsrc'
+                  echo "WOPI discovery OK"
