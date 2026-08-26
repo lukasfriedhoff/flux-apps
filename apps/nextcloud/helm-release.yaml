@@ -905,9 +905,6 @@ spec:
           configure_external_photos_link
           configure_external_memes_link
           enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
-          # Nextcloud Office; store is disabled, so the app is a manual tarball
-          # in custom_apps (v11.1.0 for NC 34, replaced 10.1.2 on 2026-08-25).
-          enable_custom_app_if_present richdocuments /var/www/html/custom_apps/richdocuments/appinfo/info.xml || true
           enable_custom_app_if_present contacts /var/www/html/custom_apps/contacts/appinfo/info.xml || true
           enable_custom_app_if_present calendar /var/www/html/custom_apps/calendar/appinfo/info.xml || true
           enable_custom_app_if_present cookbook /var/www/html/custom_apps/cookbook/vendor/autoload.php || true
@@ -1041,10 +1038,10 @@ spec:
                 5.7.4
               fetch_app \
                 richdocuments \
-                https://github.com/nextcloud-releases/richdocuments/releases/download/v10.1.2/richdocuments-v10.1.2.tar.gz \
-                5bb91dd34ff98e666531143fc43077f961e52a30aafe18115d1c9e5b2bb62ca2 \
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v11.1.0/richdocuments-v11.1.0.tar.gz \
+                113507ed80870aa1d7cf7a4ab3c6d11aa9d4d1788eab0fb0e12f60cfca12da4f \
                 richdocuments/appinfo/info.xml \
-                10.1.2
+                11.1.0
               fetch_app \
                 oidc_login \
                 https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.1/oidc_login.tar.gz \
