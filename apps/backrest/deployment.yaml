@@ -23,6 +23,12 @@ spec:
       containers:
         - name: backrest
           image: ${backrest_image:=docker.io/garethgeorge/backrest:v1.14.1-alpine}
+          # Reflected from icarus (reflector): restic reads AWS_* and
+          # RESTIC_* from env, so the UI repo setup needs no key entry.
+          envFrom:
+            - secretRef:
+                name: icarus-backup-credentials
+                optional: true
           env:
             - name: BACKREST_PORT
               value: "9898"
