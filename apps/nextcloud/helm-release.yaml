@@ -926,7 +926,7 @@ spec:
           fi
       extraInitContainers:
         - name: fix-var-www-permissions
-          image: alpine:3.20
+          image: alpine:3.24
           command:
             - /bin/sh
             - -c
@@ -1099,7 +1099,7 @@ spec:
               mountPath: /var/www/html/custom_apps
               subPath: custom_apps
         - name: wait-nextcloud-app
-          image: alpine:3.20
+          image: alpine:3.24
           command:
             - /bin/sh
             - -c
@@ -1117,7 +1117,7 @@ spec:
             - name: nextcloud-main
               mountPath: /var/www/html
         - name: migrate-nextcloud-data
-          image: alpine:3.20
+          image: alpine:3.24
           command:
             - /bin/sh
             - -c
