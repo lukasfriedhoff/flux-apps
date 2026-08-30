@@ -959,7 +959,7 @@ spec:
               mountPath: /var/www-data
               subPath: data
         - name: seed-custom-apps
-          image: python:3.12.11-slim
+          image: python:3.14.7-slim
           command:
             - /bin/sh
             - -c
