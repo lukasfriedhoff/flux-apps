@@ -37,7 +37,7 @@ spec:
         fsGroup: 1337
       initContainers:
         - name: seed-whatsapp-config
-          image: busybox:1.37.0
+          image: busybox:1.38.0
           command:
             - /bin/sh
             - -ceu
@@ -112,7 +112,7 @@ spec:
         fsGroup: 1337
       initContainers:
         - name: telegram-config-bootstrap
-          image: busybox:1.36
+          image: busybox:1.38
           command:
             - /bin/sh
             - -ceu
