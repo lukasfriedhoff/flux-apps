@@ -32,8 +32,8 @@ spec:
               }
               verify_app \
                 mail \
-                https://github.com/nextcloud-releases/mail/releases/download/v5.9.3/mail-v5.9.3.tar.gz \
-                0f653c4611213315a96fc4096f2b67b6443f1a62678ac6cceccd00e460373852 \
+                https://github.com/nextcloud-releases/mail/releases/download/v5.11.3/mail-v5.11.3.tar.gz \
+                81d77122068aa7f68d7fa69f5ebe3b945c0882b1bf732056fe006a2d12789246 \
                 mail/vendor/autoload.php
               verify_app \
                 richdocuments \
@@ -52,8 +52,8 @@ spec:
                 external/appinfo/info.xml
               verify_app \
                 contacts \
-                https://github.com/nextcloud-releases/contacts/releases/download/v8.7.5/contacts-v8.7.5.tar.gz \
-                9935218201ce3f8d06b3be31a0b6df9fbba23f6993724ff3799686dd873c3ea9 \
+                https://github.com/nextcloud-releases/contacts/releases/download/v8.7.7/contacts-v8.7.7.tar.gz \
+                e6368ef0123ddb250e5154fa62582e8fceef063af8a752b830155ea0d6dd3985 \
                 contacts/appinfo/info.xml
               verify_app \
                 calendar \
@@ -62,8 +62,8 @@ spec:
                 calendar/appinfo/info.xml
               verify_app \
                 cookbook \
-                https://github.com/christianlupus-nextcloud/cookbook-releases/releases/download/v0.11.9/cookbook-0.11.9.tar.gz \
-                017e3c44d0d1888925e0e654e7c4bf8ed31604f919b8e3d32da8ecd0f5639b80 \
+                https://github.com/christianlupus-nextcloud/cookbook-releases/releases/download/v0.11.10/cookbook-0.11.10.tar.gz \
+                c8fdf5f3f0c84e161ba5acfe7573931e0a355026c46cd1ad8b887539fc84a9ae \
                 cookbook/appinfo/info.xml
               verify_app \
                 maps \
