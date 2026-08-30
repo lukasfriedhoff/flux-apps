@@ -1050,7 +1050,7 @@ spec:
                 3.3.4
               fetch_app \
                 external \
-                https://github.com/nextcloud-releases/external/releases/download/v9.0.1/external-v9.0.1.tar.gz \
+                https://github.com/nextcloud-releases/external/releases/download/v10.0.0/external-v9.0.1.tar.gz \
                 b18a55b6a0e12d4a1ced0d74b6e5ef6927f322c8b9b3409dae4ea68717e422d9 \
                 external/appinfo/info.xml \
                 9.0.1
