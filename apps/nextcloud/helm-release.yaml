@@ -1062,7 +1062,7 @@ spec:
               # custom app so they survive the next major upgrade.
               fetch_app \
                 contacts \
-                https://github.com/nextcloud-releases/contacts/releases/download/v8.7.5/contacts-v8.7.5.tar.gz \
+                https://github.com/nextcloud-releases/contacts/releases/download/v8.7.7/contacts-v8.7.5.tar.gz \
                 9935218201ce3f8d06b3be31a0b6df9fbba23f6993724ff3799686dd873c3ea9 \
                 contacts/appinfo/info.xml \
                 8.7.5
