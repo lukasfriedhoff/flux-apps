@@ -56,7 +56,7 @@ spec:
           serviceAccountName: nextcloud-office-check
           containers:
             - name: check
-              image: docker.io/alpine/k8s:1.34.1
+              image: docker.io/alpine/k8s:1.36.2
               resources:
                 requests:
                   cpu: 25m
