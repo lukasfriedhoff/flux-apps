@@ -17,7 +17,13 @@ spec:
   chart:
     spec:
       chart: tempo-distributed
-      version: 2.26.2
+      # 2.26.x restructures the memcached Service+StatefulSet in ways helm
+      # cannot upgrade in place (immutable fields; remediation rollbacks
+      # resurrect the old objects before every retry). Held at 2.1.1 until
+      # a maintenance window: delete the tempo-memcached Service AND
+      # StatefulSet, then bump this in one motion (traces live in S3, the
+      # cache is disposable). 2026-08-30.
+      version: "2.1.1"
       sourceRef:
         kind: HelmRepository
         name: grafana-community
