@@ -1032,7 +1032,7 @@ spec:
               }
               fetch_app \
                 mail \
-                https://github.com/nextcloud-releases/mail/releases/download/v5.9.3/mail-v5.9.3.tar.gz \
+                https://github.com/nextcloud-releases/mail/releases/download/v5.11.3/mail-v5.9.3.tar.gz \
                 0f653c4611213315a96fc4096f2b67b6443f1a62678ac6cceccd00e460373852 \
                 mail/vendor/autoload.php \
                 5.9.3
