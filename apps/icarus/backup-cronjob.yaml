@@ -24,7 +24,7 @@ spec:
             kubernetes.io/hostname: ${icarus_node}
           containers:
             - name: restic
-              image: restic/restic:0.18.1
+              image: restic/restic:0.19.1
               command:
                 - /bin/sh
                 - -ec

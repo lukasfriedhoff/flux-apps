@@ -16,7 +16,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: migrate
-          image: alpine:3.20
+          image: alpine:3.24
           resources:
             requests:
               cpu: 25m
