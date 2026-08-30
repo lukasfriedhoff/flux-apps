@@ -1078,7 +1078,7 @@ spec:
               # tree, hence info.xml there.
               fetch_app \
                 cookbook \
-                https://github.com/christianlupus-nextcloud/cookbook-releases/releases/download/v0.11.9/cookbook-0.11.9.tar.gz \
+                https://github.com/christianlupus-nextcloud/cookbook-releases/releases/download/v0.11.10/cookbook-0.11.9.tar.gz \
                 017e3c44d0d1888925e0e654e7c4bf8ed31604f919b8e3d32da8ecd0f5639b80 \
                 cookbook/vendor/autoload.php \
                 0.11.9
