@@ -16,7 +16,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: repair
-          image: postgres:16-alpine
+          image: postgres:18-alpine
           imagePullPolicy: IfNotPresent
           env:
             - name: PGHOST
