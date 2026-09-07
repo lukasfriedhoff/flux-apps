@@ -14,7 +14,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: livesync${public_host_suffix}.${delegating_domain}
+    - host: obsidian-backend${public_host_suffix}.${delegating_domain}
       http:
         paths:
           - path: /
