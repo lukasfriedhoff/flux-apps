@@ -20,7 +20,11 @@ spec:
         app.kubernetes.io/name: couchdb
     spec:
       securityContext:
-        # couchdb image runs as uid/gid 5984; make the PVC writable to it.
+        # Run as the couchdb user (uid/gid 5984). This skips the root-only
+        # chown block in the image entrypoint, which otherwise fails under
+        # set -e when it tries to chown the read-only config subPath mount.
+        runAsUser: 5984
+        runAsGroup: 5984
         fsGroup: 5984
       containers:
         - name: couchdb
