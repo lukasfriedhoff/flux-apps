@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: couchdb
+  namespace: obsidian-livesync
+  labels:
+    app.kubernetes.io/name: couchdb
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: couchdb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: couchdb
+    spec:
+      securityContext:
+        # couchdb image runs as uid/gid 5984; make the PVC writable to it.
+        fsGroup: 5984
+      containers:
+        - name: couchdb
+          image: ${obsidian_couchdb_image:=docker.io/library/couchdb:3.5.2}
+          env:
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ${obsidian_secret_name:=couchdb-admin}
+                  key: COUCHDB_USER
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${obsidian_secret_name:=couchdb-admin}
+                  key: COUCHDB_PASSWORD
+          ports:
+            - containerPort: 5984
+          volumeMounts:
+            - name: data
+              mountPath: /opt/couchdb/data
+            - name: config
+              mountPath: /opt/couchdb/etc/local.d
+          readinessProbe:
+            httpGet:
+              path: /_up
+              port: 5984
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: couchdb-data
+        - name: config
+          configMap:
+            name: couchdb-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: couchdb
+  namespace: obsidian-livesync
+spec:
+  selector:
+    app.kubernetes.io/name: couchdb
+  ports:
+    - port: 80
+      targetPort: 5984

@@ -1,0 +1,44 @@
+# CouchDB tuned for obsidian-livesync. single_node auto-creates the system
+# databases (_users/_replicator/_global_changes) on first boot; the CORS
+# origins are Obsidian's desktop (app://obsidian.md) and mobile
+# (capacitor://localhost) app schemes. Vault content is E2E-encrypted by
+# the plugin before it reaches CouchDB, so the server never sees plaintext.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: couchdb-config
+  namespace: obsidian-livesync
+data:
+  livesync.ini: |
+    [couchdb]
+    single_node = true
+    max_document_size = 50000000
+
+    [chttpd]
+    require_valid_user = true
+    max_http_request_size = 4294967296
+    enable_cors = true
+    bind_address = 0.0.0.0
+
+    [chttpd_auth]
+    require_valid_user = true
+
+    [httpd]
+    WWW-Authenticate = Basic realm="couchdb"
+    enable_cors = true
+
+    [cors]
+    credentials = true
+    origins = app://obsidian.md,capacitor://localhost,http://localhost
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: couchdb-data
+  namespace: obsidian-livesync
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: ${obsidian_storage_class:=longhorn-ssd-rwo-2r}
+  resources:
+    requests:
+      storage: ${obsidian_data_size:=10Gi}
