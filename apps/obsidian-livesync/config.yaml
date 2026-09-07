@@ -16,6 +16,9 @@ data:
 
     [chttpd]
     require_valid_user = true
+    # Exempt the /_up health endpoint so the k8s readiness probe (which
+    # cannot present credentials) succeeds while everything else stays authed.
+    require_valid_user_except_for_up = true
     max_http_request_size = 4294967296
     enable_cors = true
     bind_address = 0.0.0.0
