@@ -112,26 +112,3 @@ spec:
   resources:
     requests:
       storage: ${matrix_bridge_data_size}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: matrix-signald-data
-  namespace: matrix
-  annotations:
-    # longhorn-replica-policy resets every volume's replica count from its
-    # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
-    # declared here. storageClassName cannot be used for this: it is immutable
-    # on a bound PVC, and changing it on a StatefulSet's volumeClaimTemplates
-    # is rejected outright.
-    # Keep this a literal quoted string: a ${var} here loses its quotes during
-    # kustomize build and substitutes back as an int, which the API server
-    # rejects with "expected string, got 2".
-    longhorn.h4xx.io/replica-count: "2"
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: ${matrix_bridge_storage_class_name}
-  resources:
-    requests:
-      storage: ${matrix_signald_data_size}

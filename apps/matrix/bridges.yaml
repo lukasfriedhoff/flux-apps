@@ -202,8 +202,6 @@ spec:
           volumeMounts:
             - name: signal-data
               mountPath: /data
-            - name: signald-data
-              mountPath: /signald
             - name: signal-config
               mountPath: /data/config.yaml
               subPath: config.yaml
@@ -216,58 +214,6 @@ spec:
         - name: signal-data
           persistentVolumeClaim:
             claimName: matrix-signal-data
-        - name: signald-data
-          persistentVolumeClaim:
-            claimName: matrix-signald-data
         - name: signal-config
           secret:
             secretName: matrix-signal-config
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: signaldprivate
-  namespace: matrix
-spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 100%
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: signaldprivate
-  template:
-    metadata:
-      annotations:
-        reloader.stakater.com/auto: "true"
-      labels:
-        app.kubernetes.io/name: signaldprivate
-    spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: signalbridgeprivate
-              topologyKey: kubernetes.io/hostname
-      securityContext:
-        fsGroup: 1337
-      containers:
-        - name: signaldprivate
-          image: docker.io/signald/signald:${matrix_signald_image_tag}
-          resources:
-            requests:
-              cpu: ${matrix_signald_requests_cpu}
-              memory: ${matrix_signald_requests_memory}
-            limits:
-              cpu: ${matrix_signald_limits_cpu}
-              memory: ${matrix_signald_limits_memory}
-          volumeMounts:
-            - name: signald-data
-              mountPath: /signald
-      volumes:
-        - name: signald-data
-          persistentVolumeClaim:
-            claimName: matrix-signald-data
