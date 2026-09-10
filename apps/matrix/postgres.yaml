@@ -5,7 +5,7 @@ metadata:
   namespace: matrix
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
-  instances: ${matrix_postgres_instances:=1}
+  instances: ${matrix_synapse_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
     annotations:
