@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 data:
   immich_photos_suspend: "true"
+  immich_photos_postgres_instances: "1"
   immich_photos_secret_name: "immich-photos-secrets"
   immich_photos_image_tag: "release"
   immich_photos_timezone: "Europe/Berlin"

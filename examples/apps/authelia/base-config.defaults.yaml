@@ -4,6 +4,7 @@ metadata:
   name: base-config
   namespace: flux-system
 data:
+  authelia_postgres_instances: "1"
   authelia_smtp_address: "submission://posteo.de:587"
   authelia_smtp_startup_check_address: "h4xx@posteo.de"
   authelia_access_policy: "two_factor"
