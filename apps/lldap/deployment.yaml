@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lldap
+  namespace: lldap
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lldap
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lldap
+    spec:
+      containers:
+        - name: lldap
+          # Pinned tag (not a moving :latest) + IfNotPresent so a moved tag can
+          # never ImagePullBackOff the auth store. Bump via Renovate.
+          image: docker.io/lldap/lldap:${lldap_image_tag:=stable}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: ldap
+              containerPort: 3890
+            - name: http
+              containerPort: 17170
+          env:
+            - name: LLDAP_LDAP_BASE_DN
+              value: "${lldap_base_dn:=dc=h4xx,dc=io}"
+            - name: LLDAP_LDAP_USER_DN
+              value: admin
+            - name: LLDAP_LDAP_USER_EMAIL
+              value: "${lldap_admin_email:=admin@h4xx.io}"
+            - name: LLDAP_HTTP_URL
+              value: "https://lldap${public_host_suffix}.${delegating_domain}"
+            - name: LLDAP_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: lldap-postgres-app
+                  key: uri
+            - name: LLDAP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ${lldap_secret_name:=lldap-secrets}
+                  key: LLDAP_JWT_SECRET
+            - name: LLDAP_KEY_SEED
+              valueFrom:
+                secretKeyRef:
+                  name: ${lldap_secret_name:=lldap-secrets}
+                  key: LLDAP_KEY_SEED
+            - name: LLDAP_LDAP_USER_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: ${lldap_secret_name:=lldap-secrets}
+                  key: LLDAP_LDAP_USER_PASS
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: ldap
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${lldap_requests_cpu:=25m}
+              memory: ${lldap_requests_memory:=64Mi}
+            limits:
+              cpu: ${lldap_limits_cpu:=500m}
+              memory: ${lldap_limits_memory:=256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lldap
+  namespace: lldap
+spec:
+  selector:
+    app.kubernetes.io/name: lldap
+  ports:
+    - name: ldap
+      port: 3890
+      targetPort: ldap
+    - name: http
+      port: 17170
+      targetPort: http

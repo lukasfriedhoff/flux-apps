@@ -1,0 +1,26 @@
+# LLDAP web UI (user/group management). Double-gated: Authelia forward-auth
+# (redirect to login portal) on top of LLDAP's own admin login. The LDAP port
+# (3890) is cluster-internal only and deliberately not exposed here.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lldap
+  namespace: lldap
+  annotations:
+    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: lldap${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lldap
+                port:
+                  number: 17170
