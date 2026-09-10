@@ -1038,7 +1038,7 @@ spec:
                 5.11.3
               fetch_app \
                 richdocuments \
-                https://github.com/nextcloud-releases/richdocuments/releases/download/v11.1.0/richdocuments-v11.1.0.tar.gz \
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v11.1.1/richdocuments-v11.1.0.tar.gz \
                 113507ed80870aa1d7cf7a4ab3c6d11aa9d4d1788eab0fb0e12f60cfca12da4f \
                 richdocuments/appinfo/info.xml \
                 11.1.0
