@@ -4,7 +4,7 @@ metadata:
   name: authelia-postgres
   namespace: authelia
 spec:
-  instances: 1
+  instances: ${authelia_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
     annotations:
