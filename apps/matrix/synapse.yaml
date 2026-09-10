@@ -234,6 +234,11 @@ spec:
       containers:
         - name: synapse
           image: matrixdotorg/synapse:${matrix_synapse_image_tag}
+          # Use the node-local/Spegel-mirrored image rather than re-resolving
+          # :latest on every restart: a moved :latest digest that no node has
+          # cached falls through to Docker Hub and can ImagePullBackOff the
+          # homeserver during a registry hiccup. The tag is digest-pinned.
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8008
