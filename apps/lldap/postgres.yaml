@@ -1,0 +1,32 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: lldap-postgres
+  namespace: lldap
+spec:
+  instances: ${lldap_postgres_instances:=3}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: lldap
+      owner: lldap
+      # No secret ref: CNPG auto-generates the `lldap-postgres-app` secret
+      # (with a `uri` key) that LLDAP consumes as LLDAP_DATABASE_URL.
+  storage:
+    # Small, low-IOPS auth DB. Use the reliable disk pool (not the mis-tagged
+    # USB "nvme" disks). 3 CNPG instances give HA at the Postgres layer, so a
+    # single Longhorn replica per instance is enough.
+    storageClass: ${lldap_postgres_storage_class_name:=longhorn-disk-rwo-1r}
+    size: ${lldap_postgres_size:=2Gi}
+  resources:
+    requests:
+      cpu: ${lldap_postgres_requests_cpu:=50m}
+      memory: ${lldap_postgres_requests_memory:=128Mi}
+    limits:
+      cpu: ${lldap_postgres_limits_cpu:=500m}
+      memory: ${lldap_postgres_limits_memory:=512Mi}
