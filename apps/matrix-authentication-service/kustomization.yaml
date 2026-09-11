@@ -6,4 +6,5 @@ resources:
   - migration-configmap.yaml
   - postgres.yaml
   - deployment.yaml
+  - pdb.yaml
   - ingress.yaml
