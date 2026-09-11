@@ -17,6 +17,23 @@ spec:
       owner: lldap
       # No secret ref: CNPG auto-generates the `lldap-postgres-app` secret
       # (with a `uri` key) that LLDAP consumes as LLDAP_DATABASE_URL.
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${lldap_postgres_backup_bucket:=lldap-postgres-backup}/${cluster_environment}/${lldap_postgres_backup_generation:=}lldap-postgres/"
+      endpointURL: "${lldap_postgres_backup_endpoint_url:=}"
+      serverName: ${lldap_postgres_backup_server_name:=lldap-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${lldap_postgres_backup_credential_secret_name:=lldap-postgres-backup-credentials}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${lldap_postgres_backup_credential_secret_name:=lldap-postgres-backup-credentials}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${lldap_postgres_backup_retention:=30d}"
   storage:
     # Small, low-IOPS auth DB. Use the reliable disk pool (not the mis-tagged
     # USB "nvme" disks). 3 CNPG instances give HA at the Postgres layer, so a

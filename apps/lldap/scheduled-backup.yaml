@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: lldap-postgres
+  namespace: lldap
+spec:
+  schedule: "${lldap_postgres_backup_cron:=0 0 3 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: lldap-postgres
