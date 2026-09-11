@@ -1136,3 +1136,66 @@ groups:
           description: >-
             {{ $labels.service }} has taken over 5s to answer its probe for 30
             minutes. Usually storage pressure or a saturated node.
+  - name: storage01-backup-host
+    rules:
+      - alert: SmartDeviceHealthFailed
+        expr: |
+          smartctl_device_smart_status{instance="storage01"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: A disk on storage01 reports SMART health FAILED.
+          description: >-
+            Disk {{ $labels.device }} on backup host storage01 reports SMART
+            overall-health = FAILED. Replace it; a failed disk previously stalled
+            the backup MinIO for ~6 weeks.
+      - alert: Storage01RaidDegraded
+        expr: |
+          (node_md_disks_required{instance="storage01"} - node_md_disks{instance="storage01",state="active"}) > 0
+          or node_md_disks{instance="storage01",state="failed"} > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: storage01 RAID array is degraded.
+          description: md {{ $labels.device }} on storage01 has a failed/missing member; backup store lost redundancy.
+      - alert: Storage01BackupDiskAlmostFull
+        expr: |
+          node_filesystem_avail_bytes{instance="storage01",mountpoint="/mnt/backup"}
+          / node_filesystem_size_bytes{instance="storage01",mountpoint="/mnt/backup"} < 0.10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: storage01 backup RAID < 10% free.
+          description: When /mnt/backup fills, ALL CNPG + Longhorn backups fail. Prune old backups / fix retention.
+      - alert: Storage01BackupDiskCritical
+        expr: |
+          node_filesystem_avail_bytes{instance="storage01",mountpoint="/mnt/backup"}
+          / node_filesystem_size_bytes{instance="storage01",mountpoint="/mnt/backup"} < 0.03
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: storage01 backup RAID critically full (<3%).
+          description: /mnt/backup is about to fill; backups will fail imminently.
+      - alert: Storage01ExporterDown
+        expr: |
+          up{instance="storage01"} == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: storage01 metrics exporter is down.
+          description: Backup-server disk/SMART/host health is blind until Alloy can scrape {{ $labels.job }} on storage01 again.
+      - alert: Storage01MemoryPressure
+        expr: |
+          node_memory_MemAvailable_bytes{instance="storage01"}
+          / node_memory_MemTotal_bytes{instance="storage01"} < 0.10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: storage01 low on memory.
+          description: MinIO scanning the large store can OOM here (it crash-looped for weeks). Consider swap / more RAM.
