@@ -20,4 +20,4 @@ spec:
   volumeName: ${immich_photos_shared_pv_name:=immich-photos-shared-pv}
   resources:
     requests:
-      storage: ${nextcloud_photos_size:=50Gi}
+      storage: ${immich_photos_shared_size:=50Gi}

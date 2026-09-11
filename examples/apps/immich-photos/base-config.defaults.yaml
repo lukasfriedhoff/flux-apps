@@ -29,6 +29,9 @@ data:
   immich_photos_uploads_storage_class_name: "longhorn-rwo-1r"
   immich_photos_uploads_size: "200Gi"
   immich_photos_shared_storage_class_name: "longhorn-rwx-1r"
+  # Nominal size of the static NFS PV re-exporting the Nextcloud shared media volume.
+  # The real capacity is the Longhorn volume (nextcloud_photos_size); NFS enforces none.
+  immich_photos_shared_size: "50Gi"
 
   immich_photos_postgres_storage_class_name: "longhorn-rwo-1r"
   immich_photos_postgres_size: "50Gi"
