@@ -884,6 +884,9 @@ groups:
           ) > 60 * 60
           and max by (cluster, namespace, pod) (
             cnpg_pg_stat_archiver_seconds_since_last_failure
+          ) >= 0
+          and max by (cluster, namespace, pod) (
+            cnpg_pg_stat_archiver_seconds_since_last_failure
           ) < 60 * 60
         for: 30m
         labels:
