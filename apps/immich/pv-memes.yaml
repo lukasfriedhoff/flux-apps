@@ -4,7 +4,7 @@ metadata:
   name: ${immich_memes_shared_pv_name:=immich-memes-shared-pv}
 spec:
   capacity:
-    storage: ${nextcloud_memes_size:=50Gi}
+    storage: ${immich_memes_shared_size:=50Gi}
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain

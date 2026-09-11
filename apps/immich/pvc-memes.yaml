@@ -20,4 +20,4 @@ spec:
   volumeName: ${immich_memes_shared_pv_name:=immich-memes-shared-pv}
   resources:
     requests:
-      storage: ${nextcloud_memes_size:=50Gi}
+      storage: ${immich_memes_shared_size:=50Gi}
