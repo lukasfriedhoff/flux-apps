@@ -166,6 +166,11 @@ spec:
             secretKeyRef:
               name: authelia-mail-credentials
               key: sender
+        - name: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: authelia-ldap
+              key: password
       extraVolumeMounts:
         - name: authelia-users
           mountPath: /config/users_database.yml

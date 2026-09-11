@@ -18,8 +18,19 @@ data:
 
     theme: dark
     authentication_backend:
-      file:
-        path: /config/users_database.yml
+      # Migrated from the static file backend to LLDAP (2026-09-11) for
+      # web-based user management + self-service password reset. The file
+      # users_database.yml is still mounted (see helm-release extraVolumes) so
+      # reverting this block to `file:` is an instant rollback.
+      password_reset:
+        disable: false
+      refresh_interval: 1m
+      ldap:
+        implementation: lldap
+        address: 'ldap://lldap.lldap.svc.cluster.local:3890'
+        base_dn: 'dc=h4xx,dc=io'
+        user: 'uid=admin,ou=people,dc=h4xx,dc=io'
+        # password via AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD (secret authelia-ldap)
 
     definitions:
       user_attributes:
