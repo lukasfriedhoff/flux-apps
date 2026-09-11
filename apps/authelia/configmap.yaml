@@ -245,6 +245,15 @@ data:
               - groups
               - preferred_username
               - role
+          matrix:
+            # MAS reads claims from the id_token (no fetch_userinfo) and its
+            # localpart template requires preferred_username, so these must be
+            # in the id_token, not just userinfo.
+            id_token:
+              - email
+              - name
+              - groups
+              - preferred_username
         scopes:
           nextcloud_admin:
             claims:
@@ -407,6 +416,7 @@ data:
             token_endpoint_auth_method: client_secret_post
           - client_id: ${matrix_oidc_client_id:=matrix-synapse}
             client_name: Matrix Synapse
+            claims_policy: matrix
             client_secret: {{ secret "/secrets/authelia-oidc-matrix/client_secret_digest" | msquote }}
             public: false
             authorization_policy: testuser_one_factor
