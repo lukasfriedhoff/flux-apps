@@ -30,7 +30,13 @@ metadata:
 spec:
   replicas: ${matrix_mas_replicas:=0}
   strategy:
-    type: Recreate
+    # MAS is stateless (all state in matrix-mas-postgres) and runs DB migrations
+    # via the migrate-database initContainer under a Postgres advisory lock, so
+    # concurrent replica starts and rolling upgrades are safe.
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: matrix-authentication-service
@@ -41,6 +47,17 @@ spec:
       labels:
         app.kubernetes.io/name: matrix-authentication-service
     spec:
+      # Spread replicas across nodes for HA; soft so it still schedules when a
+      # node is unavailable.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: matrix-authentication-service
+                topologyKey: kubernetes.io/hostname
       securityContext:
         runAsUser: 10001
         runAsGroup: 10001
