@@ -33,11 +33,16 @@ Status: **PLAN** (2026-09-12). Discovery done read-only; nothing migrated yet.
   and it does not migrate shares anyway.
 - Files rsync + `occ files:scan` is version-agnostic; calendars/contacts are
   portable via CalDAV/CardDAV exports; shares are recreatable via the OCS API.
-- **Passwords do not migrate.** Users get provisioned with disabled/random
-  passwords + password-reset mail (needs their email addresses — phase 0
-  exports them; source SMTP config exists on the old instance). Later
-  Authelia/LLDAP accounts can take over auth per user (usernames are kept
-  identical precisely so an eventual `oidc_login` match is seamless).
+- **Passwords DO migrate** (corrected 2026-09-12): modern NC hashes
+  (`3|$argon2id…`, `1|$2y$…`) are self-contained (salt+params inside, no
+  instance secret involved) and verify via `password_verify()` on any NC/DB.
+  Phase 1 copies each `oc_users.password` hash row-by-row into the target
+  after `occ user:add`. Reset mail only as fallback for pre-2015 LEGACY
+  hashes (salted with the old instance's `passwordsalt`; detect:
+  `password NOT LIKE '_|%'`). NOT portable regardless: app passwords/device
+  tokens + TOTP enrollments (encrypted with the instance `secret`) — devices
+  re-login, 2FA re-enrolls. Later Authelia/LLDAP accounts can take over auth
+  per user (usernames kept identical so `oidc_login` matching is seamless).
 
 ## Phase 0 — complete discovery (read-only, ~30 min)
 
@@ -51,6 +56,12 @@ On docker-host via `occ`:
 5. Group memberships: `occ group:list --output=json`.
 6. Decide inactive-user policy with operator (accounts dead since years →
    migrate-but-disable?).
+7. **`occ encryption:status` on the source** — if server-side encryption is
+   ON, files on disk are ciphertext (keys derived from passwords + instance
+   secret) and MUST be decrypted in place (`occ encryption:decrypt-all`)
+   before any rsync.
+8. Hash-format census: `SELECT uid FROM oc_users WHERE password NOT LIKE
+   '_|%'` → the (rare) legacy-hash users who WILL need a reset mail.
 
 ## Phase 1 — provision users + groups on k8s NC (no downtime)
 
@@ -59,8 +70,11 @@ For each source user (mapping `h4xx`→**skip creation** — merges into `lukasf
 occ user:add --display-name "<Display>" --email "<mail>" <username>   # random pw
 occ user:disable <username>        # enabled only at cutover
 occ group:add <g>; occ group:adduser <g> <u>
+# then: copy the password hash from the source DB (portable, see Strategy):
+#   psql: UPDATE oc_users SET password='<hash-from-mysql>' WHERE uid='<u>';
 ```
-Scripted from phase-0 JSON; idempotent.
+Scripted from phase-0 JSON; idempotent. h4xx's hash is NOT copied onto
+lukasf (existing account keeps its credentials + OIDC).
 
 ## Phase 2 — bulk file pre-sync (online, repeatable)
 
