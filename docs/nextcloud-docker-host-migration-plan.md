@@ -105,8 +105,8 @@ lukasf (existing account keeps its credentials + OIDC).
 
 1. Old instance → maintenance mode (`occ maintenance:mode --on`) = freeze.
 2. Final delta rsync + final files:scan + final DAV/share replay.
-3. `occ user:enable` all migrated users; send password-reset mails
-   (`occ user:resetpassword --send-email` loop / custom mail).
+3. `occ user:enable` all migrated users. Passwords already work (migrated
+   hashes); reset mails go ONLY to the phase-0 legacy-hash list, if any.
 4. App config: add `h4.ddnss.org` names to `trusted_domains` (new
    `previews.config.php`-style config file via GitOps; also check
    `overwrite.cli.url`/protocol interplay — the existing overwritehost pins
@@ -126,7 +126,8 @@ lukasf (existing account keeps its credentials + OIDC).
 ## Risks / notes
 
 - ~20 real external users → comms matter more than tech: announce cutover,
-  password-reset mail flow, broken public links, trash/versions not migrated.
+  devices/apps must re-login (tokens don't migrate), 2FA re-enrollment,
+  broken public links, trash/versions not migrated. Passwords stay the same.
 - Quotas: copy from source (`occ user:setting <u> files quota`).
 - Guest/ghost accounts (aphasie orgs) may be share-hubs — check share dump
   before deciding to disable anyone.
