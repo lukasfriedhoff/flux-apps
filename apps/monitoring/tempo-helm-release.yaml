@@ -17,13 +17,14 @@ spec:
   chart:
     spec:
       chart: tempo-distributed
-      # 2.26.x restructured the memcached Service+StatefulSet (immutable
-      # fields); upgraded 2026-09-12 by suspending the HR, deleting the old
-      # tempo-memcached Service+StatefulSet, bumping, and resuming (traces
-      # live in S3, the cache is disposable). Chart v3 (Tempo 3.0) is a
-      # Kafka-based write-path re-architecture — treat as a migration
-      # project, NOT a Renovate merge.
-      version: "2.26.2"
+      # v3 = Tempo 3.0: the ingester/compactor write path is replaced by
+      # Kafka-backed ingest (distributor -> tempo-kafka -> block-builder +
+      # live-store; compactor -> backend-scheduler + backend-worker).
+      # Migrated 2026-09-12; the broker lives in tempo-kafka.yaml. Traces
+      # remain disposable (blocks in S3), so ingest-queue loss is accepted.
+      # blockBuilder/liveStore replicas must equal the Kafka partition
+      # count (ingest.kafka.auto_create_topic_default_partitions).
+      version: "3.5.1"
       sourceRef:
         kind: HelmRepository
         name: grafana-community
@@ -54,16 +55,17 @@ spec:
           region: ${object_storage_region}
           insecure: ${object_storage_insecure}
           forcepathstyle: ${object_storage_force_path_style}
-    minio:
-      enabled: false
-    tempo:
-      structuredConfig:
-        ingester:
-          lifecycler:
-            ring:
-              replication_factor: ${tempo_replication_factor}
+    # Tempo 3.0 write path: OTLP -> distributor -> Kafka -> block-builder
+    # (S3 blocks) + live-store (recent-data queries).
     ingester:
-      replicas: ${tempo_ingester_replicas}
+      enabled: false
+    ingest:
+      kafka:
+        address: "tempo-kafka.${namespace_monitoring:=monitoring}.svc.cluster.local:9092"
+        auto_create_topic_default_partitions: 1
+    blockBuilder:
+      enabled: true
+      replicas: 1
       resources:
         requests:
           cpu: 100m
@@ -71,7 +73,18 @@ spec:
         limits:
           cpu: 500m
           memory: 512Mi
-    distributor:
+    liveStore:
+      enabled: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 768Mi
+    backendScheduler:
+      enabled: true
       resources:
         requests:
           cpu: 50m
@@ -79,7 +92,16 @@ spec:
         limits:
           cpu: 300m
           memory: 256Mi
-    compactor:
+    backendWorker:
+      enabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi
+    distributor:
       resources:
         requests:
           cpu: 50m

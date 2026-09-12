@@ -31,5 +31,11 @@ data:
   object_storage_region: "us-east-1"
   monitoring_storage_class_name: "ssd-rbd-2r"
   monitoring_tempo_bucket: "homelab-tempo"
+  # Tempo 3.x Kafka ingest buffer (single-node KRaft, see apps/monitoring/tempo-kafka.yaml)
+  tempo_kafka_requests_cpu: "250m"
+  tempo_kafka_requests_memory: "768Mi"
+  tempo_kafka_limits_cpu: "1"
+  tempo_kafka_limits_memory: "1Gi"
+  tempo_kafka_storage_class_name: "longhorn-ssd-rwo-1r"
+  tempo_kafka_size: "10Gi"
   monitoring_tenant_id: "anonymous"
-  tempo_ingester_replicas: "3"
