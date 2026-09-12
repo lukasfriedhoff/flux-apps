@@ -1,0 +1,659 @@
+{
+ "annotations": {
+  "list": []
+ },
+ "editable": true,
+ "fiscalYearStartMonth": 0,
+ "graphTooltip": 1,
+ "id": null,
+ "links": [],
+ "panels": [
+  {
+   "type": "stat",
+   "title": "Exporters Up",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 0
+   },
+   "targets": [
+    {
+     "expr": "sum(up{instance=\"storage01\"})",
+     "refId": "A",
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "2": {
+         "text": "2/2 UP",
+         "color": "green"
+        },
+        "1": {
+         "text": "1/2",
+         "color": "yellow"
+        },
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        }
+       }
+      }
+     ],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "type": "stat",
+   "title": "SMART (worst disk)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 0
+   },
+   "targets": [
+    {
+     "expr": "min(smartctl_device_smart_status{instance=\"storage01\"})",
+     "refId": "A",
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "FAIL",
+         "color": "red"
+        },
+        "1": {
+         "text": "OK",
+         "color": "green"
+        }
+       }
+      }
+     ],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "type": "stat",
+   "title": "RAID md0 degraded disks",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 0
+   },
+   "targets": [
+    {
+     "expr": "node_md_disks_required{instance=\"storage01\",device=\"md0\"} - node_md_disks{instance=\"storage01\",device=\"md0\",state=\"active\"}",
+     "refId": "A",
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "mappings": [],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "type": "stat",
+   "title": "/mnt/backup used",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 0
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - node_filesystem_avail_bytes{instance=\"storage01\",mountpoint=\"/mnt/backup\"} / node_filesystem_size_bytes{instance=\"storage01\",mountpoint=\"/mnt/backup\"})",
+     "refId": "A",
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "mappings": [],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 80
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Mem available",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 0
+   },
+   "targets": [
+    {
+     "expr": "node_memory_MemAvailable_bytes{instance=\"storage01\"}",
+     "refId": "A",
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "mappings": [],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 2147483648
+       },
+       {
+        "color": "green",
+        "value": 4294967296
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Uptime",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 0
+   },
+   "targets": [
+    {
+     "expr": "node_time_seconds{instance=\"storage01\"} - node_boot_time_seconds{instance=\"storage01\"}",
+     "refId": "A",
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "mappings": [],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Memory & Swap",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 4
+   },
+   "targets": [
+    {
+     "expr": "node_memory_MemTotal_bytes{instance=\"storage01\"} - node_memory_MemAvailable_bytes{instance=\"storage01\"}",
+     "refId": "A",
+     "legendFormat": "mem used"
+    },
+    {
+     "expr": "node_memory_MemTotal_bytes{instance=\"storage01\"}",
+     "refId": "B",
+     "legendFormat": "mem total"
+    },
+    {
+     "expr": "node_memory_SwapTotal_bytes{instance=\"storage01\"} - node_memory_SwapFree_bytes{instance=\"storage01\"}",
+     "refId": "C",
+     "legendFormat": "swap used"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 12,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "CPU & Load",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 4
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{instance=\"storage01\",mode=\"idle\"}[5m])))",
+     "refId": "A",
+     "legendFormat": "cpu %"
+    },
+    {
+     "expr": "node_load5{instance=\"storage01\"}",
+     "refId": "B",
+     "legendFormat": "load5"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "fillOpacity": 12,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Backup array space (/mnt/backup)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 12
+   },
+   "targets": [
+    {
+     "expr": "node_filesystem_size_bytes{instance=\"storage01\",mountpoint=\"/mnt/backup\"} - node_filesystem_avail_bytes{instance=\"storage01\",mountpoint=\"/mnt/backup\"}",
+     "refId": "A",
+     "legendFormat": "used"
+    },
+    {
+     "expr": "node_filesystem_size_bytes{instance=\"storage01\",mountpoint=\"/mnt/backup\"}",
+     "refId": "B",
+     "legendFormat": "total"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 12,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Disk IO busy %",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 12
+   },
+   "targets": [
+    {
+     "expr": "100 * rate(node_disk_io_time_seconds_total{instance=\"storage01\",device=~\"md0|sd[a-z]\"}[5m])",
+     "refId": "A",
+     "legendFormat": "{{device}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "fillOpacity": 12,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "max": 100
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Disk temperatures (SMART)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 20
+   },
+   "targets": [
+    {
+     "expr": "smartctl_device_temperature{instance=\"storage01\",temperature_type=\"current\"}",
+     "refId": "A",
+     "legendFormat": "{{device}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "custom": {
+      "fillOpacity": 12,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Network (enp/eth)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "mimir"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 20
+   },
+   "targets": [
+    {
+     "expr": "rate(node_network_receive_bytes_total{instance=\"storage01\",device!~\"lo|docker.*|veth.*|br.*\"}[5m])",
+     "refId": "A",
+     "legendFormat": "rx {{device}}"
+    },
+    {
+     "expr": "rate(node_network_transmit_bytes_total{instance=\"storage01\",device!~\"lo|docker.*|veth.*|br.*\"}[5m])",
+     "refId": "B",
+     "legendFormat": "tx {{device}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 12,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  }
+ ],
+ "refresh": "1m",
+ "schemaVersion": 39,
+ "tags": [
+  "storage01",
+  "backup",
+  "homelab"
+ ],
+ "templating": {
+  "list": []
+ },
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "timezone": "browser",
+ "title": "storage01 backup host",
+ "uid": "storage01-backup-host"
+}
