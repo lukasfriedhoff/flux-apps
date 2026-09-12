@@ -4,7 +4,7 @@ metadata:
   name: immich-photos-postgres
   namespace: immich-photos
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16.13-system-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
   instances: ${immich_photos_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
