@@ -4,7 +4,7 @@ metadata:
   name: tempo
   namespace: monitoring
 spec:
-  interval: 10m0s
+  interval: 15m0s
   timeout: 30m0s
   driftDetection:
     mode: enabled
