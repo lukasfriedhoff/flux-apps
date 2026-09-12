@@ -10,6 +10,13 @@ generatorOptions:
     kustomize.toolkit.fluxcd.io/substitute: disabled
 
 configMapGenerator:
+  - name: grafana-dashboard-storage01
+    options:
+      annotations:
+        grafana_folder: Homelab
+    files:
+      - storage01/storage01.json
+
   - name: grafana-dashboard-kubernetes
     options:
       annotations:
