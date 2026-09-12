@@ -60,7 +60,7 @@ metadata:
   namespace: matrix
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
-  instances: ${matrix_postgres_instances:=1}
+  instances: ${matrix_whatsappdb_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
     annotations:
@@ -115,7 +115,7 @@ metadata:
   namespace: matrix
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
-  instances: ${matrix_postgres_instances:=1}
+  instances: ${matrix_telegramdb_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
     annotations:
@@ -170,7 +170,7 @@ metadata:
   namespace: matrix
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
-  instances: ${matrix_postgres_instances:=1}
+  instances: ${matrix_signaldb_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
     annotations:
