@@ -67,6 +67,15 @@ spec:
             - nextcloud${public_host_suffix}.${delegating_domain}
     nextcloud:
       host: nextcloud${public_host_suffix}.${delegating_domain}
+      # Zero-downtime config rollouts: safe because the data volume is RWX
+      # and HPA already runs multiple pods concurrently. Chart default is
+      # Recreate (= full outage per change). On a misbehaving NEXTCLOUD
+      # VERSION upgrade, temporarily flip back to Recreate for that bump.
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
       podSecurityContext:
         fsGroupChangePolicy: OnRootMismatch
       extraEnv:
