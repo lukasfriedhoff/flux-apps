@@ -5,7 +5,12 @@ metadata:
   namespace: flux-system
 data:
   matrix_suspend: "true"
-  matrix_postgres_instances: "1"
+  matrix_postgres_instances: "1"  # legacy shared default (no longer referenced)
+  # Per-bridge-DB instance counts (split 2026-09-12 so HA scale-ups can go
+  # one cluster at a time — see the 2026-09-10 mass-scale-up incident)
+  matrix_whatsappdb_postgres_instances: "1"
+  matrix_telegramdb_postgres_instances: "1"
+  matrix_signaldb_postgres_instances: "1"
   matrix_auth_mode: "legacy"
 
   matrix_synapse_image_tag: "latest"
