@@ -30,7 +30,7 @@ spec:
               protocol: TCP
           env:
             - name: NEXTCLOUD_SERVER
-              value: http://nextcloud.nextcloud.svc.cluster.local:8080
+              value: http://nextcloud.${nextcloud_namespace:=nextcloud}.svc.cluster.local:8080
             - name: NEXTCLOUD_TIMEOUT
               value: 20s
             - name: NEXTCLOUD_INFO_APPS

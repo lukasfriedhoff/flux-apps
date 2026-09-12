@@ -47,3 +47,8 @@ data:
   # Secret must exist in the nextcloud namespace with keys AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
   # (same key names as the longhorn-backup-target secret)
   nextcloud_postgres_backup_credential_secret_name: "nextcloud-postgres-backup-credentials"
+  # Namespace the instance runs in. Only referenced by in-cluster FQDNs
+  # (postgres rw service, metrics exporter target); the resources themselves
+  # get their namespace from the flux Kustomization targetNamespace. Override
+  # for a second instance (e.g. nextcloud-h4).
+  nextcloud_namespace: "nextcloud"
