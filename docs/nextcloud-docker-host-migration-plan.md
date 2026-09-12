@@ -8,10 +8,11 @@ Status: **PLAN** (2026-09-12). Discovery done read-only; nothing migrated yet.
   (`nextcloud-app-1`) + nginx (`nextcloud-web-1`/`web2`) + cron + **MySQL/MariaDB**.
 - Version: **31.0.14** (target runs **34.0.3** — 3 majors apart).
 - Data dir: `/var/www/html/data` (size TBD in phase 0).
-- Users (≥20, real people incl. two Aphasie associations): anni, annika,
-  aphasieshgessen, bj, christoph, fachschaft1, fredde, hubi, jascha, jens,
-  friedhoff, jogi, jmo, johanna, kevin, landesverbandaphasienrw, leon,
-  **h4xx (Lukas → maps to `lukasf`)**, marv, mascha, … (full list in phase 0).
+- Users (**27**, real people incl. two Aphasie associations): anni, annika,
+  aphasieshgessen, bj, christoph, fachschaft1, fredde, friedhoff, **h4xx
+  (Lukas)**, hubi, jascha, jens, jmo, jogi, johanna, kevin,
+  landesverbandaphasienrw, leon, marv, mascha, max, milena, miro, monika,
+  pascal, timo, vivian.
 - Domain today: `nextcloud.h4.ddnss.org` (currently resolving to an IONOS IP).
 
 ## Target
@@ -65,7 +66,14 @@ On docker-host via `occ`:
 
 ## Phase 1 — provision users + groups on k8s NC (no downtime)
 
-For each source user (mapping `h4xx`→**skip creation** — merges into `lukasf`):
+**UID landscape (verified 2026-09-12): zero collisions.** The k8s instance
+has only `admin` + four **UUID-uid accounts created by oidc_login from the
+authelia `sub` claim** (`08f11a25-…` = Lukas Friedhoff = the real merge
+target for `h4xx` — there is NO `lukasf` uid; data dir is the UUID). All 27
+source uids are free.
+
+For each source user (mapping `h4xx`→**skip creation** — its files merge
+into `08f11a25-d9f3-487d-8a31-0a15df131ca1`):
 ```
 occ user:add --display-name "<Display>" --email "<mail>" <username>   # random pw
 occ user:disable <username>        # enabled only at cutover
@@ -119,8 +127,14 @@ lukasf (existing account keeps its credentials + OIDC).
 
 ## Later (explicitly out of scope now)
 
-- Authelia/LLDAP accounts for migrated users (usernames already aligned);
-  switch users to OIDC login gradually; `oidc_login` matches by username.
+- Authelia/LLDAP accounts for migrated users — **WARNING (found in the UID
+  check): oidc_login on this instance maps accounts by the OIDC `sub` claim
+  (UUIDs)**, so an SSO login by a migrated user would create a NEW UUID
+  account instead of attaching to their provisioned username. Before any SSO
+  rollout for migrated users, either reconfigure `oidc_login_attributes`
+  id-mapping to `preferred_username`/email (and migrate the four existing
+  UUID accounts' uids in the same step) or accept password-login-only for
+  migrated users. Design decision deferred.
 - Ingress for `nextcloud.h4.ddnss.org` (operator).
 
 ## Risks / notes
