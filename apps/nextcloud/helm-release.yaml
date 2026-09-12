@@ -133,6 +133,17 @@ spec:
             'appstoreenabled' => false,
             'appstore.experimental.enabled' => false,
           );
+        previews.config.php: |-
+          <?php
+          // Cap preview generation: unbounded defaults re-rendered ~80G of
+          // thumbnails in one day (2026-09-12) after pod churn. 2048px is
+          // indistinguishable in the web UI; skip previews for images >64MB.
+          $CONFIG = array (
+            'preview_max_x' => 2048,
+            'preview_max_y' => 2048,
+            'jpeg_quality' => 80,
+            'preview_max_filesize_image' => 64,
+          );
         logging.config.php: |-
           <?php
           $CONFIG = array (
