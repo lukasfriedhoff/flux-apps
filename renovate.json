@@ -11,7 +11,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Pinned app tarballs seeded by initContainers (URL version bumps only; sha256 must be refreshed manually, so these PRs act as update notifications)",
+      "description": "Pinned Nextcloud app tarballs seeded by initContainers. Renovate bumps ONLY the release tag in the URL path (currentValue); when merging you MUST also hand-edit the version in the asset filename (app-vX.Y.Z.tar.gz), the sha256, and the desired_version arg. Treat these PRs as notifications, not auto-merge.",
       "managerFilePatterns": ["/apps/nextcloud/(helm-release|verify-custom-apps)\\.ya?ml$/"],
       "matchStrings": [
         "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/v(?<currentValue>[0-9.]+)/"
