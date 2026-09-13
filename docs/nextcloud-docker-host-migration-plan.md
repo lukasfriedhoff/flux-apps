@@ -66,6 +66,50 @@ Provisioning caveat: LLDAP stores its own credentials — NC password hashes are
 not importable into LLDAP; users either reset in LLDAP or keep NC-local
 password auth (option a). Decide per path.
 
+## DECISION: approach (a) chosen (2026-09-13) — friendly local uids + password login
+
+Operator picked (a): the 26 org users become **local Nextcloud users with
+friendly uids + their portable source password hashes** (login via the
+password form, which is enabled). **Lukas untouched** (stays `08f11a25`,
+Authelia SSO); h4xx merges into him. All 27 also get added to **LLDAP** for
+other apps / future SSO (LLDAP provisioning is a separate step — LLDAP keeps
+its own credentials, so users either reset there or stay NC-password; decide at
+provisioning). Option (b) — unify everyone on Authelia SSO with friendly names
+(requires remapping Lukas + oidc `id=preferred_username`) — remains a later
+deliberate change.
+
+**Account creation is CUTOVER-timed, not now** — the org still uses the old
+instance; pre-creating empty prod accounts causes drift/confusion. Run the
+script below only when cutting the org over to prod (after DNS is ready).
+
+### (a) cutover script (turnkey; run when copy complete + old instance in maintenance)
+
+```sh
+# prereqs: kubectl ctx homelab-prod; source reachable; migration pod present
+NS=nextcloud
+APP=$(kubectl -n $NS get pods -l app.kubernetes.io/name=nextcloud -o jsonpath='{.items[0].metadata.name}')
+occ(){ kubectl -n $NS exec "$APP" -c nextcloud -- php /var/www/html/occ "$@"; }
+SRC=root@10.0.11.22
+Q(){ ssh -i /path/nc-mig-key -o StrictHostKeyChecking=no "$SRC" "DBPW=\$(grep dbpassword /mnt/dockerstorage/nextcloud/config/config.php|sed -E "s/.*=> '([^']*)'.*/\1/"); docker exec nextcloud-db-1 mysql -u nextcloud -p"\$DBPW" nextcloud -N -e "$1""; }
+PGPOD=nextcloud-postgres-1   # cnpg primary; use the app DB role
+
+USERS="bj vivian jascha annika christoph monika miro pascal friedhoff johanna mascha max landesverbandaphasienrw aphasieshgessen leon jmo jogi jens anni fredde hubi kevin marv milena timo fachschaft1"
+for u in $USERS; do
+  export OC_PASS="$(head -c18 /dev/urandom|base64)"
+  occ user:add --password-from-env "$u" || true            # creates data/$u
+  dn=$(Q "SELECT displayname FROM oc_users WHERE uid='$u'"); [ -n "$dn" ] && occ user:setting "$u" settings display_name "$dn"
+  h=$(Q "SELECT password FROM oc_users WHERE uid='$u'")     # portable hash
+  # apply hash directly (no occ verb for hashes): UPDATE prod PG oc_users
+  kubectl -n $NS exec "$PGPOD" -- psql -qAt -c "UPDATE oc_users SET password='$h' WHERE uid='$u';"
+  # move staged data into place (same Longhorn volume => instant), fix owner:
+  kubectl -n $NS exec nc-migration -- sh -c "mkdir -p /data/$u && mv /data/_import_ddnss/$u/files /data/$u/files && chown -R 33:33 /data/$u"
+  occ files:scan --path="$u/files"
+done
+# h4xx -> existing lukasf (data already staged in 08f11a25.../files/h4-import):
+occ files:scan --path="08f11a25-d9f3-487d-8a31-0a15df131ca1/files"
+# shares (151) + groupfolder: rebuild via occ scripting (file IDs changed post-scan) — separate pass.
+```
+
 ## Post-copy runbook (per user, once its UUID is known)
 
 1. `occ user:add <uid>` (or OIDC first-login) → note the prod data dir UUID.
