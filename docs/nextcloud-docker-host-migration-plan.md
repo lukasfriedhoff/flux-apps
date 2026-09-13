@@ -152,3 +152,23 @@ BACKEND-DEPENDENT (need a companion service — DECIDE per app: deploy or disabl
 
 Note: appdata_occ7puli0xhw (362G) includes previewgenerator thumbnails +
 recognize models + fulltextsearch index — migrating it preserves those.
+
+## App scope FINALIZED (operator 2026-09-13) — zero companion services
+
+DROP (10, not migrated; app:remove on source before final dump, exclude their
+appdata from rsync): onlyoffice, fulltextsearch, files_fulltextsearch,
+fulltextsearch_elasticsearch, files_fulltextsearch_tesseract, recognize,
+libresign, riotchat, drawio, integration_paperless. => NO Elasticsearch /
+OnlyOffice DS / Paperless / ML runtime / Java needed. User files (onlyoffice/
+libresign docs) are plain files, untouched; only the app FEATURES + regenerable
+indexes/models are dropped.
+
+SEED via GitOps (20, all self-contained, appstore stays false): calendar,
+calendar_news, carnet, contacts, cookbook, cospend, deck, gpoddersync,
+groupfolders, groupfolder_tags, groupfolder_filesystem_snapshots,
+organization_folders, mail, maps, news, nextpod, impersonate, passwords,
+previewgenerator, tasks.
+
+Build: per-instance seed app-list in apps/nextcloud (prod curated / h4 = these
+20), pinned URL+sha256+version auto-generated from the appstore API for the
+NC34-compatible release of each. appstoreenabled=false on h4 too.
