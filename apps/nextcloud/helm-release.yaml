@@ -930,6 +930,17 @@ spec:
           enable_custom_app_if_present cookbook /var/www/html/custom_apps/cookbook/vendor/autoload.php || true
           enable_custom_app_if_present maps /var/www/html/custom_apps/maps/vendor/autoload.php || true
           enable_custom_app_if_present passwords /var/www/html/custom_apps/passwords/appinfo/info.xml || true
+          enable_custom_app_if_present calendar_news /var/www/html/custom_apps/calendar_news/appinfo/info.xml || true
+          enable_custom_app_if_present carnet /var/www/html/custom_apps/carnet/appinfo/info.xml || true
+          enable_custom_app_if_present cospend /var/www/html/custom_apps/cospend/appinfo/info.xml || true
+          enable_custom_app_if_present deck /var/www/html/custom_apps/deck/appinfo/info.xml || true
+          enable_custom_app_if_present gpoddersync /var/www/html/custom_apps/gpoddersync/appinfo/info.xml || true
+          enable_custom_app_if_present groupfolders /var/www/html/custom_apps/groupfolders/appinfo/info.xml || true
+          enable_custom_app_if_present impersonate /var/www/html/custom_apps/impersonate/appinfo/info.xml || true
+          enable_custom_app_if_present news /var/www/html/custom_apps/news/appinfo/info.xml || true
+          enable_custom_app_if_present nextpod /var/www/html/custom_apps/nextpod/appinfo/info.xml || true
+          enable_custom_app_if_present previewgenerator /var/www/html/custom_apps/previewgenerator/appinfo/info.xml || true
+          enable_custom_app_if_present tasks /var/www/html/custom_apps/tasks/appinfo/info.xml || true
           ensure_app_enabled serverinfo
           if enable_custom_app_if_present richdocuments /var/www/html/custom_apps/richdocuments/appinfo/info.xml; then
             occ_safe app:disable -n richdocumentscode
@@ -1114,6 +1125,76 @@ spec:
                 f0447632ac9e3e91110fb4517f0f07ab9c4dc7eb3cbd484f6c3c89d89bd4fe1a \
                 passwords/appinfo/info.xml \
                 2026.7.20
+              # Apps migrated from the docker-host (h4.ddnss.org) instance.
+              # Pinned NC34-compatible releases from the official appstore /
+              # each app's release page (URL+sha256+version); appstoreenabled
+              # stays false, so these survive major upgrades like the rest.
+              fetch_app \
+                calendar_news \
+                https://github.com/mziech/nextcloud-calendar-news/releases/download/v1.1.19/calendar_news.tar.gz \
+                46740e11682a11af7c42aa4c4df3b3a17d03e90a9c0a01bcf4b499356a276e85 \
+                calendar_news/appinfo/info.xml \
+                1.1.19
+              fetch_app \
+                carnet \
+                https://github.com/CarnetApp/CarnetNextcloud/releases/download/v0.25.14/carnet-nc-v0.25.14.tar.gz \
+                46adf29d21eb3b3836a20042bb8867b90b74b04f73e5e8cd260ed0d20513a61e \
+                carnet/appinfo/info.xml \
+                0.25.14
+              fetch_app \
+                cospend \
+                https://github.com/julien-nc/cospend-nc/releases/download/v4.1.3/cospend-4.1.3.tar.gz \
+                6a749c542a3d6eb06694d535a0f6d774912a337f28ca5b4e9ad551cca47a9ade \
+                cospend/appinfo/info.xml \
+                4.1.3
+              fetch_app \
+                deck \
+                https://github.com/nextcloud-releases/deck/releases/download/v1.18.4/deck-v1.18.4.tar.gz \
+                d8a7063cdd6225d19dc28833a7170506cac6f5e429a020e23bcd8c2d8315bc39 \
+                deck/appinfo/info.xml \
+                1.18.4
+              fetch_app \
+                gpoddersync \
+                https://github.com/thrillfall/nextcloud-gpodder/releases/download/3.17.0/gpoddersync.tar.gz \
+                578889af5a79baac5daef139d1b8f235388776c6404dec1a057290f0c6b47478 \
+                gpoddersync/appinfo/info.xml \
+                3.17.0
+              fetch_app \
+                groupfolders \
+                https://github.com/nextcloud-releases/groupfolders/releases/download/v22.0.6/groupfolders-v22.0.6.tar.gz \
+                bfff357b12bbd24257d8d127cf30e83a72256e7659f1cc3e32bd09fe647d2f9b \
+                groupfolders/appinfo/info.xml \
+                22.0.6
+              fetch_app \
+                impersonate \
+                https://github.com/nextcloud-releases/impersonate/releases/download/v5.0.0/impersonate-v5.0.0.tar.gz \
+                e9b85d6489434af2d05f1618839bcfd9859dbc6b7be580148592f511a448ed66 \
+                impersonate/appinfo/info.xml \
+                5.0.0
+              fetch_app \
+                news \
+                https://github.com/nextcloud/news/releases/download/28.7.0/news.tar.gz \
+                aaeadd2c018aa2d8e5844309d5c754ae8ba47067f06f87a0f82afe5af257dff8 \
+                news/appinfo/info.xml \
+                28.7.0
+              fetch_app \
+                nextpod \
+                https://github.com/pbek/nextcloud-nextpod/releases/download/v0.7.12/nextpod-nc.tar.gz \
+                c205b45f68f60afe6ba7f3856b4c6cba262e1354c9afffa8a040f8f0972c02fa \
+                nextpod/appinfo/info.xml \
+                0.7.12
+              fetch_app \
+                previewgenerator \
+                https://github.com/nextcloud-releases/previewgenerator/releases/download/v5.14.0/previewgenerator-v5.14.0.tar.gz \
+                8a9e20a883f67224f8e73947afb476d9809bd7991ac0cd92d7fafcedbe65ca87 \
+                previewgenerator/appinfo/info.xml \
+                5.14.0
+              fetch_app \
+                tasks \
+                https://github.com/nextcloud/tasks/releases/download/v0.18.1/tasks.tar.gz \
+                0c988d50531c9bfa246e6c31f3f95369adde1629ba70d15194915ab56e24687b \
+                tasks/appinfo/info.xml \
+                0.18.1
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www/html/custom_apps
