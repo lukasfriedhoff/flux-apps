@@ -37,17 +37,34 @@
   `scratchpad/nc-migration-pod-srv9.yaml` + re-`cp` `one.sh`/`migrate.sh`, and
   re-authorize the pubkey on docker-host.
 
-## BLOCKER — 26 users need OIDC-UUID identity mapping (operator + authelia)
+## Identity: KEEP FRIENDLY UIDS (resolved 2026-09-13) — the earlier "UUID blocker" was wrong
 
-Prod logs in via **oidc_login**, so prod usernames are the OIDC subject
-**UUIDs** (lukasf = `08f11a25-d9f3-487d-8a31-0a15df131ca1`), NOT friendly uids.
-The 26 non-Lukas source users (`bj`, `vivian`, … — a real, actively-used
-aphasia-org + family instance, ~15 logged in daily) have **no prod UUID yet**.
-Minting accounts blindly = wrong identity for real users. **Before provisioning
-them:** decide the IdP path — either (a) provision each in authelia/LLDAP and
-have them log in once (mints the UUID), then map staging→UUID dir, or (b) a
-scripted uid→UUID map agreed with the operator. This is why the autonomous run
-copied the other 26 to **staging only** and did NOT create accounts.
+Discovered facts on prod: all users are `backend: Database` (local, incl.
+Lukas); `oidc_login_attributes['id'] => 'sub'` (why oidc-created uids are
+UUIDs); `oidc_login_auto_redirect => false` (password form IS available);
+`user_ldap` 1.25.0 enabled but UNCONFIGURED; **LLDAP is live** (ns lldap).
+
+So we CAN keep the source friendly uids (`bj`,`vivian`,…, `lukasf` exists):
+create the 27 as **local users with friendly uids + their portable password
+hashes** → data lands in `data/<uid>/` (matches the `_import_ddnss/<uid>/`
+staging layout; just move the parent). No UUID remap. Form login works today.
+h4xx still merges into existing `lukasf` (08f11a25).
+
+**Add all 27 to LLDAP** (friendly uids) and wire prod's dormant `user_ldap`
+→ LLDAP (username attr = uid) so NC uses friendly uids natively + authelia
+(LDAP-backed) gives SSO. LLDAP = identity source of truth.
+
+**Fork to decide with operator (touches EXISTING users + live org auth — do NOT
+do unattended):**
+- (a) Non-disruptive: friendly local/LDAP users + password(form) login now; add
+  to LLDAP; DEFER oidc-uid unification. Lukas stays `08f11a25`.
+- (b) Coordinated cutover: remap Lukas `08f11a25`→`lukasf`, set oidc
+  `id=preferred_username`, authelia issues `preferred_username=uid` → unified
+  friendly-uid SSO for everyone.
+
+Provisioning caveat: LLDAP stores its own credentials — NC password hashes are
+not importable into LLDAP; users either reset in LLDAP or keep NC-local
+password auth (option a). Decide per path.
 
 ## Post-copy runbook (per user, once its UUID is known)
 
