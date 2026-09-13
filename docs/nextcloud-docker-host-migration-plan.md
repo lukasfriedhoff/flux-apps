@@ -1,3 +1,78 @@
+# Nextcloud docker-host → k8s migration
+
+> **v3 (2026-09-13) — MERGE INTO PROD (current, supersedes v2 below).**
+> Operator pivot: do NOT stand up a second instance. Merge the docker-host
+> instance (`nextcloud.h4.ddnss.org`, NC31/MariaDB) INTO the existing prod
+> k8s Nextcloud (NC34/CNPG-PG), keeping all 27 users; only **h4xx → lukasf**
+> is identity-mapped. v2 (separate instance) and v1 (merge) are kept below
+> for reference.
+
+## Current state (2026-09-13, autonomous session)
+
+**DONE**
+- **Apps**: 11 ddnss third-party apps added to the prod seed + enabled
+  (calendar_news, carnet, cospend, deck, gpoddersync, groupfolders,
+  impersonate, news, nextpod, previewgenerator, tasks) — commit `7568ff2`,
+  zero-downtime. `appstoreenabled` stays false.
+- **Data PVC**: prod `nextcloud-data-hdd` expanded to **5 Ti** (4.9 T free);
+  RWX `longhorn-disk-rwx-2r`.
+- **Source inventory**: 27 users, 4 groups, 151 shares, 1 groupfolder,
+  encryption OFF, instanceid `occ7puli0xhw`, ~2.3 TB user data + 362 G
+  appdata. h4xx="Lukas" 326 G. Password hashes portable (argon2id/bcrypt).
+
+**IN PROGRESS — bulk data copy (resumable, runs a day+)**
+- A migration pod `nc-migration` (namespace nextcloud, pinned to **srv9**,
+  mounts `nextcloud-data-hdd` RWX) rsync-pulls from docker-host
+  (`root@10.0.11.22:/mnt/dockerstorage/nextcloud/data`) via an ephemeral key.
+- **3-way parallel, `--inplace --partial --whole-file`, bwlimit 20 MB/s/stream**
+  (single-stream is ~6 MiB/s — small files over Longhorn RWX-NFS are
+  latency-bound; parallelism is the lever, not tar).
+- Targets: **h4xx → `…/08f11a25…/files/h4-import/`** (lukasf, mapping known);
+  all others → **`/data/_import_ddnss/<uid>/files/`** (staging).
+- Logs: `/data/.migration/<uid>.status` + `.log`; done marker
+  `/data/.migration/_ALL.status`.
+- **Resume after interruption**: `kubectl -n nextcloud exec nc-migration --
+  setsid sh -c 'sh /root/migrate.sh >/dev/null 2>&1 &'` (idempotent; rsync
+  skips finished files). If the pod is gone, recreate from
+  `scratchpad/nc-migration-pod-srv9.yaml` + re-`cp` `one.sh`/`migrate.sh`, and
+  re-authorize the pubkey on docker-host.
+
+## BLOCKER — 26 users need OIDC-UUID identity mapping (operator + authelia)
+
+Prod logs in via **oidc_login**, so prod usernames are the OIDC subject
+**UUIDs** (lukasf = `08f11a25-d9f3-487d-8a31-0a15df131ca1`), NOT friendly uids.
+The 26 non-Lukas source users (`bj`, `vivian`, … — a real, actively-used
+aphasia-org + family instance, ~15 logged in daily) have **no prod UUID yet**.
+Minting accounts blindly = wrong identity for real users. **Before provisioning
+them:** decide the IdP path — either (a) provision each in authelia/LLDAP and
+have them log in once (mints the UUID), then map staging→UUID dir, or (b) a
+scripted uid→UUID map agreed with the operator. This is why the autonomous run
+copied the other 26 to **staging only** and did NOT create accounts.
+
+## Post-copy runbook (per user, once its UUID is known)
+
+1. `occ user:add <uid>` (or OIDC first-login) → note the prod data dir UUID.
+2. Move staged files into place: `mv /data/_import_ddnss/<uid>/files/*
+   /data/<UUID>/files/` (same volume → instant), `chown -R 33:33`.
+3. `occ files:scan --path="<UUID>/files"` (registers files in the DB).
+4. Password: copy the source `oc_users.password` hash (portable) into prod
+   `oc_users.password` for that uid so old passwords work (or leave OIDC-only).
+5. Shares (151 total) + groupfolder: re-create via `occ`/DB — file IDs differ
+   after scan, so shares can't be lifted 1:1; script by (owner, path, target).
+
+### h4xx → lukasf (pilot, UUID known — do this first when copy of h4xx finishes)
+1. `occ files:scan --path="08f11a25-d9f3-487d-8a31-0a15df131ca1/files"`
+2. Verify h4-import/ appears in Lukas's account (web/DAV).
+3. (Optional) set lukasf's local password from h4xx's hash so "login via
+   password" works alongside authelia — **operator to confirm** (auth change).
+
+## Cleanup when done
+- Delete pod `nc-migration` + secret `nc-migration-sshkey` (nextcloud ns);
+  shred `scratchpad/nc-mig-key*`; **remove the migration pubkey from
+  `root@docker-host:~/.ssh/authorized_keys`**.
+
+---
+
 # Migration plan v2: docker-host Nextcloud → k8s as a SECOND instance
 
 Status: **PLAN v2** (2026-09-12). Strategy pivoted by operator: **move, not
