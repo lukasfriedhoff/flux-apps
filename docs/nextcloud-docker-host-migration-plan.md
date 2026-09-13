@@ -123,3 +123,32 @@ Remaining wiring (Phase A2, ~1 commit each side):
   `nextcloud_appstore_enabled:=false` override (true for h4) and include
   `custom_apps/` in the Phase B rsync. fulltextsearch+elasticsearch implies
   an Elasticsearch dependency to stand up or disable post-move.
+
+## App management on h4 = GitOps (operator decision 2026-09-13)
+
+h4 keeps `appstoreenabled=false` and seeds ALL third-party apps declaratively
+(pinned URL+sha256+version via the fetch_app initContainer pattern), NOT
+UI/appstore-managed. Mechanism to build: parametrize apps/nextcloud's seed so
+the app list is per-instance (prod = curated 9; h4 = full set). Auto-generate
+the pinned catalog from the Nextcloud appstore API (per app: NC34-compatible
+release -> download URL -> sha256).
+
+30 third-party apps in custom_apps/ (versions are NC31-era; pick NC34-compatible
+at seed time):
+
+SELF-CONTAINED (pure seed): calendar, calendar_news, contacts, tasks, deck,
+cospend, groupfolders, groupfolder_tags, groupfolder_filesystem_snapshots,
+organization_folders, news, cookbook, maps, passwords, previewgenerator,
+impersonate, drawio, gpoddersync, nextpod, carnet, riotchat, mail.
+
+BACKEND-DEPENDENT (need a companion service — DECIDE per app: deploy or disable):
+- onlyoffice 9.13.0 -> OnlyOffice Document Server deployment
+- fulltextsearch 31.0.1 + files_fulltextsearch 31.0.0 + fulltextsearch_elasticsearch
+  31.0.2 -> Elasticsearch instance
+- files_fulltextsearch_tesseract 27.0.1 -> tesseract OCR in image
+- recognize 9.0.9 -> ~2GB ML models + nodejs/tensorflow (heavy CPU/GPU)
+- libresign 11.6.0 -> Java + JSignPDF + CFSSL backend
+- integration_paperless 1.0.10 -> external Paperless-ngx instance
+
+Note: appdata_occ7puli0xhw (362G) includes previewgenerator thumbnails +
+recognize models + fulltextsearch index — migrating it preserves those.
