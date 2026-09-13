@@ -103,3 +103,23 @@ Remaining wiring (Phase A2, ~1 commit each side):
 - App passwords/TOTP are instance-`secret`-bound: unmergeable, movable.
 - UID collision check 2026-09-12: zero overlap between the 27 source uids
   and prod's 5 (admin + 4 oidc-sub UUIDs).
+
+## Phase B0 results (discovered 2026-09-13)
+
+- **Server-side encryption: DISABLED** — plain rsync copies real files; no
+  `encryption:decrypt-all` needed. Move-not-merge confirmed viable.
+- **Data: 2.0 TB + appdata 362 GB** (`appdata_occ7puli0xhw` → instanceid
+  `occ7puli0xhw`, matches the captured config.php secret set). Size the h4
+  data PVC ~**3 Ti**; on the 2-replica Longhorn disk class that is ~6 TB of
+  USB-disk capacity on srv2/srv8 — consider NAS-backed storage for h4 data,
+  or accept the capacity hit.
+- **~40 enabled apps**, many NOT in our curated seed (deck, cospend,
+  onlyoffice, news, carnet, libresign, recognize, fulltextsearch
+  (+elasticsearch), groupfolders, organization_folders, paperless, nextpod,
+  gpoddersync, cookbook, maps, …). **Implication:** prod runs
+  `appstoreenabled=false` + seeds a fixed list; h4 must instead run with the
+  **appstore ENABLED** and migrate the source `custom_apps/` dir with the
+  data, or the DB's 40 app rows error/disable. Add a per-instance
+  `nextcloud_appstore_enabled:=false` override (true for h4) and include
+  `custom_apps/` in the Phase B rsync. fulltextsearch+elasticsearch implies
+  an Elasticsearch dependency to stand up or disable post-move.
