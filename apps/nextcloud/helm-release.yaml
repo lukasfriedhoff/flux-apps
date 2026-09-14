@@ -1161,7 +1161,7 @@ spec:
                 3.17.0
               fetch_app \
                 groupfolders \
-                https://github.com/nextcloud-releases/groupfolders/releases/download/v22.0.6/groupfolders-v22.0.6.tar.gz \
+                https://github.com/nextcloud-releases/groupfolders/releases/download/v23.0.1/groupfolders-v22.0.6.tar.gz \
                 bfff357b12bbd24257d8d127cf30e83a72256e7659f1cc3e32bd09fe647d2f9b \
                 groupfolders/appinfo/info.xml \
                 22.0.6
