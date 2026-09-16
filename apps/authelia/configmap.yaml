@@ -186,8 +186,12 @@ data:
     session:
       name: ${authelia_session_cookie_name:=authelia_session}
       same_site: lax
-      expiration: 1h
-      inactivity: 15m
+      # Was 1h/15m -> constant re-logins. Longer session + idle window, and
+      # remember_me enables a "Remember me" checkbox for month-long sessions
+      # (valkey/redis is the shared session store, so these persist).
+      expiration: 12h
+      inactivity: 4h
+      remember_me: 1M
       cookies:
         - domain: ${delegating_domain}
           authelia_url: https://auth${public_host_suffix}.${delegating_domain}
