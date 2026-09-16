@@ -52,7 +52,7 @@ spec:
                 external/appinfo/info.xml
               verify_app \
                 contacts \
-                https://github.com/nextcloud-releases/contacts/releases/download/v8.8.1/contacts-v8.8.1.tar.gz \
+                https://github.com/nextcloud-releases/contacts/releases/download/v8.9.0/contacts-v8.8.1.tar.gz \
                 2ae3edbd90edcc44ab8c2d3172661e5d1948205aa0a4d3e712fc66d2501329f7 \
                 contacts/appinfo/info.xml
               verify_app \
