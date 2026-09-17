@@ -1,3 +1,8 @@
+> **SUPERSEDED (v4, 2026-09-17):** operator chose the COMPLETE-DB MOVE to
+> preserve the Passwords vault/calendars/shares. See
+> [nextcloud-db-move-runbook.md](nextcloud-db-move-runbook.md). This doc (v1-v3
+> merge approaches) is kept for history.
+
 # Nextcloud docker-host → k8s migration
 
 > **v3 (2026-09-13) — MERGE INTO PROD (current, supersedes v2 below).**
