@@ -42,7 +42,7 @@ spec:
                 richdocuments/appinfo/info.xml
               verify_app \
                 oidc_login \
-                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.4/oidc_login.tar.gz \
+                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.4.0/oidc_login.tar.gz \
                 10d5610fd5b12fab763bb3c59fc1195011a5d6fcbf310991bc0c9fb504541fc7 \
                 oidc_login/appinfo/info.xml
               verify_app \
