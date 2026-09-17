@@ -1,0 +1,72 @@
+# Temp NC31 on the loaded MariaDB, WITH ddnss custom_apps mounted so
+# db:convert-type has every app's schema (fixes the dropped-tables issue).
+# Config on PVC to survive the later upgrade image bumps.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: conv-nc-config, namespace: nextcloud }
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-nvme-rwo-2r
+  resources: { requests: { storage: 1Gi } }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: { name: conv-nc-config-seed, namespace: nextcloud }
+data:
+  config.php: |
+    <?php
+    $CONFIG = array (
+      'instanceid' => 'occ7puli0xhw',
+      'passwordsalt' => 'rehearsalSaltPlaceholder000000',
+      'secret' => 'rehearsalSecretPlaceholder00000000000000000000',
+      'trusted_domains' => array ( 0 => 'localhost' ),
+      'datadirectory' => '/var/www/html/data',
+      'dbtype' => 'mysql',
+      'version' => '31.0.14.1',
+      'dbname' => 'nextcloud',
+      'dbhost' => 'conv-mariadb',
+      'dbtableprefix' => 'oc_',
+      'dbuser' => 'root',
+      'dbpassword' => 'convroot',
+      'mysql.utf8mb4' => true,
+      'appstoreenabled' => false,
+      'installed' => true,
+      'maintenance' => false,
+    );
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: conv-nc, namespace: nextcloud }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: conv-nc } }
+  strategy: { type: Recreate }
+  template:
+    metadata: { labels: { app: conv-nc } }
+    spec:
+      containers:
+        - name: nc
+          image: nextcloud:31.0.14-apache
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              if [ ! -f /var/www/html/version.php ]; then cp -a /usr/src/nextcloud/. /var/www/html/; fi
+              [ -f /var/www/html/config/config.php ] || cp /seed/config.php /var/www/html/config/config.php
+              mkdir -p /var/www/html/data
+              printf "# Nextcloud data directory\n" > /var/www/html/data/.ncdata
+              find /var/www/html -maxdepth 1 -not -name custom_apps -not -name html -exec chown -R www-data:www-data {} + 2>/dev/null || true
+              echo NC_READY "apps=$(ls /var/www/html/custom_apps | wc -l)"
+              sleep infinity
+          volumeMounts:
+            - { name: code, mountPath: /var/www/html }
+            - { name: config, mountPath: /var/www/html/config }
+            - { name: seed, mountPath: /seed }
+            - { name: customapps, mountPath: /var/www/html/custom_apps, subPath: _migrate/custom_apps, readOnly: true }
+          resources: { requests: { cpu: 500m, memory: 512Mi }, limits: { cpu: "4", memory: 2Gi } }
+      volumes:
+        - { name: code, emptyDir: {} }
+        - { name: config, persistentVolumeClaim: { claimName: conv-nc-config } }
+        - { name: seed, configMap: { name: conv-nc-config-seed } }
+        - { name: customapps, persistentVolumeClaim: { claimName: nextcloud-data-hdd } }
