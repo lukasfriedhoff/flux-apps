@@ -1167,7 +1167,7 @@ spec:
                 22.0.6
               fetch_app \
                 impersonate \
-                https://github.com/nextcloud-releases/impersonate/releases/download/v5.0.0/impersonate-v5.0.0.tar.gz \
+                https://github.com/nextcloud-releases/impersonate/releases/download/v6.0.0/impersonate-v5.0.0.tar.gz \
                 e9b85d6489434af2d05f1618839bcfd9859dbc6b7be580148592f511a448ed66 \
                 impersonate/appinfo/info.xml \
                 5.0.0
