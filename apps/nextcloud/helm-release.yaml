@@ -1149,7 +1149,7 @@ spec:
                 4.1.3
               fetch_app \
                 deck \
-                https://github.com/nextcloud-releases/deck/releases/download/v1.18.4/deck-v1.18.4.tar.gz \
+                https://github.com/nextcloud-releases/deck/releases/download/v1.19.0/deck-v1.18.4.tar.gz \
                 d8a7063cdd6225d19dc28833a7170506cac6f5e429a020e23bcd8c2d8315bc39 \
                 deck/appinfo/info.xml \
                 1.18.4
