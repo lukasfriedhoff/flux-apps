@@ -1,0 +1,78 @@
+# Temp conversion stack (nextcloud ns, disposable): MariaDB loaded from the
+# ddnss dump + a Postgres target for occ db:convert-type. Deleted after cutover.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: conv-mariadb, namespace: nextcloud }
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-nvme-rwo-2r
+  resources: { requests: { storage: 8Gi } }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: conv-postgres, namespace: nextcloud }
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-nvme-rwo-2r
+  resources: { requests: { storage: 8Gi } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: conv-mariadb, namespace: nextcloud }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: conv-mariadb } }
+  strategy: { type: Recreate }
+  template:
+    metadata: { labels: { app: conv-mariadb } }
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:10.11
+          env:
+            - { name: MARIADB_ROOT_PASSWORD, value: convroot }
+            - { name: MARIADB_DATABASE, value: nextcloud }
+            - { name: MARIADB_USER, value: nextcloud }
+            - { name: MARIADB_PASSWORD, value: convpass }
+          args: ["--innodb-buffer-pool-size=1G","--max-allowed-packet=256M","--innodb-flush-log-at-trx-commit=0"]
+          ports: [{ containerPort: 3306 }]
+          volumeMounts: [{ name: data, mountPath: /var/lib/mysql }]
+          resources: { requests: { cpu: 500m, memory: 1Gi }, limits: { cpu: "4", memory: 3Gi } }
+      volumes: [{ name: data, persistentVolumeClaim: { claimName: conv-mariadb } }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: conv-mariadb, namespace: nextcloud }
+spec:
+  selector: { app: conv-mariadb }
+  ports: [{ port: 3306, targetPort: 3306 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: conv-postgres, namespace: nextcloud }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: conv-postgres } }
+  strategy: { type: Recreate }
+  template:
+    metadata: { labels: { app: conv-postgres } }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          env:
+            - { name: POSTGRES_PASSWORD, value: convroot }
+            - { name: POSTGRES_DB, value: nextcloud }
+            - { name: POSTGRES_USER, value: nextcloud }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+          ports: [{ containerPort: 5432 }]
+          volumeMounts: [{ name: data, mountPath: /var/lib/postgresql/data }]
+          resources: { requests: { cpu: 500m, memory: 512Mi }, limits: { cpu: "4", memory: 2Gi } }
+      volumes: [{ name: data, persistentVolumeClaim: { claimName: conv-postgres } }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: conv-postgres, namespace: nextcloud }
+spec:
+  selector: { app: conv-postgres }
+  ports: [{ port: 5432, targetPort: 5432 }]
