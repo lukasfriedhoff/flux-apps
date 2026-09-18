@@ -24,7 +24,7 @@ spec:
       # remain disposable (blocks in S3), so ingest-queue loss is accepted.
       # blockBuilder/liveStore replicas must equal the Kafka partition
       # count (ingest.kafka.auto_create_topic_default_partitions).
-      version: "3.5.1"
+      version: "3.7.0"
       sourceRef:
         kind: HelmRepository
         name: grafana-community
