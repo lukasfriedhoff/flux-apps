@@ -1199,3 +1199,14 @@ groups:
         annotations:
           summary: storage01 low on memory.
           description: MinIO scanning the large store can OOM here (it crash-looped for weeks). Consider swap / more RAM.
+  - name: media-vpn
+    rules:
+      - alert: QbittorrentVpnDownOrLeaking
+        expr: |
+          kube_job_status_failed{namespace="media", job_name=~"vpn-sentinel.*", job="integrations/kubernetes/kube-state-metrics"} > 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: qbittorrent VPN sentinel is failing.
+          description: The vpn-sentinel CronJob reports qbittorrent is NOT egressing via ProtonVPN — either the gluetun tunnel is down (downloads fail-closed/stopped) or the exit is the home fiber IP 217.253.x (a LEAK). Check the gluetun sidecar in the qbittorrent pod; verify the netpol endpoint still matches the Proton server.
