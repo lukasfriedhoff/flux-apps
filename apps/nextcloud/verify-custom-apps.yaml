@@ -32,7 +32,7 @@ spec:
               }
               verify_app \
                 mail \
-                https://github.com/nextcloud-releases/mail/releases/download/v5.11.5/mail-v5.11.5.tar.gz \
+                https://github.com/nextcloud-releases/mail/releases/download/v5.12.0/mail-v5.11.5.tar.gz \
                 58dacb416ac7dfa1b711c7a5c15d502ca2d5f9f0b45253a0597eb39d29eaf881 \
                 mail/vendor/autoload.php
               verify_app \
