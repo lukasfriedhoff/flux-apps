@@ -44,7 +44,7 @@ spec:
       containers:
         - name: kafka
           # renovate: docker=docker.io/apache/kafka
-          image: apache/kafka:4.0.0
+          image: apache/kafka:4.3.1
           ports:
             - containerPort: 9092
               name: plaintext
