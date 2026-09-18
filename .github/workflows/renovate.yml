@@ -18,3 +18,7 @@ jobs:
           RENOVATE_PLATFORM: github
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: optional
+          # Allow the postUpgradeTask that reconciles the Nextcloud app pins
+          # (filename + desired_version + recomputed sha256). Self-hosted Renovate
+          # blocks post-upgrade commands unless they match this allow-list.
+          RENOVATE_ALLOWED_COMMANDS: '["^node scripts/renovate/fix-nextcloud-app-pins\\.mjs$"]'
