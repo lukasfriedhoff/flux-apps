@@ -78,13 +78,12 @@ spec:
                   name: ${icarus_credentials_secret_name:=icarus-credentials}
                   key: admin_password
           ports:
-            # In-container port must match the published port or Steam
-            # advertises the wrong endpoint; hostPort keeps them identical.
+            # Published via the icarus-game LoadBalancer (MetalLB VIP, see
+            # service-game.yaml); its service ports must match these or Steam
+            # advertises the wrong endpoint.
             - containerPort: ${icarus_game_port:=17777}
-              hostPort: ${icarus_game_port:=17777}
               protocol: UDP
             - containerPort: ${icarus_query_port:=27015}
-              hostPort: ${icarus_query_port:=27015}
               protocol: UDP
           startupProbe:
             exec:

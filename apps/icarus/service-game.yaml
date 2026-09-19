@@ -1,0 +1,33 @@
+# Game traffic entrypoint: a MetalLB VIP so the router's DNAT target stays
+# stable no matter which node runs the server (the deployment is node-pinned
+# for the node-local image, but the published address no longer cares).
+#
+# externalTrafficPolicy Local, deliberately:
+#   * players' real source IPs reach the server (bans, logs)
+#   * the VIP is announced from the node holding the pod — no extra hop
+apiVersion: v1
+kind: Service
+metadata:
+  name: icarus-game
+  namespace: ${icarus_namespace}
+  labels:
+    app.kubernetes.io/name: icarus
+  annotations:
+    metallb.io/loadBalancerIPs: ${icarus_vip:=10.1.20.42}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  allocateLoadBalancerNodePorts: false
+  selector:
+    app.kubernetes.io/name: icarus
+  ports:
+    # Service port must equal the in-container port or Steam advertises the
+    # wrong endpoint (the server announces whatever port the process binds).
+    - name: game
+      protocol: UDP
+      port: ${icarus_game_port:=17777}
+      targetPort: ${icarus_game_port:=17777}
+    - name: query
+      protocol: UDP
+      port: ${icarus_query_port:=27015}
+      targetPort: ${icarus_query_port:=27015}
