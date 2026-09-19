@@ -12,7 +12,7 @@ fail() {
 # Steam must stay off the server's startup path (the old stack's worst outage):
 # the updater only runs when the game is missing or explicitly forced.
 grep -q 'ICARUS_UPDATE_ON_START' "${app}/deployment.yaml" || fail "updater must be gated behind icarus_update_on_start"
-grep -q 'ls -A /game' "${app}/deployment.yaml" || fail "updater must skip when the game is already installed"
+grep -q 'IcarusServer-Win64-Shipping.exe' "${app}/deployment.yaml" || fail "updater must skip when the game is already installed"
 
 # Steam advertises whatever port the process binds; hostPort keeps them equal.
 grep -q 'hostPort: ${icarus_game_port' "${app}/deployment.yaml" || fail "game port must be a hostPort matching the container port"

@@ -24,6 +24,21 @@ data:
         shell: |
           kubectl -n ${icarus_namespace} rollout restart deployment/icarus
         timeout: 30
+      - title: Check Steam listing
+        icon: ping
+        shell: |
+          kubectl -n ${icarus_namespace} run steam-check-$(date +%s) --rm -i --restart=Never \
+            --image=${icarus_kubectl_image:=docker.io/alpine/k8s:1.34.1} -- sh -c '
+            set -e
+            HOST="${icarus_public_host:=}"
+            [ -n "$HOST" ] || { echo "icarus_public_host is not configured"; exit 1; }
+            IP=$(getent hosts "$HOST" | awk "{print \$1; exit}")
+            [ -n "$IP" ] || { echo "cannot resolve $HOST"; exit 1; }
+            LISTING=$(curl -sf "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v0001?addr=$IP")
+            echo "$LISTING" | jq -e ".response.servers[] | select(.gameport == ${icarus_game_port:=17777})" \
+              || { echo "NOT listed on Steam at $HOST (gameport ${icarus_game_port:=17777})"; exit 1; }
+            echo "OK: listed on Steam at $HOST"'
+        timeout: 120
       - title: Restore snapshot (STOPS the server)
         icon: warning
         timeout: 900
