@@ -98,6 +98,7 @@ spec:
             - "-B"
             - "${ha_otbr_backbone_if:=brvlan12}"
             - "-d4"
+            - "-v"
             - "--rest-listen-address"
             - "0.0.0.0"
             - "--rest-listen-port"
