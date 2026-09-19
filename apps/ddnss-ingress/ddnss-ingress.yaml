@@ -1,0 +1,94 @@
+# WireGuard leg of the ddnss.org ingress path:
+#   internet -> ionos1 (217.160.11.254, DNAT 80/443) -> wg tunnel -> this pod
+#   -> haproxy (TCP/SNI passthrough) -> traefik
+# The pod DIALS OUT to ionos1 (persistent keepalive), so no inbound port at
+# home and no labrouter/docker-host in the path. ionos1's DNAT still points
+# at the labrouter (10.172.0.3) until the nextcloud cutover flips it to
+# 10.172.0.4 (see docs/runbooks/nextcloud-ddnss-cutover.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ddnss-ingress
+  namespace: ${ddnss_ingress_namespace:=ddnss-ingress}
+  labels:
+    app.kubernetes.io/name: ddnss-ingress
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ddnss-ingress
+  template:
+    metadata:
+      labels:
+        app: ddnss-ingress
+    spec:
+      containers:
+        - name: wireguard
+          image: lscr.io/linuxserver/wireguard:${ddnss_ingress_wireguard_tag:=1.0.20210914}
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          volumeMounts:
+            - name: wg-conf
+              mountPath: /config/wg_confs
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        - name: haproxy
+          image: haproxy:${ddnss_ingress_haproxy_tag:=3.0-alpine}
+          volumeMounts:
+            - name: haproxy-conf
+              mountPath: /usr/local/etc/haproxy
+              readOnly: true
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: wg-conf
+          secret:
+            secretName: ${ddnss_ingress_wg_secret_name:=ddnss-ingress-wg}
+        - name: haproxy-conf
+          configMap:
+            name: ddnss-ingress-haproxy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ddnss-ingress-haproxy
+  namespace: ${ddnss_ingress_namespace:=ddnss-ingress}
+data:
+  haproxy.cfg: |
+    global
+      maxconn 2048
+    defaults
+      mode tcp
+      timeout connect 10s
+      timeout client 300s
+      timeout server 300s
+    # Plain TCP both ways: TLS terminates in traefik (SNI routing intact),
+    # ACME http-01 for ddnss hostnames rides the :80 path.
+    frontend http_in
+      bind :80
+      default_backend traefik_http
+    frontend https_in
+      bind :443
+      default_backend traefik_https
+    backend traefik_http
+      server traefik traefik.traefik.svc.cluster.local:80
+    backend traefik_https
+      server traefik traefik.traefik.svc.cluster.local:443
