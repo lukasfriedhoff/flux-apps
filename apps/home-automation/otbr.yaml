@@ -71,6 +71,10 @@ spec:
               value: "0"
             - name: FIREWALL
               value: "0"
+            # nat44_start is gated on DOCKER=1 (baked into the image), not
+            # on NAT64 - it would still hit the legacy-iptables wall.
+            - name: DOCKER
+              value: "0"
             - name: OT_INFRA_IF
               value: "${ha_otbr_backbone_if:=brvlan12}"
             - name: OT_REST_LISTEN_ADDR
