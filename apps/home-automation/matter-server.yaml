@@ -47,6 +47,13 @@ spec:
             - /data
             - --paa-root-cert-dir
             - /data/credentials
+            # Identity of the migrated HAOS-addon fabric (chip.json caList):
+            # the SDK looks up its fabric admin by (vendorId, fabricId) -
+            # wrong pair means a fresh CA and an empty fabric.
+            - --vendorid
+            - "${ha_matter_vendorid:=4939}"
+            - --fabricid
+            - "${ha_matter_fabricid:=2}"
           ports:
             - containerPort: 5580
           volumeMounts:
