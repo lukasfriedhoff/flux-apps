@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: ${harbor_postgres_cluster_name}
+  namespace: ${harbor_namespace}
+spec:
+  schedule: "${harbor_postgres_backup_cron:=0 0 3 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: ${harbor_postgres_cluster_name}
