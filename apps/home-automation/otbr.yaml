@@ -64,6 +64,13 @@ spec:
           env:
             - name: OT_RCP_DEVICE
               value: "${ha_thread_radio_url:=spinel+hdlc+uart:///dev/null?uart-baudrate=460800}"
+            # NAT64/firewall stages use the image's legacy iptables, which
+            # cannot run on the nft-only host kernel; routing and firewall
+            # are the host's (nix) responsibility anyway.
+            - name: NAT64
+              value: "0"
+            - name: FIREWALL
+              value: "0"
             - name: OT_INFRA_IF
               value: "${ha_otbr_backbone_if:=brvlan12}"
             - name: OT_REST_LISTEN_ADDR
