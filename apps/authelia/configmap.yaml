@@ -326,6 +326,24 @@ data:
               - refresh_token
             response_types:
               - code
+          - client_id: harbor
+            client_name: Harbor
+            client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.harbor.secret" | msquote }}
+            authorization_policy: one_factor
+            consent_mode: implicit
+            redirect_uris:
+              - https://harbor${public_host_suffix}.${delegating_domain}/c/oidc/callback
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+              - offline_access
+            grant_types:
+              - authorization_code
+              - refresh_token
+            response_types:
+              - code
           - client_id: jellyfin
             client_name: Jellyfin
             client_secret: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.client.jellyfin.secret" | msquote }}
