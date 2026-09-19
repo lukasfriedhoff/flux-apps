@@ -46,13 +46,6 @@
         "kubernetes"
       ],
       "groupName": "container images"
-    },
-    {
-      "description": "external-dns chart 1.22.0 (app v0.22.0) silently stops creating NEW records (harbor/nc-clone, 2026-09-19) - proven by rollback; skip until a fixed release",
-      "matchPackageNames": [
-        "external-dns"
-      ],
-      "allowedVersions": "!/^1\\.22\\.0$/"
     }
   ]
 }

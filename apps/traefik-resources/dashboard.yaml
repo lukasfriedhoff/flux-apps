@@ -54,7 +54,7 @@ metadata:
   namespace: traefik
   annotations:
     cert-manager.io/cluster-issuer: ${default_cluster_issuer}
-    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
 spec:
   entryPoints:
     - websecure
@@ -76,7 +76,7 @@ metadata:
   name: traefik-dashboard-dns
   namespace: traefik
   annotations:
-    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
 spec:
   ingressClassName: external-dns
   rules:

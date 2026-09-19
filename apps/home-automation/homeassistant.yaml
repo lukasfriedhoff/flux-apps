@@ -74,7 +74,7 @@ metadata:
   name: homeassistant
   namespace: home-automation
   annotations:
-    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
@@ -97,7 +97,7 @@ metadata:
   name: zigbee2mqtt
   namespace: home-automation
   annotations:
-    external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
