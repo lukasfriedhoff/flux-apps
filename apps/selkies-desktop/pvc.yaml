@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: selkies-desktop-home
+  namespace: cloud-desktop
+  labels:
+    app.kubernetes.io/name: selkies-desktop
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${selkies_home_storage_class_name}
+  resources:
+    requests:
+      storage: ${selkies_home_size}
