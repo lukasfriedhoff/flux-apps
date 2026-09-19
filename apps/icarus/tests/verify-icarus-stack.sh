@@ -14,9 +14,13 @@ fail() {
 grep -q 'ICARUS_UPDATE_ON_START' "${app}/deployment.yaml" || fail "updater must be gated behind icarus_update_on_start"
 grep -q 'IcarusServer-Win64-Shipping.exe' "${app}/deployment.yaml" || fail "updater must skip when the game is already installed"
 
-# Steam advertises whatever port the process binds; hostPort keeps them equal.
-grep -q 'hostPort: ${icarus_game_port' "${app}/deployment.yaml" || fail "game port must be a hostPort matching the container port"
-grep -q 'hostPort: ${icarus_query_port' "${app}/deployment.yaml" || fail "query port must be a hostPort matching the container port"
+# Steam advertises whatever port the process binds; the LB service ports must
+# stay equal to the container ports (same variable on port and targetPort).
+[ "$(grep -ci 'port: ${icarus_game_port' "${app}/service-game.yaml")" -eq 2 ] || fail "game service port and targetPort must both use icarus_game_port"
+[ "$(grep -ci 'port: ${icarus_query_port' "${app}/service-game.yaml")" -eq 2 ] || fail "query service port and targetPort must both use icarus_query_port"
+# Player source IPs must reach the server; Local also pins the announcement
+# to the node running the pod.
+grep -q 'externalTrafficPolicy: Local' "${app}/service-game.yaml" || fail "game service must use externalTrafficPolicy Local"
 
 # The image is imported node-locally; a registry pull would always fail.
 grep -q 'imagePullPolicy: Never' "${app}/deployment.yaml" || fail "image must be node-local (imagePullPolicy Never)"

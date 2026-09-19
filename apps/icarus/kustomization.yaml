@@ -4,6 +4,7 @@ resources:
   - pvc-game.yaml
   - pvc-data.yaml
   - deployment.yaml
+  - service-game.yaml
   - backup-cronjob.yaml
   - webui-rbac.yaml
   - webui-olivetin.yaml
