@@ -1,0 +1,85 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: harbor
+  namespace: ${harbor_namespace}
+spec:
+  interval: 10m0s
+  timeout: 15m0s
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: harbor
+      version: ${harbor_chart_version:=1.19.2}
+      sourceRef:
+        kind: HelmRepository
+        name: harbor
+        namespace: ${harbor_namespace}
+      interval: 1h0m0s
+  values:
+    externalURL: https://harbor${public_host_suffix}.${delegating_domain}
+    existingSecretAdminPassword: ${harbor_admin_secret_name:=harbor-admin}
+    existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
+    expose:
+      type: ingress
+      tls:
+        enabled: true
+        certSource: secret
+        secret:
+          secretName: harbor-tls
+      ingress:
+        className: traefik
+        hosts:
+          core: harbor${public_host_suffix}.${delegating_domain}
+        annotations:
+          cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+          external-dns.alpha.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: "true"
+    database:
+      type: external
+      external:
+        host: ${harbor_postgres_cluster_name}-rw.${harbor_namespace}.svc.cluster.local
+        port: "5432"
+        username: ${harbor_postgres_user}
+        # CNPG's auto-generated <cluster>-app secret carries the key
+        # "password", which is exactly what the chart requires here.
+        existingSecret: ${harbor_postgres_cluster_name}-app
+        coreDatabase: ${harbor_postgres_db_name}
+        sslmode: require
+    redis:
+      type: internal
+    trivy:
+      enabled: ${harbor_trivy_enabled:=true}
+    metrics:
+      enabled: true
+    # RWO volumes deadlock a RollingUpdate (new pod waits on the PVC the old
+    # pod still holds); Recreate swaps cleanly at the cost of brief downtime.
+    updateStrategy:
+      type: Recreate
+    persistence:
+      enabled: true
+      resourcePolicy: keep
+      persistentVolumeClaim:
+        registry:
+          storageClass: ${harbor_registry_storage_class_name}
+          size: ${harbor_registry_size:=100Gi}
+          accessMode: ReadWriteOnce
+        jobservice:
+          jobLog:
+            storageClass: ${harbor_aux_storage_class_name}
+            size: ${harbor_joblog_size:=2Gi}
+            accessMode: ReadWriteOnce
+        redis:
+          storageClass: ${harbor_aux_storage_class_name}
+          size: ${harbor_redis_size:=2Gi}
+          accessMode: ReadWriteOnce
+        trivy:
+          storageClass: ${harbor_aux_storage_class_name}
+          size: ${harbor_trivy_size:=5Gi}
+          accessMode: ReadWriteOnce

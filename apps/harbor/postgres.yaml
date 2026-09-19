@@ -1,0 +1,42 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ${harbor_postgres_cluster_name}
+  namespace: ${harbor_namespace}
+  labels:
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/component: database
+spec:
+  imageName: ${harbor_postgres_image}
+  instances: ${harbor_postgres_instances}
+  primaryUpdateStrategy: unsupervised
+  bootstrap:
+    initdb:
+      database: ${harbor_postgres_db_name}
+      owner: ${harbor_postgres_user}
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${harbor_postgres_backup_bucket:=harbor-postgres-backup}/${cluster_environment}/${harbor_postgres_backup_generation:=}harbor-postgres/"
+      endpointURL: "${harbor_postgres_backup_endpoint_url:=}"
+      serverName: ${harbor_postgres_backup_server_name:=harbor-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${harbor_postgres_backup_credential_secret_name:=harbor-postgres-backup-credentials}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${harbor_postgres_backup_credential_secret_name:=harbor-postgres-backup-credentials}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${harbor_postgres_backup_retention:=30d}"
+  storage:
+    storageClass: ${harbor_postgres_storage_class_name}
+    size: ${harbor_postgres_size}
+  resources:
+    requests:
+      cpu: ${harbor_postgres_requests_cpu}
+      memory: ${harbor_postgres_requests_memory}
+    limits:
+      memory: ${harbor_postgres_limits_memory}
