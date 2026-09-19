@@ -270,6 +270,9 @@ data:
           nextcloud_admin:
             claims:
               - is_admin
+              # ddnss merge: the NC account identifier claim (see the
+              # nextcloud_username attribute definition)
+              - ncuid
         jwks:
           - key: {{ secret "/secrets/authelia-oidc/identity_providers.oidc.jwks.rsa.2048.key" | mindent 14 "|" | msquote }}
             algorithm: 'RS256'
