@@ -1,9 +1,9 @@
 # In-cluster replacement for the docker-host scanserver-samba.
 # LAN-ONLY by design: no Ingress, no external-dns record - reachable as
 # smb.h4xx.io solely via the MikroTik split-horizon DNS static pointing at the
-# pinned node's hostPort 445. The printer/nextcloud accounts keep their
-# original NT hashes (SOPS secret smb-accounts), so no device reconfiguration
-# beyond the hostname.
+# MetalLB VIP below. The printer/nextcloud accounts keep their original NT
+# hashes (SOPS secret smb-accounts), so no device reconfiguration beyond the
+# hostname.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,8 +23,6 @@ spec:
       labels:
         app: smb
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: ${smb_node:=srv9}
       containers:
         - name: samba
           image: ghcr.io/servercontainers/samba:${smb_image_tag:=smbd-only-a3.24.2-s4.23.8-r0}
@@ -50,7 +48,6 @@ spec:
               value: "[kiosk_scan]; path=/shares/kiosk_scan; valid users = printer, nextcloud; guest ok = no; read only = no; browseable = yes; force group = scan"
           ports:
             - containerPort: 445
-              hostPort: 445
               protocol: TCP
           volumeMounts:
             - name: shares
@@ -82,3 +79,20 @@ spec:
   resources:
     requests:
       storage: ${smb_shares_size:=10Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smb
+  namespace: ${smb_namespace:=smb}
+  annotations:
+    metallb.io/loadBalancerIPs: ${smb_vip:=10.1.20.41}
+spec:
+  type: LoadBalancer
+  allocateLoadBalancerNodePorts: false
+  selector:
+    app: smb
+  ports:
+    - name: smb
+      port: 445
+      targetPort: 445
