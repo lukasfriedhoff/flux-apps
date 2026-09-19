@@ -1,0 +1,97 @@
+# OpenThread Border Router for the Thread part of the Matter stack. Replicas
+# stay 0 until the Thread RCP USB stick (Silicon Labs CP210x) is physically
+# attached to ${ha_node} (see the migration plan); the serial path is the
+# stable /dev/serial/by-id link. hostNetwork is required so otbr-agent can
+# use the IoT VLAN bridge as its backbone interface for mDNS, ICMPv6 route
+# advertisements and Thread border routing. The REST API (8081) is consumed
+# by Home Assistant on the same host, so no Service/Ingress is exposed.
+# Upstream only publishes a rolling :latest tag, hence the digest pin.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: otbr-data
+  namespace: home-automation
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: ${ha_storage_class:=longhorn-ssd-rwo-1r}
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otbr
+  namespace: home-automation
+  labels:
+    app.kubernetes.io/name: otbr
+spec:
+  replicas: ${ha_otbr_replicas:=0}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otbr
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otbr
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        kubernetes.io/hostname: ${ha_node:=srv9}
+      initContainers:
+        # The same sysctls the official docker run command sets; pod-level
+        # net.* sysctls are rejected for hostNetwork pods, so write them on
+        # the host from a privileged init container instead.
+        - name: sysctls
+          image: ${ha_otbr_image:=docker.io/openthread/otbr@sha256:35c6e6520080116572fea50bbf271eff337992dd34e0cb095f4289f7853311e9}
+          command:
+            - sh
+            - -c
+            - |
+              echo 1 > /proc/sys/net/ipv4/conf/all/forwarding
+              echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+              echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6
+          securityContext:
+            privileged: true
+      containers:
+        - name: otbr
+          image: ${ha_otbr_image:=docker.io/openthread/otbr@sha256:35c6e6520080116572fea50bbf271eff337992dd34e0cb095f4289f7853311e9}
+          securityContext:
+            privileged: true
+          env:
+            - name: OT_RCP_DEVICE
+              value: "spinel+hdlc+uart://${ha_thread_serial:=/dev/null}?uart-baudrate=${ha_thread_baud:=460800}"
+            - name: OT_INFRA_IF
+              value: "${ha_otbr_backbone_if:=brvlan12}"
+            - name: OT_REST_LISTEN_ADDR
+              value: "0.0.0.0"
+            - name: OT_REST_LISTEN_PORT
+              value: "8081"
+            - name: OT_LOG_LEVEL
+              value: "5"
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            # otbr-agent persists Thread network data under /data/thread
+            # (symlinked to /var/lib/thread by the image entrypoint).
+            - name: data
+              mountPath: /data
+            - name: serial
+              mountPath: "${ha_thread_serial:=/dev/null}"
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: otbr-data
+        - name: serial
+          hostPath:
+            path: "${ha_thread_serial:=/dev/null}"
+            type: CharDevice

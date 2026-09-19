@@ -1,0 +1,76 @@
+# Matter controller (python-matter-server) for Home Assistant. Replicas stay
+# 0 until the Thread/Matter cutover (see the migration plan). hostNetwork is
+# required for mDNS discovery and direct IPv6 reachability of Thread and
+# Wi-Fi Matter devices; /data holds the Matter fabric credentials and must
+# survive restarts. Home Assistant connects to the WebSocket API on 5580; no
+# Ingress, this is in-cluster/same-host only.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matter-server-data
+  namespace: home-automation
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: ${ha_storage_class:=longhorn-ssd-rwo-1r}
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matter-server
+  namespace: home-automation
+  labels:
+    app.kubernetes.io/name: matter-server
+spec:
+  replicas: ${ha_matter_replicas:=0}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: matter-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: matter-server
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        kubernetes.io/hostname: ${ha_node:=srv9}
+      containers:
+        - name: matter-server
+          image: ${ha_matter_image:=ghcr.io/matter-js/python-matter-server:8.1.2}
+          args:
+            - --storage-path
+            - /data
+            - --paa-root-cert-dir
+            - /data/credentials
+          ports:
+            - containerPort: 5580
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: matter-server-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: matter-server
+  namespace: home-automation
+spec:
+  selector:
+    app.kubernetes.io/name: matter-server
+  ports:
+    - port: 5580
+      targetPort: 5580
