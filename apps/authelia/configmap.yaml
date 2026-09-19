@@ -36,6 +36,11 @@ data:
       user_attributes:
         nextcloud_is_admin:
           expression: '"nextcloud-admins" in groups'
+        # ddnss merge: NC account names come from the migrated instance, not
+        # OIDC subjects. Map authelia identities onto their pre-existing
+        # ddnss accounts; default = same username.
+        nextcloud_username:
+          expression: 'username == "lukasf" ? "h4xx" : username'
         immich_meme_role:
           expression: '"meme-admins" in groups ? "admin" : "user"'
         immich_photos_role:
@@ -221,6 +226,9 @@ data:
               nextcloud_is_admin:
                 name: is_admin
                 attribute: nextcloud_is_admin
+              nextcloud_username:
+                name: ncuid
+                attribute: nextcloud_username
           grafana:
             id_token:
               - email
@@ -276,6 +284,9 @@ data:
             redirect_uris:
               - https://nextcloud${public_host_suffix}.${delegating_domain}/apps/oidc_login/oidc
               - https://nextcloud${public_host_suffix}.${delegating_domain}/index.php/apps/oidc_login/oidc
+              # temporary until the ddnss cutover: identity-mapping validation
+              - https://nc-clone${public_host_suffix}.${delegating_domain}/apps/oidc_login/oidc
+              - https://nc-clone${public_host_suffix}.${delegating_domain}/index.php/apps/oidc_login/oidc
             scopes:
               - openid
               - profile
