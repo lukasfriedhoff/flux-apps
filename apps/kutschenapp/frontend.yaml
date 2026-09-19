@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kutschenapp-frontend
+  namespace: ${kutschenapp_namespace}
+  labels:
+    app.kubernetes.io/name: kutschenapp
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kutschenapp-frontend
+  template:
+    metadata:
+      labels:
+        app: kutschenapp-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ${kutschenapp_frontend_image:=harbor.h4xx.io/library/kutschenapp-frontend:m1}
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kutschenapp-frontend
+  namespace: ${kutschenapp_namespace}
+spec:
+  selector:
+    app: kutschenapp-frontend
+  ports:
+    - port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kutschenapp-frontend
+  namespace: ${kutschenapp_namespace}
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: kutsche${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kutschenapp-frontend
+                port: { number: 3000 }
+  tls:
+    - secretName: kutschenapp-frontend-tls
+      hosts:
+        - kutsche${public_host_suffix}.${delegating_domain}
