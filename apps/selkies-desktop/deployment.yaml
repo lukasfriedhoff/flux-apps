@@ -26,35 +26,32 @@ spec:
         h4xx.io/gpu.vaapi: "true"
       containers:
         - name: selkies-desktop
-          # nix-built image (nix repo: pkgs/selkies-desktop-image). Push goes
-          # through a kubectl port-forward to harbor-core, NOT harbor.h4xx.io
-          # (Cloudflare caps request bodies ~100MB) — see the harbor AI skill.
-          image: harbor.h4xx.io/library/selkies-desktop:${selkies_image_tag}
+          # Full NixOS personal desktop (nix repo: packages.cloud-desktop-image,
+          # streamLayeredImage over the cloud-desktop nixosConfiguration).
+          # Boots systemd via the baked /init Entrypoint; StopSignal
+          # SIGRTMIN+3 is baked too. Push from the in-cluster builder over
+          # the LAN path — see the harbor AI skill.
+          image: harbor.h4xx.io/library/cloud-desktop:${selkies_image_tag}
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
-          env:
-            - name: HOME
-              value: /home/desktop
-            # Authelia's forwardauth on the ingress is the login; a second
-            # basic-auth prompt on top of SSO is noise, not defense. The
-            # NetworkPolicy is what keeps in-cluster traffic from reaching
-            # the unauthenticated port directly.
-            - name: SELKIES_ENABLE_BASIC_AUTH
-              value: "false"
-          # The server answers 401 without credentials, so HTTP probes would
-          # report a healthy pod as broken; TCP is the right signal here.
+          # Auth (Authelia-only, basic auth off) and env are baked into the
+          # NixOS config (lukasf.selkies in hosts/personal/cloud-desktop);
+          # the NetworkPolicy keeps in-cluster traffic away from the
+          # unauthenticated port.
+          # A full NixOS boot plus Home Manager activation precedes the
+          # server; probe patiently.
           readinessProbe:
             tcpSocket:
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
             tcpSocket:
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 180
             periodSeconds: 20
           resources:
             requests:
@@ -71,12 +68,19 @@ spec:
             privileged: true
           volumeMounts:
             - name: home
-              mountPath: /home/desktop
+              mountPath: /home/lukasf
             # Xorg/XShm capture and desktop apps outgrow the 64Mi k8s default.
             - name: shm
               mountPath: /dev/shm
             - name: dri
               mountPath: /dev/dri
+            # systemd-in-a-pod: stage 2 wants writable tmpfs here.
+            - name: run
+              mountPath: /run
+            - name: run-lock
+              mountPath: /run/lock
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: home
           persistentVolumeClaim:
@@ -91,3 +95,11 @@ spec:
           hostPath:
             path: /dev/dri
             type: DirectoryOrCreate
+        - name: run
+          emptyDir:
+            medium: Memory
+        - name: run-lock
+          emptyDir:
+            medium: Memory
+        - name: tmp
+          emptyDir: {}
