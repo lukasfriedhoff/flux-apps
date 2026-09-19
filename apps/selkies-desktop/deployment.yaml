@@ -18,6 +18,12 @@ spec:
       labels:
         app.kubernetes.io/name: selkies-desktop
     spec:
+      # VA-API encoding wants the node with the GPU (srv8's Renoir on the
+      # homelab cluster); the image falls back to CPU striped encoding when
+      # no render node is present, so a GPU-less cluster can point this at
+      # any node.
+      nodeSelector:
+        kubernetes.io/hostname: ${selkies_node}
       containers:
         - name: selkies-desktop
           # nix-built image (nix repo: pkgs/selkies-desktop-image). Push goes
@@ -58,12 +64,20 @@ spec:
             limits:
               cpu: ${selkies_limits_cpu}
               memory: ${selkies_limits_memory}
+          # Privileged solely for GPU encode: the device cgroup denies
+          # hostPath character devices to unprivileged containers, so
+          # /dev/dri stays invisible without it. Drop this (and the dri
+          # mount) to run CPU-only, or replace with a device plugin later.
+          securityContext:
+            privileged: true
           volumeMounts:
             - name: home
               mountPath: /home/desktop
             # Xorg/XShm capture and desktop apps outgrow the 64Mi k8s default.
             - name: shm
               mountPath: /dev/shm
+            - name: dri
+              mountPath: /dev/dri
       volumes:
         - name: home
           persistentVolumeClaim:
@@ -72,3 +86,9 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: ${selkies_shm_size}
+        # DirectoryOrCreate: on a GPU-less node this mounts an empty dir and
+        # pixelflux falls back to software encoding instead of failing.
+        - name: dri
+          hostPath:
+            path: /dev/dri
+            type: DirectoryOrCreate
