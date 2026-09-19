@@ -63,7 +63,7 @@ spec:
             privileged: true
           env:
             - name: OT_RCP_DEVICE
-              value: "spinel+hdlc+uart://${ha_thread_serial:=/dev/null}?uart-baudrate=${ha_thread_baud:=460800}"
+              value: "${ha_thread_radio_url:=spinel+hdlc+uart:///dev/null?uart-baudrate=460800}"
             - name: OT_INFRA_IF
               value: "${ha_otbr_backbone_if:=brvlan12}"
             - name: OT_REST_LISTEN_ADDR

@@ -68,6 +68,24 @@ spec:
     - port: 80
       targetPort: 8123
 ---
+# IoT-VLAN VIP (shared with mosquitto): keeps the companion apps'
+# internal_url (http://10.1.12.13:8123) working after the VM is gone.
+apiVersion: v1
+kind: Service
+metadata:
+  name: homeassistant-iot
+  namespace: home-automation
+  annotations:
+    metallb.io/loadBalancerIPs: ${ha_iot_vip:=10.1.12.13}
+    metallb.io/allow-shared-ip: ha-iot-vip
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: homeassistant
+  ports:
+    - port: 8123
+      targetPort: 8123
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

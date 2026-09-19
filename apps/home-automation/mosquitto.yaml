@@ -72,7 +72,13 @@ kind: Service
 metadata:
   name: mosquitto
   namespace: home-automation
+  # Shares the legacy VM address with homeassistant-iot so MQTT devices
+  # (Tasmota et al.) keep their configured broker endpoint after cutover.
+  annotations:
+    metallb.io/loadBalancerIPs: ${ha_iot_vip:=10.1.12.13}
+    metallb.io/allow-shared-ip: ha-iot-vip
 spec:
+  type: LoadBalancer
   selector:
     app.kubernetes.io/name: mosquitto
   ports:
