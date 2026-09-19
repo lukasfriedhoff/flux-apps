@@ -35,3 +35,5 @@ data:
   icarus_olivetin_image: "ghcr.io/olivetin/olivetin:2024.05.27"
   icarus_filebrowser_image: "docker.io/filebrowser/filebrowser:v2.44.0"
   icarus_kubectl_image: "docker.io/alpine/k8s:1.34.1"
+  # Public DNS name players use to reach the server (empty = Steam-listing check disabled)
+  icarus_public_host: ""
