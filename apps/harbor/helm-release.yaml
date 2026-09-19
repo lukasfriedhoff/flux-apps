@@ -21,6 +21,15 @@ spec:
         name: harbor
         namespace: ${harbor_namespace}
       interval: 1h0m0s
+  # OIDC settings (incl. the authelia client secret) come from the SOPS
+  # secret harbor-oidc; the chart renders the JSON as CONFIG_OVERWRITE_JSON,
+  # which makes these settings read-only in the UI. Local admin login stays
+  # available at /account/sign-in.
+  valuesFrom:
+    - kind: Secret
+      name: harbor-oidc
+      valuesKey: oidc-config
+      targetPath: core.configureUserSettings
   values:
     externalURL: https://harbor${public_host_suffix}.${delegating_domain}
     existingSecretAdminPassword: ${harbor_admin_secret_name:=harbor-admin}
