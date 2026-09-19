@@ -1,18 +1,30 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":semanticCommits", ":disableRateLimiting"],
-  "labels": ["renovate"],
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":disableRateLimiting"
+  ],
+  "labels": [
+    "renovate"
+  ],
   "flux": {
-    "managerFilePatterns": ["/apps/.+\\.ya?ml$/"]
+    "managerFilePatterns": [
+      "/apps/.+\\.ya?ml$/"
+    ]
   },
   "kubernetes": {
-    "managerFilePatterns": ["/apps/.+\\.ya?ml$/"]
+    "managerFilePatterns": [
+      "/apps/.+\\.ya?ml$/"
+    ]
   },
   "customManagers": [
     {
       "customType": "regex",
       "description": "Pinned Nextcloud app tarballs seeded by initContainers. Renovate can only bump the release tag in the URL path; the postUpgradeTask below reconciles the versioned filename, the desired_version arg, and the sha256 (recomputed from the tarball) so the PR is complete and mergeable.",
-      "managerFilePatterns": ["/apps/nextcloud/(helm-release|verify-custom-apps)\\.ya?ml$/"],
+      "managerFilePatterns": [
+        "/apps/nextcloud/(helm-release|verify-custom-apps)\\.ya?ml$/"
+      ],
       "matchStrings": [
         "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/v(?<currentValue>[0-9.]+)/"
       ],
@@ -20,14 +32,27 @@
     }
   ],
   "postUpgradeTasks": {
-    "commands": ["node scripts/renovate/fix-nextcloud-app-pins.mjs"],
-    "fileFilters": ["apps/nextcloud/**"],
+    "commands": [
+      "node scripts/renovate/fix-nextcloud-app-pins.mjs"
+    ],
+    "fileFilters": [
+      "apps/nextcloud/**"
+    ],
     "executionMode": "branch"
   },
   "packageRules": [
     {
-      "matchManagers": ["kubernetes"],
+      "matchManagers": [
+        "kubernetes"
+      ],
       "groupName": "container images"
+    },
+    {
+      "description": "external-dns chart 1.22.0 (app v0.22.0) silently stops creating NEW records (harbor/nc-clone, 2026-09-19) - proven by rollback; skip until a fixed release",
+      "matchPackageNames": [
+        "external-dns"
+      ],
+      "allowedVersions": "!/^1\\.22\\.0$/"
     }
   ]
 }
