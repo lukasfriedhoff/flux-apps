@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: selkies-desktop-ingress
+  namespace: cloud-desktop
+  labels:
+    app.kubernetes.io/name: selkies-desktop
+spec:
+  # With selkies' basic auth disabled, Authelia on the ingress is the only
+  # login — so only traefik may reach the pod. Without this, any pod in the
+  # cluster could open the desktop unauthenticated.
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: selkies-desktop
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8080
