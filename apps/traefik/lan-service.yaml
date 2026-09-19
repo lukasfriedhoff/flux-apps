@@ -1,0 +1,23 @@
+# LAN entrypoint: split-horizon DNS statics on the RB5009 (e.g. harbor.h4xx.io)
+# point here so LAN clients bypass the Cloudflare tunnel (no ~100MB request
+# cap, no hairpin). Same pods, same routers - only the path differs.
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-lan
+  namespace: ${traefik_namespace:=traefik}
+  annotations:
+    metallb.io/loadBalancerIPs: ${traefik_lan_vip:=10.1.20.40}
+spec:
+  type: LoadBalancer
+  allocateLoadBalancerNodePorts: false
+  selector:
+    app.kubernetes.io/instance: traefik-traefik
+    app.kubernetes.io/name: traefik
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+    - name: websecure
+      port: 443
+      targetPort: websecure

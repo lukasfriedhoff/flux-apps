@@ -1,0 +1,20 @@
+# Service VIPs live on VLAN20 (SERVER, 10.1.20.0/24): all four k3s nodes are
+# attached there, and the range sits below the vlan20 DHCP pool (.100+), so
+# no reservation on the router is needed. VLAN30 stays management-only.
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: services
+  namespace: ${metallb_namespace:=metallb-system}
+spec:
+  addresses:
+    - ${metallb_pool_range:=10.1.20.40-10.1.20.59}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: services
+  namespace: ${metallb_namespace:=metallb-system}
+spec:
+  ipAddressPools:
+    - services
