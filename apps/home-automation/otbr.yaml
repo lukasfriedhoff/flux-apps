@@ -1,3 +1,33 @@
+# The RCP radio reaches this pod over TCP (socat on srv4 today, MikroTik
+# /port remote-access later). otbr-agent spawns the bridge itself via its
+# forkpty radio URL; python3 is the only stream tool the image ships.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otbr-bridge
+  namespace: home-automation
+data:
+  bridge.py: |
+    #!/usr/bin/env python3
+    # stdio (a pty provided by otbr-agent's forkpty) <-> raw TCP serial
+    import os, select, socket, sys
+    host, port = sys.argv[1], int(sys.argv[2])
+    s = socket.create_connection((host, port), timeout=10)
+    s.settimeout(None)
+    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+    while True:
+        r, _, _ = select.select([s.fileno(), 0], [], [])
+        if s.fileno() in r:
+            d = s.recv(4096)
+            if not d:
+                sys.exit(1)
+            os.write(1, d)
+        if 0 in r:
+            d = os.read(0, 4096)
+            if not d:
+                sys.exit(1)
+            s.sendall(d)
+---
 # OpenThread Border Router for the Thread part of the Matter stack. Replicas
 # stay 0 until the Thread RCP USB stick (Silicon Labs CP210x) is physically
 # attached to ${ha_node} (see the migration plan); the serial path is the
@@ -106,8 +136,8 @@ spec:
             # (symlinked to /var/lib/thread by the image entrypoint).
             - name: data
               mountPath: /data
-            - name: serial
-              mountPath: "${ha_thread_serial:=/dev/null}"
+            - name: bridge
+              mountPath: /otbr-bridge
           resources:
             requests:
               cpu: 25m
@@ -118,7 +148,6 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: otbr-data
-        - name: serial
-          hostPath:
-            path: "${ha_thread_serial:=/dev/null}"
-            type: CharDevice
+        - name: bridge
+          configMap:
+            name: otbr-bridge
