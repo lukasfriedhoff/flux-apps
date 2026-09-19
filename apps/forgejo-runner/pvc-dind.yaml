@@ -1,0 +1,13 @@
+# Docker layer cache for the dind sidecar: the wine image build pulls ~GBs of
+# apt packages; a persistent cache turns rebuilds from ~20min into ~2min.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: forgejo-runner-dind
+  namespace: ${forgejo_namespace:=forgejo}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ${forgejo_runner_storage_class_name:=longhorn-ssd-rwo-1r}
+  resources:
+    requests:
+      storage: ${forgejo_runner_dind_cache_size:=30Gi}

@@ -1,0 +1,106 @@
+# Forgejo Actions runner with a docker:dind sidecar. Jobs run as containers
+# on the dind daemon (labels below); the daemon's layer cache lives on a PVC.
+#
+# Registration happens once in an init container (guarded by the .runner
+# state file); the token comes from a SOPS secret. Re-registering after a
+# token rotation: delete the state PVC and restart.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-runner
+  namespace: ${forgejo_namespace:=forgejo}
+  labels:
+    app.kubernetes.io/name: forgejo-runner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: forgejo-runner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forgejo-runner
+    spec:
+      initContainers:
+        - name: register
+          image: ${forgejo_runner_image:=code.forgejo.org/forgejo/runner:6.3.1}
+          workingDir: /data
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              if [ -f /data/.runner ]; then
+                echo "already registered, skipping"
+                exit 0
+              fi
+              forgejo-runner register --no-interactive \
+                --instance "${forgejo_runner_instance_url:=https://git.h4xx.io}" \
+                --token "$RUNNER_TOKEN" \
+                --name "${forgejo_runner_name:=k8s-homelab}" \
+                --labels "ubuntu-latest:docker://ghcr.io/catthehacker/ubuntu:act-22.04,ubuntu-22.04:docker://ghcr.io/catthehacker/ubuntu:act-22.04"
+          env:
+            - name: RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ${forgejo_runner_token_secret_name:=forgejo-runner-token}
+                  key: token
+          volumeMounts:
+            - name: state
+              mountPath: /data
+      containers:
+        - name: runner
+          image: ${forgejo_runner_image:=code.forgejo.org/forgejo/runner:6.3.1}
+          workingDir: /data
+          command: ["forgejo-runner", "--config", "/etc/runner/config.yml", "daemon"]
+          env:
+            - name: DOCKER_HOST
+              value: tcp://localhost:2376
+            - name: DOCKER_CERT_PATH
+              value: /certs/client
+            - name: DOCKER_TLS_VERIFY
+              value: "1"
+          volumeMounts:
+            - name: state
+              mountPath: /data
+            - name: config
+              mountPath: /etc/runner
+            - name: docker-certs
+              mountPath: /certs
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+        - name: dind
+          image: ${forgejo_runner_dind_image:=docker.io/library/docker:27.5.1-dind}
+          securityContext:
+            privileged: true
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: /certs
+          volumeMounts:
+            - name: docker-certs
+              mountPath: /certs
+            - name: dind-storage
+              mountPath: /var/lib/docker
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              memory: ${forgejo_runner_dind_memory_limit:=8Gi}
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: forgejo-runner-state
+        - name: dind-storage
+          persistentVolumeClaim:
+            claimName: forgejo-runner-dind
+        - name: config
+          configMap:
+            name: forgejo-runner-config
+        - name: docker-certs
+          emptyDir: {}

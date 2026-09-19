@@ -1,0 +1,13 @@
+# Runner registration state (.runner) — survives pod recreation so the runner
+# keeps its identity instead of re-registering on every restart.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: forgejo-runner-state
+  namespace: ${forgejo_namespace:=forgejo}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ${forgejo_runner_storage_class_name:=longhorn-ssd-rwo-1r}
+  resources:
+    requests:
+      storage: ${forgejo_runner_state_size:=1Gi}
