@@ -38,13 +38,12 @@ spec:
           env:
             - name: HOME
               value: /home/desktop
-            - name: CUSTOM_USER
-              value: ${selkies_user}
-            - name: PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: selkies-desktop-auth
-                  key: password
+            # Authelia's forwardauth on the ingress is the login; a second
+            # basic-auth prompt on top of SSO is noise, not defense. The
+            # NetworkPolicy is what keeps in-cluster traffic from reaching
+            # the unauthenticated port directly.
+            - name: SELKIES_ENABLE_BASIC_AUTH
+              value: "false"
           # The server answers 401 without credentials, so HTTP probes would
           # report a healthy pod as broken; TCP is the right signal here.
           readinessProbe:
