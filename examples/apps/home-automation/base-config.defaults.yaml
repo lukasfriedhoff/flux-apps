@@ -26,3 +26,5 @@ data:
   # e.g. /dev/serial/by-id/usb-Silicon_Labs_CP2102N...-if00-port0
   ha_thread_serial: "/dev/null"
   ha_thread_baud: "460800"
+  ha_thread_radio_url: "spinel+hdlc+uart:///dev/null?uart-baudrate=460800"
+  ha_iot_vip: "10.1.12.13"
