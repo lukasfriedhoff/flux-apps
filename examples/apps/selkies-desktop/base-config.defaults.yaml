@@ -14,5 +14,6 @@ data:
   selkies_limits_cpu: "4000m"
   selkies_limits_memory: "4Gi"
   selkies_shm_size: "512Mi"
+  selkies_cache_size: "8Gi"
   selkies_home_storage_class_name: "longhorn-rwo-1r"
   selkies_home_size: "10Gi"

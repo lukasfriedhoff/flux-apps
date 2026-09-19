@@ -24,6 +24,10 @@ spec:
       # at startup and falls back to CPU striped encoding without a GPU.
       nodeSelector:
         h4xx.io/gpu.vaapi: "true"
+      # The desktop needs no API access, and the token mount pre-creates
+      # /var/run as a real directory — which shadows NixOS' /var/run -> /run
+      # symlink and crash-loops nsncd (and hides /var/run/dbus).
+      automountServiceAccountToken: false
       containers:
         - name: selkies-desktop
           # Full NixOS personal desktop (nix repo: packages.cloud-desktop-image,
@@ -81,6 +85,11 @@ spec:
               mountPath: /run/lock
             - name: tmp
               mountPath: /tmp
+            # Browser/font/Electron caches are small-file write churn —
+            # the worst case for a replicated Longhorn volume, and nothing
+            # in here is worth replicating.
+            - name: cache
+              mountPath: /home/lukasf/.cache
       volumes:
         - name: home
           persistentVolumeClaim:
@@ -103,3 +112,6 @@ spec:
             medium: Memory
         - name: tmp
           emptyDir: {}
+        - name: cache
+          emptyDir:
+            sizeLimit: ${selkies_cache_size}
