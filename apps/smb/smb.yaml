@@ -1,0 +1,84 @@
+# In-cluster replacement for the docker-host scanserver-samba.
+# LAN-ONLY by design: no Ingress, no external-dns record - reachable as
+# smb.h4xx.io solely via the MikroTik split-horizon DNS static pointing at the
+# pinned node's hostPort 445. The printer/nextcloud accounts keep their
+# original NT hashes (SOPS secret smb-accounts), so no device reconfiguration
+# beyond the hostname.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smb
+  namespace: ${smb_namespace:=smb}
+  labels:
+    app.kubernetes.io/name: smb
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: smb
+  template:
+    metadata:
+      labels:
+        app: smb
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${smb_node:=srv9}
+      containers:
+        - name: samba
+          image: ghcr.io/servercontainers/samba:${smb_image_tag:=smbd-only-a3.24.2-s4.23.8-r0}
+          envFrom:
+            - secretRef:
+                name: ${smb_accounts_secret_name:=smb-accounts}
+          env:
+            - name: SAMBA_GLOBAL_STANZA
+              value: "vfs objects = catia fruit streams_xattr"
+            - name: SAMBA_CONF_LOG_LEVEL
+              value: "1"
+            - name: AVAHI_DISABLE
+              value: "1"
+            - name: WSDD2_DISABLE
+              value: "1"
+            - name: NETBIOS_DISABLE
+              value: "1"
+            - name: GROUP_scan
+              value: "1289"
+            - name: SAMBA_VOLUME_CONFIG_public
+              value: "[Scan]; path=/shares/scan; valid users = printer, nextcloud; guest ok = no; read only = no; browseable = yes; force group = scan"
+            - name: SAMBA_VOLUME_CONFIG_kiosk
+              value: "[kiosk_scan]; path=/shares/kiosk_scan; valid users = printer, nextcloud; guest ok = no; read only = no; browseable = yes; force group = scan"
+          ports:
+            - containerPort: 445
+              hostPort: 445
+              protocol: TCP
+          volumeMounts:
+            - name: shares
+              mountPath: /shares/scan
+              subPath: scan
+            - name: shares
+              mountPath: /shares/kiosk_scan
+              subPath: kiosk_scan
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: shares
+          persistentVolumeClaim:
+            claimName: smb-shares
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smb-shares
+  namespace: ${smb_namespace:=smb}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${smb_storage_class_name}
+  resources:
+    requests:
+      storage: ${smb_shares_size:=10Gi}

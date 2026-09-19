@@ -1,0 +1,55 @@
+# Replaces the docker-host homeassistant-proxy (nginx): kiosk.<domain> now
+# rides cloudflared -> traefik -> this selectorless Service pointing at the
+# Home Assistant box on the IOT VLAN. Traefik handles websocket upgrades.
+apiVersion: v1
+kind: Service
+metadata:
+  name: homeassistant
+  namespace: ${kiosk_namespace:=kiosk}
+spec:
+  ports:
+    - name: http
+      port: 8123
+      targetPort: 8123
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: homeassistant-1
+  namespace: ${kiosk_namespace:=kiosk}
+  labels:
+    kubernetes.io/service-name: homeassistant
+addressType: IPv4
+ports:
+  - name: http
+    port: 8123
+    protocol: TCP
+endpoints:
+  - addresses: ["${kiosk_homeassistant_ip:=10.1.12.13}"]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kiosk
+  namespace: ${kiosk_namespace:=kiosk}
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: kiosk${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homeassistant
+                port: { number: 8123 }
+  tls:
+    - secretName: kiosk-tls
+      hosts:
+        - kiosk${public_host_suffix}.${delegating_domain}

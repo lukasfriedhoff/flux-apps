@@ -18,12 +18,12 @@ spec:
       labels:
         app.kubernetes.io/name: selkies-desktop
     spec:
-      # VA-API encoding wants the node with the GPU (srv8's Renoir on the
-      # homelab cluster); the image falls back to CPU striped encoding when
-      # no render node is present, so a GPU-less cluster can point this at
-      # any node.
+      # Capability selection, not hostname pinning: h4xx.io/gpu.* labels are
+      # derived from each node's facter report in the nix repo. The image
+      # picks the matching VA-API driver (radeonsi/iHD) from the render node
+      # at startup and falls back to CPU striped encoding without a GPU.
       nodeSelector:
-        kubernetes.io/hostname: ${selkies_node}
+        h4xx.io/gpu.vaapi: "true"
       containers:
         - name: selkies-desktop
           # nix-built image (nix repo: pkgs/selkies-desktop-image). Push goes

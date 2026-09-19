@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kutschenapp-mariadb
+  namespace: ${kutschenapp_namespace}
+  labels:
+    app.kubernetes.io/name: kutschenapp
+    app.kubernetes.io/component: database
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kutschenapp-mariadb
+  template:
+    metadata:
+      labels:
+        app: kutschenapp-mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:${kutschenapp_mariadb_tag:=11.4}
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${kutschenapp_db_secret_name:=kutschenapp-db}
+                  key: root-password
+            - name: MARIADB_DATABASE
+              value: kutschenapp
+            - name: MARIADB_USER
+              value: api
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${kutschenapp_db_secret_name:=kutschenapp-db}
+                  key: api-password
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: kutschenapp-mariadb
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kutschenapp-mariadb
+  namespace: ${kutschenapp_namespace}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${kutschenapp_db_storage_class_name}
+  resources:
+    requests:
+      storage: ${kutschenapp_db_size:=5Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kutschenapp-mariadb
+  namespace: ${kutschenapp_namespace}
+spec:
+  selector:
+    app: kutschenapp-mariadb
+  ports:
+    - port: 3306
