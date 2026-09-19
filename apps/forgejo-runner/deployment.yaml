@@ -23,9 +23,16 @@ spec:
       labels:
         app.kubernetes.io/name: forgejo-runner
     spec:
+      # The runner image runs unprivileged; fsGroup makes the Longhorn PVCs
+      # writable for it (dind stays privileged root via its own context).
+      securityContext:
+        fsGroup: 1000
       initContainers:
         - name: register
           image: ${forgejo_runner_image:=code.forgejo.org/forgejo/runner:6.3.1}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           workingDir: /data
           command:
             - /bin/sh
@@ -52,6 +59,9 @@ spec:
       containers:
         - name: runner
           image: ${forgejo_runner_image:=code.forgejo.org/forgejo/runner:6.3.1}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           workingDir: /data
           command: ["forgejo-runner", "--config", "/etc/runner/config.yml", "daemon"]
           env:
