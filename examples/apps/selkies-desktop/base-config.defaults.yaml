@@ -7,6 +7,8 @@ data:
   selkies_suspend: "true"
   selkies_image_tag: "2.1.0-unstable-2026-09-17"
   selkies_user: "lukasf"
+  # Node with the render GPU; on GPU-less clusters any node works (CPU fallback).
+  selkies_node: "srv8"
   selkies_requests_cpu: "500m"
   selkies_requests_memory: "1Gi"
   # CPU-striped H.264 encoding wants headroom; without a GPU the encoder
