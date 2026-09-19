@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selkies-desktop
+  namespace: cloud-desktop
+  labels:
+    app.kubernetes.io/name: selkies-desktop
+spec:
+  replicas: 1
+  # A desktop session is stateful; never run two instances against one home.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: selkies-desktop
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: selkies-desktop
+    spec:
+      containers:
+        - name: selkies-desktop
+          # nix-built image (nix repo: pkgs/selkies-desktop-image). Push goes
+          # through a kubectl port-forward to harbor-core, NOT harbor.h4xx.io
+          # (Cloudflare caps request bodies ~100MB) — see the harbor AI skill.
+          image: harbor.h4xx.io/library/selkies-desktop:${selkies_image_tag}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: HOME
+              value: /home/desktop
+            - name: CUSTOM_USER
+              value: ${selkies_user}
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: selkies-desktop-auth
+                  key: password
+          # The server answers 401 without credentials, so HTTP probes would
+          # report a healthy pod as broken; TCP is the right signal here.
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${selkies_requests_cpu}
+              memory: ${selkies_requests_memory}
+            limits:
+              cpu: ${selkies_limits_cpu}
+              memory: ${selkies_limits_memory}
+          volumeMounts:
+            - name: home
+              mountPath: /home/desktop
+            # Xorg/XShm capture and desktop apps outgrow the 64Mi k8s default.
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: home
+          persistentVolumeClaim:
+            claimName: selkies-desktop-home
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: ${selkies_shm_size}

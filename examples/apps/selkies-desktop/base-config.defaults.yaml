@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  selkies_suspend: "true"
+  selkies_image_tag: "2.1.0-unstable-2026-09-17"
+  selkies_user: "lukasf"
+  selkies_requests_cpu: "500m"
+  selkies_requests_memory: "1Gi"
+  # CPU-striped H.264 encoding wants headroom; without a GPU the encoder
+  # scales with cores.
+  selkies_limits_cpu: "4000m"
+  selkies_limits_memory: "4Gi"
+  selkies_shm_size: "512Mi"
+  selkies_home_storage_class_name: "longhorn-rwo-1r"
+  selkies_home_size: "10Gi"
