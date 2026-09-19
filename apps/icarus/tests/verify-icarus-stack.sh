@@ -22,9 +22,10 @@ grep -q 'IcarusServer-Win64-Shipping.exe' "${app}/deployment.yaml" || fail "upda
 # to the node running the pod.
 grep -q 'externalTrafficPolicy: Local' "${app}/service-game.yaml" || fail "game service must use externalTrafficPolicy Local"
 
-# The image is imported node-locally; a registry pull would always fail.
-grep -q 'imagePullPolicy: Never' "${app}/deployment.yaml" || fail "image must be node-local (imagePullPolicy Never)"
-grep -q 'kubernetes.io/hostname: ${icarus_node}' "${app}/deployment.yaml" || fail "server must pin to the node holding the image"
+# Immutable sha tags + IfNotPresent: a registry outage must never block a
+# plain server restart (same philosophy as keeping Steam off the boot path).
+grep -q 'imagePullPolicy: IfNotPresent' "${app}/deployment.yaml" || fail "image pulls must be IfNotPresent with immutable tags"
+grep -q 'kubernetes.io/hostname: ${icarus_node}' "${app}/deployment.yaml" || fail "server must pin to icarus_node (Longhorn replica locality)"
 
 # Real healthchecks, not process liveness.
 grep -q 'healthcheck.sh' "${app}/deployment.yaml" || fail "probes must use the a2s healthcheck"

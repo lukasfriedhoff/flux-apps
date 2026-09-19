@@ -1,7 +1,9 @@
-# Icarus dedicated server (Windows build under wine). The image is built
-# from the icarus-server repo and imported node-locally (no registry pull
-# path can move multi-GB wine layers through the tunnel), which is why the
-# deployment pins to ${icarus_node} and uses pullPolicy Never.
+# Icarus dedicated server (Windows build under wine). The image is built by
+# the icarus-server repo's Forgejo Actions pipeline and pulled from Harbor
+# over the LAN (split-horizon DNS keeps multi-GB layers off the CF tunnel).
+# Tags are immutable (sha-<short>) and pullPolicy IfNotPresent, so a registry
+# outage can never block a plain server restart. The ${icarus_node} pin is
+# for Longhorn replica locality, no longer an image constraint.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,7 +32,7 @@ spec:
         # plain server restart (that failure took the old stack down).
         - name: update
           image: ${icarus_image}
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/bash
             - -ec
@@ -50,7 +52,7 @@ spec:
       containers:
         - name: icarus
           image: ${icarus_image}
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "/usr/local/bin/runicarus.sh"]
           env:
             - name: SERVERNAME
