@@ -4,3 +4,5 @@ resources:
   - mosquitto.yaml
   - zigbee2mqtt.yaml
   - homeassistant.yaml
+  - otbr.yaml
+  - matter-server.yaml
