@@ -28,8 +28,7 @@ spec:
   valuesFrom:
     - kind: Secret
       name: harbor-oidc
-      valuesKey: oidc-config
-      targetPath: core.configureUserSettings
+      valuesKey: values.yaml
   values:
     externalURL: https://harbor${public_host_suffix}.${delegating_domain}
     existingSecretAdminPassword: ${harbor_admin_secret_name:=harbor-admin}
