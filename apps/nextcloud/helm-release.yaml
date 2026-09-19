@@ -89,6 +89,27 @@ spec:
           value: ${nextcloud_oidc}
         - name: NEXTCLOUD_EXTERNAL_PHOTOS_ENABLED
           value: ${nextcloud_external_photos_enabled:=disabled}
+        # ddnss-merge cutover: instance identity (secret/passwordsalt/
+        # instanceid) of the migrated instance. The secret only exists once
+        # the cutover happens; optional:true keeps pre-cutover pods working.
+        - name: NC_INSTANCE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ${nextcloud_instance_identity_secret_name:=nextcloud-instance-identity}
+              key: secret
+              optional: true
+        - name: NC_INSTANCE_PASSWORDSALT
+          valueFrom:
+            secretKeyRef:
+              name: ${nextcloud_instance_identity_secret_name:=nextcloud-instance-identity}
+              key: passwordsalt
+              optional: true
+        - name: NC_INSTANCE_ID
+          valueFrom:
+            secretKeyRef:
+              name: ${nextcloud_instance_identity_secret_name:=nextcloud-instance-identity}
+              key: instanceid
+              optional: true
         - name: NEXTCLOUD_EXTERNAL_PHOTOS_URL
           value: ${nextcloud_external_photos_url:=}
         - name: NEXTCLOUD_EXTERNAL_PHOTOS_LABEL
@@ -113,6 +134,17 @@ spec:
       defaultConfigs:
         upgrade-disable-web.config.php: false
       configs:
+        zz-instance-identity.config.php: |-
+          <?php
+          // ddnss-merge: adopt the migrated instance identity when the
+          // cutover secret is mounted. instanceid/secret/passwordsalt must
+          // match the DB contents (password hashes, passwords-app vault,
+          // token secrets) or logins and the vault silently break.
+          $identity = array();
+          if (getenv('NC_INSTANCE_SECRET'))       { $identity['secret'] = getenv('NC_INSTANCE_SECRET'); }
+          if (getenv('NC_INSTANCE_PASSWORDSALT')) { $identity['passwordsalt'] = getenv('NC_INSTANCE_PASSWORDSALT'); }
+          if (getenv('NC_INSTANCE_ID'))           { $identity['instanceid'] = getenv('NC_INSTANCE_ID'); }
+          $CONFIG = $identity;
         oidc-login.config.php: |-
           <?php
           $CONFIG = array (
@@ -203,6 +235,14 @@ spec:
           set -e
           # Avoid getcwd failures if the previous working directory vanished.
           cd /
+          # --- SMB CLIENT (files_external -> scan server shares) ---
+          # The official image ships no SMB support; the icewind/smb library
+          # falls back to the smbclient binary when the php extension is
+          # absent. Failure is non-fatal: only the SMB mounts degrade.
+          if ! command -v smbclient >/dev/null 2>&1; then
+            (apt-get update -qq && apt-get install -y -qq smbclient) >/dev/null 2>&1 \
+              || echo "WARN: smbclient install failed; SMB external storage unavailable"
+          fi
           # On slow or interrupted bootstrap runs, /var/www/html may exist while occ
           # is not yet available; do not crash-loop the pod in that case.
           if [ ! -x /var/www/html/occ ]; then
@@ -1093,10 +1133,10 @@ spec:
               # custom app so they survive the next major upgrade.
               fetch_app \
                 contacts \
-                https://github.com/nextcloud-releases/contacts/releases/download/v8.8.1/contacts-v8.8.1.tar.gz \
-                2ae3edbd90edcc44ab8c2d3172661e5d1948205aa0a4d3e712fc66d2501329f7 \
+                https://github.com/nextcloud-releases/contacts/releases/download/v8.9.0/contacts-v8.9.0.tar.gz \
+                06f5da48d70884cef60faaf8bb36a8b2ec22a7bcdb0aecf4970a693614562854 \
                 contacts/appinfo/info.xml \
-                8.8.1
+                8.9.0
               fetch_app \
                 calendar \
                 https://github.com/nextcloud-releases/calendar/releases/download/v6.5.4/calendar-v6.5.4.tar.gz \
@@ -1121,10 +1161,10 @@ spec:
                 1.8.0
               fetch_app \
                 passwords \
-                https://git.mdns.eu/api/v4/projects/45/packages/generic/passwords/2026.7.0/passwords.tar.gz \
-                f0447632ac9e3e91110fb4517f0f07ab9c4dc7eb3cbd484f6c3c89d89bd4fe1a \
+                https://git.mdns.eu/api/v4/projects/45/packages/generic/passwords/2026.9.0/passwords.tar.gz \
+                8c3dbba93a741283e44e2c1a80a31718bbd383020715a7fca4c316df6fccb231 \
                 passwords/appinfo/info.xml \
-                2026.7.20
+                2026.9.20
               # Apps migrated from the docker-host (h4.ddnss.org) instance.
               # Pinned NC34-compatible releases from the official appstore /
               # each app's release page (URL+sha256+version); appstoreenabled
@@ -1149,16 +1189,16 @@ spec:
                 4.1.3
               fetch_app \
                 deck \
-                https://github.com/nextcloud-releases/deck/releases/download/v1.18.4/deck-v1.18.4.tar.gz \
-                d8a7063cdd6225d19dc28833a7170506cac6f5e429a020e23bcd8c2d8315bc39 \
+                https://github.com/nextcloud-releases/deck/releases/download/v1.18.5/deck-v1.18.5.tar.gz \
+                dafec6635ff3af50fb6f73330064ef6153910be2fa434d2edbf8043263122253 \
                 deck/appinfo/info.xml \
-                1.18.4
+                1.18.5
               fetch_app \
                 gpoddersync \
-                https://github.com/thrillfall/nextcloud-gpodder/releases/download/3.17.0/gpoddersync.tar.gz \
-                578889af5a79baac5daef139d1b8f235388776c6404dec1a057290f0c6b47478 \
+                https://github.com/thrillfall/nextcloud-gpodder/releases/download/3.18.0/gpoddersync.tar.gz \
+                768a851a626f52a5d71e2b91e76a48cf253a79fb28f507b18217d94a1dbfeaff \
                 gpoddersync/appinfo/info.xml \
-                3.17.0
+                3.18.0
               fetch_app \
                 groupfolders \
                 https://github.com/nextcloud-releases/groupfolders/releases/download/v22.0.6/groupfolders-v22.0.6.tar.gz \
@@ -1195,6 +1235,24 @@ spec:
                 0c988d50531c9bfa246e6c31f3f95369adde1629ba70d15194915ab56e24687b \
                 tasks/appinfo/info.xml \
                 0.18.1
+              fetch_app \
+                drawio \
+                https://github.com/arnowelzel/drawio-nextcloud/releases/download/v4.3.8/drawio-v4.3.8.tar.gz \
+                d18e2715e65c81f80d9c47601197896d560db0cee9add8dd0b315e52279441b7 \
+                drawio/appinfo/info.xml \
+                4.3.8
+              fetch_app \
+                notes \
+                https://github.com/nextcloud-releases/notes/releases/download/v6.1.0/notes-v6.1.0.tar.gz \
+                03c493f45cb17a5005a0dce91c4e59b294ef91d4520c3ef44a21d5e61e419526 \
+                notes/appinfo/info.xml \
+                6.1.0
+              fetch_app \
+                integration_paperless \
+                https://github.com/nextcloud-releases/integration_paperless/releases/download/v1.0.14/integration_paperless-v1.0.14.tar.gz \
+                293f57dda0afc91e4222c38adb51b0bc846ec9409730a979ba0751e371872ea4 \
+                integration_paperless/appinfo/info.xml \
+                1.0.14
           volumeMounts:
             - name: nextcloud-main
               mountPath: /var/www/html/custom_apps
