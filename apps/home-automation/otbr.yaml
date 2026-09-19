@@ -9,24 +9,42 @@ metadata:
 data:
   bridge.py: |
     #!/usr/bin/env python3
-    # stdio (a pty provided by otbr-agent's forkpty) <-> raw TCP serial
-    import os, select, socket, sys
-    host, port = sys.argv[1], int(sys.argv[2])
-    s = socket.create_connection((host, port), timeout=10)
-    s.settimeout(None)
-    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-    while True:
-        r, _, _ = select.select([s.fileno(), 0], [], [])
-        if s.fileno() in r:
-            d = s.recv(4096)
-            if not d:
-                sys.exit(1)
-            os.write(1, d)
-        if 0 in r:
-            d = os.read(0, 4096)
-            if not d:
-                sys.exit(1)
-            s.sendall(d)
+    # stdio (a pty provided by otbr-agent's forkpty) <-> raw TCP serial.
+    # NEVER write diagnostics to stdout/stderr - under forkpty they ARE the
+    # spinel stream; log to the PVC instead.
+    import os, select, socket, sys, time
+    log = open("/data/bridge.err", "a", buffering=1)
+    def note(msg):
+        log.write(time.strftime("%H:%M:%S ") + msg + "\n")
+    try:
+        host, port = sys.argv[1], int(sys.argv[2])
+        note(f"start argv={sys.argv!r}")
+        s = socket.create_connection((host, port), timeout=10)
+        s.settimeout(None)
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        note("connected")
+        rx = tx = 0
+        while True:
+            r, _, _ = select.select([s.fileno(), 0], [], [])
+            if s.fileno() in r:
+                d = s.recv(4096)
+                if not d:
+                    note(f"tcp closed rx={rx} tx={tx}")
+                    sys.exit(1)
+                rx += len(d)
+                os.write(1, d)
+            if 0 in r:
+                d = os.read(0, 4096)
+                if not d:
+                    note(f"pty closed rx={rx} tx={tx}")
+                    sys.exit(1)
+                tx += len(d)
+                s.sendall(d)
+    except SystemExit:
+        raise
+    except Exception as e:
+        note(f"EXC {e!r}")
+        sys.exit(1)
 ---
 # OpenThread Border Router for the Thread part of the Matter stack. Replicas
 # stay 0 until the Thread RCP USB stick (Silicon Labs CP210x) is physically
