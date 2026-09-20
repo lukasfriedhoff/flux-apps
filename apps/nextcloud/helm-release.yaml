@@ -242,7 +242,13 @@ spec:
           # falls back to the smbclient binary when the php extension is
           # absent. Failure is non-fatal: only the SMB mounts degrade.
           if ! command -v smbclient >/dev/null 2>&1; then
-            (apt-get update -qq && apt-get install -y -qq smbclient) >/dev/null 2>&1 \
+            # Fresh pods can lack egress for the first seconds (netpol/ipset
+            # admission lag) - retry instead of failing the whole pod lifetime.
+            for i in 1 2 3 4; do
+              (apt-get update -qq && apt-get install -y -qq smbclient) >/dev/null 2>&1 && break
+              sleep 15
+            done
+            command -v smbclient >/dev/null 2>&1 \
               || echo "WARN: smbclient install failed; SMB external storage unavailable"
           fi
           # On slow or interrupted bootstrap runs, /var/www/html may exist while occ
