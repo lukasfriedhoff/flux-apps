@@ -267,6 +267,19 @@ spec:
               file_put_contents('/var/www/html/config/config.php', \$cfg);
             " 2>/dev/null && echo "DB password synced from secret into config.php."
           fi
+          # --- DB NAME SYNC ---
+          # The chart only applies POSTGRES_DB at first install; config.php on
+          # the persistent PVC keeps the old name forever otherwise. Sync it so
+          # a values change (e.g. the ddnss-merge flip to nextcloud_merged)
+          # actually takes effect on existing installs.
+          if [ -f /var/www/html/config/config.php ] && [ -n "$POSTGRES_DB" ]; then
+            php -r "
+              \$cfg = file_get_contents('/var/www/html/config/config.php');
+              \$db  = getenv('POSTGRES_DB');
+              \$new = preg_replace(\"/'dbname' => '.*?'/s\", \"'dbname' => '\$db'\", \$cfg);
+              if (\$new !== \$cfg) { file_put_contents('/var/www/html/config/config.php', \$new); echo 'DB name synced: ' . \$db . PHP_EOL; }
+            " 2>/dev/null
+          fi
           # --- DB INSTALL STATE RECOVERY ---
           # Treat the database schema as authoritative. If config.php lost the
           # installed flag but the schema exists, restore the flag instead of
