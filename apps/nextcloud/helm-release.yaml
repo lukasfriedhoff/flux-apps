@@ -159,7 +159,9 @@ spec:
             'oidc_login_logout_url' => 'https://nextcloud${public_host_suffix}.${delegating_domain}/apps/oidc_login/oidc',
             'oidc_login_disable_registration' => false,
             'oidc_login_attributes' => array (
-              'id' => 'sub',
+              // ddnss merge: map OIDC identities onto the migrated accounts
+              // via the authelia ncuid claim (lukasf -> h4xx etc.)
+              'id' => 'ncuid',
               'name' => 'name',
               'mail' => 'email',
               'groups' => 'groups',
@@ -1321,7 +1323,7 @@ spec:
       enabled: true
       type: postgresql
       host: nextcloud-postgres-rw.${nextcloud_namespace:=nextcloud}.svc.cluster.local
-      database: nextcloud
+      database: ${nextcloud_db_name:=nextcloud}
       existingSecret:
         enabled: true
         secretName: nextcloud-postgres-app
