@@ -123,20 +123,20 @@ spec:
           # Run the agent directly: the image's s6/entrypoint stack fights
           # the nft-only host (legacy iptables) and ignores runtime env for
           # the radio/backbone config (baked /etc/default/otbr-agent).
-          command: ["/usr/sbin/otbr-agent"]
+          # Wrapper restores the entrypoint's one useful side effect: Thread
+          # state (active dataset!) persists under /var/lib/thread, which must
+          # live on the PVC or the network dies with every pod restart.
+          command: ["sh", "-c"]
           args:
-            - "-I"
-            - "wpan0"
-            - "-B"
-            - "${ha_otbr_backbone_if:=brvlan12}"
-            - "-d4"
-            - "-v"
-            - "--rest-listen-address"
-            - "0.0.0.0"
-            - "--rest-listen-port"
-            - "8081"
-            - "--auto-attach=1"
-            - "${ha_thread_radio_url:=spinel+hdlc+uart:///dev/null}"
+            - >-
+              mkdir -p /data/thread &&
+              rm -rf /var/lib/thread &&
+              ln -sfn /data/thread /var/lib/thread &&
+              exec /usr/sbin/otbr-agent -I wpan0
+              -B ${ha_otbr_backbone_if:=brvlan12} -d4 -v
+              --rest-listen-address 0.0.0.0 --rest-listen-port 8081
+              --auto-attach=1
+              "${ha_thread_radio_url:=spinel+hdlc+uart:///dev/null}"
           image: ${ha_otbr_image:=docker.io/openthread/otbr@sha256:35c6e6520080116572fea50bbf271eff337992dd34e0cb095f4289f7853311e9}
           securityContext:
             privileged: true
