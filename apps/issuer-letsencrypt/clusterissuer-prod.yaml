@@ -9,6 +9,17 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod-account-key
     solvers:
+      # ddnss.org is not a zone we control at Cloudflare - those hosts
+      # validate via http-01 through the ddnss-ingress tunnel path
+      # (docs/architecture/ddnss-ingress.md). Selector solvers are matched
+      # first; the DNS-01 solver stays the default for everything else.
+      - selector:
+          dnsNames:
+            - h4.ddnss.org
+            - nextcloud.h4.ddnss.org
+        http01:
+          ingress:
+            ingressClassName: traefik
       - dns01:
           cloudflare:
             apiTokenSecretRef:
