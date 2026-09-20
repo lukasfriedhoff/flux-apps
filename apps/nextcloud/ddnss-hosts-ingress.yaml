@@ -1,0 +1,41 @@
+# Legacy ddnss.org hostnames, served by the SAME nextcloud after the merge.
+# Traffic path: docs/architecture/ddnss-ingress.md (ionos1 -> wg -> haproxy
+# -> traefik). No external-dns annotations on purpose: ddnss DNS stays at the
+# provider pointing at ionos1; certs issue via http-01 over the tunnel.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud-ddnss
+  namespace: nextcloud
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: h4.ddnss.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nextcloud
+                port:
+                  number: 8080
+    - host: nextcloud.h4.ddnss.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nextcloud
+                port:
+                  number: 8080
+  tls:
+    - secretName: nextcloud-ddnss-tls
+      hosts:
+        - h4.ddnss.org
+        - nextcloud.h4.ddnss.org

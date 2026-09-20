@@ -19,3 +19,4 @@ resources:
   - office-check.yaml
   - metrics-exporter.yaml
   - helm-release.yaml
+  - ddnss-hosts-ingress.yaml
