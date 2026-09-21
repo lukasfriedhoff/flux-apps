@@ -17,6 +17,7 @@ spec:
           dnsNames:
             - h4.ddnss.org
             - nextcloud.h4.ddnss.org
+            - kiosk.h4.ddnss.org
         http01:
           ingress:
             ingressClassName: traefik

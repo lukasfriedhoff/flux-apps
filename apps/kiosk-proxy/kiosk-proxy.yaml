@@ -40,6 +40,18 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
+    # legacy ddnss name kept alive post-docker-host (family bookmarks / kiosk
+    # devices); cert via the issuer's http-01 ddnss solver
+    - host: kiosk.h4.ddnss.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homeassistant
+                port:
+                  number: 8123
     - host: kiosk${public_host_suffix}.${delegating_domain}
       http:
         paths:
@@ -53,3 +65,6 @@ spec:
     - secretName: kiosk-tls
       hosts:
         - kiosk${public_host_suffix}.${delegating_domain}
+    - secretName: kiosk-ddnss-tls
+      hosts:
+        - kiosk.h4.ddnss.org
