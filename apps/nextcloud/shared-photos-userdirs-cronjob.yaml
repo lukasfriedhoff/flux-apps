@@ -85,7 +85,7 @@ spec:
                         timeout 60 php /var/www/html/occ files:scan \
                           --path="/$user_id/files/Photos" \
                           --shallow \
-                          --quiet \
+                          --quiet < /dev/null \
                           || echo "Warning: failed to shallow-scan /$user_id/files/Photos" >&2
                       fi
                     done < "$users_file"
