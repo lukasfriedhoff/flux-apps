@@ -37,6 +37,13 @@ spec:
         prometheus.io/path: "/metrics"
     ports:
       websecure:
+        # Trust X-Forwarded-For from in-cluster proxies (cloudflared, the
+        # ddnss haproxy) so Nextcloud & friends see real client IPs instead
+        # of one shared pod IP. Without this, one client failing logins
+        # bruteforce-throttles EVERY tunnel user (429s).
+        forwardedHeaders:
+          trustedIPs:
+            - ${cluster_pod_cidr:=10.42.0.0/16}
         http:
           tls:
             enabled: true

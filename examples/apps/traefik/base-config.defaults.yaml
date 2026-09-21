@@ -11,3 +11,6 @@ data:
   # Ingress replicas; hard anti-affinity spreads them across nodes, so
   # single-node clusters must set this to "1".
   traefik_replicas: "2"
+  # Pod CIDR whose X-Forwarded-For headers Traefik trusts (in-cluster
+  # proxies: cloudflared, ddnss haproxy). k3s default pod network.
+  cluster_pod_cidr: "10.42.0.0/16"

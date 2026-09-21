@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 data:
   selkies_suspend: "true"
-  selkies_image_tag: "2026-09-19-1"
+  selkies_image_tag: "2026-09-19-2"
   selkies_user: "lukasf"
   selkies_requests_cpu: "500m"
   selkies_requests_memory: "1Gi"
