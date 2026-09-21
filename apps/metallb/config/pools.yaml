@@ -8,7 +8,34 @@ metadata:
   namespace: ${metallb_namespace:=metallb-system}
 spec:
   addresses:
-    - ${metallb_pool_range:=10.1.20.40-10.1.20.59}
+    - ${metallb_pool_range:=10.1.20.40-10.1.20.49}
+---
+# The apiserver VIP gets its own pool + an announcement pinned to the
+# control-plane nodes: speaker election across all nodes proved flappy on
+# the RB5009's ARP cache (silent blackholes when a non-CP node won).
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: apiserver
+  namespace: ${metallb_namespace:=metallb-system}
+spec:
+  addresses:
+    - ${metallb_apiserver_pool:=10.1.20.50-10.1.20.59}
+  serviceAllocation:
+    namespaces:
+      - kube-system
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: apiserver
+  namespace: ${metallb_namespace:=metallb-system}
+spec:
+  ipAddressPools:
+    - apiserver
+  nodeSelectors:
+    - matchLabels:
+        node-role.kubernetes.io/control-plane: "true"
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
