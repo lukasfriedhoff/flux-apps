@@ -44,6 +44,13 @@ spec:
         forwardedHeaders:
           trustedIPs:
             - ${cluster_pod_cidr:=10.42.0.0/16}
+        # PROXY protocol from the ddnss path: ionos1's haproxy prepends the
+        # real client address, the ddnss-ingress pod passes it through in
+        # TCP mode. Traefik maps trusted IPs to proxyproto.USE - the header
+        # is OPTIONAL, so cloudflared/LAN connections without it still work.
+        proxyProtocol:
+          trustedIPs:
+            - ${cluster_pod_cidr:=10.42.0.0/16}
         http:
           tls:
             enabled: true
