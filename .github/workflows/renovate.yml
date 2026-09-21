@@ -23,6 +23,10 @@ jobs:
           RENOVATE_PLATFORM: forgejo
           RENOVATE_ENDPOINT: https://git.h4xx.io/api/v1
           RENOVATE_GIT_AUTHOR: "Renovate Bot <renovate@h4xx.io>"
+          # Datasource lookups (github-releases etc.) need a github.com token
+          # separate from the platform token since the platform moved to
+          # Forgejo - without it the lookups rate-limit to zero updates.
+          GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: optional
           # Allow the postUpgradeTask that reconciles the Nextcloud app pins
