@@ -1,0 +1,41 @@
+# MetalLB VIP in front of the k3s API servers (prod.k8s.lab.h4xx.io).
+# Selectorless Service + manual EndpointSlice because the apiservers are
+# host processes, not pods. Members = the etcd/control-plane set
+# (srv1/srv8/srv9 since the srv2 demotion). The RB5009 serves the DNS
+# static for the name; every server carries the SAN via its k3s tls-san.
+# Disaster access: the VIP lives inside the cluster - keep direct node
+# names as kubeconfig fallbacks.
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-api
+  namespace: ${k8s_api_lb_namespace:=kube-system}
+  annotations:
+    metallb.io/loadBalancerIPs: ${k8s_api_vip:=10.1.20.43}
+spec:
+  type: LoadBalancer
+  allocateLoadBalancerNodePorts: false
+  ports:
+    - name: https
+      port: 6443
+      targetPort: 6443
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: k8s-api-1
+  namespace: ${k8s_api_lb_namespace:=kube-system}
+  labels:
+    kubernetes.io/service-name: k8s-api
+addressType: IPv4
+ports:
+  - name: https
+    port: 6443
+    protocol: TCP
+endpoints:
+  - addresses:
+      - "${k8s_api_member1:=10.1.30.12}"
+  - addresses:
+      - "${k8s_api_member2:=10.1.30.27}"
+  - addresses:
+      - "${k8s_api_member3:=10.1.30.31}"
