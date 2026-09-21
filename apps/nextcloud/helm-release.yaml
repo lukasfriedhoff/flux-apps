@@ -1160,10 +1160,10 @@ spec:
                 8.9.0
               fetch_app \
                 calendar \
-                https://github.com/nextcloud-releases/calendar/releases/download/v6.5.4/calendar-v6.5.4.tar.gz \
-                67c777a6ea974409e9d228c23fc60f2be8e675d376531b6b1b125f2f0365738d \
+                https://github.com/nextcloud-releases/calendar/releases/download/v6.6.1/calendar-v6.6.1.tar.gz \
+                fd6630deec568368784c569ef01c7d9ed8acca1ab6833cf12a2bff5984a3fa7b \
                 calendar/appinfo/info.xml \
-                6.5.4
+                6.6.1
               # cookbook and maps ship a vendored autoloader, so that file is
               # the marker: a truncated extraction would leave info.xml in
               # place but break the app at runtime. passwords has no vendor
