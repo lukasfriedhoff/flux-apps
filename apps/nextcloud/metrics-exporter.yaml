@@ -37,16 +37,15 @@ spec:
               value: "false"
             - name: NEXTCLOUD_INFO_UPDATE
               value: "false"
-            - name: NEXTCLOUD_USERNAME
+            # Token auth against the serverinfo app (occ config:app:set
+            # serverinfo token) - no admin account needed; the merged
+            # production DB has no 'admin' user, and each failed basic-auth
+            # scrape fed the bruteforce throttle.
+            - name: NEXTCLOUD_AUTH_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: nextcloud-admin
-                  key: username
-            - name: NEXTCLOUD_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: nextcloud-admin
-                  key: password
+                  name: nextcloud-serverinfo-token
+                  key: token
             - name: NEXTCLOUD_TLS_SKIP_VERIFY
               value: "false"
           resources:
