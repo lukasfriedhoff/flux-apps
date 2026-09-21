@@ -15,6 +15,10 @@ metadata:
 spec:
   type: LoadBalancer
   allocateLoadBalancerNodePorts: false
+  # Local: the announcing node serves ITS OWN apiserver endpoint - no
+  # cross-node forwarding leg (which proved unreliable for node-IP
+  # endpoints), and MetalLB only elects announcers that have one.
+  externalTrafficPolicy: Local
   ports:
     - name: https
       port: 6443
@@ -37,13 +41,16 @@ endpoints:
   # and MetalLB refuses to announce services whose endpoints lack ready=true.
   - addresses:
       - "${k8s_api_member1:=10.1.30.12}"
+    nodeName: srv1
     conditions:
       ready: true
   - addresses:
       - "${k8s_api_member2:=10.1.30.27}"
+    nodeName: srv8
     conditions:
       ready: true
   - addresses:
       - "${k8s_api_member3:=10.1.30.31}"
+    nodeName: srv9
     conditions:
       ready: true
