@@ -1246,10 +1246,10 @@ spec:
                 0.7.12
               fetch_app \
                 previewgenerator \
-                https://github.com/nextcloud-releases/previewgenerator/releases/download/v5.14.0/previewgenerator-v5.14.0.tar.gz \
-                8a9e20a883f67224f8e73947afb476d9809bd7991ac0cd92d7fafcedbe65ca87 \
+                https://github.com/nextcloud-releases/previewgenerator/releases/download/v5.15.0/previewgenerator-v5.15.0.tar.gz \
+                e90a57c6cd02a5c6cc36163f37c94297a2ffd2443ccbf0164881e8fd7b324fd9 \
                 previewgenerator/appinfo/info.xml \
-                5.14.0
+                5.15.0
               fetch_app \
                 tasks \
                 https://github.com/nextcloud/tasks/releases/download/v0.18.1/tasks.tar.gz \
