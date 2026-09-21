@@ -287,9 +287,6 @@ data:
             redirect_uris:
               - https://nextcloud${public_host_suffix}.${delegating_domain}/apps/oidc_login/oidc
               - https://nextcloud${public_host_suffix}.${delegating_domain}/index.php/apps/oidc_login/oidc
-              # temporary until the ddnss cutover: identity-mapping validation
-              - https://nc-clone${public_host_suffix}.${delegating_domain}/apps/oidc_login/oidc
-              - https://nc-clone${public_host_suffix}.${delegating_domain}/index.php/apps/oidc_login/oidc
             scopes:
               - openid
               - profile
