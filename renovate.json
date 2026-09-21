@@ -46,6 +46,18 @@
         "kubernetes"
       ],
       "groupName": "container images"
+    },
+    {
+      "description": "NC35-only majors - unblock when the server moves to 35",
+      "matchPackageNames": [
+        "nextcloud-releases/external",
+        "nextcloud-releases/impersonate",
+        "nextcloud-releases/richdocuments"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }
