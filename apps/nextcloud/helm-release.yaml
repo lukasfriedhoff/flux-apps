@@ -242,14 +242,20 @@ spec:
           # falls back to the smbclient binary when the php extension is
           # absent. Failure is non-fatal: only the SMB mounts degrade.
           if ! command -v smbclient >/dev/null 2>&1; then
-            # Fresh pods can lack egress for the first seconds (netpol/ipset
-            # admission lag) - retry instead of failing the whole pod lifetime.
-            for i in 1 2 3 4; do
+            # Fresh pods can lack egress for the first MINUTES (netpol/ipset
+            # admission lag) - 4x15s was not enough: on 2026-09-21 a full
+            # rollout left ALL replicas without smbclient (broken SMB mounts
+            # taxed every request as StorageNotAvailable). Retry for up to
+            # 10 minutes; HPA churns pods daily, so every start must win.
+            for i in $(seq 1 60); do
               (apt-get update -qq && apt-get install -y -qq smbclient) >/dev/null 2>&1 && break
-              sleep 15
+              sleep 10
             done
-            command -v smbclient >/dev/null 2>&1 \
-              || echo "WARN: smbclient install failed; SMB external storage unavailable"
+            if command -v smbclient >/dev/null 2>&1; then
+              echo "smbclient installed (attempt $i)"
+            else
+              echo "WARN: smbclient install failed after $i attempts; SMB external storage unavailable"
+            fi
           fi
           # On slow or interrupted bootstrap runs, /var/www/html may exist while occ
           # is not yet available; do not crash-loop the pod in that case.
