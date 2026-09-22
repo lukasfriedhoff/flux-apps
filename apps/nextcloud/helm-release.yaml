@@ -21,6 +21,13 @@ spec:
         namespace: nextcloud
       interval: 10m0s
   values:
+    # Custom image with smbclient baked in (containers/nextcloud/Dockerfile,
+    # built by the build-nextcloud-image workflow). The tag mirrors the
+    # upstream tag; on upstream bumps merge the Dockerfile PR first, wait
+    # for the build, then bump this tag.
+    image:
+      repository: ${nextcloud_image_repository:=harbor.h4xx.io/library/nextcloud}
+      tag: 34.0.4-apache
     replicaCount: ${nextcloud_hpa_min_pods}
     hpa:
       enabled: ${nextcloud_hpa_enabled}

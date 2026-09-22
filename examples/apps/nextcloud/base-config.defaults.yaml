@@ -52,3 +52,6 @@ data:
   # get their namespace from the flux Kustomization targetNamespace. Override
   # for a second instance (e.g. nextcloud-h4).
   nextcloud_namespace: "nextcloud"
+  # Registry+repo for the smbclient-baked NC image (containers/nextcloud/).
+  # Set to "nextcloud" to fall back to the upstream docker.io image.
+  nextcloud_image_repository: "harbor.h4xx.io/library/nextcloud"
