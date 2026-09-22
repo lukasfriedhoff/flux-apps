@@ -1,0 +1,47 @@
+# Game traffic entrypoint: a MetalLB VIP so the router's DNAT target stays
+# stable no matter which node runs the server.
+#
+# externalTrafficPolicy Local, deliberately:
+#   * players' real source IPs reach the server (bans, logs)
+#   * the VIP is announced from the node holding the pod — no extra hop
+apiVersion: v1
+kind: Service
+metadata:
+  name: valheim-game
+  namespace: ${valheim_namespace}
+  labels:
+    app.kubernetes.io/name: valheim
+  annotations:
+    metallb.io/loadBalancerIPs: ${valheim_vip:=10.1.20.43}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  allocateLoadBalancerNodePorts: false
+  selector:
+    app.kubernetes.io/name: valheim
+  ports:
+    # Service port must equal the in-container port or Steam advertises the
+    # wrong endpoint (the server announces whatever port it binds).
+    - name: game
+      protocol: UDP
+      port: ${valheim_game_port:=2456}
+      targetPort: ${valheim_game_port:=2456}
+    - name: query
+      protocol: UDP
+      port: ${valheim_query_port:=2457}
+      targetPort: ${valheim_query_port:=2457}
+---
+# Cluster-internal only: the image's status.json (server state + connected
+# players), consumed by the OliveTin "Server status" action. Never exposed.
+apiVersion: v1
+kind: Service
+metadata:
+  name: valheim-status
+  namespace: ${valheim_namespace}
+spec:
+  selector:
+    app.kubernetes.io/name: valheim
+  ports:
+    - name: status
+      port: 80
+      targetPort: ${valheim_status_port:=9110}

@@ -1,0 +1,154 @@
+# Valheim dedicated server.
+#
+# Unlike icarus (Windows build under wine, custom-built image), Valheim ships a
+# native Linux server, so we run the upstream lloesche/valheim-server image
+# pulled through the Harbor ghcr proxy-cache — no bespoke build pipeline to
+# maintain. The image bundles steamcmd, a supervisor, scheduled update checks
+# and world backups.
+#
+# The ${valheim_node} pin is for Longhorn replica locality only; the game is
+# published through a MetalLB VIP (service-game.yaml), so the node can change
+# without touching the router.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valheim
+  namespace: ${valheim_namespace}
+  labels:
+    app.kubernetes.io/name: valheim
+spec:
+  replicas: ${valheim_replicas:=1}
+  strategy:
+    # One world, one writer: never run two servers against the same save.
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: valheim
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: valheim
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${valheim_node}
+      # supervisord needs to start as root (it chowns the volumes and drops to
+      # PUID/PGID for the server itself); fsGroup keeps the PVCs writable.
+      securityContext:
+        fsGroup: ${valheim_pgid:=1000}
+      containers:
+        - name: valheim
+          image: ${valheim_image}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SERVER_NAME
+              value: "${valheim_server_name}"
+            - name: WORLD_NAME
+              value: "${valheim_world_name}"
+            - name: SERVER_PORT
+              value: ${quote}${valheim_game_port:=2456}${quote}
+            - name: SERVER_PUBLIC
+              value: ${quote}${valheim_server_public:=true}${quote}
+            - name: SERVER_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: ${valheim_credentials_secret_name:=valheim-credentials}
+                  key: server_pass
+            # Steam IDs with admin rights in-game (space separated).
+            - name: ADMINLIST_IDS
+              value: "${valheim_adminlist_ids}"
+            # Update checks are scheduled, and only fire when the server is
+            # empty, so a patch never kicks players mid-raid. An outdated
+            # server is invisible to clients, so this stays enabled — the
+            # image leaves the install untouched when Steam fails.
+            - name: UPDATE_CRON
+              value: "${valheim_update_cron:=*/15 * * * *}"
+            - name: UPDATE_IF_IDLE
+              value: ${quote}${valheim_update_if_idle:=true}${quote}
+            # In-container world snapshots: cheap, world-consistent zips that
+            # the restic job then ships offsite. Retention here stays short
+            # (restic owns long-term history).
+            - name: BACKUPS
+              value: ${quote}${valheim_internal_backups:=true}${quote}
+            - name: BACKUPS_CRON
+              value: "${valheim_internal_backups_cron:=0 */6 * * *}"
+            - name: BACKUPS_MAX_AGE
+              value: ${quote}${valheim_internal_backups_max_age:=3}${quote}
+            - name: BACKUPS_DIRECTORY
+              value: /config/backups
+            - name: STATUS_HTTP
+              value: "true"
+            - name: STATUS_HTTP_PORT
+              value: ${quote}${valheim_status_port:=9110}${quote}
+            - name: PUID
+              value: ${quote}${valheim_puid:=1000}${quote}
+            - name: PGID
+              value: ${quote}${valheim_pgid:=1000}${quote}
+            - name: TZ
+              value: "${valheim_timezone:=Europe/Berlin}"
+          ports:
+            # Must match the LoadBalancer service ports: Steam advertises
+            # whatever port the server binds.
+            - name: game
+              containerPort: ${valheim_game_port:=2456}
+              protocol: UDP
+            - name: query
+              containerPort: ${valheim_query_port:=2457}
+              protocol: UDP
+            - name: status
+              containerPort: ${valheim_status_port:=9110}
+          startupProbe:
+            # A live A2S answer, not a process check: a wedged server keeps its
+            # PID and its HTTP status page while refusing every join (the
+            # failure mode that hid a broken icarus server for months).
+            # First boot downloads the server and generates the world, hence
+            # the long budget (15s x 80 = 20min).
+            exec:
+              command:
+                - python3
+                - -c
+                - |
+                  import socket, sys
+                  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                  s.settimeout(4)
+                  s.sendto(bytes([255, 255, 255, 255]) + b'TSource Engine Query' + bytes([0]),
+                           ('127.0.0.1', ${valheim_query_port:=2457}))
+                  data, _ = s.recvfrom(4096)
+                  # 'I' = info reply, 'A' = challenge; both prove it answers.
+                  sys.exit(0 if data[4:5] in (b'I', b'A') else 1)
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 80
+          livenessProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - |
+                  import socket, sys
+                  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                  s.settimeout(4)
+                  s.sendto(bytes([255, 255, 255, 255]) + b'TSource Engine Query' + bytes([0]),
+                           ('127.0.0.1', ${valheim_query_port:=2457}))
+                  data, _ = s.recvfrom(4096)
+                  sys.exit(0 if data[4:5] in (b'I', b'A') else 1)
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: ${valheim_requests_cpu:=1}
+              memory: ${valheim_requests_memory:=3Gi}
+            limits:
+              memory: ${valheim_limits_memory:=6Gi}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: server
+              mountPath: /opt/valheim
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: valheim-config
+        - name: server
+          persistentVolumeClaim:
+            claimName: valheim-server

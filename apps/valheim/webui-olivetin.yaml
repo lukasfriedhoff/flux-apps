@@ -1,0 +1,158 @@
+# Operations UI: one-click backup, snapshot listing, guarded restore and a
+# live server status readout. Exposed only behind the authelia forwardauth
+# middleware (see ingress).
+#
+# NOTE ON $ IN THESE SCRIPTS: flux postBuild substitutes braced ${VAR} (an
+# undefined one silently becomes empty — it broke icarus's update gate), but
+# leaves bare $VAR and $(...) alone. Shell variables here are therefore
+# written unbraced on purpose.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: valheim-olivetin-config
+  namespace: ${valheim_namespace}
+data:
+  config.yaml: |
+    listenAddressSingleHTTPFrontend: 0.0.0.0:1337
+    logLevel: INFO
+    actions:
+      - title: Server status (who is online)
+        icon: search
+        shell: |
+          kubectl -n ${valheim_namespace} run valheim-status-$(date +%s) --rm -i --restart=Never \
+            --image=${valheim_kubectl_image:=docker.io/alpine/k8s:1.34.1} -- \
+            sh -c 'curl -sf --max-time 10 http://valheim-status/status.json | jq .'
+        timeout: 60
+      - title: Backup now
+        icon: box
+        shell: |
+          kubectl -n ${valheim_namespace} create job --from=cronjob/valheim-backup valheim-backup-manual-$(date +%s)
+        timeout: 30
+      - title: List snapshots
+        icon: search
+        shell: restic snapshots --compact
+        timeout: 120
+      - title: Restart server (also runs a Steam update check)
+        icon: restart
+        shell: |
+          kubectl -n ${valheim_namespace} rollout restart deployment/valheim
+        timeout: 30
+      - title: Check Steam listing
+        icon: ping
+        shell: |
+          [ -n "$VALHEIM_PUBLIC_HOST" ] || { echo "public_host missing in credentials secret"; exit 1; }
+          kubectl -n ${valheim_namespace} run steam-check-$(date +%s) --rm -i --restart=Never \
+            --env=PUBLIC_HOST="$VALHEIM_PUBLIC_HOST" \
+            --image=${valheim_kubectl_image:=docker.io/alpine/k8s:1.34.1} -- sh -c '
+            set -e
+            IP=$(getent hosts "$PUBLIC_HOST" | awk "{print \$1; exit}")
+            [ -n "$IP" ] || { echo "cannot resolve $PUBLIC_HOST"; exit 1; }
+            LISTING=$(curl -sf "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v0001?addr=$IP")
+            echo "$LISTING" | jq -e ".response.servers[] | select(.gameport == ${valheim_game_port:=2456})" \
+              || { echo "NOT listed on Steam (gameport ${valheim_game_port:=2456})"; exit 1; }
+            echo "OK: listed on Steam"'
+        timeout: 120
+      - title: Restore snapshot (STOPS the server)
+        icon: warning
+        timeout: 900
+        arguments:
+          - name: snapshot
+            title: restic snapshot ID (see List snapshots)
+            type: ascii_identifier
+        shell: |
+          set -e
+          kubectl -n ${valheim_namespace} scale deployment/valheim --replicas=0
+          kubectl -n ${valheim_namespace} wait --for=delete pod -l app.kubernetes.io/name=valheim --timeout=180s || true
+          restic restore {{ snapshot }} --target /restore-data --delete
+          kubectl -n ${valheim_namespace} scale deployment/valheim --replicas=${valheim_replicas:=1}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valheim-olivetin
+  namespace: ${valheim_namespace}
+  labels:
+    app.kubernetes.io/name: valheim-olivetin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: valheim-olivetin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: valheim-olivetin
+    spec:
+      serviceAccountName: valheim-olivetin
+      nodeSelector:
+        kubernetes.io/hostname: ${valheim_node}
+      initContainers:
+        # The OliveTin image ships neither kubectl nor restic; stage both
+        # into a shared tools dir the actions can use.
+        - name: stage-kubectl
+          image: ${valheim_kubectl_image:=docker.io/alpine/k8s:1.34.1}
+          command: ["cp", "/usr/bin/kubectl", "/tools/kubectl"]
+          volumeMounts:
+            - name: tools
+              mountPath: /tools
+        - name: stage-restic
+          image: ${valheim_restic_image:=restic/restic:0.19.1}
+          command: ["cp", "/usr/bin/restic", "/tools/restic"]
+          volumeMounts:
+            - name: tools
+              mountPath: /tools
+      containers:
+        - name: olivetin
+          image: ${valheim_olivetin_image:=ghcr.io/olivetin/olivetin:2024.05.27}
+          ports:
+            - containerPort: 1337
+          env:
+            - name: PATH
+              value: /tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            - name: RESTIC_CACHE_DIR
+              value: /tmp/restic-cache
+            # Public DNS name for the Steam-listing action; deliberately a
+            # secret, not a config var — the operator keeps it unpublished.
+            - name: VALHEIM_PUBLIC_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: ${valheim_credentials_secret_name:=valheim-credentials}
+                  key: public_host
+                  optional: true
+          envFrom:
+            - secretRef:
+                name: ${valheim_backup_secret_name:=valheim-backup-credentials}
+          volumeMounts:
+            - name: tools
+              mountPath: /tools
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /restore-data
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: tools
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: valheim-olivetin-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: valheim-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: valheim-olivetin
+  namespace: ${valheim_namespace}
+spec:
+  selector:
+    app.kubernetes.io/name: valheim-olivetin
+  ports:
+    - port: 80
+      targetPort: 1337

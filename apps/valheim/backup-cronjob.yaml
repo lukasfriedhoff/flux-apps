@@ -1,0 +1,57 @@
+# Nightly restic backup of the config volume (worlds, admin lists and the
+# in-container world zips) to S3. restic gives encrypted, deduplicated
+# snapshots with retention and a first-class restore path — the web UI
+# drives both.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: valheim-backup
+  namespace: ${valheim_namespace}
+spec:
+  schedule: "${valheim_backup_cron:=15 4 * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: valheim-backup
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: ${valheim_node}
+          containers:
+            - name: restic
+              image: ${valheim_restic_image:=restic/restic:0.19.1}
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  # Init ONLY when the repo truly does not exist (restic exit
+                  # code 10). A transient S3 outage must fail loudly, not fall
+                  # through to `restic init` (which fatals on an existing repo
+                  # and masks the real error - bit icarus on 2026-09-22).
+                  set +e; restic cat config >/dev/null 2>&1; rc=$?; set -e
+                  if [ "$rc" -eq 10 ]; then
+                    restic init
+                  elif [ "$rc" -ne 0 ]; then
+                    echo "repository check failed (rc=$rc); refusing to init over it" >&2
+                    restic cat config >/dev/null || true
+                    exit "$rc"
+                  fi
+                  restic backup /data --tag scheduled
+                  restic forget --keep-daily ${valheim_backup_keep_daily:=14} --keep-weekly ${valheim_backup_keep_weekly:=8} --prune
+              envFrom:
+                - secretRef:
+                    name: ${valheim_backup_secret_name:=valheim-backup-credentials}
+              volumeMounts:
+                - name: config
+                  mountPath: /data
+                  readOnly: true
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                claimName: valheim-config

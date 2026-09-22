@@ -1,0 +1,59 @@
+# Config-file editing UI over the config volume (worlds, adminlist.txt).
+# Auth is delegated entirely to authelia at the ingress; filebrowser itself
+# runs with authentication disabled and must never be exposed without the
+# forwardauth middleware.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valheim-filebrowser
+  namespace: ${valheim_namespace}
+  labels:
+    app.kubernetes.io/name: valheim-filebrowser
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: valheim-filebrowser
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: valheim-filebrowser
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${valheim_node}
+      containers:
+        - name: filebrowser
+          image: ${valheim_filebrowser_image:=docker.io/filebrowser/filebrowser:v2.44.0}
+          args:
+            - --noauth
+            - --root=/data
+            - --database=/tmp/filebrowser.db
+            - --address=0.0.0.0
+            - --port=8080
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: valheim-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: valheim-filebrowser
+  namespace: ${valheim_namespace}
+spec:
+  selector:
+    app.kubernetes.io/name: valheim-filebrowser
+  ports:
+    - port: 80
+      targetPort: 8080
