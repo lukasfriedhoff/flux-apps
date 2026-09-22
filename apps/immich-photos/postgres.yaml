@@ -31,23 +31,8 @@ spec:
   storage:
     storageClass: ${immich_photos_postgres_storage_class_name}
     size: ${immich_photos_postgres_size}
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${immich_photos_postgres_backup_bucket}/${cluster_environment}/${immich_photos_postgres_backup_generation:=}immich-photos-postgres/"
-      endpointURL: "${immich_photos_postgres_backup_endpoint_url:=}"
-      serverName: ${immich_photos_postgres_backup_server_name:=immich-photos-postgres}
-      s3Credentials:
-        accessKeyId:
-          name: ${immich_photos_postgres_backup_credential_secret_name}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${immich_photos_postgres_backup_credential_secret_name}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "30d"
+  # BACKUPS DISABLED 2026-09-22 (storage01 MinIO at 100%) - see the
+  # nextcloud postgres.yaml for the full incident note. Revert to re-enable.
   resources:
     requests:
       cpu: ${immich_photos_postgres_requests_cpu}
@@ -62,8 +47,9 @@ metadata:
   name: immich-photos-postgres
   namespace: immich-photos
 spec:
+  suspend: true
   schedule: "${immich_photos_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
-  immediate: true
+  immediate: false
   cluster:
     name: immich-photos-postgres

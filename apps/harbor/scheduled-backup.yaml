@@ -4,8 +4,9 @@ metadata:
   name: ${harbor_postgres_cluster_name}
   namespace: ${harbor_namespace}
 spec:
+  suspend: true
   schedule: "${harbor_postgres_backup_cron:=0 0 3 * * *}"
   backupOwnerReference: self
-  immediate: true
+  immediate: false
   cluster:
     name: ${harbor_postgres_cluster_name}

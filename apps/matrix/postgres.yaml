@@ -28,23 +28,8 @@ spec:
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
     size: ${matrix_synapse_postgres_size:=${matrix_postgres_size}}
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_synapsedb_backup_generation:=}${matrix_synapsedb_backup_path:=synapsedb}/"
-      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
-      serverName: ${matrix_synapsedb_backup_server_name:=synapsedb}
-      s3Credentials:
-        accessKeyId:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "30d"
+  # BACKUPS DISABLED 2026-09-22 (storage01 MinIO at 100%) - see the
+  # nextcloud postgres.yaml for the full incident note. Revert to re-enable.
   resources:
     requests:
       cpu: ${matrix_postgres_requests_cpu}
@@ -83,23 +68,8 @@ spec:
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
     size: ${matrix_whatsapp_postgres_size:=${matrix_postgres_size}}
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_whatsappdb_backup_generation:=}whatsappdb/"
-      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
-      serverName: ${matrix_whatsappdb_backup_server_name:=whatsappdb}
-      s3Credentials:
-        accessKeyId:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "30d"
+  # BACKUPS DISABLED 2026-09-22 (storage01 MinIO at 100%) - see the
+  # nextcloud postgres.yaml for the full incident note. Revert to re-enable.
   resources:
     requests:
       cpu: ${matrix_postgres_requests_cpu}
@@ -138,23 +108,8 @@ spec:
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
     size: ${matrix_telegram_postgres_size:=${matrix_postgres_size}}
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_telegramdb_backup_generation:=}telegramdb/"
-      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
-      serverName: ${matrix_telegramdb_backup_server_name:=telegramdb}
-      s3Credentials:
-        accessKeyId:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "30d"
+  # BACKUPS DISABLED 2026-09-22 (storage01 MinIO at 100%) - see the
+  # nextcloud postgres.yaml for the full incident note. Revert to re-enable.
   resources:
     requests:
       cpu: ${matrix_postgres_requests_cpu}
@@ -193,23 +148,8 @@ spec:
   storage:
     storageClass: ${matrix_postgres_storage_class_name}
     size: ${matrix_signal_postgres_size:=${matrix_postgres_size}}
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_signaldbprivate_backup_generation:=}signaldbprivate/"
-      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
-      serverName: ${matrix_signaldbprivate_backup_server_name:=signaldbprivate}
-      s3Credentials:
-        accessKeyId:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "30d"
+  # BACKUPS DISABLED 2026-09-22 (storage01 MinIO at 100%) - see the
+  # nextcloud postgres.yaml for the full incident note. Revert to re-enable.
   resources:
     requests:
       cpu: ${matrix_postgres_requests_cpu}
@@ -224,9 +164,10 @@ metadata:
   name: synapsedb
   namespace: matrix
 spec:
+  suspend: true
   schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
-  immediate: true
+  immediate: false
   cluster:
     name: synapsedb
 ---
@@ -236,9 +177,10 @@ metadata:
   name: whatsappdb
   namespace: matrix
 spec:
+  suspend: true
   schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
-  immediate: true
+  immediate: false
   cluster:
     name: whatsappdb
 ---
@@ -248,9 +190,10 @@ metadata:
   name: telegramdb
   namespace: matrix
 spec:
+  suspend: true
   schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
-  immediate: true
+  immediate: false
   cluster:
     name: telegramdb
 ---
@@ -260,8 +203,9 @@ metadata:
   name: signaldbprivate
   namespace: matrix
 spec:
+  suspend: true
   schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
-  immediate: true
+  immediate: false
   cluster:
     name: signaldbprivate
