@@ -28,23 +28,8 @@ spec:
   storage:
     storageClass: ${matrix_mas_postgres_storage_class_name}
     size: ${matrix_mas_postgres_size}
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_masdb_backup_generation:=}matrix-mas/"
-      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
-      serverName: ${matrix_masdb_backup_server_name:=matrix-mas-postgres}
-      s3Credentials:
-        accessKeyId:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${matrix_postgres_backup_credential_secret_name}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "${matrix_mas_postgres_backup_retention:=30d}"
+  # BACKUPS DISABLED 2026-09-22 (storage01 MinIO at 100%) - see the
+  # nextcloud postgres.yaml for the full incident note. Revert to re-enable.
   resources:
     requests:
       cpu: ${matrix_mas_postgres_requests_cpu}
@@ -59,8 +44,9 @@ metadata:
   name: matrix-mas-postgres
   namespace: matrix
 spec:
+  suspend: true
   schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
-  immediate: true
+  immediate: false
   cluster:
     name: matrix-mas-postgres
