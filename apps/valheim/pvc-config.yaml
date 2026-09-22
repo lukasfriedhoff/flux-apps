@@ -1,0 +1,17 @@
+# Worlds, admin lists and in-container backup zips — the precious data.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: valheim-config
+  namespace: ${valheim_namespace}
+  annotations:
+    # longhorn-replica-policy resets replica counts from the StorageClass;
+    # a bump only sticks when declared here (see the icarus/nextcloud PVCs).
+    longhorn.h4xx.io/replica-count: "2"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: ${valheim_config_size:=10Gi}
+  storageClassName: ${valheim_config_storage_class_name:=longhorn-ssd-rwo-1r}
