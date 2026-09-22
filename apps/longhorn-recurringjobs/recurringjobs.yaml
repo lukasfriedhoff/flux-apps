@@ -5,10 +5,14 @@ metadata:
   namespace: ${longhorn_namespace}
 spec:
   name: backup-daily
-  cron: "${longhorn_recurring_backup_cron:=15 3 * * *}"
+  # DISABLED 2026-09-22: storage01 MinIO is 100% full (5.5T). Longhorn volume
+  # backups share that bucket store with the CNPG barman archives, so every
+  # WAL archive started failing with XMinioStorageFull. Belt and braces while
+  # we clean up: a cron date that never occurs (Feb 31) AND no group, so the
+  # job selects no volumes. Restore both lines to re-enable.
+  cron: "${longhorn_recurring_backup_cron:=0 0 31 2 *}"
   task: backup
-  groups:
-    - default
+  groups: []
   retain: ${longhorn_recurring_backup_retain:=14}
   concurrency: 1
   labels:
