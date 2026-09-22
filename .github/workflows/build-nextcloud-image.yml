@@ -1,0 +1,39 @@
+name: build-nextcloud-image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - containers/nextcloud/**
+      - .github/workflows/build-nextcloud-image.yml
+  workflow_dispatch:
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: lint Dockerfile
+        # Plain docker run over stdin: marketplace hadolint action doesn't
+        # resolve on Forgejo, and dind can't volume-mount job paths.
+        run: docker run --rm -i ghcr.io/hadolint/hadolint /bin/hadolint --failure-threshold error - < containers/nextcloud/Dockerfile
+      - name: build and push to harbor
+        env:
+          HARBOR_USER: ${{ secrets.HARBOR_ROBOT_NAME }}
+          HARBOR_PASS: ${{ secrets.HARBOR_ROBOT_SECRET }}
+        # The pushed tag mirrors the FROM tag, so the helm values in
+        # apps/nextcloud/helm-release.yaml reference the same version string
+        # as upstream. sha-suffixed tag = immutable trace of each rebuild.
+        # In-cluster pushes to harbor.h4xx.io bypass the CF tunnel via the
+        # coredns rewrite (tunnel caps request bodies at ~100MB).
+        run: |
+          set -euo pipefail
+          TAG=$(awk -F: '/^FROM/ {print $2; exit}' containers/nextcloud/Dockerfile)
+          test -n "$TAG"
+          SHORT=$(echo "$GITHUB_SHA" | cut -c1-8)
+          IMG=harbor.h4xx.io/library/nextcloud
+          echo "$HARBOR_PASS" | docker login harbor.h4xx.io -u "$HARBOR_USER" --password-stdin
+          docker build -t "$IMG:$TAG" -t "$IMG:$TAG-sha-$SHORT" containers/nextcloud
+          docker push "$IMG:$TAG"
+          docker push "$IMG:$TAG-sha-$SHORT"
+          echo "pushed $IMG:$TAG (and :$TAG-sha-$SHORT)"
