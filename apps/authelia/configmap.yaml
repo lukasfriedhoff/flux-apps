@@ -181,6 +181,27 @@ data:
             - 'group:traefik-admins'
             - 'group:traefik-users'
           policy: ${authelia_access_policy}
+        # Game-server ops UIs: these can restart servers and restore backups,
+        # so they must not fall through to the authenticated-user catch-all
+        # below (which would expose them to every account in the directory).
+        - domain: 'valheim${public_host_suffix}.${delegating_domain}'
+          subject:
+            - 'group:valheim-admins'
+            - 'group:valheim-users'
+          policy: ${authelia_access_policy}
+        - domain: 'valheim-files${public_host_suffix}.${delegating_domain}'
+          subject:
+            - 'group:valheim-admins'
+          policy: ${authelia_access_policy}
+        - domain: 'icarus${public_host_suffix}.${delegating_domain}'
+          subject:
+            - 'group:icarus-admins'
+            - 'group:icarus-users'
+          policy: ${authelia_access_policy}
+        - domain: 'icarus-files${public_host_suffix}.${delegating_domain}'
+          subject:
+            - 'group:icarus-admins'
+          policy: ${authelia_access_policy}
         - domain_regex: '^.*${public_host_suffix}\.${delegating_domain}$'
           subject:
             - 'user:wooden'
