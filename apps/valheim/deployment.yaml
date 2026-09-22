@@ -41,9 +41,9 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: SERVER_NAME
-              value: "${valheim_server_name}"
+              value: ${quote}${valheim_server_name}${quote}
             - name: WORLD_NAME
-              value: "${valheim_world_name}"
+              value: ${quote}${valheim_world_name}${quote}
             - name: SERVER_PORT
               value: ${quote}${valheim_game_port:=2456}${quote}
             - name: SERVER_PUBLIC
@@ -55,13 +55,13 @@ spec:
                   key: server_pass
             # Steam IDs with admin rights in-game (space separated).
             - name: ADMINLIST_IDS
-              value: "${valheim_adminlist_ids}"
+              value: ${quote}${valheim_adminlist_ids}${quote}
             # Update checks are scheduled, and only fire when the server is
             # empty, so a patch never kicks players mid-raid. An outdated
             # server is invisible to clients, so this stays enabled — the
             # image leaves the install untouched when Steam fails.
             - name: UPDATE_CRON
-              value: "${valheim_update_cron:=*/15 * * * *}"
+              value: ${quote}${valheim_update_cron}${quote}
             - name: UPDATE_IF_IDLE
               value: ${quote}${valheim_update_if_idle:=true}${quote}
             # In-container world snapshots: cheap, world-consistent zips that
@@ -70,7 +70,7 @@ spec:
             - name: BACKUPS
               value: ${quote}${valheim_internal_backups:=true}${quote}
             - name: BACKUPS_CRON
-              value: "${valheim_internal_backups_cron:=0 */6 * * *}"
+              value: ${quote}${valheim_internal_backups_cron}${quote}
             - name: BACKUPS_MAX_AGE
               value: ${quote}${valheim_internal_backups_max_age:=3}${quote}
             - name: BACKUPS_DIRECTORY
@@ -84,7 +84,7 @@ spec:
             - name: PGID
               value: ${quote}${valheim_pgid:=1000}${quote}
             - name: TZ
-              value: "${valheim_timezone:=Europe/Berlin}"
+              value: ${quote}${valheim_timezone}${quote}
           ports:
             # Must match the LoadBalancer service ports: Steam advertises
             # whatever port the server binds.

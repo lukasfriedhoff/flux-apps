@@ -28,6 +28,16 @@ grep -q 'type: Recreate' "${app}/deployment.yaml" || fail "deployment must use t
 # Updates must not kick players mid-session.
 grep -q 'UPDATE_IF_IDLE' "${app}/deployment.yaml" || fail "update checks must be gated on an idle server"
 
+# kustomize drops source quotes it deems unnecessary, so a value that only
+# becomes YAML-significant AFTER substitution (a cron starting with '*', an
+# empty string) must re-insert them with ${quote} or the Kustomization fails
+# with "did not find expected alphabetic or numeric character".
+for v in valheim_update_cron valheim_internal_backups_cron valheim_backup_cron; do
+  if grep -rq "\${$v" "${app}"; then
+    grep -rq "\${quote}\${$v}\${quote}" "${app}" || fail "$v must be wrapped in \${quote} (cron values can start with '*')"
+  fi
+done
+
 # Saves are precious: second Longhorn replica must be pinned via annotation.
 grep -q 'longhorn.h4xx.io/replica-count: "2"' "${app}/pvc-config.yaml" || fail "config PVC needs the replica-count annotation"
 
