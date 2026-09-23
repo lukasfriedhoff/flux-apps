@@ -30,16 +30,17 @@ spec:
                 - /bin/sh
                 - -ec
                 - |
-                  # Init ONLY when the repo truly does not exist (restic exit
-                  # code 10). A transient S3 outage must fail loudly, not fall
-                  # through to `restic init` (which fatals on an existing repo
-                  # and masks the real error - bit icarus on 2026-09-22).
-                  set +e; restic cat config >/dev/null 2>&1; rc=$?; set -e
-                  if [ "$rc" -eq 10 ]; then
+                  # Init ONLY for a genuinely absent repository: restic exit
+                  # code 10, or a bucket that does not exist yet (first run of
+                  # a new app - that returns a generic rc, not 10). Anything
+                  # else aborts WITH the real error: a transient S3 outage must
+                  # never fall through to `restic init`, which fatals on an
+                  # existing repo and masks the cause (bit icarus 2026-09-22).
+                  set +e; err=$(restic cat config 2>&1 >/dev/null); rc=$?; set -e
+                  if [ "$rc" -eq 10 ] || echo "$err" | grep -qi "bucket does not exist"; then
                     restic init
                   elif [ "$rc" -ne 0 ]; then
-                    echo "repository check failed (rc=$rc); refusing to init over it" >&2
-                    restic cat config >/dev/null || true
+                    echo "repository check failed (rc=$rc): $err" >&2
                     exit "$rc"
                   fi
                   restic backup /data --tag scheduled
