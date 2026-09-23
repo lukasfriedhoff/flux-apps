@@ -4,7 +4,6 @@ metadata:
   name: ${hydra_postgres_cluster_name}
   namespace: ${hydra_namespace}
 spec:
-  suspend: true
   schedule: "${hydra_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: false
