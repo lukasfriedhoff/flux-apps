@@ -4,8 +4,6 @@ metadata:
   name: nextcloud-postgres
   namespace: nextcloud
 spec:
-  # Suspended 2026-09-22 with the cluster's barmanObjectStore (storage01 full).
-  suspend: true
   schedule: "${nextcloud_postgres_backup_cron:=0 0 3 * * *}"
   backupOwnerReference: self
   immediate: false

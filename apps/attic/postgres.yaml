@@ -19,8 +19,23 @@ spec:
   storage:
     storageClass: ${attic_postgres_storage_class_name}
     size: ${attic_postgres_size}
-  # BACKUPS DISABLED 2026-09-22 (storage01 MinIO at 100%) - see the
-  # nextcloud postgres.yaml for the full incident note. Revert to re-enable.
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${attic_postgres_backup_bucket}/${cluster_environment}/${attic_postgres_backup_generation:=}attic-postgres/"
+      endpointURL: "${attic_postgres_backup_endpoint_url:=}"
+      serverName: ${attic_postgres_backup_server_name:=attic-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${attic_postgres_backup_credential_secret_name}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${attic_postgres_backup_credential_secret_name}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${attic_postgres_backup_retention:=30d}"
   resources:
     requests:
       cpu: ${attic_postgres_requests_cpu}
@@ -37,7 +52,6 @@ metadata:
   name: ${attic_postgres_cluster_name}
   namespace: ${attic_namespace}
 spec:
-  suspend: true
   schedule: "${attic_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: false

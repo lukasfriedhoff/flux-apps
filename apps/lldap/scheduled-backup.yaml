@@ -4,7 +4,6 @@ metadata:
   name: lldap-postgres
   namespace: lldap
 spec:
-  suspend: true
   schedule: "${lldap_postgres_backup_cron:=0 0 3 * * *}"
   backupOwnerReference: self
   immediate: false

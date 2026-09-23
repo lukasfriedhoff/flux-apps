@@ -4,7 +4,6 @@ metadata:
   name: authelia-postgres
   namespace: authelia
 spec:
-  suspend: true
   schedule: "${authelia_postgres_backup_cron:=0 0 2 * * *}"
   backupOwnerReference: self
   immediate: false

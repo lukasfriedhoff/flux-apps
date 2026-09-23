@@ -18,11 +18,23 @@ spec:
     initdb:
       database: nextcloud
       owner: nextcloud
-  # BACKUPS DISABLED 2026-09-22 (revert this commit to restore).
-  # storage01 MinIO hit 100% (5.5T) so every WAL archive failed with
-  # XMinioStorageFull. CNPG blocks a demoted primary from rejoining until its
-  # pending WAL is archived, which wedged nextcloud-postgres-1 in a restart
-  # loop. Re-enable once storage01 has free space AND retention actually prunes.
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${nextcloud_postgres_backup_bucket}/${cluster_environment}/${nextcloud_postgres_backup_generation:=}nextcloud-postgres/"
+      endpointURL: "${nextcloud_postgres_backup_endpoint_url:=}"
+      serverName: ${nextcloud_postgres_backup_server_name:=nextcloud-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${nextcloud_postgres_backup_credential_secret_name}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${nextcloud_postgres_backup_credential_secret_name}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "30d"
   resources:
     requests:
       cpu: 100m

@@ -14,8 +14,23 @@ spec:
     initdb:
       database: ${forgejo_postgres_db_name}
       owner: ${forgejo_postgres_user}
-  # BACKUPS DISABLED 2026-09-22 (storage01 MinIO at 100%) - see the
-  # nextcloud postgres.yaml for the full incident note. Revert to re-enable.
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${forgejo_postgres_backup_bucket:=forgejo-postgres-backup}/${cluster_environment}/${forgejo_postgres_backup_generation:=}forgejo-postgres/"
+      endpointURL: "${forgejo_postgres_backup_endpoint_url:=}"
+      serverName: ${forgejo_postgres_backup_server_name:=forgejo-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${forgejo_postgres_backup_credential_secret_name:=forgejo-postgres-backup-credentials}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${forgejo_postgres_backup_credential_secret_name:=forgejo-postgres-backup-credentials}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${forgejo_postgres_backup_retention:=30d}"
   storage:
     storageClass: ${forgejo_postgres_storage_class_name}
     size: ${forgejo_postgres_size}
