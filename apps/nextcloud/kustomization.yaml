@@ -15,6 +15,7 @@ resources:
   - scheduled-backup.yaml
   - upgrade-check-rbac.yaml
   - upgrade-check-cronjob.yaml
+  - cron-cronjob.yaml
   - verify-custom-apps.yaml
   - office-check.yaml
   - metrics-exporter.yaml
