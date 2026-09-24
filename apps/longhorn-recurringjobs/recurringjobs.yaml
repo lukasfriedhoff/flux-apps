@@ -25,15 +25,25 @@ metadata:
   namespace: ${longhorn_namespace}
 spec:
   name: backup-daily
-  # DISABLED 2026-09-22: storage01 MinIO is 100% full (5.5T). Longhorn volume
-  # backups share that bucket store with the CNPG barman archives, so every
-  # WAL archive started failing with XMinioStorageFull. Belt and braces while
-  # we clean up: a cron date that never occurs (Feb 31) AND no group, so the
-  # job selects no volumes. Restore both lines to re-enable.
-  cron: "${longhorn_recurring_backup_cron:=0 0 31 2 *}"
+  # RE-ENABLED 2026-09-24 (was disabled 09-22 when storage01 hit 100%).
+  # storage01 is back to 74% / 1.5T free and d9a2c68's cache exclusions are
+  # banked, so a generation costs ~30-40Gi of changed blocks, not a fresh full
+  # (the store dedups by block checksum: 2 fleet-wide full days in a row still
+  # total only 2445Gi stored). The first run also PRUNES - retain was cut 14->7
+  # while the job was disabled, so every volume still holds 14 generations and
+  # night one drops roughly half of them.
+  #
+  # Caution for the next person: this bucket store is SHARED with the CNPG
+  # barman WAL archives. Filling it does not just stop volume backups, it stops
+  # every postgres from archiving WAL, which fills the primaries' PVCs and ends
+  # in "no primary at all". Watch /mnt/backup after the first few runs.
+  cron: "${longhorn_recurring_backup_cron:=15 3 * * *}"
   task: backup
-  groups: []
-  retain: ${longhorn_recurring_backup_retain:=14}
+  groups:
+    - default
+  # was :=14 - stale. The live object and base-config both say 7; keep the
+  # default honest so a fresh cluster does not silently retain twice as much.
+  retain: ${longhorn_recurring_backup_retain:=7}
   concurrency: 1
   labels:
     backup-target: external-minio
