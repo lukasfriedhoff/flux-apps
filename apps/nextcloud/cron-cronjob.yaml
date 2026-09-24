@@ -1,0 +1,87 @@
+# Nextcloud's background job runner.
+#
+# `backgroundjobs_mode` has been `cron` since forever, but nothing was ever
+# scheduled to CALL cron.php - so from 2026-08-08 to 2026-09-24 no background
+# job ran at all (47 days). Nothing alerted, because nothing was failing;
+# the work simply was not happening. Consequences while it was dead:
+# no trashbin or file-version expiry (disk grows unbounded), no preview
+# generation, no LDAP/federated user sync, no notification delivery.
+#
+# Why a CronJob and not the alternatives:
+#   - not a sidecar: the Deployment runs replicaCount 3 behind an HPA, so a
+#     sidecar means 3+ concurrent cron.php loops racing the same job table.
+#   - not `ajax` mode: that runs jobs on page loads, which never drains a
+#     backlog and stops entirely when nobody is browsing.
+#   - not the chart's built-in cronjob: the app Deployment carries 25 mounts
+#     including 20 nextcloud-config subPath files and 4 initContainers, so a
+#     standalone cron pod would run against a different config surface.
+# Hence: exec into a real, READY app pod, which is by definition correctly
+# configured.
+#
+# `runuser -u www-data` is mandatory - kubectl exec lands as uid 0, and root
+# writing previews/versions into the RWX data dir reproduces the uid 33/82
+# ownership trap that has bitten this deployment before.
+#
+# concurrencyPolicy Forbid (not Replace): a cron.php pass can run for many
+# minutes, and killing it mid-job leaves `reserved_at` set on the rows it
+# claimed, which wedges those jobs for ~6h. For the same reason there is
+# deliberately no activeDeadlineSeconds.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-cron
+  namespace: nextcloud
+spec:
+  # Shipped SUSPENDED on purpose. 47 days of skipped runs left 65,233 rows in
+  # oc_jobs and 18,241 pending previews; the first pass is therefore nothing
+  # like a steady-state one. The app HPA scales on 60% of a 200m CPU request
+  # (min 3, max 9), so a ~1-core cron.php inside one pod drags the 3-pod
+  # average to ~230% and scales the Deployment out - and a later scale-down can
+  # evict the very pod running cron.php, SIGKILLing it mid-job and wedging the
+  # rows it claimed for ~6h. Drain deliberately first, then flip this to false
+  # in git (a kubectl patch would be reverted by the nextcloud-app Kustomization).
+  suspend: true
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: nextcloud-upgrade-check
+          containers:
+            - name: cron
+              image: alpine/k8s:1.37.0
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  # Require READY (1/1), not merely Running: exec'ing into a
+                  # still-warming replica is what makes the sibling
+                  # upgrade-check and office-check jobs fail intermittently
+                  # with "curl: (7) Failed to connect to 127.0.0.1 port 80".
+                  pod="$(
+                    kubectl -n nextcloud get pods \
+                      -l app.kubernetes.io/instance=nextcloud,app.kubernetes.io/component=app \
+                      --no-headers \
+                      | awk '$2 == "1/1" && $3 == "Running" { print $1; exit }'
+                  )"
+                  if [ -z "$pod" ]; then
+                    echo "No ready Nextcloud app pod found." >&2
+                    exit 1
+                  fi
+                  echo "running cron.php in $pod"
+                  kubectl -n nextcloud exec "$pod" -c nextcloud -- \
+                    runuser -u www-data -- php -f /var/www/html/cron.php
