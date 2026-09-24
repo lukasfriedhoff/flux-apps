@@ -67,10 +67,10 @@ data:
       <a class="card" href="https://meme.h4xx.io">
         <div class="name">Memes</div>
         <div class="desc">Die geteilte Bildersammlung.</div></a>
-      <a class="card" href="https://collabora.h4xx.io">
+      <a class="card" href="https://nextcloud.h4xx.io/apps/files/">
         <div class="name">Office</div>
-        <div class="desc">Dokumente direkt im Browser bearbeiten. Öffnet sich
-        normalerweise automatisch aus Nextcloud heraus.</div></a>
+        <div class="desc">Dokumente, Tabellen und Präsentationen direkt im
+        Browser bearbeiten — einfach eine Datei in Nextcloud anklicken.</div></a>
     </div>
 
     <h2>Medien</h2>
