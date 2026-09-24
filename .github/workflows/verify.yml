@@ -15,19 +15,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install yq
+      # The suite needs all three: yq for the manifest assertions, kustomize
+      # to render apps, and flux to run envsubst over the ${...} variables.
+      - name: Install yq, kustomize and flux
         run: |
           set -euo pipefail
           curl -fsSL -o /usr/local/bin/yq \
             https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
           chmod +x /usr/local/bin/yq
-          yq --version
+          curl -fsSL https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh | bash
+          install -m 0755 kustomize /usr/local/bin/kustomize
+          curl -fsSL https://fluxcd.io/install.sh | bash
+          yq --version && kustomize version && flux --version
 
-      # Deliberately NOT ./scripts/verify-static.sh yet. That suite is red on
-      # main for reasons unrelated to service coverage: nine apps are missing
-      # their examples/apps/<app>/ files (home-automation, k8s-api-lb,
-      # kiosk-proxy, kutschenapp, lldap, metallb, obsidian-livesync,
-      # reflector, smb). Gating on it today would just train people to ignore
-      # a red build. Fix those, then switch this step to the whole suite.
-      - name: Verify every service appears on the status dashboard
-        run: ./apps/status-dashboard/tests/verify-status-coverage.sh
+      - name: Run static verification suite
+        run: ./scripts/verify-static.sh

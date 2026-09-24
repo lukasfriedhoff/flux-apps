@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # MetalLB in L2 mode. Required because k3s runs with --disable servicelb:
+  # without it a type: LoadBalancer Service pends forever.
+  # Pools/L2Advertisements live in the separate metallb-config app so the
+  # controller can come up before any address configuration is applied.
+  metallb_namespace: "metallb-system"
+  metallb_chart_version: "0.16.1"
+  metallb_suspend: "true"

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # LAN-only Samba replacing the docker-host scanserver. Deliberately has no
+  # Ingress and no external-dns record: it is reachable on a MetalLB VIP from
+  # the local network only, never through the tunnel.
+  smb_namespace: "smb"
+  smb_image_tag: "smbd-only-a3.24.2-s4.23.8-r0"
+  # LAN VIP for port 445. Give it a DNS static on the router if you want a
+  # name rather than an address.
+  smb_vip: "10.1.20.41"
+  # SOPS secret holding the samba account passwords (printer, nextcloud).
+  smb_accounts_secret_name: "smb-accounts"
+  smb_shares_size: "10Gi"
+  smb_storage_class_name: "longhorn-ssd-rwo-1r"
+  smb_suspend: "true"

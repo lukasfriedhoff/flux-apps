@@ -16,14 +16,19 @@ env \
       quote='"' \
       flux envsubst --strict >"$rendered"
 
+# `yq ea '[.] | ...'`, not `yq -s ...`: in yq v4 `-s` is --split-exp, which
+# writes files and prints nothing to stdout. These variables then came back
+# empty and the comparisons below died with "[: : integer expected". The
+# script presumably predates that flag's meaning changing; eval-all with an
+# explicit [.] wrapper is the current way to slurp documents into an array.
 two_replica_count="$(
-  yq -s \
-    '[.[] | select(.kind == "StorageClass" and .parameters.numberOfReplicas == "2")] | length' \
+  yq ea \
+    '[.] | [.[] | select(.kind == "StorageClass" and .parameters.numberOfReplicas == "2")] | length' \
     "$rendered"
 )"
 invalid_two_replica_count="$(
-  yq -s \
-    '[.[] | select(
+  yq ea \
+    '[.] | [.[] | select(
       .kind == "StorageClass"
       and .parameters.numberOfReplicas == "2"
       and (

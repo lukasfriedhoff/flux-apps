@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Publishes Home Assistant's kiosk view under kiosk.<domain>. HA runs with
+  # hostNetwork on a MetalLB VIP rather than as a normal Service, so this is
+  # a selectorless Service plus a manual EndpointSlice pointing at that IP.
+  kiosk_namespace: "kiosk"
+  # Where Home Assistant actually listens (its MetalLB VIP, port 8123).
+  kiosk_homeassistant_ip: "10.1.12.13"
+  kiosk_proxy_suspend: "true"
