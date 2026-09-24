@@ -32,15 +32,19 @@ metadata:
   name: nextcloud-cron
   namespace: nextcloud
 spec:
-  # Shipped SUSPENDED on purpose. 47 days of skipped runs left 65,233 rows in
-  # oc_jobs and 18,241 pending previews; the first pass is therefore nothing
-  # like a steady-state one. The app HPA scales on 60% of a 200m CPU request
-  # (min 3, max 9), so a ~1-core cron.php inside one pod drags the 3-pod
-  # average to ~230% and scales the Deployment out - and a later scale-down can
-  # evict the very pod running cron.php, SIGKILLing it mid-job and wedging the
-  # rows it claimed for ~6h. Drain deliberately first, then flip this to false
-  # in git (a kubectl patch would be reverted by the nextcloud-app Kustomization).
-  suspend: true
+  # Enabled 2026-09-24 after 47 days of nothing calling cron.php.
+  #
+  # Expect the first days to be heavier than steady state: 65,233 rows in
+  # oc_jobs and 18,241 pending previews have to drain. The app HPA scales on
+  # 60% of a 200m CPU request (min 3, max 9), so a ~1-core cron.php inside one
+  # pod drags the 3-pod average up and will scale the Deployment out while the
+  # backlog burns down. That is expected and self-correcting.
+  #
+  # Forbid (above) is what keeps this safe - runs cannot stack, so a long pass
+  # simply delays the next one rather than piling on. If a run is killed
+  # mid-job (e.g. HPA scale-down evicting its pod) the rows it claimed keep
+  # `reserved_at` set and are retried after ~6h; that is slow, not harmful.
+  suspend: false
   schedule: "*/5 * * * *"
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 120
