@@ -87,5 +87,16 @@ spec:
                     exit 1
                   fi
                   echo "running cron.php in $pod"
+                  # -d memory_limit here, NOT in the global php config: the
+                  # Maps app's ExifGeoData::get_exif_data_array does a plain
+                  # file_get_contents() on each media file to read EXIF, which
+                  # blows the 512M default on large photos and kills the whole
+                  # cron.php pass with
+                  #   PHP Fatal error: Allowed memory size of 536870912 bytes
+                  #   exhausted ... ExifGeoData.php on line 91
+                  # Raising it globally would apply to every php-fpm worker
+                  # too (max_children x limit against an 8Gi pod), so scope it
+                  # to this one process instead.
                   kubectl -n nextcloud exec "$pod" -c nextcloud -- \
-                    runuser -u www-data -- php -f /var/www/html/cron.php
+                    runuser -u www-data -- \
+                    php -d memory_limit=2G -f /var/www/html/cron.php
