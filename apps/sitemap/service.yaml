@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sitemap
+  namespace: ${sitemap_namespace:=sitemap}
+  labels:
+    app.kubernetes.io/name: sitemap
+spec:
+  selector:
+    app.kubernetes.io/name: sitemap
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

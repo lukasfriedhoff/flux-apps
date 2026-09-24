@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sitemap
+  namespace: ${sitemap_namespace:=sitemap}
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="de">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>h4xx.io — Übersicht</title>
+    <style>
+      :root { color-scheme: light dark; --fg:#1a1a1a; --muted:#666; --bg:#fafafa;
+              --card:#fff; --line:#e3e3e3; --accent:#2b6cb0; }
+      @media (prefers-color-scheme: dark) {
+        :root { --fg:#e8e8e8; --muted:#a0a0a0; --bg:#181a1b; --card:#222527;
+                --line:#34383b; --accent:#7aa7d9; }
+      }
+      * { box-sizing: border-box; }
+      body { margin:0; padding:2rem 1rem 4rem; background:var(--bg); color:var(--fg);
+             font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+      .wrap { max-width: 60rem; margin: 0 auto; }
+      h1 { font-size:1.9rem; margin:0 0 .3rem; }
+      .lede { color:var(--muted); margin:0 0 2rem; }
+      h2 { font-size:1.15rem; margin:2.2rem 0 .8rem; padding-bottom:.35rem;
+           border-bottom:1px solid var(--line); }
+      .grid { display:grid; gap:.75rem;
+              grid-template-columns:repeat(auto-fill,minmax(17rem,1fr)); }
+      a.card { display:block; padding:.85rem 1rem; background:var(--card);
+               border:1px solid var(--line); border-radius:.5rem;
+               text-decoration:none; color:inherit; }
+      a.card:hover { border-color:var(--accent); }
+      .name { font-weight:600; color:var(--accent); }
+      .desc { color:var(--muted); font-size:.9rem; margin-top:.15rem; }
+      .note { background:var(--card); border:1px solid var(--line);
+              border-left:3px solid var(--accent); border-radius:.4rem;
+              padding:.85rem 1rem; margin:1.5rem 0; font-size:.93rem; }
+      footer { margin-top:3rem; color:var(--muted); font-size:.85rem; }
+      code { background:var(--bg); padding:.1rem .3rem; border-radius:.2rem;
+             border:1px solid var(--line); font-size:.85em; }
+    </style>
+    </head>
+    <body><div class="wrap">
+
+    <h1>h4xx.io</h1>
+    <p class="lede">Übersicht über alle Dienste. Einmal anmelden, überall drin.</p>
+
+    <div class="note">
+      <strong>Anmeldung:</strong> Alle Dienste nutzen denselben Login über
+      <a href="https://auth.h4xx.io">auth.h4xx.io</a>. Passwort vergessen?
+      Dort auf „Reset password“ klicken — die Mail kommt automatisch.
+      Du siehst nur die Dienste, für die du freigeschaltet bist.
+    </div>
+
+    <h2>Dateien &amp; Fotos</h2>
+    <div class="grid">
+      <a class="card" href="https://nextcloud.h4xx.io">
+        <div class="name">Nextcloud</div>
+        <div class="desc">Dateien, Kalender, Kontakte und Passwörter. Es gibt Apps
+        für Handy und PC — Server ist <code>nextcloud.h4xx.io</code>.</div></a>
+      <a class="card" href="https://photos.h4xx.io">
+        <div class="name">Fotos</div>
+        <div class="desc">Private Fotosammlung mit automatischem Handy-Upload
+        (Immich).</div></a>
+      <a class="card" href="https://meme.h4xx.io">
+        <div class="name">Memes</div>
+        <div class="desc">Die geteilte Bildersammlung.</div></a>
+      <a class="card" href="https://collabora.h4xx.io">
+        <div class="name">Office</div>
+        <div class="desc">Dokumente direkt im Browser bearbeiten. Öffnet sich
+        normalerweise automatisch aus Nextcloud heraus.</div></a>
+    </div>
+
+    <h2>Medien</h2>
+    <div class="grid">
+      <a class="card" href="https://jellyfin.h4xx.io">
+        <div class="name">Jellyfin</div>
+        <div class="desc">Filme und Serien streamen. Apps gibt es für Fire TV,
+        Android TV, iOS und Android.</div></a>
+      <a class="card" href="https://jellyseerr.h4xx.io">
+        <div class="name">Jellyseerr</div>
+        <div class="desc">Wünsch dir was: hier Filme und Serien anfragen, die
+        dann automatisch in Jellyfin landen.</div></a>
+    </div>
+
+    <h2>Kommunikation</h2>
+    <div class="grid">
+      <a class="card" href="https://chat.h4xx.io">
+        <div class="name">Chat (Matrix)</div>
+        <div class="desc">Verschlüsselter Messenger mit Brücken zu WhatsApp,
+        Signal und Telegram.</div></a>
+    </div>
+
+    <h2>Zuhause</h2>
+    <div class="grid">
+      <a class="card" href="https://ha.h4xx.io">
+        <div class="name">Home Assistant</div>
+        <div class="desc">Licht, Heizung und Sensoren steuern.</div></a>
+    </div>
+
+    <h2>Status &amp; Hilfe</h2>
+    <div class="grid">
+      <a class="card" href="https://status.h4xx.io">
+        <div class="name">Systemstatus</div>
+        <div class="desc">Läuft alles? Hier steht, welche Dienste gerade
+        erreichbar sind — die erste Anlaufstelle, wenn etwas klemmt.</div></a>
+      <a class="card" href="https://auth.h4xx.io">
+        <div class="name">Konto &amp; Passwort</div>
+        <div class="desc">Passwort ändern oder zurücksetzen.</div></a>
+    </div>
+
+    <footer>
+      Etwas kaputt oder du brauchst Zugriff auf einen Dienst, den du hier nicht
+      siehst? Sag Lukas Bescheid. Erst kurz auf
+      <a href="https://status.h4xx.io">status.h4xx.io</a> schauen — dann ist
+      schon klar, ob es an dir oder am Server liegt.
+    </footer>
+
+    </div></body>
+    </html>

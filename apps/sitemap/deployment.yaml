@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sitemap
+  namespace: ${sitemap_namespace:=sitemap}
+  annotations:
+    # Pick up index.html edits without a manual rollout.
+    reloader.stakater.com/auto: "true"
+  labels:
+    app.kubernetes.io/name: sitemap
+spec:
+  replicas: ${sitemap_replicas:=2}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sitemap
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sitemap
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: sitemap
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+      containers:
+        - name: nginx
+          image: ${sitemap_image:=docker.io/library/nginx:1.29-alpine}
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: content
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+            # nginx:alpine needs these writable; the image's default paths sit
+            # under / which is read-only here.
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: content
+          configMap:
+            name: sitemap
+        - name: nginx-conf
+          configMap:
+            name: sitemap-nginx
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sitemap-nginx
+  namespace: ${sitemap_namespace:=sitemap}
+data:
+  default.conf: |
+    server {
+      # 8080, not 80: the pod runs unprivileged and cannot bind low ports.
+      listen 8080;
+      server_name _;
+      root /usr/share/nginx/html;
+      index index.html;
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+    }

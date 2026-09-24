@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sitemap
+  namespace: ${sitemap_namespace:=sitemap}
+  annotations:
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Behind Authelia like everything else. This is the page people land on
+    # first, so the SSO prompt here is the single login for the whole estate -
+    # after this every linked service is already authenticated.
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: start${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sitemap
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - start${public_host_suffix}.${delegating_domain}
+      secretName: sitemap-tls
