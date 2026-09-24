@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Kutschenapp: frontend + API + MariaDB, migrated off the retired
+  # docker-host. Images are built by CI and pushed to Harbor with immutable
+  # tags, so a registry hiccup cannot silently change what a restart runs.
+  kutschenapp_namespace: "kutschenapp"
+  kutschenapp_frontend_image: "harbor.h4xx.io/library/kutschenapp-frontend:m1"
+  kutschenapp_api_image: "harbor.h4xx.io/library/kutschenapp-api:m1"
+  kutschenapp_mariadb_tag: "11.4"
+  # SOPS secret with the MariaDB root/app credentials.
+  kutschenapp_db_secret_name: "kutschenapp-db"
+  kutschenapp_db_size: "5Gi"
+  kutschenapp_db_storage_class_name: "longhorn-ssd-rwo-1r"
+  kutschenapp_suspend: "true"

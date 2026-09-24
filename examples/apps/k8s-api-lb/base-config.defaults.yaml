@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # A MetalLB VIP in front of the kube-apiservers so kubeconfigs survive any
+  # single control-plane node. Implemented as a Service plus a MANUAL
+  # EndpointSlice - the apiserver is not a pod, so nothing else would populate
+  # endpoints for it.
+  k8s_api_lb_namespace: "kube-system"
+  # The VIP itself. Must sit in a MetalLB pool announced ONLY by
+  # control-plane nodes.
+  k8s_api_vip: "10.1.20.43"
+  # Control-plane node IPs that back the VIP. These are the EndpointSlice
+  # addresses; each needs a matching nodeName and conditions.ready=true or
+  # MetalLB will not announce. The Service also needs
+  # externalTrafficPolicy: Local, because cross-node kube-proxy forwarding to
+  # node IPs blackholes most connections.
+  k8s_api_member1: "10.1.30.12"
+  k8s_api_member2: "10.1.30.27"
+  k8s_api_member3: "10.1.30.31"
+  k8s_api_lb_suspend: "true"
