@@ -11,6 +11,7 @@ cd "$repo_root"
 ./apps/monitoring/tests/verify-dashboards.sh
 
 ./apps/cloudflared/tests/verify-ingress-hosts.sh
+./apps/status-dashboard/tests/verify-status-coverage.sh
 ./apps/immich/tests/verify-nextcloud-storage.sh
 ./apps/immich/tests/verify-reloader-annotations.sh
 ./apps/longhorn/tests/verify-storageclasses.sh

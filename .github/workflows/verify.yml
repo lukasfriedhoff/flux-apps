@@ -1,0 +1,33 @@
+name: verify
+
+# scripts/verify-static.sh already existed but nothing ran it, so its checks
+# only fired when someone remembered. That is how the status dashboard drifted
+# to 17 missing services. Run the suite on every push and PR instead.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          chmod +x /usr/local/bin/yq
+          yq --version
+
+      # Deliberately NOT ./scripts/verify-static.sh yet. That suite is red on
+      # main for reasons unrelated to service coverage: nine apps are missing
+      # their examples/apps/<app>/ files (home-automation, k8s-api-lb,
+      # kiosk-proxy, kutschenapp, lldap, metallb, obsidian-livesync,
+      # reflector, smb). Gating on it today would just train people to ignore
+      # a red build. Fix those, then switch this step to the whole suite.
+      - name: Verify every service appears on the status dashboard
+        run: ./apps/status-dashboard/tests/verify-status-coverage.sh

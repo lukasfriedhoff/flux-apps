@@ -51,12 +51,6 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-      - name: Logday
-        group: Core
-        url: https://logday${public_host_suffix}.${delegating_domain}/
-        interval: 1m
-        conditions:
-          - "[STATUS] < 500"
       - name: Grafana
         group: Monitoring
         url: https://grafana${public_host_suffix}.${delegating_domain}/api/health
@@ -171,9 +165,123 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] < 500"
-      - name: Moonlight
-        group: Media
-        url: https://moonlight${public_host_suffix}.${delegating_domain}/
+      # --- Platform: the things everything else depends on. A failure here
+      # usually explains failures further down this page, so keep it first.
+      - name: Forgejo
+        group: Platform
+        url: https://git${public_host_suffix}.${delegating_domain}/api/healthz
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Harbor
+        group: Platform
+        url: https://harbor${public_host_suffix}.${delegating_domain}/api/v2.0/ping
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == Pong"
+      - name: LLDAP
+        group: Platform
+        # The directory behind Authelia: if this is down nobody can log in
+        # anywhere, including this dashboard's own protected endpoints.
+        url: https://lldap${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Matrix Auth (MAS)
+        group: Platform
+        # MAS has no /health or /healthz (both 404). The OIDC discovery
+        # document is a better probe anyway: a 200 here means it is actually
+        # serving OIDC, which is what Matrix logins depend on.
+        url: https://matrix-auth${public_host_suffix}.${delegating_domain}/.well-known/openid-configuration
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].issuer != "
+      - name: Backrest
+        group: Platform
+        url: https://backrest${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+
+      # --- Home: automation and household-facing bits.
+      - name: Home Assistant
+        group: Home
+        url: https://ha${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Zigbee2MQTT
+        group: Home
+        url: https://zigbee${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Kiosk
+        group: Home
+        url: https://kiosk${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Obsidian LiveSync
+        group: Home
+        url: https://obsidian-backend${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+
+      # --- Games and remote desktop.
+      - name: Icarus
+        group: Games
+        url: https://icarus${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Icarus Files
+        group: Games
+        url: https://icarus-files${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Valheim
+        group: Games
+        url: https://valheim${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Valheim Files
+        group: Games
+        url: https://valheim-files${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Cloud Desktop
+        group: Games
+        url: https://desktop${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+
+      # --- Apps: smaller self-hosted bits.
+      - name: Kutschenapp
+        group: Apps
+        url: https://kutsche${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Kutschenapp API
+        group: Apps
+        # Returns 404 at / - it is an API with no root route. That still
+        # proves the app is answering (traefik routed and the app replied);
+        # a dead backend gives 502/503, which this condition catches.
+        url: https://kutschenapi${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Cryo
+        group: Apps
+        url: https://cryo${public_host_suffix}.${delegating_domain}/
         interval: 1m
         conditions:
           - "[STATUS] < 500"
