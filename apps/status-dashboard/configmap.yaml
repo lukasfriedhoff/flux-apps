@@ -205,6 +205,15 @@ data:
         conditions:
           - "[STATUS] < 500"
 
+      - name: Start Page
+        group: Platform
+        # The landing page people are pointed at; if it is down they have no
+        # way to find anything else.
+        url: https://start${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+
       # --- Home: automation and household-facing bits.
       - name: Home Assistant
         group: Home
