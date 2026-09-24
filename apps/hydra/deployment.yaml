@@ -394,11 +394,38 @@ spec:
                 --password "$${HYDRA_ADMIN_PASSWORD}" \
                 --role admin || true
 
-              hydra-queue-runner -v &
+              # A CNPG failover drops every database connection. On 2026-09-23
+              # that killed hydra-queue-runner, hydra-evaluator AND
+              # hydra-update-gc-roots outright ("queue monitor: Lost connection
+              # to the database server"), while hydra-server survived - so the
+              # pod stayed Ready with restartCount 0 while nothing was
+              # dispatched for over five hours. Nothing restarted them because
+              # they were launched once and only $server_pid was waited on.
+              #
+              # Supervise them instead. A liveness probe on :9198 was considered
+              # and rejected: during a failover the queue runner legitimately
+              # loops without binding, so the probe would restart the whole pod
+              # (web UI included) exactly when the database is already
+              # struggling. Restart the daemon, not the pod; HydraQueueRunnerDown
+              # already alerts on :9198 going away.
+              #
+              # hydra-update-gc-roots is one-shot by design - NixOS runs it on a
+              # 2h45m timer - so its "retry interval" is that period, not 10s.
+              supervise() {
+                name="$${1}"; interval="$${2}"; shift 2
+                (
+                  while :; do
+                    "$${@}" || echo "supervise: $${name} exited $${?}, retrying in $${interval}s" >&2
+                    sleep "$${interval}"
+                  done
+                ) &
+              }
+
+              supervise queue-runner 10 hydra-queue-runner -v
               queue_pid="$${!}"
-              hydra-evaluator &
+              supervise evaluator 10 hydra-evaluator
               evaluator_pid="$${!}"
-              hydra-update-gc-roots &
+              supervise gc-roots 9900 hydra-update-gc-roots
               gc_pid="$${!}"
               hydra-server -f -h "$${HYDRA_LISTEN_HOST}" -p "$${HYDRA_PORT}" \
                 --min_spare_servers "$${HYDRA_MIN_SPARE_SERVERS}" \
@@ -434,7 +461,12 @@ spec:
                 --data "{\"type\":1,\"flake\":\"$${HYDRA_JOBSET_FLAKE}\",\"description\":\"All NixOS host configurations\",\"checkinterval\":$${HYDRA_JOBSET_CHECK_INTERVAL},\"schedulingshares\":1,\"keepnr\":$${HYDRA_JOBSET_KEEP_NR},\"enabled\":1,\"visible\":true}" \
                 "http://127.0.0.1:$${HYDRA_PORT}/jobset/nixos-configs/all" >/dev/null || true
 
-              trap 'kill "$${server_pid}" "$${queue_pid}" "$${evaluator_pid}" "$${gc_pid}" 2>/dev/null || true; wait' TERM INT
+              # `exit 0`, not a bare `wait`: the supervise subshells loop
+              # forever, so waiting on them after the kill would hang until the
+              # grace period expires and the kubelet SIGKILLs the pod.
+              trap 'kill "$${server_pid}" "$${queue_pid}" "$${evaluator_pid}" "$${gc_pid}" 2>/dev/null || true; exit 0' TERM INT
+              # Still only the web server, so PID 1 exits (and the pod restarts)
+              # if it dies. The daemons are supervised in-place above.
               wait "$${server_pid}"
           readinessProbe:
             httpGet:
