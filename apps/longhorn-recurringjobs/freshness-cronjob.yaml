@@ -1,0 +1,129 @@
+# Why this exists (2026-09-24):
+#
+# From 2026-09-21 to 09-24 no Longhorn volume was backed up at all, and NOTHING
+# alerted. The nightly `backup-daily` Job kept exiting 0 in ~6 seconds, because
+# the RecurringJob had `groups: []` and therefore selected zero volumes:
+#
+#   level=info msg="Found 0 volumes with recurring job backup-daily"
+#
+# Job success is not evidence that a backup happened. Every existing rule in
+# the homelab-backups group watches for FAILED Jobs or MISSED schedules, and a
+# no-op run is neither. This CronJob closes that gap by asserting the outcome
+# (a recent backup exists) instead of the action (a job ran).
+#
+# It deliberately checks per-volume rather than fleet-max: one volume still
+# being backed up would otherwise mask 112 that are not.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: longhorn-backup-freshness
+  namespace: ${longhorn_namespace}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: longhorn-backup-freshness
+  namespace: ${longhorn_namespace}
+rules:
+  - apiGroups: ["longhorn.io"]
+    resources: ["volumes", "backupvolumes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: longhorn-backup-freshness
+  namespace: ${longhorn_namespace}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: longhorn-backup-freshness
+subjects:
+  - kind: ServiceAccount
+    name: longhorn-backup-freshness
+    namespace: ${longhorn_namespace}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: longhorn-backup-freshness
+  namespace: ${longhorn_namespace}
+spec:
+  # Hourly, so a stale state is caught long before the next nightly window.
+  # Deliberately NOT a ${...} variable: kustomize strips the quotes around a
+  # substitution, and a cron default like "*/15 * * * *" then emerges as a
+  # bare scalar starting with '*', which YAML reads as an alias and the API
+  # server rejects. No cluster needs a different cadence for a health check.
+  schedule: "25 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: longhorn-backup-freshness
+          containers:
+            - name: check
+              image: ${longhorn_kubectl_image:=docker.io/alpine/k8s:1.34.1}
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+
+                  # Only volumes actually opted IN to the backup group count.
+                  # Caches excluded by d9a2c68 carry the label value
+                  # "disabled" and must not raise an alarm, and 21 orphan
+                  # BackupVolumes exist whose Volume CR is long gone - match
+                  # on .spec.volumeName, never on the BackupVolume's own
+                  # name (it is "<volume>-<hash>", not "<volume>").
+                  kubectl get volumes.longhorn.io -o json > /tmp/vols.json
+                  kubectl get backupvolumes.longhorn.io -o json > /tmp/bvs.json
+
+                  # Bare $vars only - Flux envsubst rewrites ${braced} ones.
+                  RESULT=$(jq -r -n \
+                    --slurpfile v /tmp/vols.json \
+                    --slurpfile b /tmp/bvs.json \
+                    --argjson max 129600 '
+                      ($b[0].items
+                        | map(select(.spec.volumeName != null))
+                        | map({key: .spec.volumeName,
+                               value: (.status.lastBackupAt // "")})
+                        | from_entries) as $last
+                      | ($v[0].items
+                        | map(select(.metadata.labels[
+                            "recurring-job-group.longhorn.io/default"
+                          ] == "enabled"))
+                        | map(.metadata.name)) as $enabled
+                      | ($enabled
+                        | map(select(
+                            ($last[.] // "") == ""
+                            or (now - ($last[.] | fromdateiso8601)) > $max
+                          ))) as $stale
+                      | "\($stale | length) \($enabled | length)"')
+
+                  set -- $RESULT
+                  STALE=$1
+                  TOTAL=$2
+
+                  echo "enabled volumes: $TOTAL"
+                  echo "with no backup newer than 36h: $STALE"
+
+                  if [ "$STALE" -gt 0 ]; then
+                    echo "FAIL: Longhorn volume backups are stale." >&2
+                    echo "A no-op backup-daily run still exits 0 - check" >&2
+                    echo "'.spec.groups' on the backup-daily RecurringJob" >&2
+                    echo "and /mnt/backup free space on storage01." >&2
+                    exit 1
+                  fi
+                  echo "OK"
