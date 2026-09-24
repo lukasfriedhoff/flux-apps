@@ -5,6 +5,11 @@ metadata:
   namespace: ${sitemap_namespace:=sitemap}
   annotations:
     external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    # Required because this Ingress declares a tls block: without an issuer
+    # nothing ever creates sitemap-tls, Traefik cannot complete the handshake
+    # and the host fails to connect entirely (not a cert warning - a dead
+    # connection). Apps that omit tls: fall back to Traefik's default cert.
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     # Behind Authelia like everything else. This is the page people land on
