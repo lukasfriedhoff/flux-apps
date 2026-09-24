@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Namespace for the ddnss.org ingress path: a WireGuard client that dials
+  # OUT to ionos1 plus an haproxy that forwards the tunnelled :80/:443 to
+  # Traefik. See docs/architecture/ddnss-ingress.md in flux-cluster.
+  ddnss_ingress_namespace: "ddnss-ingress"
+  # SOPS secret holding the WireGuard client config (wg0.conf). The cluster
+  # private key lives there; ionos1 carries the matching peer entry.
+  ddnss_ingress_wg_secret_name: "ddnss-ingress-wg"
+  # linuxserver/wireguard tag. The pod dials out with keepalive, so no
+  # inbound port is needed at home.
+  ddnss_ingress_wireguard_tag: "1.0.20210914"
+  # haproxy tag. TCP mode with SNI passthrough so TLS still terminates at
+  # Traefik and cert-manager keeps working unchanged.
+  ddnss_ingress_haproxy_tag: "3.0-alpine"
+  # Suspended by default: only clusters that actually own the ddnss.org
+  # tunnel (homelab) should run this.
+  ddnss_ingress_suspend: "true"
