@@ -1216,3 +1216,93 @@ groups:
         annotations:
           summary: qbittorrent VPN sentinel is failing.
           description: The vpn-sentinel CronJob reports qbittorrent is NOT egressing via ProtonVPN — either the gluetun tunnel is down (downloads fail-closed/stopped) or the exit is the home fiber IP 217.253.x (a LEAK). Check the gluetun sidecar in the qbittorrent pod; verify the netpol endpoint still matches the Proton server.
+  # Added 2026-09-24 after a day where every one of these failure modes was
+  # real and none of them alerted. Nextcloud broke five separate ways and the
+  # only signal was a user saying "it lags".
+  - name: homelab-nextcloud
+    rules:
+      - alert: NextcloudApiDown
+        expr: |
+          nextcloud_up == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Nextcloud is not answering the serverinfo API.
+          description: >-
+            The exporter reaches the pod but Nextcloud itself will not answer.
+            Distinct from the pod being down: this fires while kubelet still
+            reports the container healthy, e.g. maintenance mode or a wedged
+            PHP-FPM.
+      - alert: NextcloudExporterScrapeErrors
+        expr: |
+          increase(nextcloud_scrape_errors_total[30m]) > 3
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: The Nextcloud exporter is failing to scrape.
+          description: >-
+            Every Nextcloud panel silently goes stale when this happens. It
+            ran unnoticed for days because the merged database has no 'admin'
+            account, so basic-auth scrapes 401ed every 30s; the fix was moving
+            to serverinfo token auth. If this fires, check the token in the
+            nextcloud-serverinfo-token secret still matches
+            `occ config:app:get serverinfo token`.
+      - alert: NextcloudRateLimiting
+        expr: |
+          sum(rate(traefik_service_requests_total{service="nextcloud-nextcloud-8080@kubernetes", code="429"}[10m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Nextcloud is returning 429s (bruteforce throttling).
+          description: >-
+            Sustained 429s mean Nextcloud's bruteforce protection is throttling
+            someone. If Traefik is not passing real client IPs, ONE bad client
+            throttles EVERY user behind the same proxy address - that is exactly
+            how the Passwords app broke. Check
+            `occ security:bruteforce:attempts <ip>` and confirm
+            forwardedHeaders/proxyProtocol trust is intact on the websecure
+            entrypoint.
+      - alert: NextcloudServerErrors
+        expr: |
+          sum(rate(traefik_service_requests_total{service="nextcloud-nextcloud-8080@kubernetes", code=~"5.."}[10m]))
+          /
+          clamp_min(sum(rate(traefik_service_requests_total{service="nextcloud-nextcloud-8080@kubernetes"}[10m])), 0.001)
+          > 0.05
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: More than 5% of Nextcloud requests are failing with 5xx.
+          description: >-
+            Broken external storage is a common cause: a missing smbclient
+            binary made every request pay a StorageNotAvailable penalty and
+            surfaced only as "it lags". Also check the database and that the
+            data directory is writable by uid 33.
+      - alert: NextcloudFreeSpaceLow
+        expr: |
+          nextcloud_free_space_bytes < 100 * 1024 * 1024 * 1024
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Nextcloud data volume has less than 100GiB free.
+          description: >-
+            Free space on the Nextcloud data volume is running out. Uploads and
+            previews fail once it hits zero, and a full volume is far more
+            painful to recover than to prevent.
+      - alert: NextcloudNoActiveUsers
+        expr: |
+          nextcloud_active_users_daily_total == 0
+        for: 6h
+        labels:
+          severity: warning
+        annotations:
+          summary: No Nextcloud user has been active for 6 hours.
+          description: >-
+            A cheap end-to-end canary: the stack can pass every health check
+            while nobody can actually log in (a broken OIDC mapping or an
+            expired Authelia client does exactly that). Expect this to fire
+            occasionally overnight - treat a daytime firing as real.
