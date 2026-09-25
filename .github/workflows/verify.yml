@@ -13,7 +13,7 @@ jobs:
   verify-static:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The suite needs all three: yq for the manifest assertions, kustomize
       # to render apps, and flux to run envsubst over the ${...} variables.
