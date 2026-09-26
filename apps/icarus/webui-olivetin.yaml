@@ -26,18 +26,17 @@ data:
         timeout: 30
       - title: Check Steam listing
         icon: ping
+        # Runs in the OliveTin container itself (it ships curl + jq): the
+        # ServiceAccount deliberately cannot create pods, so a `kubectl run`
+        # wrapper here only ever returns exit code 1.
         shell: |
           [ -n "$ICARUS_PUBLIC_HOST" ] || { echo "public_host missing in credentials secret"; exit 1; }
-          kubectl -n ${icarus_namespace} run steam-check-$(date +%s) --rm -i --restart=Never \
-            --env=PUBLIC_HOST="$ICARUS_PUBLIC_HOST" \
-            --image=${icarus_kubectl_image:=docker.io/alpine/k8s:1.34.1} -- sh -c '
-            set -e
-            IP=$(getent hosts "$PUBLIC_HOST" | awk "{print \$1; exit}")
-            [ -n "$IP" ] || { echo "cannot resolve $PUBLIC_HOST"; exit 1; }
-            LISTING=$(curl -sf "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v0001?addr=$IP")
-            echo "$LISTING" | jq -e ".response.servers[] | select(.gameport == ${icarus_game_port:=17777})" \
-              || { echo "NOT listed on Steam (gameport ${icarus_game_port:=17777})"; exit 1; }
-            echo "OK: listed on Steam"'
+          IP=$(getent hosts "$ICARUS_PUBLIC_HOST" | awk '{print $1; exit}')
+          [ -n "$IP" ] || { echo "cannot resolve the public host"; exit 1; }
+          curl -sf "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v0001?addr=$IP" \
+            | jq -e ".response.servers[] | select(.gameport == ${icarus_game_port:=17777})" \
+            || { echo "NOT listed on Steam (gameport ${icarus_game_port:=17777})"; exit 1; }
+          echo "OK: listed on Steam"
         timeout: 120
       - title: Restore snapshot (STOPS the server)
         icon: warning
@@ -52,6 +51,22 @@ data:
           kubectl -n ${icarus_namespace} wait --for=delete pod -l app.kubernetes.io/name=icarus --timeout=180s || true
           restic restore {{ snapshot }} --target /restore-data --delete
           kubectl -n ${icarus_namespace} scale deployment/icarus --replicas=${icarus_replicas:=1}
+    # Landing page. The `display` carries raw HTML, which is how this OliveTin
+    # release does links (additionalNavigationLinks only exists in newer ones).
+    dashboards:
+      - title: Icarus
+        contents:
+          - type: display
+            title: |
+              <strong>Server:</strong> ${icarus_server_name}
+              <br />
+              <a href="https://icarus-files${public_host_suffix}.${delegating_domain}" target="_blank">
+              Open the file browser</a> &mdash; prospects, server config, mod paks
+          - title: Check Steam listing
+          - title: Backup now
+          - title: List snapshots
+          - title: Restart server
+          - title: Restore snapshot (STOPS the server)
 ---
 apiVersion: apps/v1
 kind: Deployment
