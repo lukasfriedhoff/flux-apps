@@ -1,0 +1,14 @@
+# Uptime history for the status page. Without it gatus runs in-memory and
+# every restart resets all availability figures to zero.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: status-dashboard
+  namespace: ${status_dashboard_namespace}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: ${status_dashboard_data_size:=2Gi}
+  storageClassName: ${status_dashboard_storage_class_name:=longhorn-ssd-rwo-1r}

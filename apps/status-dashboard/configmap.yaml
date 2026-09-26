@@ -5,6 +5,11 @@ metadata:
   namespace: ${status_dashboard_namespace}
 data:
   config.yaml: |
+    # Without this block gatus defaults to in-memory storage and loses every
+    # uptime figure on restart (and it restarts on any config change).
+    storage:
+      type: sqlite
+      path: /data/gatus.db
     ui:
       title: ${status_dashboard_title}
       description: ${status_dashboard_description}
@@ -285,6 +290,12 @@ data:
         conditions:
           - "[STATUS] == 200"
           - "[BODY].icarus.up == 1"
+      - name: Uptime Kuma
+        group: Monitoring
+        url: https://${uptime_kuma_host}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
       - name: Cloud Desktop
         group: Games
         url: https://desktop${public_host_suffix}.${delegating_domain}/
