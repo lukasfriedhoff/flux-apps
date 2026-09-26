@@ -265,6 +265,49 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] < 500"
+      # The game endpoints themselves, not just their ops UIs. ICMP against
+      # the MetalLB VIP is what actually carries a latency number ([RESPONSE_TIME]);
+      # the UDP checks confirm the published game/query ports are routable.
+      # Unprivileged ICMP works here because the nodes ship
+      # net.ipv4.ping_group_range = 0 2147483647, so no NET_RAW is needed.
+      - name: Valheim Server (ping)
+        group: Games
+        url: "icmp://${valheim_vip:=10.1.20.43}"
+        interval: 1m
+        conditions:
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 250"
+      - name: Valheim Game Port
+        group: Games
+        url: "udp://${valheim_vip:=10.1.20.43}:${valheim_game_port:=2456}"
+        interval: 1m
+        conditions:
+          - "[CONNECTED] == true"
+      - name: Valheim Query Port
+        group: Games
+        url: "udp://${valheim_vip:=10.1.20.43}:${valheim_query_port:=2457}"
+        interval: 1m
+        conditions:
+          - "[CONNECTED] == true"
+      - name: Icarus Server (ping)
+        group: Games
+        url: "icmp://${icarus_vip:=10.1.20.42}"
+        interval: 1m
+        conditions:
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 250"
+      - name: Icarus Game Port
+        group: Games
+        url: "udp://${icarus_vip:=10.1.20.42}:${icarus_game_port:=17777}"
+        interval: 1m
+        conditions:
+          - "[CONNECTED] == true"
+      - name: Icarus Query Port
+        group: Games
+        url: "udp://${icarus_vip:=10.1.20.42}:${icarus_query_port:=27015}"
+        interval: 1m
+        conditions:
+          - "[CONNECTED] == true"
       - name: Cloud Desktop
         group: Games
         url: https://desktop${public_host_suffix}.${delegating_domain}/
