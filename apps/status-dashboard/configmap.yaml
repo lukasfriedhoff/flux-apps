@@ -11,8 +11,8 @@ data:
     # $${GATUS_DB_URI} is escaped so flux's envsubst passes it through as
     # ${GATUS_DB_URI}; Gatus expands it at startup from the CNPG-generated
     # status-dashboard-postgres-app secret. Do not unescape it - flux replaces
-    # unknown ${...} with an empty string, which would silently yield an empty
-    # DSN.
+    # unknown placeholders with an empty string, which would silently yield
+    # an empty DSN.
     storage:
       type: postgres
       path: "$${GATUS_DB_URI}"

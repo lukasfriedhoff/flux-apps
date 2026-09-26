@@ -38,6 +38,28 @@ for app_path in "${apps_dir}"/*; do
   yq -e 'select(has("apiVersion") and has("kind") and has("metadata"))' "$rendered" >/dev/null \
     || fail "apps/${app} rendered no Kubernetes resources with apiVersion/kind/metadata"
 
+  # Flux runs envsubst over the rendered manifest at reconcile time, and it
+  # rejects anything that is not a parseable variable name - including a
+  # literal ${...} written in a YAML comment, which reads as a variable named
+  # "...". kustomize build is perfectly happy with that, so the failure only
+  # ever showed up in the cluster as "unable to parse variable name" with no
+  # hint of which line caused it. Replicate the pass here instead.
+  # Resources annotated substitute: disabled are skipped by flux, so they may
+  # legitimately contain text envsubst cannot parse - the Grafana dashboards in
+  # apps/monitoring carry ${...} Grafana template vars for exactly that reason.
+  # Filter them out the same way flux does before checking the rest.
+  yq 'select(.metadata.annotations."kustomize.toolkit.fluxcd.io/substitute" != "disabled")' \
+    "$rendered" >"${rendered}.sub" 2>/dev/null || cp "$rendered" "${rendered}.sub"
+
+  if ! flux envsubst <"${rendered}.sub" >/dev/null 2>"${rendered}.err"; then
+    printf '[app-manifest-test] apps/%s fails flux envsubst:\n' "$app" >&2
+    sed 's/^/    /' "${rendered}.err" >&2
+    printf '  A literal ${...} or $${...} in a comment is the usual cause.\n' >&2
+    rm -f "${rendered}.err" "${rendered}.sub"
+    fail "apps/${app} rendered a manifest flux cannot substitute"
+  fi
+  rm -f "${rendered}.err" "${rendered}.sub"
+
   if grep -Eq '\$\{[A-Za-z0-9_]+(:=[^}]*)?\}' "$rendered"; then
     printf '[app-manifest-test] apps/%s ok (contains postBuild substitutions)\n' "$app"
   else
