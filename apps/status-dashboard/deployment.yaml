@@ -28,7 +28,7 @@ spec:
           image: twinproduction/gatus:latest
           imagePullPolicy: IfNotPresent
           env:
-            # Gatus expands ${...} in its config at startup. Written as
+            # Gatus expands placeholders in its config at startup. Written as
             # $${GATUS_DB_URI} in the ConfigMap so flux's envsubst leaves it
             # alone - an unescaped one would be replaced with an empty string
             # before Gatus ever sees it.
