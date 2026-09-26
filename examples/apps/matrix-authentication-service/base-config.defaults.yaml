@@ -10,6 +10,9 @@ data:
   matrix_mas_image: "ghcr.io/element-hq/matrix-authentication-service:1.21.0@sha256:9b5013992767f9e67ca10848e1f4c7951e335360cd70f8f5427adc21bb185d8c"
   matrix_mas_replicas: "0"
   matrix_mas_synapse_kind: "synapse_read_only"
+  # Client-facing host for the MAS login-compat route. The sentinel keeps
+  # the route unmatched until a cluster opts in by setting a real host.
+  matrix_mas_compat_host: "mas-compat-disabled.invalid"
   matrix_mas_upstream_provider_id: "01K1ZQ2A9S7F4P8K6W3C5D0R1T"
   matrix_mas_preflight_generation: "disabled"
   matrix_mas_cutover_generation: "disabled"

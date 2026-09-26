@@ -1,6 +1,17 @@
-# Public, like the Gatus page: Uptime Kuma ships its own login for the admin
-# UI and serves read-only status pages to anonymous visitors, so it is
-# deliberately NOT behind the authelia forwardauth middleware.
+# Behind Authelia. Uptime Kuma has no OIDC, OAuth or SAML login of its own -
+# the openid-client code in its image is outbound only, used to fetch tokens
+# when probing OAuth-protected monitors. Its sole login is a local account in
+# its own database, and until one exists the setup page is public and claimable
+# by anyone who reaches this host. The forwardauth middleware below is
+# therefore the OIDC integration, and it needs the matching access_control
+# rule in apps/authelia/configmap.yaml to stay above the subject-less
+# catch-all there.
+#
+# The tradeoff: status pages here are no longer anonymous, and this page now
+# depends on Authelia and LLDAP being up - which is exactly what a status page
+# should not depend on. Gatus at status${public_host_suffix} stays public and
+# unauthenticated for that reason; this instance is the authenticated,
+# richer-detail view, not the one to check during an outage.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -9,6 +20,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: ${default_cluster_issuer}
     external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
