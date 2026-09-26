@@ -292,6 +292,10 @@ data:
           - "[BODY].icarus.up == 1"
       - name: Uptime Kuma
         group: Monitoring
+        # Behind Authelia since the OIDC wiring, so an unauthenticated probe
+        # gets a 302 to the auth portal. That redirect still proves Traefik
+        # routed and the pod answered - all this can assert from outside.
+        # A dead backend gives 502/503 and fails the condition below.
         url: https://${uptime_kuma_host}/
         interval: 1m
         conditions:
