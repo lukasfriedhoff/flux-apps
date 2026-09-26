@@ -10,7 +10,7 @@
 # tag from it (harbor.h4xx.io/library/nextcloud:<same tag>). Merge order on
 # upstream bumps: this Dockerfile PR FIRST (builds the new tag), then the
 # helm values PR in apps/nextcloud that points at it.
-FROM docker.io/library/nextcloud:34.0.4-apache
+FROM docker.io/library/nextcloud:35.0.1-apache
 
 # DL3008: the base tag is the pin; smbclient point versions rotate out of
 # the debian archive and would break rebuilds.
