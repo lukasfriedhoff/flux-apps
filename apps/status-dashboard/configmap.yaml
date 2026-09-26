@@ -265,49 +265,26 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] < 500"
-      # The game endpoints themselves, not just their ops UIs. ICMP against
-      # the MetalLB VIP is what actually carries a latency number ([RESPONSE_TIME]);
-      # the UDP checks confirm the published game/query ports are routable.
-      # Unprivileged ICMP works here because the nodes ship
-      # net.ipv4.ping_group_range = 0 2147483647, so no NET_RAW is needed.
-      - name: Valheim Server (ping)
+      # The game endpoints themselves, not just their ops UIs behind the
+      # tunnel. These are backed by the A2S exporter, which reports up=1 only
+      # when the server actually answered a Steam query - the one check that
+      # distinguishes "joinable" from "process alive". ICMP was rejected here
+      # (the container drops NET_RAW) and a UDP dial always succeeds because
+      # UDP is connectionless, so neither was trustworthy.
+      - name: Valheim Server
         group: Games
-        url: "icmp://${valheim_vip:=10.1.20.43}"
+        url: http://gameserver-exporter.${gameserver_exporter_namespace:=monitoring}.svc.cluster.local/status
         interval: 1m
         conditions:
-          - "[CONNECTED] == true"
-          - "[RESPONSE_TIME] < 250"
-      - name: Valheim Game Port
+          - "[STATUS] == 200"
+          - "[BODY].valheim.up == 1"
+      - name: Icarus Server
         group: Games
-        url: "udp://${valheim_vip:=10.1.20.43}:${valheim_game_port:=2456}"
+        url: http://gameserver-exporter.${gameserver_exporter_namespace:=monitoring}.svc.cluster.local/status
         interval: 1m
         conditions:
-          - "[CONNECTED] == true"
-      - name: Valheim Query Port
-        group: Games
-        url: "udp://${valheim_vip:=10.1.20.43}:${valheim_query_port:=2457}"
-        interval: 1m
-        conditions:
-          - "[CONNECTED] == true"
-      - name: Icarus Server (ping)
-        group: Games
-        url: "icmp://${icarus_vip:=10.1.20.42}"
-        interval: 1m
-        conditions:
-          - "[CONNECTED] == true"
-          - "[RESPONSE_TIME] < 250"
-      - name: Icarus Game Port
-        group: Games
-        url: "udp://${icarus_vip:=10.1.20.42}:${icarus_game_port:=17777}"
-        interval: 1m
-        conditions:
-          - "[CONNECTED] == true"
-      - name: Icarus Query Port
-        group: Games
-        url: "udp://${icarus_vip:=10.1.20.42}:${icarus_query_port:=27015}"
-        interval: 1m
-        conditions:
-          - "[CONNECTED] == true"
+          - "[STATUS] == 200"
+          - "[BODY].icarus.up == 1"
       - name: Cloud Desktop
         group: Games
         url: https://desktop${public_host_suffix}.${delegating_domain}/

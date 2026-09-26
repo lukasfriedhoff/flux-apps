@@ -1,0 +1,95 @@
+{
+  "title": "Game Servers",
+  "uid": "gameservers",
+  "tags": ["games", "homelab"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Server up",
+      "id": 1,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green", "index": 1 } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "targets": [ { "expr": "gameserver_up", "legendFormat": "{{game}}", "refId": "A" } ]
+    },
+    {
+      "type": "stat",
+      "title": "Players online",
+      "id": 2,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "options": { "colorMode": "value", "graphMode": "area", "textMode": "auto" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "text", "value": null }, { "color": "green", "value": 1 } ] } }, "overrides": [] },
+      "targets": [ { "expr": "gameserver_players", "legendFormat": "{{game}}", "refId": "A" } ]
+    },
+    {
+      "type": "stat",
+      "title": "A2S query latency",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "options": { "colorMode": "value", "graphMode": "area", "textMode": "auto" },
+      "fieldConfig": { "defaults": { "unit": "s", "decimals": 3, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 0.3 }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
+      "targets": [ { "expr": "gameserver_query_latency_seconds", "legendFormat": "{{game}}", "refId": "A" } ]
+    },
+    {
+      "type": "stat",
+      "title": "Availability (24h)",
+      "id": 4,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "options": { "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2, "max": 1, "min": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 0.95 }, { "color": "green", "value": 0.995 } ] } }, "overrides": [] },
+      "targets": [ { "expr": "avg_over_time(gameserver_up[24h])", "legendFormat": "{{game}}", "refId": "A" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Players over time",
+      "id": 5,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 20, "lineWidth": 2, "showPoints": "never" } }, "overrides": [] },
+      "targets": [
+        { "expr": "gameserver_players", "legendFormat": "{{game}} online", "refId": "A" },
+        { "expr": "gameserver_max_players", "legendFormat": "{{game}} slots", "refId": "B" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "A2S query latency (the 'ping' a client sees)",
+      "id": 6,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2, "showPoints": "never" } }, "overrides": [] },
+      "targets": [ { "expr": "gameserver_query_latency_seconds", "legendFormat": "{{game}}", "refId": "A" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Reachability",
+      "id": 7,
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "max": 1, "custom": { "fillOpacity": 30, "lineWidth": 1, "showPoints": "never", "drawStyle": "line", "lineInterpolation": "stepAfter" } }, "overrides": [] },
+      "targets": [ { "expr": "gameserver_up", "legendFormat": "{{game}}", "refId": "A" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Server pod CPU / memory",
+      "id": 8,
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 10, "lineWidth": 2, "showPoints": "never" } }, "overrides": [ { "matcher": { "id": "byRegexp", "options": ".*memory.*" }, "properties": [ { "id": "unit", "value": "bytes" } ] } ] },
+      "targets": [
+        { "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~\"valheim|icarus\", container!=\"\"}[5m]))", "legendFormat": "{{namespace}} cpu (cores)", "refId": "A" },
+        { "expr": "sum by (namespace) (container_memory_working_set_bytes{namespace=~\"valheim|icarus\", container!=\"\"})", "legendFormat": "{{namespace}} memory", "refId": "B" }
+      ]
+    }
+  ]
+}

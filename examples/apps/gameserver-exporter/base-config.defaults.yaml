@@ -1,0 +1,13 @@
+# All ${...} keys apps/gameserver-exporter consumes, with sane defaults.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+data:
+  gameserver_exporter_suspend: "true"
+  gameserver_exporter_namespace: "monitoring"
+  gameserver_exporter_image: "docker.io/library/python:3.13-alpine"
+  gameserver_exporter_port: "9109"
+  gameserver_exporter_interval: "20"
+  # name=host:A2S_QUERY_PORT pairs, comma separated.
+  gameserver_exporter_targets: ""
