@@ -9,6 +9,9 @@ metadata:
     reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
+  strategy:
+    # sqlite tolerates exactly one writer: never run two pods on this volume.
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: status-dashboard
@@ -25,6 +28,8 @@ spec:
             - containerPort: 8080
               name: http
           volumeMounts:
+            - name: data
+              mountPath: /data
             - name: config
               mountPath: /config/config.yaml
               subPath: config.yaml
@@ -54,6 +59,9 @@ spec:
               drop:
                 - ALL
       volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: status-dashboard
         - name: config
           configMap:
             name: status-dashboard-config

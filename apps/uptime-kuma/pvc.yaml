@@ -1,0 +1,19 @@
+# Uptime Kuma keeps its monitors, users and the whole history in a SQLite
+# database under /app/data. This PVC is the entire reason it survives a
+# restart - the thing the in-memory Gatus deployment does not do.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uptime-kuma
+  namespace: ${uptime_kuma_namespace:=uptime-kuma}
+  annotations:
+    # longhorn-replica-policy resets replica counts from the StorageClass;
+    # a bump only sticks when declared here.
+    longhorn.h4xx.io/replica-count: "2"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: ${uptime_kuma_data_size:=5Gi}
+  storageClassName: ${uptime_kuma_storage_class_name:=longhorn-ssd-rwo-1r}

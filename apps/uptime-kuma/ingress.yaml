@@ -1,0 +1,30 @@
+# Public, like the Gatus page: Uptime Kuma ships its own login for the admin
+# UI and serves read-only status pages to anonymous visitors, so it is
+# deliberately NOT behind the authelia forwardauth middleware.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-kuma
+  namespace: ${uptime_kuma_namespace:=uptime-kuma}
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${uptime_kuma_host}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime-kuma
+                port:
+                  number: 80
+  tls:
+    - secretName: uptime-kuma-tls
+      hosts:
+        - ${uptime_kuma_host}
