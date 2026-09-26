@@ -1,0 +1,25 @@
+# Template for flux-cluster/base/kustomizations/infra/gameserver-exporter.yaml.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gameserver-exporter-app
+  namespace: flux-system
+spec:
+  suspend: ${gameserver_exporter_suspend:=true}
+  dependsOn:
+    - name: namespaces
+  interval: ${flux_kustomization_default_interval:=1h0m0s}
+  path: ./apps/gameserver-exporter
+  prune: true
+  retryInterval: ${flux_kustomization_default_retry_interval:=10m0s}
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  timeout: ${flux_kustomization_default_timeout:=10m0s}
+  wait: true
+  postBuild:
+    substitute:
+      quote: '"'
+    substituteFrom:
+      - kind: ConfigMap
+        name: base-config
