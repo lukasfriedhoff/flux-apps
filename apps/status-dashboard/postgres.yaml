@@ -1,0 +1,50 @@
+# Gatus uptime history, moved off sqlite-on-a-RWO-PVC.
+#
+# sqlite forced replicas: 1 with the Recreate strategy, because it tolerates
+# exactly one writer. That made the status page the least available thing in
+# the cluster: any node failure meant waiting for a Longhorn volume to detach
+# and reattach before the page came back - and this page is what you open to
+# find out what is broken.
+#
+# Postgres removes that constraint. The data lives in a 3-instance CNPG
+# cluster instead of a single-writer volume, so Gatus itself becomes stateless
+# and can run more than one replica.
+#
+# Deliberately NO barmanObjectStore block, unlike the other CNPG clusters here.
+# This holds uptime history only: it is regenerated continuously, losing it
+# costs a graph and nothing else, and storage01 has already hit 100% once. Three
+# synchronous-capable instances are the durability story. If that judgement
+# changes, copy the backup block from apps/lldap/postgres.yaml and add the
+# bucket plus credentials secret.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: status-dashboard-postgres
+  namespace: ${status_dashboard_namespace}
+spec:
+  instances: ${status_dashboard_postgres_instances:=3}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: gatus
+      owner: gatus
+      # No secret ref: CNPG generates `status-dashboard-postgres-app` with a
+      # `uri` key, which the deployment passes to Gatus as GATUS_DB_URI.
+  storage:
+    # Low-volume, low-IOPS. Use the reliable disk pool, not the mis-tagged USB
+    # "nvme" disks. Three CNPG instances give HA at the Postgres layer, so one
+    # Longhorn replica per instance is enough.
+    storageClass: ${status_dashboard_postgres_storage_class_name:=longhorn-disk-rwo-1r}
+    size: ${status_dashboard_postgres_size:=2Gi}
+  resources:
+    requests:
+      cpu: ${status_dashboard_postgres_requests_cpu:=50m}
+      memory: ${status_dashboard_postgres_requests_memory:=128Mi}
+    limits:
+      cpu: ${status_dashboard_postgres_limits_cpu:=500m}
+      memory: ${status_dashboard_postgres_limits_memory:=512Mi}

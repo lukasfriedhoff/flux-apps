@@ -8,10 +8,13 @@ metadata:
   annotations:
     reloader.stakater.com/auto: "true"
 spec:
-  replicas: 1
+  replicas: ${status_dashboard_replicas:=1}
   strategy:
-    # sqlite tolerates exactly one writer: never run two pods on this volume.
-    type: Recreate
+    # No local state any more (history lives in CNPG), so a rolling update is
+    # safe. Start at one replica: Gatus runs its schema migration on startup,
+    # and two pods racing that on a fresh database is an avoidable risk. Raise
+    # status_dashboard_replicas once the schema exists.
+    type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: status-dashboard
@@ -24,12 +27,20 @@ spec:
         - name: gatus
           image: twinproduction/gatus:latest
           imagePullPolicy: IfNotPresent
+          env:
+            # Gatus expands ${...} in its config at startup. Written as
+            # $${GATUS_DB_URI} in the ConfigMap so flux's envsubst leaves it
+            # alone - an unescaped one would be replaced with an empty string
+            # before Gatus ever sees it.
+            - name: GATUS_DB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: status-dashboard-postgres-app
+                  key: uri
           ports:
             - containerPort: 8080
               name: http
           volumeMounts:
-            - name: data
-              mountPath: /data
             - name: config
               mountPath: /config/config.yaml
               subPath: config.yaml
@@ -59,9 +70,6 @@ spec:
               drop:
                 - ALL
       volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: status-dashboard
         - name: config
           configMap:
             name: status-dashboard-config
