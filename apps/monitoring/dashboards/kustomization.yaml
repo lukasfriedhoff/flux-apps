@@ -10,6 +10,13 @@ generatorOptions:
     kustomize.toolkit.fluxcd.io/substitute: disabled
 
 configMapGenerator:
+  - name: grafana-dashboard-gameservers
+    options:
+      annotations:
+        grafana_folder: Homelab
+    files:
+      - gameservers/gameservers.json
+
   - name: grafana-dashboard-storage01
     options:
       annotations:

@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gameserver-exporter
+  namespace: ${gameserver_exporter_namespace:=monitoring}
+  labels:
+    app.kubernetes.io/name: gameserver-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gameserver-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gameserver-exporter
+      annotations:
+        # Alloy discovers scrape targets from these (annotationAutodiscovery).
+        prometheus.io/scrape: "true"
+        prometheus.io/port: ${quote}${gameserver_exporter_port:=9109}${quote}
+        prometheus.io/path: /metrics
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+      containers:
+        - name: exporter
+          image: ${gameserver_exporter_image:=docker.io/library/python:3.13-alpine}
+          command: ["python3", "/app/exporter.py"]
+          env:
+            # name=host:port pairs; the port is the A2S QUERY port.
+            - name: TARGETS
+              value: ${quote}${gameserver_exporter_targets}${quote}
+            - name: LISTEN_PORT
+              value: ${quote}${gameserver_exporter_port:=9109}${quote}
+            - name: SCRAPE_INTERVAL
+              value: ${quote}${gameserver_exporter_interval:=20}${quote}
+          ports:
+            - name: metrics
+              containerPort: ${gameserver_exporter_port:=9109}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: ${gameserver_exporter_port:=9109}
+            periodSeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: ${gameserver_exporter_port:=9109}
+            periodSeconds: 30
+            failureThreshold: 4
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: script
+              mountPath: /app
+      volumes:
+        - name: script
+          configMap:
+            name: gameserver-exporter-script
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gameserver-exporter
+  namespace: ${gameserver_exporter_namespace:=monitoring}
+  labels:
+    app.kubernetes.io/name: gameserver-exporter
+spec:
+  selector:
+    app.kubernetes.io/name: gameserver-exporter
+  ports:
+    - name: metrics
+      port: 80
+      targetPort: ${gameserver_exporter_port:=9109}
