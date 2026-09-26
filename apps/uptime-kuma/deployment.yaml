@@ -32,6 +32,20 @@ spec:
           env:
             - name: UPTIME_KUMA_PORT
               value: "3001"
+            # Pin the backend so the first-run wizard never asks. Without this
+            # the pod serves an unauthenticated /setup-database page, and this
+            # ingress is public - whoever reaches it first picks the database
+            # and claims the admin account.
+            #
+            # sqlite is the choice the rest of this manifest already assumes:
+            # one replica, Recreate, a single-writer RWO volume. The embedded
+            # MariaDB option runs a second process in this container against
+            # that same volume, so it adds memory pressure against the 1Gi
+            # limit and a heavier backup story without buying any availability.
+            # External MariaDB/MySQL would mean a second database engine - the
+            # cluster runs CNPG (PostgreSQL), which Uptime Kuma cannot use.
+            - name: UPTIME_KUMA_DB_TYPE
+              value: "sqlite"
             - name: TZ
               value: ${quote}${uptime_kuma_timezone:=Europe/Berlin}${quote}
           startupProbe:
