@@ -31,8 +31,10 @@ data:
         # wrapper here only ever returns exit code 1.
         shell: |
           [ -n "$ICARUS_PUBLIC_HOST" ] || { echo "public_host missing in credentials secret"; exit 1; }
-          IP=$(getent hosts "$ICARUS_PUBLIC_HOST" | awk '{print $1; exit}')
-          [ -n "$IP" ] || { echo "cannot resolve the public host"; exit 1; }
+          # ahostsv4, not `hosts`: in-cluster DNS answers with IPv6 first and
+          # Steam's API rejects anything that is not IPv4.
+          IP=$(getent ahostsv4 "$ICARUS_PUBLIC_HOST" | awk '{print $1; exit}')
+          [ -n "$IP" ] || { echo "cannot resolve the public host to IPv4"; exit 1; }
           curl -sf "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v0001?addr=$IP" \
             | jq -e ".response.servers[] | select(.gameport == ${icarus_game_port:=17777})" \
             || { echo "NOT listed on Steam (gameport ${icarus_game_port:=17777})"; exit 1; }
