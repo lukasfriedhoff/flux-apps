@@ -202,16 +202,6 @@ data:
           subject:
             - 'group:icarus-admins'
           policy: ${authelia_access_policy}
-        # Uptime Kuma has no OIDC or SSO of its own - its only login is a
-        # local account in its SQLite database. This rule plus the
-        # forwardauth middleware on its ingress IS the OIDC integration.
-        # It must stay above the subject-less catch-all below, which would
-        # otherwise admit every authenticated user.
-        - domain: 'status-alt${public_host_suffix}.${delegating_domain}'
-          subject:
-            - 'group:uptime-kuma-admins'
-            - 'group:uptime-kuma-users'
-          policy: ${authelia_access_policy}
         - domain_regex: '^.*${public_host_suffix}\.${delegating_domain}$'
           subject:
             - 'user:wooden'

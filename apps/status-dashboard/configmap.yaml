@@ -7,9 +7,15 @@ data:
   config.yaml: |
     # Without this block gatus defaults to in-memory storage and loses every
     # uptime figure on restart (and it restarts on any config change).
+    #
+    # $${GATUS_DB_URI} is escaped so flux's envsubst passes it through as
+    # ${GATUS_DB_URI}; Gatus expands it at startup from the CNPG-generated
+    # status-dashboard-postgres-app secret. Do not unescape it - flux replaces
+    # unknown ${...} with an empty string, which would silently yield an empty
+    # DSN.
     storage:
-      type: sqlite
-      path: /data/gatus.db
+      type: postgres
+      path: "$${GATUS_DB_URI}"
     ui:
       title: ${status_dashboard_title}
       description: ${status_dashboard_description}
@@ -290,16 +296,6 @@ data:
         conditions:
           - "[STATUS] == 200"
           - "[BODY].icarus.up == 1"
-      - name: Uptime Kuma
-        group: Monitoring
-        # Behind Authelia since the OIDC wiring, so an unauthenticated probe
-        # gets a 302 to the auth portal. That redirect still proves Traefik
-        # routed and the pod answered - all this can assert from outside.
-        # A dead backend gives 502/503 and fails the condition below.
-        url: https://${uptime_kuma_host}/
-        interval: 1m
-        conditions:
-          - "[STATUS] < 500"
       - name: Cloud Desktop
         group: Games
         url: https://desktop${public_host_suffix}.${delegating_domain}/
