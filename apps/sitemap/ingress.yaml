@@ -15,7 +15,14 @@ metadata:
     # Behind Authelia like everything else. This is the page people land on
     # first, so the SSO prompt here is the single login for the whole estate -
     # after this every linked service is already authenticated.
-    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth@kubernetescrd
+    # -redirect, not the plain forwardauth: this is a browser UI. The plain
+    # middleware answers an unauthenticated request with a bare
+    # text/plain 401 carrying no Location and no session cookie, so the
+    # browser lands on a dead wall with no way to reach the auth portal.
+    # Reported 2026-09-27 as "cannot log in" - there was no login flow to
+    # reach at all. Keep the plain variant only for machine endpoints
+    # (see apps/monitoring/ingress-ingest.yaml), never for a UI.
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
