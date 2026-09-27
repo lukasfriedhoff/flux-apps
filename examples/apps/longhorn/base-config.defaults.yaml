@@ -70,3 +70,7 @@ data:
   longhorn_recurring_backup_cron: "15 3 * * *"
   longhorn_recurring_backup_retain: "14"
   longhorn_recurring_full_backup_interval: "7"
+  # MinIO client. Built from nixpkgs and hosted in Harbor because MinIO
+  # withdrew public distribution of mc in 2025 (quay/dockerhub 401,
+  # dl.min.io 410). See containers/mc/Dockerfile.
+  mc_image: "harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z"

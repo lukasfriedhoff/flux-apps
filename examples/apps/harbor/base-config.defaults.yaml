@@ -27,3 +27,7 @@ data:
   harbor_postgres_requests_cpu: "100m"
   harbor_postgres_requests_memory: "512Mi"
   harbor_postgres_limits_memory: "1Gi"
+  # MinIO client. Built from nixpkgs and hosted in Harbor because MinIO
+  # withdrew public distribution of mc in 2025 (quay/dockerhub 401,
+  # dl.min.io 410). See containers/mc/Dockerfile.
+  mc_image: "harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z"

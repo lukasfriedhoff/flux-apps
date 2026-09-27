@@ -24,3 +24,7 @@ data:
   authelia_postgres_backup_credential_secret_name: "authelia-postgres-backup-credentials"
   authelia_postgres_backup_retention: "30d"
   authelia_postgres_backup_cron: "0 0 2 * * *"
+  # MinIO client. Built from nixpkgs and hosted in Harbor because MinIO
+  # withdrew public distribution of mc in 2025 (quay/dockerhub 401,
+  # dl.min.io 410). See containers/mc/Dockerfile.
+  mc_image: "harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z"

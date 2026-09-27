@@ -16,7 +16,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: bootstrap
-              image: quay.io/minio/mc:latest
+              image: ${mc_image:=harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z}
               env:
                 - name: LONGHORN_BACKUP_TARGET
                   value: ${longhorn_backup_target:=}

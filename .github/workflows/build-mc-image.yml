@@ -1,0 +1,46 @@
+name: build-mc-image
+
+# MinIO withdrew public distribution of mc in 2025 - quay.io/minio/mc and
+# docker.io/minio/mc 401 on every tag, dl.min.io returns 410 - which broke all
+# six bucket-bootstrap jobs at once. We build it from nixpkgs instead.
+on:
+  push:
+    branches: [main]
+    paths:
+      - containers/mc/**
+      - .github/workflows/build-mc-image.yml
+  workflow_dispatch:
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: lint Dockerfile
+        # Plain docker run over stdin: the marketplace hadolint action does not
+        # resolve on Forgejo, and dind cannot volume-mount job paths.
+        run: docker run --rm -i ghcr.io/hadolint/hadolint /bin/hadolint --failure-threshold error - < containers/mc/Dockerfile
+      - name: build and push to harbor
+        env:
+          HARBOR_USER: ${{ secrets.HARBOR_ROBOT_NAME }}
+          HARBOR_PASS: ${{ secrets.HARBOR_ROBOT_SECRET }}
+        # The tag is read back out of the built image rather than hardcoded, so
+        # it always matches the mc release nixpkgs actually produced. The
+        # sha-suffixed tag is an immutable trace of each rebuild.
+        # In-cluster pushes to harbor.h4xx.io bypass the CF tunnel via the
+        # coredns rewrite (the tunnel caps request bodies at ~100MB).
+        run: |
+          set -euo pipefail
+          IMG=harbor.h4xx.io/library/mc
+          docker build -t "$IMG:build" containers/mc
+          TAG=$(docker run --rm "$IMG:build" mc --version | awk '/^mc version/ {print $3; exit}')
+          test -n "$TAG"
+          SHORT=$(echo "$GITHUB_SHA" | cut -c1-8)
+          echo "$HARBOR_PASS" | docker login harbor.h4xx.io -u "$HARBOR_USER" --password-stdin
+          docker tag "$IMG:build" "$IMG:$TAG"
+          docker tag "$IMG:build" "$IMG:$TAG-sha-$SHORT"
+          docker tag "$IMG:build" "$IMG:latest"
+          docker push "$IMG:$TAG"
+          docker push "$IMG:$TAG-sha-$SHORT"
+          docker push "$IMG:latest"
+          echo "pushed $IMG:$TAG (and :$TAG-sha-$SHORT, :latest)"

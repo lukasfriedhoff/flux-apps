@@ -19,3 +19,7 @@ data:
   object_storage_insecure: "true"
   object_storage_force_path_style: "true"
   monitoring_s3_values_secret_name: "monitoring-s3-values"
+  # MinIO client. Built from nixpkgs and hosted in Harbor because MinIO
+  # withdrew public distribution of mc in 2025 (quay/dockerhub 401,
+  # dl.min.io 410). See containers/mc/Dockerfile.
+  mc_image: "harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z"
