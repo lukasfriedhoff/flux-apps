@@ -99,8 +99,24 @@ data:
         contents:
           - type: display
             title: |
-              <div style="text-align:left;max-width:60em;margin:0 auto;line-height:1.55">
-              <h2 style="margin-top:0">Install a mod</h2>
+              <style>
+              /* OliveTin lays a dashboard's contents out as a grid of FIXED
+                 180px tiles - fieldset{grid-template-columns:repeat(auto-fit,180px)}
+                 - plus div.display{align-items:center;font-size:small}. That is
+                 right for action buttons and useless for prose, and no inner
+                 styling can escape a 180px parent. Override it, scoped with
+                 :has() to this one card so the button grid on the other tab is
+                 untouched. */
+              fieldset:has(#vh-manual){grid-template-columns:1fr!important;justify-content:stretch!important}
+              div.display:has(#vh-manual){align-items:stretch!important;place-content:start!important;font-size:1rem!important;text-align:left!important}
+              #vh-manual{text-align:left;line-height:1.55;padding:.5em 1.2em;max-width:70em}
+              #vh-manual h2{font-size:1.25em;margin:1.3em 0 .4em;display:block}
+              #vh-manual h2:first-child{margin-top:.2em}
+              #vh-manual li{margin-bottom:.45em}
+              #vh-manual code{font-size:.95em}
+              </style>
+              <div id="vh-manual">
+              <h2>Install a mod</h2>
               <p><b>1.</b> Open the
               <a href="https://valheim-files${public_host_suffix}.${delegating_domain}" target="_blank">file browser</a>
               &rarr; <code>bepinex/plugins/</code> &nbsp;
