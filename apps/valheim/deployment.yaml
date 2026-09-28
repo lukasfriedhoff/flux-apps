@@ -64,6 +64,23 @@ spec:
               value: ${quote}${valheim_update_cron}${quote}
             - name: UPDATE_IF_IDLE
               value: ${quote}${valheim_update_if_idle:=true}${quote}
+            # BepInEx: the mod loader. Without it there is no plugin directory
+            # and no loader, so dropping a .dll anywhere does nothing at all -
+            # which is exactly what it looked like from the file browser.
+            #
+            # With this on, the image installs BepInExPack_Valheim on start and
+            # mods go into /config/bepinex/plugins, which the file browser
+            # already exposes (it mounts the whole config volume at /data), so
+            # installing a mod becomes an upload with no shell involved.
+            #
+            # Two things to know before blaming the server:
+            #   - Mods are client AND server side. Every player needs the same
+            #     plugins or they cannot join.
+            #   - UPDATE_CRON runs every 15 min. A Valheim patch can outdate a
+            #     plugin unattended, and the usual symptom is a server that
+            #     starts but nobody can connect to.
+            - name: BEPINEX
+              value: ${quote}${valheim_bepinex:=true}${quote}
             # In-container world snapshots: cheap, world-consistent zips that
             # the restic job then ships offsite. Retention here stays short
             # (restic owns long-term history).

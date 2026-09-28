@@ -23,6 +23,10 @@ data:
   # server is invisible in the client's server browser.
   valheim_update_cron: "*/15 * * * *"
   valheim_update_if_idle: "true"
+  # BepInEx mod loader. Off means no plugin directory and no loader, so an
+  # uploaded .dll does nothing. On means mods go into /config/bepinex/plugins,
+  # which the file browser already exposes. Mods are client AND server side.
+  valheim_bepinex: "true"
   # In-container world zips; restic owns long-term history.
   valheim_internal_backups: "true"
   valheim_internal_backups_cron: "0 */6 * * *"
