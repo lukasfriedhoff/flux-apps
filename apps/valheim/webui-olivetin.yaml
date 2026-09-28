@@ -192,6 +192,11 @@ kind: Deployment
 metadata:
   name: valheim-olivetin
   namespace: ${valheim_namespace}
+  annotations:
+    # OliveTin reads its config once at startup and does not watch the file, so
+    # editing the ConfigMap alone changes nothing on the page - which looks like
+    # the change did not deploy. Let reloader restart it.
+    reloader.stakater.com/auto: "true"
   labels:
     app.kubernetes.io/name: valheim-olivetin
 spec:
