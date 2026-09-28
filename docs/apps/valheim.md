@@ -45,6 +45,20 @@ clients entirely. See [Updates](#updates) below; it normally self-heals within
 
 ---
 
+## House rules
+
+A couple of things that are not the server's fault, but will still ruin
+someone's evening:
+
+- 🙂 **Smiley: please do not use up all the leather.** Leather scraps are the
+  bottleneck for half the workbench upgrades, and "I just needed a few" has a
+  way of turning into an empty chest. Take what you need for the build you are
+  actually doing, and leave the rest for the others.
+- Same idea for any shared chest: if you take the last of something, say so in
+  chat so the next person does not plan a build around stock that is gone.
+- If you carry the portal ore run, drop the surplus in the communal chest
+  rather than hoarding it in a personal one.
+
 ## For admins
 
 Two web UIs, both published through the Cloudflare tunnel and gated by Authelia:
@@ -83,6 +97,67 @@ A player can find their own SteamID64 at `steamcommunity.com/my/profile` →
 *Edit Profile* → the numeric URL, or via any SteamID lookup site.
 
 ---
+
+## Mods
+
+The server runs **BepInEx**, the Valheim mod loader (`valheim_bepinex`, on by
+default). Without it there is no plugin directory and no loader, so dropping a
+`.dll` somewhere would do nothing at all.
+
+**The single most important rule: mods are client *and* server side.** Every
+player needs the same plugins at the same versions, or they simply cannot
+join. Nearly every "the server is down" report is really a mod mismatch.
+
+### Where mods live
+
+| Path in the container | In the file browser | What it is |
+|---|---|---|
+| `/config/bepinex/plugins/` | `/bepinex/plugins/` | the `.dll` plugins themselves |
+| `/config/bepinex/*.cfg` | `/bepinex/` | per-mod config, written on first run |
+
+The file browser at `valheim-files.h4xx.io` mounts the whole config volume, so
+installing and updating mods is an upload — no shell, no kubectl.
+
+### Installing a mod
+
+1. Download the plugin (Thunderstore is the usual source). You want the `.dll`,
+   not the whole archive — unzip it first if needed.
+2. Upload it into `/bepinex/plugins/` in the file browser.
+3. Hit **Restart server** in the OliveTin UI.
+4. Give the same `.dll` to every player — it goes into their local
+   `BepInEx/plugins/` folder.
+
+### Updating a mod
+
+1. Delete the old `.dll` from `/bepinex/plugins/` and upload the new one. Do
+   **not** leave both versions in the folder; BepInEx would load both and the
+   server will behave strangely or fail to start.
+2. Restart the server.
+3. Make sure every player updates the same plugin. A player on the old version
+   will be rejected.
+4. Leave the mod's `.cfg` file alone unless you want to change settings —
+   settings survive the update. Deleting a `.cfg` regenerates it with defaults
+   on the next start.
+
+BepInEx itself does not need manual updating: the image reinstalls/updates it
+on the `UPDATE_CRON` schedule along with the game.
+
+### After a Valheim patch
+
+This is the trap worth knowing. Updates run unattended (every 15 minutes while
+the server is empty), so the game can move underneath a plugin without anyone
+touching it. The symptom is confusing: **the server starts fine, reports
+healthy, and nobody can connect.**
+
+If that happens:
+
+1. Check the startup log for plugin errors:
+   `kubectl -n valheim logs deploy/valheim | grep -i bepinex`
+2. Update the offending plugin, or temporarily remove its `.dll` and restart
+   to get everyone back online while you wait for the mod author.
+
+To check which plugins actually loaded, look for the BepInEx banner near the
+top of the server log after a restart.
 
 ## How it is wired
 
