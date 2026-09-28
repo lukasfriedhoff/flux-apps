@@ -89,103 +89,94 @@ data:
       # Second tab: the manual lives here rather than behind a link, so it
       # cannot rot, needs no extra hosting, and is readable by anyone who can
       # already open this page. Full version: apps/valheim/MANUAL.md.
+      #
+      # ONE display block on purpose. OliveTin lays each entry in `contents`
+      # out as its own card in a grid, so splitting the manual into five
+      # blocks produced five ~180px columns of centred text. Everything lives
+      # in one block, left-aligned and width-capped by inline style, because
+      # the card CSS centres by default.
       - title: Manual
         contents:
           - type: display
             title: |
-              <h3>Install a mod</h3>
-              <ol>
-                <li>Open the
-                  <a href="https://valheim-files${public_host_suffix}.${delegating_domain}" target="_blank">file browser</a>
-                  and go to <code>bepinex/plugins/</code></li>
-                <li>Drop the mod's <code>.dll</code> in</li>
-                <li>Come back here and press <strong>Restart server</strong></li>
-              </ol>
-              That is all of it &mdash; BepInEx is already installed and updates
-              itself. To uninstall, delete the <code>.dll</code> and restart.
-              <br /><br />
-              <strong>Three things that will bite you:</strong>
+              <div style="text-align:left;max-width:60em;margin:0 auto;line-height:1.55">
+              <h2 style="margin-top:0">Install a mod</h2>
+              <p><b>1.</b> Open the
+              <a href="https://valheim-files${public_host_suffix}.${delegating_domain}" target="_blank">file browser</a>
+              &rarr; <code>bepinex/plugins/</code> &nbsp;
+              <b>2.</b> Drop the mod's <code>.dll</code> in &nbsp;
+              <b>3.</b> Back here &rarr; <b>Restart server</b></p>
+              <p>That is all of it. BepInEx is installed already and updates
+              itself. To uninstall, delete the <code>.dll</code> and restart.</p>
+              <p><b>Three things that will bite you:</b></p>
               <ul>
-                <li><strong>Everyone needs the same mods.</strong> They are client
-                  AND server side &mdash; if the server has a mod and your game
-                  does not, you cannot join at all. Agree a list first.</li>
-                <li><strong>Most pre-1.0 mods are broken.</strong> 1.0 was a major
-                  release with a Unity upgrade and there is no official mod
-                  support, so check the author shipped a 1.0 build before
-                  blaming the server.</li>
-                <li><strong>A bad mod breaks joining silently.</strong> Server
-                  looks healthy, nobody gets in. Remove the newest
-                  <code>.dll</code>, restart.</li>
+              <li><b>Everyone needs the same mods</b> &mdash; they are client AND
+              server side. If the server has a mod and your game does not, you
+              cannot join at all. Agree a list first.</li>
+              <li><b>Most pre-1.0 mods are broken.</b> 1.0 was a major release
+              with a Unity upgrade and there is no official mod support. Check
+              the author shipped a 1.0 build before blaming the server.</li>
+              <li><b>A bad mod breaks joining silently</b> &mdash; server looks
+              healthy, nobody gets in. Remove the newest <code>.dll</code>,
+              restart.</li>
               </ul>
-          - type: display
-            title: |
-              <h3>Upload a world</h3>
-              Worlds are folders under <code>worlds_local/</code> in the file
-              browser.
-              <br /><br />
-              <strong>Close Valheim on your PC first.</strong> A running game
-              holds the save files open, and then only the map cache copies
-              while the actual world silently does not &mdash; this has already
-              happened here once.
-              <br /><br />
-              Copy the whole folder from
+
+              <h2>Upload a world</h2>
+              <p>Worlds are folders under <code>worlds_local/</code> in the file
+              browser.</p>
+              <p><b>Close Valheim on your PC first.</b> A running game holds the
+              save files open, and then only the map cache copies while the
+              actual world silently does not &mdash; that has already happened
+              here once.</p>
+              <p>Copy the whole folder from
               <code>%USERPROFILE%\AppData\LocalLow\IronGate\Valheim\worlds_local\</code>.
-              A complete world contains, besides the <code>cacheMinimap*</code>
-              files:
-              <ul>
-                <li><code>_main.&lt;n&gt;.db2</code> &mdash; the world itself, the one that matters</li>
-                <li><code>_main.&lt;n&gt;.fwl2</code> &mdash; seed and metadata</li>
-                <li><code>_main.&lt;n&gt;.chunks</code>, <code>_main.&lt;n&gt;.ok</code> and one or more <code>*.chunk</code></li>
-              </ul>
-              If all you see after uploading are four <code>cacheMinimap*</code>
+              Besides the <code>cacheMinimap*</code> files a complete world has
+              <code>_main.&lt;n&gt;.db2</code> (the world itself, the one that
+              matters), <code>_main.&lt;n&gt;.fwl2</code> (seed and metadata),
+              <code>_main.&lt;n&gt;.chunks</code>, <code>_main.&lt;n&gt;.ok</code>
+              and one or more <code>*.chunk</code>.</p>
+              <p>If all you see after uploading are four <code>cacheMinimap*</code>
               files, the world did not come with it. Names are also truncated to
-              20 characters, so check the folder name survived.
-          - type: display
-            title: |
-              <h3>Switching which world runs</h3>
-              Not self-service, and not a permissions problem: a Valheim
-              dedicated server hosts exactly <strong>one</strong> world, picked
-              when it starts. There is no in-game world chooser, and the setting
-              lives in the deployment config, not in any file here.
-              <br /><br />
-              Ask Lukas &mdash; it is a one-line change. Two worlds playable at
-              once means a second server, also possible. Switching deletes
-              nothing; old worlds stay on disk.
-          - type: display
-            title: |
-              <h3>Backups, and what not to do</h3>
-              <strong>Backup now</strong> before anything risky.
-              <strong>List snapshots</strong> shows what can be restored.
-              <strong>Restore snapshot</strong> stops the server and
-              <strong>rolls the world back for everyone</strong> &mdash; check
-              <em>Server status</em> and warn people first.
-              <br /><br />
-              The server also snapshots itself every 6 hours, and a nightly job
-              ships everything off-site, so there are two layers before anything
-              is really lost.
-              <br /><br />
-              <strong>Please do not:</strong> delete or rename anything in
+              20 characters, so check the folder name survived.</p>
+
+              <h2>Switching which world runs</h2>
+              <p>Not self-service, and not a permissions problem: a Valheim
+              dedicated server hosts exactly <b>one</b> world, picked when it
+              starts. There is no in-game world chooser, and the setting lives
+              in the deployment config, not in any file here. Ask Lukas &mdash;
+              it is a one-line change. Two worlds playable at once means a
+              second server, also possible. Switching deletes nothing.</p>
+
+              <h2>Backups</h2>
+              <p><b>Backup now</b> before anything risky. <b>List snapshots</b>
+              shows what can be restored. <b>Restore snapshot</b> stops the
+              server and <b>rolls the world back for everyone</b> &mdash; check
+              <i>Server status</i> and warn people first. The server also
+              snapshots itself every 6 hours and a nightly job ships everything
+              off-site, so there are two layers before anything is really lost.</p>
+              <p><b>Please do not:</b> delete or rename anything in
               <code>worlds_local/</code> except a world you uploaded yourself
               (the <code>*_backup_auto-*</code> folders are the safety net);
-              restore while people play; install a server mod without telling
-              the others.
-          - type: display
-            title: |
-              <h3>When something is wrong</h3>
-              <table>
-                <tr><td><strong>Not in the server browser</strong></td>
-                    <td>Press <em>Check Steam listing</em>. Steam drops healthy servers sometimes.</td></tr>
-                <tr><td><strong>You cannot join, others can</strong></td>
-                    <td>Your mods differ from the server's.</td></tr>
-                <tr><td><strong>Nobody can join, server looks up</strong></td>
-                    <td>Newest mod. Remove the <code>.dll</code>, restart.</td></tr>
-                <tr><td><strong>World looks older than it should</strong></td>
-                    <td>Someone restored a snapshot. <em>List snapshots</em> shows when.</td></tr>
-                <tr><td><strong>Uploaded world does not appear</strong></td>
-                    <td>It is not selected yet (see above), and check the <code>_main.*.db2</code> really uploaded.</td></tr>
-              </table>
-              Anything else: note the time it happened and ask Lukas. The server
-              keeps logs, and an exact time makes it findable.
+              restore while people are playing; install a server mod without
+              telling the others.</p>
+
+              <h2>When something is wrong</h2>
+              <ul>
+              <li><b>Not in the server browser</b> &mdash; press <i>Check Steam
+              listing</i>. Steam drops healthy servers sometimes.</li>
+              <li><b>You cannot join, others can</b> &mdash; your mods differ
+              from the server's.</li>
+              <li><b>Nobody can join, server looks up</b> &mdash; newest mod.
+              Remove the <code>.dll</code>, restart.</li>
+              <li><b>World looks older than it should</b> &mdash; someone
+              restored a snapshot; <i>List snapshots</i> shows when.</li>
+              <li><b>Uploaded world does not appear</b> &mdash; it is not
+              selected yet (see above), and check the
+              <code>_main.*.db2</code> really uploaded.</li>
+              </ul>
+              <p>Anything else: note the time it happened and ask Lukas. The
+              server keeps logs, and an exact time makes it findable.</p>
+              </div>
 ---
 apiVersion: apps/v1
 kind: Deployment
