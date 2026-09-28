@@ -5,6 +5,7 @@ resources:
   - bootstrap-config.yaml
   - bootstrap-cronjob.yaml
   - pv-memes.yaml
+  - share-endpoint-check.yaml
   - pvc-memes.yaml
   - postgres.yaml
   - redis.yaml

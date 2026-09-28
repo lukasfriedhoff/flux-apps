@@ -1,0 +1,115 @@
+# Why this exists (2026-09-28): meme.h4xx.io was down and immich-photos was
+# one restart away from joining it, because both static NFS PVs pointed at a
+# share-manager ClusterIP that had changed 17 days earlier.
+#
+# longhorn-rwx-1r serves RWX volumes through a share-manager pod whose
+# Service gets a NEW ClusterIP whenever it is recreated. The PVs must carry
+# an IP (kubelet mounts NFS in the host netns, where *.svc.cluster.local does
+# not resolve), so every share-manager restart re-arms this trap. And the
+# failure is invisible: an NFS mount to a dead IP HANGS with no kubelet event,
+# while already-running pods keep working off their existing mount until they
+# restart.
+#
+# This check makes the drift loud instead: compare every static-NFS PV that
+# points into longhorn-system against the live shareEndpoint of the Longhorn
+# volume it references, and FAIL if they differ. The failing Job pages via the
+# existing KubeJobFailed alert. The fix it prints is a one-variable change in
+# flux-cluster (photos_shared_nfs_server / memes_shared_nfs_server) plus PV
+# recreation, exactly as done on 2026-09-28.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: immich-share-endpoint-check
+  namespace: immich
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  # Cluster-scoped: PVs are cluster resources, and the Longhorn volumes live
+  # in longhorn-system.
+  name: immich-share-endpoint-check
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list"]
+  - apiGroups: ["longhorn.io"]
+    resources: ["volumes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: immich-share-endpoint-check
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: immich-share-endpoint-check
+subjects:
+  - kind: ServiceAccount
+    name: immich-share-endpoint-check
+    namespace: immich
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: immich-share-endpoint-check
+  namespace: immich
+spec:
+  # Hourly, off the :00 crowd. A share-manager restart mid-day is caught the
+  # same hour instead of at the next immich restart weeks later.
+  schedule: "35 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: immich-share-endpoint-check
+          containers:
+            - name: check
+              image: docker.io/alpine/k8s:1.34.1
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  kubectl get pv -o json > /tmp/pvs.json
+                  kubectl -n longhorn-system get volumes.longhorn.io -o json > /tmp/vols.json
+
+                  # Bare $vars only - flux envsubst rewrites braced ones.
+                  DRIFT=$(jq -r -n --slurpfile pvs /tmp/pvs.json --slurpfile vols /tmp/vols.json '
+                    ($vols[0].items
+                      | map({key: .metadata.name,
+                             value: (.status.shareEndpoint // "")})
+                      | from_entries) as $ep
+                    | $pvs[0].items[]
+                    | select(.spec.nfs != null)
+                    | (.spec.nfs.path | ltrimstr("/")) as $vol
+                    | select($ep[$vol] != null and $ep[$vol] != "")
+                    | ($ep[$vol] | sub("^nfs://"; "") | sub("/.*$"; "")) as $live
+                    | select(.spec.nfs.server != $live)
+                    | "\(.metadata.name): PV says \(.spec.nfs.server), share-manager is at \($live)"')
+
+                  if [ -n "$DRIFT" ]; then
+                    echo "SHARE-ENDPOINT DRIFT - these PVs point at a dead NFS server:" >&2
+                    echo "$DRIFT" >&2
+                    echo "" >&2
+                    echo "Fix: update photos_shared_nfs_server / memes_shared_nfs_server" >&2
+                    echo "in flux-cluster overlays to the address above, then delete the" >&2
+                    echo "PVC and PV so flux recreates them (reclaim is Retain; the data" >&2
+                    echo "lives in the Longhorn volume and is not touched). Mounts to the" >&2
+                    echo "dead address HANG silently - do this before restarting immich." >&2
+                    exit 1
+                  fi
+                  echo "OK: all static NFS PVs match their live share-manager endpoints"
