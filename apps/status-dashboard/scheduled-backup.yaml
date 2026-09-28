@@ -1,0 +1,12 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: status-dashboard-postgres
+  namespace: ${status_dashboard_namespace}
+spec:
+  # 03:30 - after the 02:00/03:00 waves of the bigger clusters.
+  schedule: "${status_dashboard_postgres_backup_cron:=0 30 3 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: status-dashboard-postgres

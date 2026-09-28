@@ -29,6 +29,28 @@ spec:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9187"
       prometheus.io/path: "/metrics"
+  # Backup to the shared storage01 MinIO, mirroring every sibling cluster.
+  # Until 2026-09-28 this was the ONLY CNPG cluster in the fleet with no
+  # backup section at all - firstRecoverabilityPoint: none, unrestorable.
+  # Uptime history is not precious, but "the one unbackable database" is
+  # exactly the kind of exception that bites during a restore drill.
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${status_dashboard_postgres_backup_bucket:=status-dashboard-postgres-backup}/${cluster_environment}/${status_dashboard_postgres_backup_generation:=}status-dashboard-postgres/"
+      endpointURL: "${status_dashboard_postgres_backup_endpoint_url:=}"
+      serverName: ${status_dashboard_postgres_backup_server_name:=status-dashboard-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${status_dashboard_postgres_backup_credential_secret_name:=status-dashboard-postgres-backup-credentials}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${status_dashboard_postgres_backup_credential_secret_name:=status-dashboard-postgres-backup-credentials}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${status_dashboard_postgres_backup_retention:=30d}"
   bootstrap:
     initdb:
       database: gatus
