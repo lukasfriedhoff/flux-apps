@@ -19,6 +19,9 @@ data:
   valheim_query_port: "2457"
   valheim_status_port: "9110"
   valheim_vip: "10.1.20.43"
+  # Address players type, shown on the OliveTin landing page. Must be set per
+  # cluster; empty just leaves the field blank.
+  valheim_public_host: ""
   # Update checks: frequent, but only while the server is empty. An outdated
   # server is invisible in the client's server browser.
   valheim_update_cron: "*/15 * * * *"
