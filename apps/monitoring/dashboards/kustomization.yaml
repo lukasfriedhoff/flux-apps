@@ -17,6 +17,13 @@ configMapGenerator:
     files:
       - gameservers/gameservers.json
 
+  - name: grafana-dashboard-media
+    options:
+      annotations:
+        grafana_folder: Homelab
+    files:
+      - media/media.json
+
   - name: grafana-dashboard-storage01
     options:
       annotations:
