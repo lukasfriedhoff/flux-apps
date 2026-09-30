@@ -182,6 +182,9 @@ spec:
               export HYDRA_JOBSET_CHECK_INTERVAL="${hydra_jobset_check_interval}"
               export HYDRA_JOBSET_KEEP_NR="${hydra_jobset_keep_nr}"
               export HYDRA_MAX_SERVERS="${hydra_max_servers}"
+              export HYDRA_NIX_STORE_GC_TRIGGER_PERCENT="${hydra_nix_store_gc_trigger_percent}"
+              export HYDRA_NIX_STORE_GC_TARGET_PERCENT="${hydra_nix_store_gc_target_percent}"
+              export HYDRA_NIX_STORE_GC_INTERVAL="${hydra_nix_store_gc_interval}"
               export HYDRA_MIN_SPARE_SERVERS="${hydra_min_spare_servers}"
               export HYDRA_MAX_SPARE_SERVERS="${hydra_max_spare_servers}"
               export HYDRA_EVALUATOR_MAX_MEMORY_SIZE="${hydra_evaluator_max_memory_size}"
@@ -427,6 +430,37 @@ spec:
               evaluator_pid="$${!}"
               supervise gc-roots 9900 hydra-update-gc-roots
               gc_pid="$${!}"
+
+              # hydra-update-gc-roots only maintains the roots; nothing ever
+              # collected, so /nix climbed to 91% of a 250Gi volume and
+              # PersistentVolumeClaimAlmostFull fired (2026-09-30). Collect in
+              # the pod rather than from a CronJob: the store is RWO and a
+              # second pod cannot mount it off-node, and here the nix db and
+              # the daemon are the same ones Hydra itself uses.
+              #
+              # Hysteresis on purpose: trigger high, collect down to the
+              # target, so a store hovering at the trigger does not GC every
+              # cycle. Hydra's own gcroots protect everything the configured
+              # number of builds still references, so this only reaps what is
+              # already unreferenced.
+              store_gc() {
+                used="$(df --output=pcent /nix | tr -dc '0-9')"
+                [ -n "$${used}" ] || return 0
+                if [ "$${used}" -lt "$${HYDRA_NIX_STORE_GC_TRIGGER_PERCENT}" ]; then
+                  return 0
+                fi
+                total_kb="$(df --output=size /nix | tr -dc '0-9')"
+                avail_kb="$(df --output=avail /nix | tr -dc '0-9')"
+                # Bytes to free so that usage lands on the target percentage.
+                want_avail_kb="$(( total_kb * (100 - HYDRA_NIX_STORE_GC_TARGET_PERCENT) / 100 ))"
+                free_kb="$(( want_avail_kb - avail_kb ))"
+                [ "$${free_kb}" -gt 0 ] || return 0
+                echo "store-gc: /nix at $${used}%, freeing $${free_kb}KiB to reach $${HYDRA_NIX_STORE_GC_TARGET_PERCENT}%" >&2
+                nix-collect-garbage --max-freed "$$(( free_kb * 1024 ))"
+              }
+
+              supervise store-gc "$${HYDRA_NIX_STORE_GC_INTERVAL}" store_gc
+              store_gc_pid="$${!}"
               hydra-server -f -h "$${HYDRA_LISTEN_HOST}" -p "$${HYDRA_PORT}" \
                 --min_spare_servers "$${HYDRA_MIN_SPARE_SERVERS}" \
                 --max_spare_servers "$${HYDRA_MAX_SPARE_SERVERS}" \

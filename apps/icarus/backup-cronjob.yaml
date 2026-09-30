@@ -13,6 +13,12 @@ spec:
   failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
+      # failedJobsHistoryLimit keeps the last N failures with no time
+      # bound, so a week-old failure kept BackupJobFailed firing long
+      # after later runs succeeded. A TTL expires finished Jobs (failed
+      # included) so the alert clears itself, while leaving a window to
+      # actually read the logs.
+      ttlSecondsAfterFinished: ${backup_job_ttl_seconds:=172800}
       activeDeadlineSeconds: 1800
       template:
         metadata:
