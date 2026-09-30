@@ -921,17 +921,33 @@ groups:
           summary: Backup-related CronJob is suspended.
           description: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is suspended.
           runbook_url: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
-      - alert: BackupCronJobMissedSchedule
+      # Alerts on the OUTCOME (no recent successful run), not on the schedule
+      # clock. The previous expression compared now() against
+      # kube_cronjob_next_schedule_time, which kube-state-metrics computes by
+      # parsing the cron spec in UTC. None of these CronJobs sets
+      # spec.timeZone, so the controller-manager interprets them in the node's
+      # local zone (Europe/Berlin) and runs them two hours earlier than KSM
+      # predicts: "15 3" actually fires at 01:15Z. KSM's prediction was
+      # therefore stale by 02:00Z every single day, so this alert fired daily
+      # for backup-daily, icarus-backup and valheim-backup even when all three
+      # had completed successfully hours earlier (verified 2026-09-30: each
+      # activeAt was exactly its schedule plus two hours).
+      #
+      # 26h gives daily jobs a two-hour grace window. The hourly ones here
+      # (longhorn-backup-freshness, longhorn-backup-target-bootstrap) are far
+      # inside it, so a stuck hourly job takes a day to alert — acceptable,
+      # since each has its own failure alert.
+      - alert: BackupCronJobNoRecentSuccess
         expr: |
           (
-            time() - kube_cronjob_next_schedule_time{job="integrations/kubernetes/kube-state-metrics", cronjob=~".*(backup|snapshot).*"}
-          ) > 2 * 60 * 60
+            time() - kube_cronjob_status_last_successful_time{job="integrations/kubernetes/kube-state-metrics", cronjob=~".*(backup|snapshot).*"}
+          ) > 26 * 60 * 60
         for: 30m
         labels:
           severity: warning
         annotations:
-          summary: Backup-related CronJob missed its next schedule.
-          description: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is more than 2 hours past its next scheduled run.
+          summary: Backup-related CronJob has no recent successful run.
+          description: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} has not completed successfully in over 26 hours.
           runbook_url: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
   # Scrape-target availability. The kubernetes-mixin alerts on pods, but a pod
   # can be Running while the service behind it stops answering, so alert on the
