@@ -86,6 +86,12 @@ spec:
           maxUnavailable: 0
       podSecurityContext:
         fsGroupChangePolicy: OnRootMismatch
+        # The media NFS export holds the music library as 1000:1000 mode 0775
+        # while Nextcloud runs as www-data (33:33). Without this group the
+        # Music mount is readable but never writable, so flipping
+        # nextcloud_external_music_readonly to false would silently fail.
+        supplementalGroups:
+          - ${media_pgid:=1000}
       extraEnv:
         - name: OVERWRITEHOST
           value: nextcloud${public_host_suffix}.${delegating_domain}
@@ -128,6 +134,12 @@ spec:
           value: ${nextcloud_external_memes_url:=}
         - name: NEXTCLOUD_EXTERNAL_MEMES_LABEL
           value: ${nextcloud_external_memes_label:=Memes}
+        - name: NEXTCLOUD_SHARED_MUSIC_ENABLED
+          value: ${nextcloud_shared_music_enabled:=disabled}
+        - name: NEXTCLOUD_SHARED_MUSIC_LABEL
+          value: ${nextcloud_shared_music_label:=Music}
+        - name: NEXTCLOUD_SHARED_MUSIC_READONLY
+          value: ${nextcloud_external_music_readonly:=true}
         - name: OIDC_LOGIN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
@@ -866,6 +878,71 @@ spec:
             rmdir "$lock_dir"
             return "$status"
           }
+          # One folder, same content for every user - no $user placeholder,
+          # unlike Photos/Memes. This is the library Jellyfin serves, so a
+          # track visible here is a track Jellyfin plays.
+          configure_shared_music_storage() {
+            if [ "$${NEXTCLOUD_SHARED_MUSIC_ENABLED}" != "enabled" ]; then
+              return 0
+            fi
+            if ! enable_custom_app_if_present files_external \
+              /var/www/html/apps/files_external/appinfo/info.xml; then
+              return 0
+            fi
+            if [ ! -d /shared-music ]; then
+              echo "Shared Music mount /shared-music is not present; skipping."
+              return 0
+            fi
+            # Exported, not a prefix assignment on the call: the php lookups
+            # below read it with getenv() in a child process.
+            export WANT_MOUNT_POINT="/$${NEXTCLOUD_SHARED_MUSIC_LABEL}"
+            existing_mount="$(timeout 30 php /var/www/html/occ files_external:list \
+              --output=json 2>/dev/null \
+              | php -r '
+                $mounts = json_decode(file_get_contents("php://stdin"), true);
+                if (!is_array($mounts)) {
+                  exit;
+                }
+                $want = getenv("WANT_MOUNT_POINT");
+                foreach ($mounts as $m) {
+                  if (($m["mount_point"] ?? "") === $want) {
+                    echo ($m["mount_id"] ?? "");
+                    break;
+                  }
+                }
+              ')"
+            if [ -z "$${existing_mount}" ]; then
+              echo "Creating Shared Music external storage at /shared-music..."
+              occ_safe files_external:create \
+                "$${NEXTCLOUD_SHARED_MUSIC_LABEL}" local null::null \
+                -c datadir=/shared-music || return 0
+              existing_mount="$(timeout 30 php /var/www/html/occ files_external:list \
+                --output=json 2>/dev/null \
+                | php -r '
+                  $mounts = json_decode(file_get_contents("php://stdin"), true);
+                  if (!is_array($mounts)) {
+                    exit;
+                  }
+                  $want = getenv("WANT_MOUNT_POINT");
+                  foreach ($mounts as $m) {
+                    if (($m["mount_point"] ?? "") === $want) {
+                      echo ($m["mount_id"] ?? "");
+                      break;
+                    }
+                  }
+                ')"
+            else
+              echo "Shared Music external storage already configured."
+            fi
+            # Read-only by default: every user shares this one folder, so a
+            # writable mount lets any single account delete the whole library.
+            if [ -n "$${existing_mount}" ]; then
+              occ_safe files_external:option "$${existing_mount}" \
+                readonly "$${NEXTCLOUD_SHARED_MUSIC_READONLY}" || true
+              occ_safe files_external:option "$${existing_mount}" \
+                enable_sharing true || true
+            fi
+          }
           configure_shared_memes_storage() {
             if ! enable_custom_app_if_present files_external \
               /var/www/html/apps/files_external/appinfo/info.xml; then
@@ -997,6 +1074,7 @@ spec:
           configure_oidc_login
           configure_shared_photos_storage
           configure_shared_memes_storage
+          configure_shared_music_storage
           configure_external_photos_link
           configure_external_memes_link
           enable_custom_app_if_present mail /var/www/html/custom_apps/mail/vendor/autoload.php || true
@@ -1343,6 +1421,8 @@ spec:
         - name: memes-shared
           mountPath: /shared-memes
           subPath: memes
+        - name: music-shared
+          mountPath: /shared-music
       extraVolumes:
         - name: photos-shared
           persistentVolumeClaim:
@@ -1350,6 +1430,9 @@ spec:
         - name: memes-shared
           persistentVolumeClaim:
             claimName: ${nextcloud_memes_claim_name:=nextcloud-photos-shared}
+        - name: music-shared
+          persistentVolumeClaim:
+            claimName: ${nextcloud_music_claim_name:=nextcloud-music-nfs}
     internalDatabase:
       enabled: false
     externalDatabase:

@@ -1,0 +1,50 @@
+# The music library Jellyfin serves, mounted into Nextcloud so every user has
+# a Music folder at their root.
+#
+# Deliberately the SAME NFS export the media stack uses (10.1.120.10:/data/cmc/pub,
+# subPath h4xx/music) rather than a copy on Longhorn: one filesystem means a
+# track added here is served by Jellyfin without any sync step, and there is no
+# second copy to drift or to back up. That is the opposite choice from
+# /shared-photos, which originates in Nextcloud and is re-exported to Immich.
+#
+# On the export the directory is 1000:1000 mode 0775, and Nextcloud runs as
+# www-data (33:33) - hence the supplemental group on the pod. The external
+# storage is still created read-only by default (nextcloud_external_music_readonly):
+# every user sees the same folder, so write access means any one of them can
+# delete the whole library.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ${nextcloud_music_claim_name:=nextcloud-music-nfs}
+  labels:
+    app.kubernetes.io/name: nextcloud-music-nfs
+spec:
+  capacity:
+    storage: 8Ti # NFS ignores capacity; must be >= the PVC request to bind
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain # never let k8s delete NAS data
+  storageClassName: "" # static binding, no provisioner
+  mountOptions:
+    - nfsvers=4.1
+    - noatime
+  nfs:
+    server: ${media_nfs_server:=10.1.120.10}
+    path: ${media_nfs_music_path:=/data/cmc/pub/h4xx/music}
+  claimRef:
+    namespace: ${nextcloud_namespace:=nextcloud}
+    name: ${nextcloud_music_claim_name:=nextcloud-music-nfs}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${nextcloud_music_claim_name:=nextcloud-music-nfs}
+  namespace: ${nextcloud_namespace:=nextcloud}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "" # static binding, no provisioner
+  volumeName: ${nextcloud_music_claim_name:=nextcloud-music-nfs}
+  resources:
+    requests:
+      storage: 8Ti
