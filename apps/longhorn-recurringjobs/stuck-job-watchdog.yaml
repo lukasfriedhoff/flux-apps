@@ -1,0 +1,115 @@
+# Why this exists (2026-10-01):
+#
+# backup-daily hung for 15 hours. The backup itself had FINISHED - the Backup
+# resource read state=Completed progress=100 - but the recurring-job pod kept
+# logging "current progress 26" every five seconds, polling a watch that had
+# died (the same window logs "Error reading from wire"). Because the
+# RecurringJob CronJob is concurrencyPolicy: Forbid, that one hung pod blocked
+# every subsequent backup: nothing had completed successfully in 34 hours and
+# the freshness check failed three hours running.
+#
+# Longhorn generates these CronJobs from the RecurringJob CR and the CRD
+# exposes no activeDeadlineSeconds, so the deadline cannot be declared where it
+# belongs. This watchdog supplies it from outside: any recurring-job Job still
+# running past the limit is deleted, which frees the Forbid lock so the next
+# scheduled run proceeds. A backup that genuinely needs longer than the limit
+# is the signal to raise it, not to remove this.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: longhorn-stuck-job-watchdog
+  namespace: ${longhorn_namespace}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: longhorn-stuck-job-watchdog
+  namespace: ${longhorn_namespace}
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: longhorn-stuck-job-watchdog
+  namespace: ${longhorn_namespace}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: longhorn-stuck-job-watchdog
+subjects:
+  - kind: ServiceAccount
+    name: longhorn-stuck-job-watchdog
+    namespace: ${longhorn_namespace}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: longhorn-stuck-job-watchdog
+  namespace: ${longhorn_namespace}
+spec:
+  schedule: "${longhorn_watchdog_cron:=25 * * * *}"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      ttlSecondsAfterFinished: 172800
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: longhorn-stuck-job-watchdog
+          containers:
+            - name: watchdog
+              image: docker.io/alpine/k8s:1.34.1
+              env:
+                - name: MAX_AGE_HOURS
+                  value: "${longhorn_watchdog_max_age_hours:=6}"
+                - name: NS
+                  value: ${longhorn_namespace}
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -uo pipefail
+                  # Shell vars unbraced: flux substitutes braced ones and an
+                  # undefined one silently becomes empty.
+                  now=$(date -u +%s)
+                  limit=$((MAX_AGE_HOURS * 3600))
+
+                  # Select on ownerReferences, NOT on the recurring-job label:
+                  # Longhorn puts that label on the CronJob and Kubernetes does
+                  # not copy CronJob labels onto the Jobs it creates, so a
+                  # label filter here silently matches nothing.
+                  kubectl get jobs -n "$NS" -o json \
+                    | jq -r '.items[]
+                        | select(.status.active == 1)
+                        | select(any(.metadata.ownerReferences[]?; .kind == "CronJob"))
+                        | [ .metadata.name,
+                            (.metadata.ownerReferences[] | select(.kind == "CronJob") | .name),
+                            .status.startTime ] | @tsv' \
+                    | while IFS=$'\t' read -r name owner start; do
+                        [ -n "$name" ] && [ -n "$start" ] || continue
+                        began=$(date -u -d "$start" +%s 2>/dev/null) || continue
+                        age=$((now - began))
+                        if [ "$age" -gt "$limit" ]; then
+                          echo "deleting $name (cronjob=$owner): stuck $age s, limit $limit s"
+                          kubectl delete job -n "$NS" "$name" --wait=false
+                        else
+                          echo "ok $name (cronjob=$owner) running $((age / 60))m"
+                        fi
+                      done
+
+                  echo "watchdog done"
