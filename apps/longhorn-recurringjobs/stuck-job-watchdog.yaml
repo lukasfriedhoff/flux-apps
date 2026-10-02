@@ -69,7 +69,11 @@ spec:
               image: docker.io/alpine/k8s:1.34.1
               env:
                 - name: MAX_AGE_HOURS
-                  value: "${longhorn_watchdog_max_age_hours:=6}"
+                  # ${quote} sentinel, not plain quotes: kustomize strips the
+                  # quoting around a lone substitution, envsubst then emits a
+                  # bare 6, and the API server rejects the integer env value.
+                  # Broke this exact CronJob's first deploy on 2026-10-02.
+                  value: ${quote}${longhorn_watchdog_max_age_hours:=6}${quote}
                 - name: NS
                   value: ${longhorn_namespace}
               resources:

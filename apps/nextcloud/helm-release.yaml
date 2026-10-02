@@ -135,11 +135,11 @@ spec:
         - name: NEXTCLOUD_EXTERNAL_MEMES_LABEL
           value: ${nextcloud_external_memes_label:=Memes}
         - name: NEXTCLOUD_SHARED_MUSIC_ENABLED
-          value: ${nextcloud_shared_music_enabled:=disabled}
+          value: ${quote}${nextcloud_shared_music_enabled:=disabled}${quote}
         - name: NEXTCLOUD_SHARED_MUSIC_LABEL
-          value: ${nextcloud_shared_music_label:=Music}
+          value: ${quote}${nextcloud_shared_music_label:=Music}${quote}
         - name: NEXTCLOUD_SHARED_MUSIC_READONLY
-          value: ${nextcloud_external_music_readonly:=true}
+          value: ${quote}${nextcloud_external_music_readonly:=true}${quote}
         - name: OIDC_LOGIN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
