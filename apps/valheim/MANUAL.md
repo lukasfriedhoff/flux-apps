@@ -7,7 +7,7 @@ or a Kubernetes login — two web pages cover all of it.
 |---|---|
 | **Controls** | <https://valheim.h4xx.io> — status, backups, restart |
 | **Files** | <https://valheim-files.h4xx.io> — worlds, mods, admin list |
-| **Connect** | `redacted.invalid:2456` (on the LAN: `10.1.20.43:2456`) |
+| **Connect** | On the LAN: `10.1.20.43:2456`. The public address is **not written here on purpose** (same as the password) — ask the admin. |
 
 Both pages sit behind the usual single sign-on, so if you can open one you can
 open the other.

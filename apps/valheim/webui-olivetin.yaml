@@ -74,7 +74,7 @@ data:
             title: |
               <strong>Server:</strong> ${valheim_server_name} &nbsp;|&nbsp;
               <strong>World:</strong> ${valheim_world_name} &nbsp;|&nbsp;
-              <strong>Connect:</strong> <code>${valheim_public_host}:${valheim_game_port:=2456}</code>
+              <strong>Connect (LAN):</strong> <code>${valheim_vip:=10.1.20.43}:${valheim_game_port:=2456}</code> &mdash; public address: ask the admin
               <br />
               <a href="https://valheim-files${public_host_suffix}.${delegating_domain}" target="_blank">
               Open the file browser</a> &mdash; worlds, mods, admin list, in-container backups
