@@ -137,6 +137,19 @@ data:
               restart.</li>
               </ul>
 
+              <h2>Update a mod</h2>
+              <p><b>Delete the old <code>.dll</code> first</b>, then upload the
+              new one &mdash; two versions in the folder makes BepInEx load both
+              and the server misbehaves or will not start. Then
+              <b>Restart server</b>.</p>
+              <p><b>Everyone updates too:</b> a player on the old version is
+              rejected exactly like someone missing the mod. The mod's
+              <code>.cfg</code> keeps your settings across an update; delete it
+              only if you want the defaults back.</p>
+              <p>The server updates itself every 15 min while empty, so a
+              Valheim patch can outdate a mod overnight &mdash; same silent
+              symptom as above.</p>
+
               <h2>Upload a world</h2>
               <p>Worlds are folders under <code>worlds_local/</code> in the file
               browser.</p>
@@ -170,6 +183,11 @@ data:
               <i>Server status</i> and warn people first. The server also
               snapshots itself every 6 hours and a nightly job ships everything
               off-site, so there are two layers before anything is really lost.</p>
+              <p>🙂 <b>Smiley: please do not use up all the leather.</b>
+              Leather scraps gate half the workbench upgrades, and "I only
+              needed a few" has a way of ending as an empty chest. Take what
+              the build actually needs and leave the rest &mdash; and if you
+              take the last of anything from a shared chest, say so in chat.</p>
               <p><b>Please do not:</b> delete or rename anything in
               <code>worlds_local/</code> except a world you uploaded yourself
               (the <code>*_backup_auto-*</code> folders are the safety net);

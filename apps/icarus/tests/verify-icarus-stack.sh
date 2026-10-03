@@ -41,7 +41,7 @@ grep -q 'readOnly: true' "${app}/backup-cronjob.yaml" || fail "backup must mount
 grep -q 'scale deployment/icarus --replicas=0' "${app}/webui-olivetin.yaml" || fail "restore must stop the server first"
 
 # Both UI hosts sit behind authelia; filebrowser is unauthenticated by itself.
-count="$(grep -c 'traefik-authelia-forwardauth@kubernetescrd' "${app}/ingress.yaml" || true)"
+count="$(grep -cE 'traefik-authelia-forwardauth[a-z-]*@kubernetescrd' "${app}/ingress.yaml" || true)"
 [ "${count}" -ge 1 ] || fail "webui ingress must use the authelia forwardauth middleware"
 grep -q -- '--noauth' "${app}/webui-filebrowser.yaml" && grep -q 'authelia' "${app}/ingress.yaml" || fail "filebrowser --noauth requires the authelia middleware on its ingress"
 

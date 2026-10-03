@@ -47,6 +47,23 @@ Three things that will bite you, in the order they usually do:
 
 To uninstall, delete the `.dll` and restart. There is no other state to clean.
 
+### Updating a mod
+
+1. **Delete the old `.dll` first**, then upload the new one. Leaving both in
+   `bepinex/plugins/` makes BepInEx load two versions of the same mod, and the
+   server then misbehaves or refuses to start.
+2. Press **Restart server**.
+3. **Everyone updates too.** A player still on the old version is rejected the
+   same way as someone missing the mod entirely.
+
+The mod's `.cfg` file next to the plugins folder keeps your settings across an
+update — leave it alone unless you want to change them. Deleting it brings the
+defaults back on the next start.
+
+One thing to watch: the server updates itself every 15 minutes while empty, so
+a Valheim patch can outdate a mod overnight without anyone touching anything.
+The symptom is the confusing one above — server healthy, nobody gets in.
+
 ## Uploading a world
 
 Worlds live in `worlds_local/` in the file browser, one folder per world.
@@ -104,6 +121,10 @@ first, and tell people.
 
 ## Please do not
 
+- 🙂 **Smiley: use up all the leather.** Leather scraps gate half the workbench
+  upgrades, and "I only needed a few" has a way of ending as an empty chest.
+  Take what the current build actually needs and leave the rest. Same goes for
+  any shared chest: if you take the last of something, say so in chat.
 - Delete or rename anything inside `worlds_local/` other than a world folder
   you uploaded yourself. The auto-backup folders are the server's safety net.
 - Restore a snapshot while people are playing.
