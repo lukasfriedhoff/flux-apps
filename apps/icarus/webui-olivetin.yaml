@@ -24,6 +24,25 @@ data:
         shell: |
           kubectl -n ${icarus_namespace} rollout restart deployment/icarus
         timeout: 30
+      - title: Update game (Steam) and restart
+        icon: restart
+        # Icarus keeps Steam OFF the normal boot path by design (a failed boot
+        # update once took the old stack down), so updating is a deliberate
+        # button, not automatic. This flips the one-shot update env on, lets the
+        # init container run steamcmd, then restores the default - ending at the
+        # git state (false), so flux sees no drift. 0 players: safe any time.
+        shell: |
+          set -e
+          echo "Enabling one-shot Steam update + restarting..."
+          kubectl -n ${icarus_namespace} patch deployment/icarus --type strategic \
+            -p '{"spec":{"template":{"spec":{"initContainers":[{"name":"update","env":[{"name":"ICARUS_UPDATE_ON_START","value":"true"}]}]}}}}'
+          kubectl -n ${icarus_namespace} rollout status deployment/icarus --timeout=18m
+          echo "Update finished; restoring Steam-off-boot default..."
+          kubectl -n ${icarus_namespace} patch deployment/icarus --type strategic \
+            -p '{"spec":{"template":{"spec":{"initContainers":[{"name":"update","env":[{"name":"ICARUS_UPDATE_ON_START","value":"false"}]}]}}}}'
+          kubectl -n ${icarus_namespace} rollout status deployment/icarus --timeout=10m
+          echo "Server updated and back online."
+        timeout: 1800
       - title: Check Steam listing
         icon: ping
         # Runs in the OliveTin container itself (it ships curl + jq): the
@@ -68,6 +87,7 @@ data:
           - title: Backup now
           - title: List snapshots
           - title: Restart server
+          - title: Update game (Steam) and restart
           - title: Restore snapshot (STOPS the server)
 ---
 apiVersion: apps/v1
