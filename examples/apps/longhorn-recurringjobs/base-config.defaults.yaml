@@ -10,3 +10,5 @@ data:
   longhorn_recurring_backup_cron: "15 3 * * *"
   longhorn_recurring_backup_retain: "14"
   longhorn_recurring_full_backup_interval: "7"
+  # Serial (1) lets one lock-blocked volume starve the whole nightly queue.
+  longhorn_recurring_backup_concurrency: "2"
