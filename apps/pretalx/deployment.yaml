@@ -72,6 +72,14 @@ spec:
               value: redis://pretalx-valkey:6379/2
             - name: PRETALX_MAIL_FROM
               value: ${pretalx_mail_from:=cfp@h4xx.io}
+            # The image defaults gunicorn to 2*nproc workers - 128 on a
+            # 64-core node - which OOM-kills the container. Pin it small.
+            - name: GUNICORN_WORKERS
+              value: ${quote}${pretalx_web_workers:=3}${quote}
+            # gunicorn serves :80 directly (no nginx in this image); trust
+            # X-Forwarded-* from the pod network (traefik), not only lo.
+            - name: GUNICORN_FORWARDED_ALLOW_IPS
+              value: '*'
             - name: PRETALX_MAIL_HOST
               value: mailpit.mailpit.svc.cluster.local
             - name: PRETALX_MAIL_PORT
@@ -87,17 +95,26 @@ spec:
               cpu: ${pretalx_requests_cpu:=100m}
               memory: ${pretalx_requests_memory:=512Mi}
             limits:
-              memory: ${pretalx_limits_memory:=1536Mi}
+              memory: ${pretalx_limits_memory:=3Gi}
+          # First boot runs database migrations before gunicorn binds :80, so
+          # the startup probe allows 10 minutes. The Host header matches the
+          # configured URL so Django host validation never fails the probe.
           startupProbe:
             httpGet:
               path: /
               port: http
-            periodSeconds: 5
+              httpHeaders:
+                - name: Host
+                  value: ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+            periodSeconds: 10
             failureThreshold: 60
           readinessProbe:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
             periodSeconds: 15
           livenessProbe:
             tcpSocket:

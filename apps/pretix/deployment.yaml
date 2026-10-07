@@ -84,6 +84,10 @@ spec:
               value: redis://pretix-valkey:6379/2
             - name: PRETIX_MAIL_FROM
               value: ${pretix_mail_from:=tickets@h4xx.io}
+            # The image defaults gunicorn to 2*nproc workers - 128 on a
+            # 64-core node - which OOM-kills the container. Pin it small.
+            - name: NUM_WORKERS
+              value: ${quote}${pretix_web_workers:=3}${quote}
             - name: PRETIX_MAIL_HOST
               value: mailpit.mailpit.svc.cluster.local
             - name: PRETIX_MAIL_PORT
@@ -99,20 +103,26 @@ spec:
               cpu: ${pretix_requests_cpu:=100m}
               memory: ${pretix_requests_memory:=512Mi}
             limits:
-              memory: ${pretix_limits_memory:=1536Mi}
-          # First boot runs database migrations before gunicorn binds :80, so
-          # the startup probe gives it up to 5 minutes; readiness/liveness are
-          # plain TCP once it is up (no dependency on a specific health URL).
+              memory: ${pretix_limits_memory:=3Gi}
+          # First boot runs database migrations before anything binds :80, so
+          # the startup probe allows 10 minutes. The Host header matches the
+          # configured URL so Django host validation never fails the probe.
           startupProbe:
             httpGet:
-              path: /
+              path: /healthcheck/
               port: http
-            periodSeconds: 5
+              httpHeaders:
+                - name: Host
+                  value: ${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}
+            periodSeconds: 10
             failureThreshold: 60
           readinessProbe:
             httpGet:
-              path: /
+              path: /healthcheck/
               port: http
+              httpHeaders:
+                - name: Host
+                  value: ${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}
             periodSeconds: 15
           livenessProbe:
             tcpSocket:
