@@ -38,38 +38,38 @@ spec:
           image: docker.io/pretalx/standalone:${pretalx_image_tag:=v2026.2.1}
           args: ["webworker"]
           env:
-            - name: PRETALX_DATABASE_BACKEND
+            - name: PRETALX_DB_TYPE
               value: postgresql
-            - name: PRETALX_DATABASE_NAME
+            - name: PRETALX_DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: dbname
-            - name: PRETALX_DATABASE_USER
+            - name: PRETALX_DB_USER
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: username
-            - name: PRETALX_DATABASE_PASSWORD
+            - name: PRETALX_DB_PASS
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: password
-            - name: PRETALX_DATABASE_HOST
+            - name: PRETALX_DB_HOST
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: host
-            - name: PRETALX_DATABASE_PORT
+            - name: PRETALX_DB_PORT
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: port
             - name: PRETALX_SITE_URL
               value: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
-            - name: PRETALX_FILESYSTEM_DATA
+            - name: PRETALX_DATA_DIR
               value: /data
-            - name: PRETALX_REDIS_LOCATION
+            - name: PRETALX_REDIS
               value: redis://pretalx-valkey:6379/0
             - name: PRETALX_CELERY_BACKEND
               value: redis://pretalx-valkey:6379/1
@@ -144,38 +144,36 @@ spec:
               value: /pretalx
             - name: PRETALX_DATA_DIR
               value: /data
-            - name: PRETALX_DATABASE_BACKEND
+            - name: PRETALX_DB_TYPE
               value: postgresql
-            - name: PRETALX_DATABASE_NAME
+            - name: PRETALX_DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: dbname
-            - name: PRETALX_DATABASE_USER
+            - name: PRETALX_DB_USER
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: username
-            - name: PRETALX_DATABASE_PASSWORD
+            - name: PRETALX_DB_PASS
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: password
-            - name: PRETALX_DATABASE_HOST
+            - name: PRETALX_DB_HOST
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: host
-            - name: PRETALX_DATABASE_PORT
+            - name: PRETALX_DB_PORT
               valueFrom:
                 secretKeyRef:
                   name: pretalx-postgres-app
                   key: port
             - name: PRETALX_SITE_URL
               value: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
-            - name: PRETALX_FILESYSTEM_DATA
-              value: /data
-            - name: PRETALX_REDIS_LOCATION
+            - name: PRETALX_REDIS
               value: redis://pretalx-valkey:6379/0
             - name: PRETALX_CELERY_BACKEND
               value: redis://pretalx-valkey:6379/1
