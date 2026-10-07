@@ -24,6 +24,10 @@ spec:
       labels:
         app.kubernetes.io/name: pretalx
     spec:
+      # pretix/pretalx run as a non-root user but the Longhorn PVC mounts
+      # root-owned; fsGroup lets the app write /data (logs, media, uploads).
+      securityContext:
+        fsGroup: 999
       containers:
         - name: pretalx
           image: docker.io/pretalx/standalone:${pretalx_image_tag:=v2026.2.1}
@@ -85,12 +89,14 @@ spec:
             limits:
               memory: ${pretalx_limits_memory:=1536Mi}
           startupProbe:
-            tcpSocket:
+            httpGet:
+              path: /
               port: http
             periodSeconds: 5
             failureThreshold: 60
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /
               port: http
             periodSeconds: 15
           livenessProbe:

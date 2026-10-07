@@ -28,6 +28,10 @@ spec:
       labels:
         app.kubernetes.io/name: pretix
     spec:
+      # pretix/pretalx run as a non-root user but the Longhorn PVC mounts
+      # root-owned; fsGroup lets the app write /data (logs, media, uploads).
+      securityContext:
+        fsGroup: 15371
       containers:
         - name: pretix
           image: docker.io/pretix/standalone:${pretix_image_tag:=2026.8.0}
@@ -100,12 +104,14 @@ spec:
           # the startup probe gives it up to 5 minutes; readiness/liveness are
           # plain TCP once it is up (no dependency on a specific health URL).
           startupProbe:
-            tcpSocket:
+            httpGet:
+              path: /
               port: http
             periodSeconds: 5
             failureThreshold: 60
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /
               port: http
             periodSeconds: 15
           livenessProbe:
