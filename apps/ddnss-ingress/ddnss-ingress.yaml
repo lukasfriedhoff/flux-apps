@@ -92,3 +92,27 @@ data:
       server traefik traefik.traefik.svc.cluster.local:80
     backend traefik_https
       server traefik traefik.traefik.svc.cluster.local:443
+    # Outbound mail: mailpit submits here; this rides the wg tunnel to the
+    # maddy relay on ionos1, so no public submission port has to exist
+    # (the IONOS provider firewall keeps 587 closed to the internet).
+    frontend smtp_submission
+      bind :587
+      default_backend maddy_submission
+    backend maddy_submission
+      server maddy 10.172.0.1:587
+---
+# In-cluster entry point for the outbound mail relay path above.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ddnss-ingress-smtp
+  namespace: ${ddnss_ingress_namespace:=ddnss-ingress}
+  labels:
+    app.kubernetes.io/name: ddnss-ingress
+spec:
+  selector:
+    app: ddnss-ingress
+  ports:
+    - name: submission
+      port: 587
+      targetPort: 587

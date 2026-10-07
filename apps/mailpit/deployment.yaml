@@ -34,6 +34,33 @@ spec:
             # and the UI sits behind Authelia at the ingress.
             - name: MP_SMTP_AUTH_ALLOW_INSECURE
               value: "true"
+            # Relay EVERYTHING that arrives here onward through the maddy
+            # relay on ionos1 (via the ddnss-ingress wg tunnel) - mailpit is
+            # the visible outbox archive, maddy does DKIM + delivery. NOTE:
+            # every mail reaching :1025 goes OUT to its real recipients.
+            - name: MP_SMTP_RELAY_ALL
+              value: ${quote}${mailpit_relay_all:=true}${quote}
+            - name: MP_SMTP_RELAY_HOST
+              value: ddnss-ingress-smtp.${ddnss_ingress_namespace:=ddnss-ingress}.svc.cluster.local
+            - name: MP_SMTP_RELAY_PORT
+              value: ${quote}587${quote}
+            - name: MP_SMTP_RELAY_STARTTLS
+              value: ${quote}true${quote}
+            # maddy presents a self-signed cert (CN mail.hackimpott.de).
+            - name: MP_SMTP_RELAY_ALLOW_INSECURE
+              value: ${quote}true${quote}
+            - name: MP_SMTP_RELAY_AUTH
+              value: plain
+            - name: MP_SMTP_RELAY_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mailpit-relay-credentials
+                  key: MP_SMTP_RELAY_USERNAME
+            - name: MP_SMTP_RELAY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mailpit-relay-credentials
+                  key: MP_SMTP_RELAY_PASSWORD
           ports:
             - name: smtp
               containerPort: 1025
