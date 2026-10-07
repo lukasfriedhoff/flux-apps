@@ -57,3 +57,40 @@ spec:
     backup-target: external-minio
   parameters:
     full-backup-interval: "7"
+---
+# Snapshot retention. There was NO snapshot cleanup job at all until 2026-10-08,
+# and that is what actually broke backups.
+#
+# Longhorn caps a volume at snapshot-max-count (250). Four volumes reached it -
+# authelia-valkey 249, attic-postgres-1 250, nix-remote-builder-state 249,
+# attic-storage 249 - and a volume at the cap cannot create a new snapshot, so
+# its backup cannot start either. Three of those four are exactly the volumes
+# that had not been backed up since 29/30 September, and the newest snapshot on
+# authelia-valkey was dated 2026-09-29T23:53 - the day it jammed.
+#
+# Only 38 of those 249 came from backup-daily; the other 211 were system
+# snapshots, almost certainly left behind by the September replica-rebuild
+# storm. Nothing was ever going to remove them.
+#
+# The space cost was real too: authelia-valkey declared 1Gi but occupied 13Gi,
+# attic-postgres-1 declared 20Gi but occupied 79Gi.
+#
+# Runs before backup-daily (03:15) so the backup always has a free slot.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: snapshot-cleanup
+  namespace: ${longhorn_namespace}
+spec:
+  name: snapshot-cleanup
+  cron: "${longhorn_recurring_snapshot_cleanup_cron:=0 1 * * *}"
+  # snapshot-delete, not snapshot-cleanup: 'cleanup' only purges snapshots that
+  # are already marked for deletion, which would have done nothing here because
+  # nothing was marking them. 'snapshot-delete' trims to retain and then purges.
+  task: snapshot-delete
+  groups:
+    - default
+  retain: ${longhorn_recurring_snapshot_retain:=10}
+  concurrency: ${longhorn_recurring_snapshot_concurrency:=2}
+  labels:
+    purpose: snapshot-retention
