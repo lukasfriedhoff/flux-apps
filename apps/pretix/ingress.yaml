@@ -41,3 +41,47 @@ spec:
       hosts:
         - ${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}
         - ${pretix_alias_host:=tickets}${public_host_suffix}.${delegating_domain}
+---
+# Event-domain hosts (hackimpott.de). DNS lives on an external nameserver
+# (A records -> ionos1), traffic rides the ddnss-ingress WireGuard path, and
+# certs validate via http-01 (see the letsencrypt-prod dnsZones selector).
+# No external-dns annotation: that automation only manages the Cloudflare
+# zone. tickets.* is the pretix system URL; pretix.* is served by pretix too
+# (assignable as an organizer domain in-app).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pretix-event
+  namespace: pretix
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${pretix_url_host:=tickets.hackimpott.de}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pretix
+                port:
+                  number: 80
+    - host: ${pretix_event_alias_host:=pretix.hackimpott.de}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pretix
+                port:
+                  number: 80
+  tls:
+    - secretName: pretix-event-tls
+      hosts:
+        - ${pretix_url_host:=tickets.hackimpott.de}
+        - ${pretix_event_alias_host:=pretix.hackimpott.de}

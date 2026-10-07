@@ -5,10 +5,10 @@ metadata:
   namespace: flux-system
 data:
   pretix_suspend: "true"
-  cloudflare_tunnel_hostname: ""
   pretix_alias_host: "tickets"
   pretix_data_size: "5Gi"
   pretix_data_storage_class_name: "longhorn-ssd-rwo-1r"
+  pretix_event_alias_host: "pretix.hackimpott.de"
   pretix_image_tag: "2026.8.0"
   pretix_instance_name: "h4xx Tickets"
   pretix_limits_memory: "2Gi"
@@ -35,5 +35,6 @@ data:
   pretix_task_limits_memory: "1536Mi"
   pretix_task_requests_cpu: "50m"
   pretix_task_requests_memory: "256Mi"
+  pretix_url_host: "tickets.hackimpott.de"
   pretix_valkey_image_tag: "9.1.2-alpine"
   pretix_web_workers: "3"

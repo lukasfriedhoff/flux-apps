@@ -327,13 +327,13 @@ data:
           - "[STATUS] < 500"
       - name: pretix
         group: Events
-        url: https://${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}/healthcheck/
+        url: https://${pretix_url_host:=tickets.hackimpott.de}/healthcheck/
         interval: 1m
         conditions:
           - "[STATUS] == 200"
       - name: pretalx
         group: Events
-        url: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}/
+        url: https://${pretalx_url_host:=cfp.hackimpott.de}/
         interval: 1m
         conditions:
           - "[STATUS] == 200"

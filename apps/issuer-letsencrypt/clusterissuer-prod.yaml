@@ -21,6 +21,15 @@ spec:
         http01:
           ingress:
             ingressClassName: traefik
+      # hackimpott.de (event domain) lives on an external nameserver, not
+      # Cloudflare: its hosts ride the same ionos1 tunnel path and validate
+      # via http-01.
+      - selector:
+          dnsZones:
+            - hackimpott.de
+        http01:
+          ingress:
+            ingressClassName: traefik
       - dns01:
           cloudflare:
             apiTokenSecretRef:

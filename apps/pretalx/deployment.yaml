@@ -66,7 +66,7 @@ spec:
                   name: pretalx-postgres-app
                   key: port
             - name: PRETALX_SITE_URL
-              value: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+              value: https://${pretalx_url_host:=cfp.hackimpott.de}
             - name: PRETALX_DATA_DIR
               value: /data
             - name: PRETALX_REDIS
@@ -110,7 +110,7 @@ spec:
               port: http
               httpHeaders:
                 - name: Host
-                  value: ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+                  value: ${pretalx_url_host:=cfp.hackimpott.de}
             periodSeconds: 10
             failureThreshold: 60
           readinessProbe:
@@ -119,7 +119,7 @@ spec:
               port: http
               httpHeaders:
                 - name: Host
-                  value: ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+                  value: ${pretalx_url_host:=cfp.hackimpott.de}
             periodSeconds: 15
           livenessProbe:
             tcpSocket:
@@ -172,7 +172,7 @@ spec:
                   name: pretalx-postgres-app
                   key: port
             - name: PRETALX_SITE_URL
-              value: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+              value: https://${pretalx_url_host:=cfp.hackimpott.de}
             - name: PRETALX_REDIS
               value: redis://pretalx-valkey:6379/0
             - name: PRETALX_CELERY_BACKEND

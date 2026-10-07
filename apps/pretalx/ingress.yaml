@@ -1,10 +1,12 @@
-# Public via Cloudflare tunnel - speakers submit talks and attendees browse the
-# schedule from anywhere. No Authelia (pretalx has its own accounts).
+# Public - speakers submit talks and attendees browse the schedule from
+# anywhere. No Authelia (pretalx has its own accounts).
 #
-# Only the primary hostname is routed to the app: pretalx validates the Host
-# header against its single configured site URL and answers 400 on anything
-# else (it has no multi-domain support, unlike pretix). The cfp.* alias is a
-# separate ingress that 301-redirects to the primary host instead.
+# pretalx validates the Host header against its single configured site URL
+# and answers 400 on anything else (no multi-domain support, unlike pretix).
+# Canonical host: cfp.hackimpott.de. Its DNS lives on an external nameserver
+# (A record -> ionos1), traffic rides the ddnss-ingress WireGuard path, and
+# the cert validates via http-01 (letsencrypt-prod dnsZones selector). Every
+# other name - pretalx.hackimpott.de and the h4xx.io pair - 301-redirects.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -12,13 +14,12 @@ metadata:
   namespace: pretalx
   annotations:
     cert-manager.io/cluster-issuer: ${default_cluster_issuer}
-    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   ingressClassName: traefik
   rules:
-    - host: ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+    - host: ${pretalx_url_host:=cfp.hackimpott.de}
       http:
         paths:
           - path: /
@@ -29,10 +30,12 @@ spec:
                 port:
                   number: 80
   tls:
-    - secretName: pretalx-tls
+    - secretName: pretalx-event-tls
       hosts:
-        - ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+        - ${pretalx_url_host:=cfp.hackimpott.de}
 ---
+# Any request on an alias host, whatever the path, goes to the canonical
+# host. $${1} survives flux substitution as the literal ${1} traefik needs.
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -40,10 +43,13 @@ metadata:
   namespace: pretalx
 spec:
   redirectRegex:
-    regex: ^https?://${pretalx_alias_host:=cfp}${public_host_suffix}\.${delegating_domain}/(.*)
-    replacement: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}/$${1}
+    regex: ^https?://[^/]+/(.*)
+    replacement: https://${pretalx_url_host:=cfp.hackimpott.de}/$${1}
     permanent: true
 ---
+# Alias hosts. The h4xx.io names keep their Cloudflare DNS records (and the
+# external-dns annotation that maintains them) and their DNS-01 certs;
+# pretalx.hackimpott.de is external-nameserver DNS like the canonical host.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -58,6 +64,26 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
+    - host: ${pretalx_event_alias_host:=pretalx.hackimpott.de}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pretalx
+                port:
+                  number: 80
+    - host: ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pretalx
+                port:
+                  number: 80
     - host: ${pretalx_alias_host:=cfp}${public_host_suffix}.${delegating_domain}
       http:
         paths:
@@ -69,6 +95,12 @@ spec:
                 port:
                   number: 80
   tls:
+    - secretName: pretalx-event-alias-tls
+      hosts:
+        - ${pretalx_event_alias_host:=pretalx.hackimpott.de}
+    - secretName: pretalx-tls
+      hosts:
+        - ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
     - secretName: pretalx-alias-tls
       hosts:
         - ${pretalx_alias_host:=cfp}${public_host_suffix}.${delegating_domain}

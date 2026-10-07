@@ -5,10 +5,11 @@ metadata:
   namespace: flux-system
 data:
   pretalx_suspend: "true"
-  cloudflare_tunnel_hostname: ""
+  1: ""
   pretalx_alias_host: "cfp"
   pretalx_data_size: "5Gi"
   pretalx_data_storage_class_name: "longhorn-ssd-rwo-1r"
+  pretalx_event_alias_host: "pretalx.hackimpott.de"
   pretalx_image_tag: "v2026.2.1"
   pretalx_limits_memory: "2Gi"
   pretalx_mail_from: "cfp@h4xx.io"
@@ -34,5 +35,6 @@ data:
   pretalx_task_limits_memory: "1536Mi"
   pretalx_task_requests_cpu: "50m"
   pretalx_task_requests_memory: "256Mi"
+  pretalx_url_host: "cfp.hackimpott.de"
   pretalx_valkey_image_tag: "9.1.2-alpine"
   pretalx_web_workers: "3"
