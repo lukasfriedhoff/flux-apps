@@ -325,3 +325,23 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] < 500"
+      - name: pretix
+        group: Events
+        url: https://${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}/healthcheck/
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: pretalx
+        group: Events
+        url: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+      - name: Mailpit
+        group: Events
+        # Behind Authelia: an auth challenge (401/302) still proves the pod
+        # and routing are alive; only a 5xx means the catcher is down.
+        url: https://${mailpit_host:=mail}${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"

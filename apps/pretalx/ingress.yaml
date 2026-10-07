@@ -1,6 +1,10 @@
 # Public via Cloudflare tunnel - speakers submit talks and attendees browse the
-# schedule from anywhere. No Authelia (pretalx has its own accounts). Two
-# hostnames: pretalx.* and cfp.*.
+# schedule from anywhere. No Authelia (pretalx has its own accounts).
+#
+# Only the primary hostname is routed to the app: pretalx validates the Host
+# header against its single configured site URL and answers 400 on anything
+# else (it has no multi-domain support, unlike pretix). The cfp.* alias is a
+# separate ingress that 301-redirects to the primary host instead.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -24,6 +28,36 @@ spec:
                 name: pretalx
                 port:
                   number: 80
+  tls:
+    - secretName: pretalx-tls
+      hosts:
+        - ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-primary
+  namespace: pretalx
+spec:
+  redirectRegex:
+    regex: ^https?://${pretalx_alias_host:=cfp}${public_host_suffix}\.${delegating_domain}/(.*)
+    replacement: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}/$${1}
+    permanent: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pretalx-alias
+  namespace: pretalx
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: pretalx-redirect-to-primary@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
     - host: ${pretalx_alias_host:=cfp}${public_host_suffix}.${delegating_domain}
       http:
         paths:
@@ -35,7 +69,6 @@ spec:
                 port:
                   number: 80
   tls:
-    - secretName: pretalx-tls
+    - secretName: pretalx-alias-tls
       hosts:
-        - ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
         - ${pretalx_alias_host:=cfp}${public_host_suffix}.${delegating_domain}
