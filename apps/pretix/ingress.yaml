@@ -1,8 +1,8 @@
-# Public, via the Cloudflare tunnel - attendees buy tickets from anywhere. No
-# Authelia: pretix has its own accounts, and the public shop must stay open.
-# Two hostnames point at the same app (pretix.* and tickets.*); add the
-# hackimpott.de names later by extending pretix_extra_hosts handling or adding
-# rules here.
+# The h4xx.io names, via the Cloudflare tunnel. They predate the move of the
+# system URL to tickets.hackimpott.de; served directly they would only show
+# pretix's "Unknown host" page, so they 301 to the canonical shop instead.
+# (To use one as a real in-app organizer domain later, drop the middleware
+# annotation so the host reaches pretix again.)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -13,6 +13,7 @@ metadata:
     external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: pretix-redirect-to-primary@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
@@ -85,3 +86,16 @@ spec:
       hosts:
         - ${pretix_url_host:=tickets.hackimpott.de}
         - ${pretix_event_alias_host:=pretix.hackimpott.de}
+---
+# Any request on an h4xx.io alias, whatever the path, goes to the canonical
+# shop. $${1} survives flux substitution as the literal ${1} traefik needs.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-primary
+  namespace: pretix
+spec:
+  redirectRegex:
+    regex: ^https?://[^/]+/(.*)
+    replacement: https://${pretix_url_host:=tickets.hackimpott.de}/$${1}
+    permanent: true
