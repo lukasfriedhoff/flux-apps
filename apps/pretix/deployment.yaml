@@ -1,9 +1,11 @@
-# pretix ticketing. Single replica running the image's `all` command: its own
-# supervisord runs gunicorn (web, :80), the Celery task worker and the periodic
-# scheduler in one container. That keeps it to a single RWO /data volume and a
-# locally-generated secret (pretix writes /data/.secret on first boot). Scaling
-# to HA later means splitting `web` and `taskworker` into separate deployments
-# and moving /data to an RWX volume - not needed for a homelab event.
+# pretix ticketing. Single replica, one pod with two containers sharing the
+# RWO /data volume: `web` (the image's supervisord: nginx + gunicorn on :80)
+# and `taskworker` (Celery). They are separate containers because the image's
+# `all` mode cannot cap Celery concurrency: Celery defaults to one forked
+# worker per CPU core - 64 on srv9 - which OOM-kills any sane memory limit.
+# `taskworker` mode passes CLI args through to Celery, so the split is the
+# supported way to pin it. Scaling to HA later means separate deployments and
+# an RWX /data - not needed for a homelab event.
 #
 # All configuration is injected as PRETIX_<SECTION>_<KEY> environment variables
 # (pretix's documented env-override of pretix.cfg). The DB credentials come from
@@ -28,14 +30,14 @@ spec:
       labels:
         app.kubernetes.io/name: pretix
     spec:
-      # pretix/pretalx run as a non-root user but the Longhorn PVC mounts
-      # root-owned; fsGroup lets the app write /data (logs, media, uploads).
+      # pretix runs as uid 15371 but the Longhorn PVC mounts root-owned;
+      # fsGroup lets the app write /data (logs, media, uploads).
       securityContext:
         fsGroup: 15371
       containers:
-        - name: pretix
+        - name: web
           image: docker.io/pretix/standalone:${pretix_image_tag:=2026.8.0}
-          args: ["all"]
+          args: ["web"]
           env:
             - name: PRETIX_DATABASE_BACKEND
               value: postgresql
@@ -84,14 +86,14 @@ spec:
               value: redis://pretix-valkey:6379/2
             - name: PRETIX_MAIL_FROM
               value: ${pretix_mail_from:=tickets@h4xx.io}
-            # The image defaults gunicorn to 2*nproc workers - 128 on a
-            # 64-core node - which OOM-kills the container. Pin it small.
-            - name: NUM_WORKERS
-              value: ${quote}${pretix_web_workers:=3}${quote}
             - name: PRETIX_MAIL_HOST
               value: mailpit.mailpit.svc.cluster.local
             - name: PRETIX_MAIL_PORT
               value: ${quote}1025${quote}
+            # The image defaults gunicorn to 2*nproc workers - 128 on a
+            # 64-core node - which OOM-kills the container. Pin it small.
+            - name: NUM_WORKERS
+              value: ${quote}${pretix_web_workers:=3}${quote}
           ports:
             - name: http
               containerPort: 80
@@ -103,7 +105,7 @@ spec:
               cpu: ${pretix_requests_cpu:=100m}
               memory: ${pretix_requests_memory:=512Mi}
             limits:
-              memory: ${pretix_limits_memory:=3Gi}
+              memory: ${pretix_limits_memory:=2Gi}
           # First boot runs database migrations before anything binds :80, so
           # the startup probe allows 10 minutes. The Host header matches the
           # configured URL so Django host validation never fails the probe.
@@ -128,6 +130,72 @@ spec:
             tcpSocket:
               port: http
             periodSeconds: 20
+        - name: taskworker
+          image: docker.io/pretix/standalone:${pretix_image_tag:=2026.8.0}
+          args:
+            - taskworker
+            - --concurrency
+            - ${quote}${pretix_task_concurrency:=2}${quote}
+          env:
+            # The web container owns migrations; never run them concurrently.
+            - name: AUTOMIGRATE
+              value: skip
+            - name: PRETIX_DATABASE_BACKEND
+              value: postgresql
+            - name: PRETIX_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: dbname
+            - name: PRETIX_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: username
+            - name: PRETIX_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: password
+            - name: PRETIX_DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: host
+            - name: PRETIX_DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: port
+            - name: PRETIX_PRETIX_INSTANCE_NAME
+              value: ${quote}${pretix_instance_name:=h4xx Tickets}${quote}
+            - name: PRETIX_PRETIX_URL
+              value: https://${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}
+            - name: PRETIX_PRETIX_DATADIR
+              value: /data
+            - name: PRETIX_REDIS_LOCATION
+              value: redis://pretix-valkey:6379/0
+            - name: PRETIX_REDIS_SESSIONS
+              value: ${quote}true${quote}
+            - name: PRETIX_CELERY_BACKEND
+              value: redis://pretix-valkey:6379/1
+            - name: PRETIX_CELERY_BROKER
+              value: redis://pretix-valkey:6379/2
+            - name: PRETIX_MAIL_FROM
+              value: ${pretix_mail_from:=tickets@h4xx.io}
+            - name: PRETIX_MAIL_HOST
+              value: mailpit.mailpit.svc.cluster.local
+            - name: PRETIX_MAIL_PORT
+              value: ${quote}1025${quote}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: ${pretix_task_requests_cpu:=50m}
+              memory: ${pretix_task_requests_memory:=256Mi}
+            limits:
+              memory: ${pretix_task_limits_memory:=1536Mi}
       volumes:
         - name: data
           persistentVolumeClaim:

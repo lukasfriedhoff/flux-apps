@@ -1,7 +1,12 @@
-# pretalx: talk submission (Call for Papers) and conference scheduling. Same
-# single-replica `all` pattern as pretix - the image's supervisord runs
-# gunicorn (:80), the Celery worker and the scheduler together, over one RWO
-# /data volume. Split web/worker + RWX /data only if HA is ever needed.
+# pretalx: talk submission (Call for Papers) and conference scheduling.
+# Single replica, one pod with two containers sharing the RWO /data volume:
+# `web` (the image's `webworker` mode: gunicorn on :80, runs migrations
+# first) and `taskworker` (Celery). Separate containers because the image's
+# `all`/`taskworker` modes cannot cap Celery concurrency - Celery defaults to
+# one forked worker per CPU core (64 on srv9) and OOM-kills any sane memory
+# limit. Unlike pretix, pretalx's taskworker mode ignores CLI args, so the
+# task container invokes celery directly with the entrypoint's environment
+# (cwd /pretalx/src, HOME, PRETALX_DATA_DIR) replicated.
 #
 # Config via PRETALX_<SECTION>_<KEY> env (pretalx's env-override of
 # pretalx.cfg); DB credentials from the CNPG pretalx-postgres-app secret.
@@ -24,14 +29,14 @@ spec:
       labels:
         app.kubernetes.io/name: pretalx
     spec:
-      # pretix/pretalx run as a non-root user but the Longhorn PVC mounts
-      # root-owned; fsGroup lets the app write /data (logs, media, uploads).
+      # pretalx runs as uid 999 but the Longhorn PVC mounts root-owned;
+      # fsGroup lets the app write /data (logs, media, uploads).
       securityContext:
         fsGroup: 999
       containers:
-        - name: pretalx
+        - name: web
           image: docker.io/pretalx/standalone:${pretalx_image_tag:=v2026.2.1}
-          args: ["all"]
+          args: ["webworker"]
           env:
             - name: PRETALX_DATABASE_BACKEND
               value: postgresql
@@ -72,6 +77,10 @@ spec:
               value: redis://pretalx-valkey:6379/2
             - name: PRETALX_MAIL_FROM
               value: ${pretalx_mail_from:=cfp@h4xx.io}
+            - name: PRETALX_MAIL_HOST
+              value: mailpit.mailpit.svc.cluster.local
+            - name: PRETALX_MAIL_PORT
+              value: ${quote}1025${quote}
             # The image defaults gunicorn to 2*nproc workers - 128 on a
             # 64-core node - which OOM-kills the container. Pin it small.
             - name: GUNICORN_WORKERS
@@ -80,10 +89,6 @@ spec:
             # X-Forwarded-* from the pod network (traefik), not only lo.
             - name: GUNICORN_FORWARDED_ALLOW_IPS
               value: '*'
-            - name: PRETALX_MAIL_HOST
-              value: mailpit.mailpit.svc.cluster.local
-            - name: PRETALX_MAIL_PORT
-              value: ${quote}1025${quote}
           ports:
             - name: http
               containerPort: 80
@@ -95,7 +100,7 @@ spec:
               cpu: ${pretalx_requests_cpu:=100m}
               memory: ${pretalx_requests_memory:=512Mi}
             limits:
-              memory: ${pretalx_limits_memory:=3Gi}
+              memory: ${pretalx_limits_memory:=2Gi}
           # First boot runs database migrations before gunicorn binds :80, so
           # the startup probe allows 10 minutes. The Host header matches the
           # configured URL so Django host validation never fails the probe.
@@ -120,6 +125,77 @@ spec:
             tcpSocket:
               port: http
             periodSeconds: 20
+        - name: taskworker
+          image: docker.io/pretalx/standalone:${pretalx_image_tag:=v2026.2.1}
+          # Bypass the entrypoint (its taskworker mode hardcodes celery with
+          # no concurrency flag) and run celery directly, pinned small.
+          command: ["celery"]
+          args:
+            - -A
+            - pretalx.celery_app
+            - worker
+            - -l
+            - info
+            - --concurrency
+            - ${quote}${pretalx_task_concurrency:=2}${quote}
+          workingDir: /pretalx/src
+          env:
+            - name: HOME
+              value: /pretalx
+            - name: PRETALX_DATA_DIR
+              value: /data
+            - name: PRETALX_DATABASE_BACKEND
+              value: postgresql
+            - name: PRETALX_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: pretalx-postgres-app
+                  key: dbname
+            - name: PRETALX_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pretalx-postgres-app
+                  key: username
+            - name: PRETALX_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pretalx-postgres-app
+                  key: password
+            - name: PRETALX_DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: pretalx-postgres-app
+                  key: host
+            - name: PRETALX_DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: pretalx-postgres-app
+                  key: port
+            - name: PRETALX_SITE_URL
+              value: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+            - name: PRETALX_FILESYSTEM_DATA
+              value: /data
+            - name: PRETALX_REDIS_LOCATION
+              value: redis://pretalx-valkey:6379/0
+            - name: PRETALX_CELERY_BACKEND
+              value: redis://pretalx-valkey:6379/1
+            - name: PRETALX_CELERY_BROKER
+              value: redis://pretalx-valkey:6379/2
+            - name: PRETALX_MAIL_FROM
+              value: ${pretalx_mail_from:=cfp@h4xx.io}
+            - name: PRETALX_MAIL_HOST
+              value: mailpit.mailpit.svc.cluster.local
+            - name: PRETALX_MAIL_PORT
+              value: ${quote}1025${quote}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: ${pretalx_task_requests_cpu:=50m}
+              memory: ${pretalx_task_requests_memory:=256Mi}
+            limits:
+              memory: ${pretalx_task_limits_memory:=1536Mi}
       volumes:
         - name: data
           persistentVolumeClaim:

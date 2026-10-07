@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  pretalx_suspend: "true"
+  cloudflare_tunnel_hostname: ""
+  pretalx_alias_host: "cfp"
+  pretalx_data_size: "5Gi"
+  pretalx_data_storage_class_name: "longhorn-ssd-rwo-1r"
+  pretalx_image_tag: "v2026.2.1"
+  pretalx_limits_memory: "2Gi"
+  pretalx_mail_from: "cfp@h4xx.io"
+  pretalx_postgres_backup_bucket: "pretalx-postgres-backup"
+  pretalx_postgres_backup_credential_secret_name: "pretalx-postgres-backup-credentials"
+  pretalx_postgres_backup_cron: "0 0 4 * * *"
+  pretalx_postgres_backup_endpoint_url: ""
+  pretalx_postgres_backup_generation: ""
+  pretalx_postgres_backup_retention: "30d"
+  pretalx_postgres_backup_server_name: "pretalx-postgres"
+  pretalx_postgres_instances: "1"
+  pretalx_postgres_limits_memory: "1Gi"
+  pretalx_postgres_requests_cpu: "50m"
+  pretalx_postgres_requests_memory: "256Mi"
+  pretalx_postgres_size: "8Gi"
+  pretalx_postgres_storage_class_name: "longhorn-nvme-rwo-2r"
+  pretalx_primary_host: "pretalx"
+  pretalx_redis_size: "1Gi"
+  pretalx_redis_storage_class_name: "longhorn-ssd-rwo-1r"
+  pretalx_requests_cpu: "100m"
+  pretalx_requests_memory: "512Mi"
+  pretalx_task_concurrency: "2"
+  pretalx_task_limits_memory: "1536Mi"
+  pretalx_task_requests_cpu: "50m"
+  pretalx_task_requests_memory: "256Mi"
+  pretalx_valkey_image_tag: "9.1.2-alpine"
+  pretalx_web_workers: "3"

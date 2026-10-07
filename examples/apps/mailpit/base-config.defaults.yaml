@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  mailpit_suspend: "true"
+  cloudflare_tunnel_hostname: ""
+  mailpit_data_size: "2Gi"
+  mailpit_host: "mail"
+  mailpit_image_tag: "v1.31.4"
+  mailpit_max_messages: "5000"
+  mailpit_storage_class_name: "longhorn-ssd-rwo-1r"
