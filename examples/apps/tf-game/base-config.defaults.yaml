@@ -13,11 +13,14 @@ data:
   tf_game_repo_suspend: "true"
   tf_game_repo_secret_name: "github-read-game-tf2026"
   # Images are published by the game repo's GitHub Actions on pushes to main
-  # (tags: main, sha-<short>) and pulled through the Harbor ghcr proxy-cache.
-  # Pin an immutable sha-* tag once a build exists.
-  tf_game_web_image_repository: "harbor.h4xx.io/proxy-ghcr/lukasfriedhoff/game_tf2026-web"
-  tf_game_api_image_repository: "harbor.h4xx.io/proxy-ghcr/lukasfriedhoff/game_tf2026-api"
+  # (tags: main, sha-<short>). The packages are PRIVATE, so pulls go to
+  # ghcr.io directly with a dockerconfigjson secret (Packages:read token) in
+  # the app namespace — the anonymous Harbor proxy-ghcr only caches public
+  # packages. Pin an immutable sha-* tag once a build exists.
+  tf_game_web_image_repository: "ghcr.io/lukasfriedhoff/game_tf2026-web"
+  tf_game_api_image_repository: "ghcr.io/lukasfriedhoff/game_tf2026-api"
   tf_game_image_tag: "main"
+  tf_game_image_pull_secret_name: "tf-game-ghcr-pull"
   tf_game_web_replicas: "2"
   tf_game_web_requests_cpu: "10m"
   tf_game_web_requests_memory: "16Mi"

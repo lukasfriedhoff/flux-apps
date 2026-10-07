@@ -29,9 +29,15 @@ spec:
         namespace: flux-system
       interval: 10m0s
   values:
+    # Private ghcr packages (repo is private): pull directly from ghcr.io with
+    # a dockerconfigjson secret — the anonymous Harbor proxy-ghcr cache only
+    # works for public upstream packages.
+    global:
+      imagePullSecrets:
+        - name: ${tf_game_image_pull_secret_name:=tf-game-ghcr-pull}
     web:
       image:
-        repository: ${tf_game_web_image_repository:=harbor.h4xx.io/proxy-ghcr/lukasfriedhoff/game_tf2026-web}
+        repository: ${tf_game_web_image_repository:=ghcr.io/lukasfriedhoff/game_tf2026-web}
         tag: ${quote}${tf_game_image_tag:=main}${quote}
       replicas: ${tf_game_web_replicas:=2}
       resources:
@@ -42,7 +48,7 @@ spec:
           memory: ${tf_game_web_limits_memory:=64Mi}
     api:
       image:
-        repository: ${tf_game_api_image_repository:=harbor.h4xx.io/proxy-ghcr/lukasfriedhoff/game_tf2026-api}
+        repository: ${tf_game_api_image_repository:=ghcr.io/lukasfriedhoff/game_tf2026-api}
         tag: ${quote}${tf_game_image_tag:=main}${quote}
       replicas: ${tf_game_api_replicas:=2}
       logLevel: ${tf_game_api_log_level:=info}
