@@ -6,10 +6,12 @@ metadata:
 data:
   tf_game_suspend: "true"
   # Game repo source (the Helm chart lives inside the game repo at
-  # deploy/helm/tf-game). GitHub is the primary for this repo.
+  # deploy/helm/tf-game). GitHub is the primary for this repo. Private repo:
+  # the secret carries username/password (a read-capable GitHub PAT).
   tf_game_repo_url: "https://github.com/lukasfriedhoff/game_tf2026.git"
   tf_game_branch: "main"
   tf_game_repo_suspend: "true"
+  tf_game_repo_secret_name: "github-read-game-tf2026"
   # Images are published by the game repo's GitHub Actions on pushes to main
   # (tags: main, sha-<short>) and pulled through the Harbor ghcr proxy-cache.
   # Pin an immutable sha-* tag once a build exists.
