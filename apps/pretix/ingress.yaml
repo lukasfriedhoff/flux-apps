@@ -1,0 +1,43 @@
+# Public, via the Cloudflare tunnel - attendees buy tickets from anywhere. No
+# Authelia: pretix has its own accounts, and the public shop must stay open.
+# Two hostnames point at the same app (pretix.* and tickets.*); add the
+# hackimpott.de names later by extending pretix_extra_hosts handling or adding
+# rules here.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pretix
+  namespace: pretix
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pretix
+                port:
+                  number: 80
+    - host: ${pretix_alias_host:=tickets}${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pretix
+                port:
+                  number: 80
+  tls:
+    - secretName: pretix-tls
+      hosts:
+        - ${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}
+        - ${pretix_alias_host:=tickets}${public_host_suffix}.${delegating_domain}

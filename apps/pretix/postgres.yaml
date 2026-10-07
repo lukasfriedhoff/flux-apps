@@ -1,0 +1,31 @@
+# NOTE: no backup section yet. These are brand-new empty databases, and the
+# shared storage01 MinIO is under strain + its host is currently unreachable.
+# The daily alert check flags any CNPG cluster without backups (it caught
+# status-dashboard the same way), so this will remind us to wire
+# barmanObjectStore + a ScheduledBackup before pretix carries real ticket data.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pretix-postgres
+  namespace: pretix
+spec:
+  instances: ${pretix_postgres_instances:=1}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: pretix
+      owner: pretix
+  storage:
+    storageClass: ${pretix_postgres_storage_class_name:=longhorn-nvme-rwo-2r}
+    size: ${pretix_postgres_size:=8Gi}
+  resources:
+    requests:
+      cpu: ${pretix_postgres_requests_cpu:=50m}
+      memory: ${pretix_postgres_requests_memory:=256Mi}
+    limits:
+      memory: ${pretix_postgres_limits_memory:=1Gi}

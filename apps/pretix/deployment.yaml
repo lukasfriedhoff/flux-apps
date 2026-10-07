@@ -1,0 +1,118 @@
+# pretix ticketing. Single replica running the image's `all` command: its own
+# supervisord runs gunicorn (web, :80), the Celery task worker and the periodic
+# scheduler in one container. That keeps it to a single RWO /data volume and a
+# locally-generated secret (pretix writes /data/.secret on first boot). Scaling
+# to HA later means splitting `web` and `taskworker` into separate deployments
+# and moving /data to an RWX volume - not needed for a homelab event.
+#
+# All configuration is injected as PRETIX_<SECTION>_<KEY> environment variables
+# (pretix's documented env-override of pretix.cfg). The DB credentials come from
+# the CNPG-generated pretix-postgres-app secret.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pretix
+  namespace: pretix
+  labels:
+    app.kubernetes.io/name: pretix
+spec:
+  replicas: 1
+  # RWO /data: a rolling update would deadlock two pods on one volume.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pretix
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pretix
+    spec:
+      containers:
+        - name: pretix
+          image: docker.io/pretix/standalone:${pretix_image_tag:=2026.8.0}
+          args: ["all"]
+          env:
+            - name: PRETIX_DATABASE_BACKEND
+              value: postgresql
+            - name: PRETIX_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: dbname
+            - name: PRETIX_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: username
+            - name: PRETIX_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: password
+            - name: PRETIX_DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: host
+            - name: PRETIX_DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: pretix-postgres-app
+                  key: port
+            - name: PRETIX_PRETIX_INSTANCE_NAME
+              value: ${quote}${pretix_instance_name:=h4xx Tickets}${quote}
+            - name: PRETIX_PRETIX_URL
+              value: https://${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}
+            - name: PRETIX_PRETIX_DATADIR
+              value: /data
+            - name: PRETIX_PRETIX_TRUST_X_FORWARDED_FOR
+              value: ${quote}on${quote}
+            - name: PRETIX_PRETIX_TRUST_X_FORWARDED_PROTO
+              value: ${quote}on${quote}
+            - name: PRETIX_REDIS_LOCATION
+              value: redis://pretix-valkey:6379/0
+            - name: PRETIX_REDIS_SESSIONS
+              value: ${quote}true${quote}
+            - name: PRETIX_CELERY_BACKEND
+              value: redis://pretix-valkey:6379/1
+            - name: PRETIX_CELERY_BROKER
+              value: redis://pretix-valkey:6379/2
+            - name: PRETIX_MAIL_FROM
+              value: ${pretix_mail_from:=tickets@h4xx.io}
+            - name: PRETIX_MAIL_HOST
+              value: mailpit.mailpit.svc.cluster.local
+            - name: PRETIX_MAIL_PORT
+              value: ${quote}1025${quote}
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: ${pretix_requests_cpu:=100m}
+              memory: ${pretix_requests_memory:=512Mi}
+            limits:
+              memory: ${pretix_limits_memory:=1536Mi}
+          # First boot runs database migrations before gunicorn binds :80, so
+          # the startup probe gives it up to 5 minutes; readiness/liveness are
+          # plain TCP once it is up (no dependency on a specific health URL).
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 15
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pretix-data

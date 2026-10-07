@@ -1,0 +1,41 @@
+# Public via Cloudflare tunnel - speakers submit talks and attendees browse the
+# schedule from anywhere. No Authelia (pretalx has its own accounts). Two
+# hostnames: pretalx.* and cfp.*.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pretalx
+  namespace: pretalx
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pretalx
+                port:
+                  number: 80
+    - host: ${pretalx_alias_host:=cfp}${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pretalx
+                port:
+                  number: 80
+  tls:
+    - secretName: pretalx-tls
+      hosts:
+        - ${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}
+        - ${pretalx_alias_host:=cfp}${public_host_suffix}.${delegating_domain}

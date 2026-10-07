@@ -1,0 +1,31 @@
+# NOTE: no backup section yet. These are brand-new empty databases, and the
+# shared storage01 MinIO is under strain + its host is currently unreachable.
+# The daily alert check flags any CNPG cluster without backups (it caught
+# status-dashboard the same way), so this will remind us to wire
+# barmanObjectStore + a ScheduledBackup before pretalx carries real ticket data.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pretalx-postgres
+  namespace: pretalx
+spec:
+  instances: ${pretalx_postgres_instances:=1}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: pretalx
+      owner: pretalx
+  storage:
+    storageClass: ${pretalx_postgres_storage_class_name:=longhorn-nvme-rwo-2r}
+    size: ${pretalx_postgres_size:=8Gi}
+  resources:
+    requests:
+      cpu: ${pretalx_postgres_requests_cpu:=50m}
+      memory: ${pretalx_postgres_requests_memory:=256Mi}
+    limits:
+      memory: ${pretalx_postgres_limits_memory:=1Gi}

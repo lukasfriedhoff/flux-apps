@@ -1,0 +1,31 @@
+# Mailpit's web UI, behind Authelia - it is an internal admin view of caught
+# mail, not a public page. The SMTP port (1025) is NOT exposed here; it is
+# reached cluster-internally by pretix/pretalx via the Service.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mailpit
+  namespace: mailpit
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${mailpit_host:=mail}${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mailpit
+                port:
+                  number: 8025
+  tls:
+    - secretName: mailpit-tls
+      hosts:
+        - ${mailpit_host:=mail}${public_host_suffix}.${delegating_domain}
