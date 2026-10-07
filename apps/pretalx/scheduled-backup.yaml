@@ -1,0 +1,12 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: pretalx-postgres
+  namespace: pretalx
+spec:
+  # 04:00 - after pretix (03:45) and the bigger-cluster waves.
+  schedule: "${pretalx_postgres_backup_cron:=0 0 4 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: pretalx-postgres

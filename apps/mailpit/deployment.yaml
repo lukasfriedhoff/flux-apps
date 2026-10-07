@@ -29,7 +29,7 @@ spec:
             - name: MP_DATABASE
               value: /data/mailpit.db
             - name: MP_MAX_MESSAGES
-              value: "${mailpit_max_messages:=5000}"
+              value: ${quote}${mailpit_max_messages:=5000}${quote}
             # Trust the pod network; auth is unnecessary for an internal catcher
             # and the UI sits behind Authelia at the ingress.
             - name: MP_SMTP_AUTH_ALLOW_INSECURE

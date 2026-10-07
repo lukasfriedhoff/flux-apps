@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pretix-postgres-backup-bucket-bootstrap
+  namespace: pretix
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: ${mc_image:=harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z}
+          env:
+            - name: AWS_ENDPOINTS
+              valueFrom:
+                secretKeyRef:
+                  name: ${pretix_postgres_backup_credential_secret_name:=pretix-postgres-backup-credentials}
+                  key: AWS_ENDPOINTS
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ${pretix_postgres_backup_credential_secret_name:=pretix-postgres-backup-credentials}
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${pretix_postgres_backup_credential_secret_name:=pretix-postgres-backup-credentials}
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: BACKUP_BUCKET
+              value: ${pretix_postgres_backup_bucket:=pretix-postgres-backup}
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              until mc alias set backup "$${AWS_ENDPOINTS}" "$${AWS_ACCESS_KEY_ID}" "$${AWS_SECRET_ACCESS_KEY}" >/dev/null 2>&1; do
+                sleep 5
+              done
+
+              mc mb --ignore-existing "backup/$${BACKUP_BUCKET}"

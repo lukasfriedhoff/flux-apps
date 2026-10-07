@@ -1,0 +1,13 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: pretix-postgres
+  namespace: pretix
+spec:
+  # 03:45 - after the 03:00/03:30 waves of the bigger clusters and the 03:15
+  # Longhorn volume backup (same shared MinIO store).
+  schedule: "${pretix_postgres_backup_cron:=0 45 3 * * *}"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: pretix-postgres
