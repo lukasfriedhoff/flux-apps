@@ -1,0 +1,42 @@
+# All ${...} keys apps/tf-game consumes, with sane defaults.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+data:
+  tf_game_suspend: "true"
+  # Game repo source (the Helm chart lives inside the game repo at
+  # deploy/helm/tf-game). GitHub is the primary for this repo.
+  tf_game_repo_url: "https://github.com/lukasfriedhoff/game_tf2026.git"
+  tf_game_branch: "main"
+  tf_game_repo_suspend: "true"
+  # Images are published by the game repo's GitHub Actions on pushes to main
+  # (tags: main, sha-<short>) and pulled through the Harbor ghcr proxy-cache.
+  # Pin an immutable sha-* tag once a build exists.
+  tf_game_web_image_repository: "harbor.h4xx.io/proxy-ghcr/lukasfriedhoff/game_tf2026-web"
+  tf_game_api_image_repository: "harbor.h4xx.io/proxy-ghcr/lukasfriedhoff/game_tf2026-api"
+  tf_game_image_tag: "main"
+  tf_game_web_replicas: "2"
+  tf_game_web_requests_cpu: "10m"
+  tf_game_web_requests_memory: "16Mi"
+  tf_game_web_limits_memory: "64Mi"
+  tf_game_api_replicas: "2"
+  tf_game_api_log_level: "info"
+  tf_game_api_requests_cpu: "50m"
+  tf_game_api_requests_memory: "96Mi"
+  tf_game_api_limits_memory: "256Mi"
+  # Ingress host label: <label><public_host_suffix>.<delegating_domain>
+  tf_game_host_label: "game"
+  # Bundled single-instance PostgreSQL (chart StatefulSet, not CNPG).
+  tf_game_postgres_size: "2Gi"
+  # Empty = cluster default StorageClass.
+  tf_game_postgres_storage_class_name: ""
+  tf_game_postgres_requests_cpu: "100m"
+  tf_game_postgres_requests_memory: "256Mi"
+  tf_game_postgres_limits_memory: "512Mi"
+  # Event window (ISO date/time, empty = always open) and knobs.
+  tf_game_event_timezone: "Europe/Berlin"
+  tf_game_event_start: ""
+  tf_game_event_end: ""
+  tf_game_leaderboard_frozen: "false"
+  tf_game_rewards_enabled: "true"

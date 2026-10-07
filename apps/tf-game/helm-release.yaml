@@ -1,0 +1,86 @@
+# "Deploy Day" booth game (game_tf2026): Phaser PWA (web) + Fastify API +
+# bundled PostgreSQL. The chart lives in the game repo itself
+# (deploy/helm/tf-game), so the sourceRef is the game-tf2026 GitRepository,
+# not flux-apps. Images are built by the repo's GitHub Actions on pushes to
+# main and pulled through the Harbor ghcr proxy-cache.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tf-game
+  namespace: tf-game
+spec:
+  interval: 10m0s
+  # The API waits for PostgreSQL and runs migrations before it turns healthy
+  # (startup probe allows up to 5 minutes), so give helm some headroom.
+  timeout: 10m0s
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: ./deploy/helm/tf-game
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: game-tf2026
+        namespace: flux-system
+      interval: 10m0s
+  values:
+    web:
+      image:
+        repository: ${tf_game_web_image_repository:=harbor.h4xx.io/proxy-ghcr/lukasfriedhoff/game_tf2026-web}
+        tag: ${quote}${tf_game_image_tag:=main}${quote}
+      replicas: ${tf_game_web_replicas:=2}
+      resources:
+        requests:
+          cpu: ${tf_game_web_requests_cpu:=10m}
+          memory: ${tf_game_web_requests_memory:=16Mi}
+        limits:
+          memory: ${tf_game_web_limits_memory:=64Mi}
+    api:
+      image:
+        repository: ${tf_game_api_image_repository:=harbor.h4xx.io/proxy-ghcr/lukasfriedhoff/game_tf2026-api}
+        tag: ${quote}${tf_game_image_tag:=main}${quote}
+      replicas: ${tf_game_api_replicas:=2}
+      logLevel: ${tf_game_api_log_level:=info}
+      resources:
+        requests:
+          cpu: ${tf_game_api_requests_cpu:=50m}
+          memory: ${tf_game_api_requests_memory:=96Mi}
+        limits:
+          memory: ${tf_game_api_limits_memory:=256Mi}
+    ingress:
+      enabled: true
+      className: traefik
+      # Public booth game: no Authelia forward-auth. The admin page has its
+      # own password (chart-generated Secret tf-game-admin).
+      annotations:
+        cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+        external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      host: ${tf_game_host_label:=game}${public_host_suffix}.${delegating_domain}
+      tls:
+        enabled: true
+        secretName: tf-game-tls
+    postgresql:
+      enabled: true
+      persistence:
+        enabled: true
+        size: ${tf_game_postgres_size:=2Gi}
+        storageClass: ${quote}${tf_game_postgres_storage_class_name:=}${quote}
+      resources:
+        requests:
+          cpu: ${tf_game_postgres_requests_cpu:=100m}
+          memory: ${tf_game_postgres_requests_memory:=256Mi}
+        limits:
+          memory: ${tf_game_postgres_limits_memory:=512Mi}
+    event:
+      timezone: ${tf_game_event_timezone:=Europe/Berlin}
+      start: ${quote}${tf_game_event_start:=}${quote}
+      end: ${quote}${tf_game_event_end:=}${quote}
+      leaderboardFrozen: ${tf_game_leaderboard_frozen:=false}
+      rewardsEnabled: ${tf_game_rewards_enabled:=true}
