@@ -1,0 +1,79 @@
+# Longhorn never cleans up backupstore lock files.
+#
+# Every backup takes a lock at backupstore/volumes/<xx>/<yy>/<pvc>/locks/*.lck.
+# If the backup is interrupted - engine restart, node reboot, the nightly Job
+# being killed mid-run, an overlapping run - the lock file is simply left
+# behind, and every later backup of that volume fails with:
+#
+#   failed to acquire lock backupstore/volumes/../locks/lock-*.lck
+#
+# They accumulate silently and forever. When this was first measured on
+# 2026-10-05 the oldest was from 2026-07-17 - nearly three months blocking
+# jellyfin - and on 2026-10-08 there were 46 lock failures in a single day
+# across ~30 different volumes.
+#
+# A live backup holds its lock for minutes, so anything older than a few hours
+# is garbage by definition. This reaps them hourly.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: longhorn-backupstore-lock-reaper
+  namespace: ${longhorn_namespace}
+spec:
+  schedule: "${longhorn_lock_reaper_cron:=25 * * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: reaper
+              # Our own mc build - MinIO withdrew public distribution in 2025.
+              # See flux-apps/containers/mc.
+              image: ${mc_image:=harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z}
+              command:
+                - /bin/sh
+                - -ceu
+                - |
+                  mc alias set bt "$AWS_ENDPOINTS" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" >/dev/null
+                  AGE="${LOCK_MAX_AGE:-6h}"
+                  echo "[lock-reaper] removing *.lck older than $AGE"
+                  n=0
+                  # --older-than keeps this safe: a lock held by a running
+                  # backup is minutes old and is never matched.
+                  for f in $(mc find "bt/${BACKUP_BUCKET}/backupstore/volumes" \
+                               --name '*.lck' --older-than "$AGE" 2>/dev/null); do
+                    if mc rm --recursive --force "$f" >/dev/null 2>&1; then
+                      echo "[lock-reaper] removed $f"; n=$((n+1))
+                    else
+                      echo "[lock-reaper] FAILED to remove $f" >&2
+                    fi
+                  done
+                  echo "[lock-reaper] removed $n stale lock(s)"
+              env:
+                - name: BACKUP_BUCKET
+                  value: ${longhorn_backup_bucket:=homelab-longhorn-backups}
+                - name: LOCK_MAX_AGE
+                  value: ${quote}${longhorn_lock_max_age:=6h}${quote}
+              envFrom:
+                - secretRef:
+                    name: ${longhorn_backup_credential_secret:=longhorn-backup-target}
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                runAsNonRoot: true
+                runAsUser: 65534
+                capabilities:
+                  drop: ["ALL"]

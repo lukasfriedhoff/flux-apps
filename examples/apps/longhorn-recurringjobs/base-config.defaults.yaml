@@ -12,3 +12,13 @@ data:
   longhorn_recurring_full_backup_interval: "7"
   # Serial (1) lets one lock-blocked volume starve the whole nightly queue.
   longhorn_recurring_backup_concurrency: "2"
+  # Hourly reaper for orphaned backupstore locks (see lock-reaper-cronjob.yaml).
+  longhorn_lock_reaper_cron: "25 * * * *"
+  longhorn_lock_max_age: "6h"
+  longhorn_backup_bucket: "homelab-longhorn-backups"
+  longhorn_backup_credential_secret: "longhorn-backup-target"
+  # Snapshot retention - without this, volumes hit the 250 cap and
+  # silently stop backing up entirely.
+  longhorn_recurring_snapshot_cleanup_cron: "0 1 * * *"
+  longhorn_recurring_snapshot_retain: "10"
+  longhorn_recurring_snapshot_concurrency: "2"
