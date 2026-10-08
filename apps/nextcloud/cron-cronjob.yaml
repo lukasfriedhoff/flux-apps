@@ -59,7 +59,7 @@ spec:
           serviceAccountName: nextcloud-upgrade-check
           containers:
             - name: cron
-              image: alpine/k8s:1.37.0
+              image: alpine/k8s:1.37.1
               resources:
                 requests:
                   cpu: 25m

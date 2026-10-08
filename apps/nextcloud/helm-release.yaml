@@ -1143,7 +1143,7 @@ spec:
               mountPath: /var/www-data
               subPath: data
         - name: seed-custom-apps
-          image: python:3.14.7-slim
+          image: python:3.14.8-slim
           command:
             - /bin/sh
             - -c
