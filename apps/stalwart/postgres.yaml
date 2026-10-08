@@ -1,0 +1,43 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: stalwart-postgres
+  namespace: mail
+spec:
+  instances: ${stalwart_postgres_instances:=3}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: stalwart
+      owner: stalwart
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${stalwart_postgres_backup_bucket:=stalwart-postgres-backup}/${cluster_environment}/${stalwart_postgres_backup_generation:=}stalwart-postgres/"
+      endpointURL: "${stalwart_postgres_backup_endpoint_url:=}"
+      serverName: ${stalwart_postgres_backup_server_name:=stalwart-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${stalwart_postgres_backup_credential_secret_name:=stalwart-postgres-backup-credentials}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${stalwart_postgres_backup_credential_secret_name:=stalwart-postgres-backup-credentials}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${stalwart_postgres_backup_retention:=30d}"
+  storage:
+    storageClass: ${stalwart_postgres_storage_class_name:=longhorn-nvme-rwo-2r}
+    size: ${stalwart_postgres_size:=20Gi}
+  resources:
+    requests:
+      cpu: ${stalwart_postgres_requests_cpu:=100m}
+      memory: ${stalwart_postgres_requests_memory:=512Mi}
+    limits:
+      memory: ${stalwart_postgres_limits_memory:=2Gi}

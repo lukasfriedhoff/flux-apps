@@ -1,0 +1,175 @@
+# Stalwart all-in-one mail server (SMTP in/out, IMAP, JMAP, CalDAV/CardDAV,
+# spam filter, Sieve). Bootstrap philosophy: this file carries only the
+# storage topology + a fallback admin; everything else (LLDAP directory,
+# OIDC, DKIM, spam tuning, cluster coordination) is configured through the
+# webadmin/API and persists in the shared Postgres settings store, which is
+# what makes every replica pick it up - the cloud-native path Stalwart
+# documents. Scale by raising ${stalwart_replicas} once coordination is on.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-config
+  namespace: mail
+data:
+  config.toml: |
+    [server]
+    hostname = "${stalwart_mail_hostname:=mail.hackimpott.de}"
+
+    [server.listener."smtp"]
+    bind = ["[::]:25"]
+    protocol = "smtp"
+
+    [server.listener."submission"]
+    bind = ["[::]:587"]
+    protocol = "smtp"
+
+    [server.listener."submissions"]
+    bind = ["[::]:465"]
+    protocol = "smtp"
+    tls.implicit = true
+
+    [server.listener."imap"]
+    bind = ["[::]:143"]
+    protocol = "imap"
+
+    [server.listener."imaptls"]
+    bind = ["[::]:993"]
+    protocol = "imap"
+    tls.implicit = true
+
+    [server.listener."sieve"]
+    bind = ["[::]:4190"]
+    protocol = "managesieve"
+
+    [server.listener."http"]
+    bind = ["[::]:8080"]
+    protocol = "http"
+
+    [server.http]
+    use-x-forwarded = true
+
+    [store."postgres"]
+    type = "postgresql"
+    host = "stalwart-postgres-rw.mail.svc.cluster.local"
+    port = 5432
+    database = "stalwart"
+    user = "%{env:PG_USER}%"
+    password = "%{env:PG_PASSWORD}%"
+
+    [store."s3"]
+    type = "s3"
+    endpoint = "http://${s3_service_name:=s3}.${s3_namespace:=object-storage}.svc.cluster.local:9000"
+    bucket = "${stalwart_blob_bucket:=stalwart-blobs}"
+    access-key = "%{env:S3_ACCESS_KEY}%"
+    secret-key = "%{env:S3_SECRET_KEY}%"
+    region = "${stalwart_blob_region:=homelab}"
+
+    [store."redis"]
+    type = "redis"
+    url = "redis://stalwart-valkey.mail.svc.cluster.local:6379"
+
+    [storage]
+    data = "postgres"
+    fts = "postgres"
+    blob = "s3"
+    lookup = "redis"
+    directory = "internal"
+
+    [directory."internal"]
+    type = "internal"
+    store = "postgres"
+
+    [authentication.fallback-admin]
+    user = "admin"
+    secret = "%{env:FALLBACK_ADMIN_SECRET}%"
+
+    [tracer."stdout"]
+    type = "stdout"
+    level = "${stalwart_log_level:=info}"
+    ansi = false
+    enable = true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stalwart
+  namespace: mail
+  labels:
+    app.kubernetes.io/name: stalwart
+spec:
+  replicas: ${stalwart_replicas:=1}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stalwart
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stalwart
+    spec:
+      containers:
+        - name: stalwart
+          image: docker.io/stalwartlabs/stalwart:${stalwart_image_tag:=v0.16.25}
+          args: ["--config", "/opt/stalwart/etc/config.toml"]
+          env:
+            - name: PG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-postgres-app
+                  key: username
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-postgres-app
+                  key: password
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-s3-credentials
+                  key: accessKey
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-s3-credentials
+                  key: secretKey
+            - name: FALLBACK_ADMIN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-admin
+                  key: password
+          ports:
+            - { name: smtp, containerPort: 25 }
+            - { name: submission, containerPort: 587 }
+            - { name: submissions, containerPort: 465 }
+            - { name: imap, containerPort: 143 }
+            - { name: imaptls, containerPort: 993 }
+            - { name: sieve, containerPort: 4190 }
+            - { name: http, containerPort: 8080 }
+          volumeMounts:
+            - name: config
+              mountPath: /opt/stalwart/etc
+          resources:
+            requests:
+              cpu: ${stalwart_requests_cpu:=200m}
+              memory: ${stalwart_requests_memory:=512Mi}
+            limits:
+              memory: ${stalwart_limits_memory:=2Gi}
+          startupProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 20
+      volumes:
+        - name: config
+          configMap:
+            name: stalwart-config

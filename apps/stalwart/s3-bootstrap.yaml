@@ -1,0 +1,71 @@
+# Provision the Stalwart blob bucket + a dedicated MinIO user on the
+# in-cluster S3. Runs in the object-storage namespace because the MinIO
+# root secret lives there; the resulting per-app credentials are the
+# stalwart-s3-credentials SOPS secret (object-storage ns), mirrored into
+# the mail namespace by reflector for the Stalwart pods.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stalwart-s3-bootstrap
+  namespace: ${s3_namespace:=object-storage}
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: ${mc_image:=harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z}
+          env:
+            - name: S3_ENDPOINT
+              value: http://${s3_service_name:=s3}.${s3_namespace:=object-storage}.svc.cluster.local:9000
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ${s3_root_secret_name:=s3-root}
+                  key: rootUser
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${s3_root_secret_name:=s3-root}
+                  key: rootPassword
+            - name: STALWART_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-s3-credentials
+                  key: accessKey
+            - name: STALWART_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-s3-credentials
+                  key: secretKey
+            - name: STALWART_BUCKET
+              value: ${stalwart_blob_bucket:=stalwart-blobs}
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              until mc alias set s3 "$${S3_ENDPOINT}" "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" >/dev/null 2>&1; do
+                sleep 5
+              done
+
+              mc mb --ignore-existing "s3/$${STALWART_BUCKET}"
+              mc admin user add s3 "$${STALWART_ACCESS_KEY}" "$${STALWART_SECRET_KEY}" || true
+
+              cat > /tmp/stalwart-policy.json <<EOF
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": ["s3:*"],
+                    "Resource": [
+                      "arn:aws:s3:::$${STALWART_BUCKET}",
+                      "arn:aws:s3:::$${STALWART_BUCKET}/*"
+                    ]
+                  }
+                ]
+              }
+              EOF
+              mc admin policy create s3 stalwart-blobs-rw /tmp/stalwart-policy.json || true
+              mc admin policy attach s3 stalwart-blobs-rw --user "$${STALWART_ACCESS_KEY}" || true

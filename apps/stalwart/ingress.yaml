@@ -1,0 +1,30 @@
+# Web face of the mailserver: webadmin UI, JMAP, DAV and the
+# autoconfig/autodiscover endpoints. hackimpott.de rides the ionos1 path;
+# cert via http-01 (letsencrypt-prod dnsZones selector). Stalwart has its
+# own authentication - no Authelia in front.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stalwart
+  namespace: mail
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${stalwart_mail_hostname:=mail.hackimpott.de}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stalwart
+                port:
+                  number: 8080
+  tls:
+    - secretName: stalwart-http-tls
+      hosts:
+        - ${stalwart_mail_hostname:=mail.hackimpott.de}
