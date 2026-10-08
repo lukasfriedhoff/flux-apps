@@ -1,93 +1,35 @@
-# Stalwart all-in-one mail server (SMTP in/out, IMAP, JMAP, CalDAV/CardDAV,
-# spam filter, Sieve). Bootstrap philosophy: this file carries only the
-# storage topology + a fallback admin; everything else (LLDAP directory,
-# OIDC, DKIM, spam tuning, cluster coordination) is configured through the
-# webadmin/API and persists in the shared Postgres settings store, which is
-# what makes every replica pick it up - the cloud-native path Stalwart
-# documents. Scale by raising ${stalwart_replicas} once coordination is on.
+# Stalwart v0.16 mail server (SMTP in/out, IMAP, JMAP, POP3, CalDAV/CardDAV,
+# spam filter, Sieve, FTS).
+#
+# v0.16 redesigned configuration completely: the on-disk config.json holds
+# ONLY the datastore pointer. Domains, listeners, directories, OIDC, DKIM,
+# spam rules and every other setting live inside that datastore as JMAP
+# objects, reconciled declaratively with `stalwart-cli apply` from the
+# committed plan in apply-plan.yaml. That is what makes replicas
+# interchangeable - scale with ${stalwart_replicas} once the cluster
+# coordinator is declared in the plan.
+#
+# config.json is rendered at pod start from the template below so the
+# CNPG-generated Postgres password never lands in git or in a ConfigMap.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: stalwart-config
   namespace: mail
 data:
-  config.toml: |
-    [server]
-    hostname = "${stalwart_mail_hostname:=mail.hackimpott.de}"
-
-    [server.listener."smtp"]
-    bind = ["[::]:25"]
-    protocol = "smtp"
-
-    [server.listener."submission"]
-    bind = ["[::]:587"]
-    protocol = "smtp"
-
-    [server.listener."submissions"]
-    bind = ["[::]:465"]
-    protocol = "smtp"
-    tls.implicit = true
-
-    [server.listener."imap"]
-    bind = ["[::]:143"]
-    protocol = "imap"
-
-    [server.listener."imaptls"]
-    bind = ["[::]:993"]
-    protocol = "imap"
-    tls.implicit = true
-
-    [server.listener."sieve"]
-    bind = ["[::]:4190"]
-    protocol = "managesieve"
-
-    [server.listener."http"]
-    bind = ["[::]:8080"]
-    protocol = "http"
-
-    [server.http]
-    use-x-forwarded = true
-
-    [store."postgres"]
-    type = "postgresql"
-    host = "stalwart-postgres-rw.mail.svc.cluster.local"
-    port = 5432
-    database = "stalwart"
-    user = "%{env:PG_USER}%"
-    password = "%{env:PG_PASSWORD}%"
-
-    [store."s3"]
-    type = "s3"
-    endpoint = "http://${s3_service_name:=s3}.${s3_namespace:=object-storage}.svc.cluster.local:9000"
-    bucket = "${stalwart_blob_bucket:=stalwart-blobs}"
-    access-key = "%{env:S3_ACCESS_KEY}%"
-    secret-key = "%{env:S3_SECRET_KEY}%"
-    region = "${stalwart_blob_region:=homelab}"
-
-    [store."redis"]
-    type = "redis"
-    url = "redis://stalwart-valkey.mail.svc.cluster.local:6379"
-
-    [storage]
-    data = "postgres"
-    fts = "postgres"
-    blob = "s3"
-    lookup = "redis"
-    directory = "internal"
-
-    [directory."internal"]
-    type = "internal"
-    store = "postgres"
-
-    [authentication.fallback-admin]
-    user = "admin"
-    secret = "%{env:FALLBACK_ADMIN_SECRET}%"
-
-    [tracer."stdout"]
-    type = "stdout"
-    level = "${stalwart_log_level:=info}"
-    ansi = false
-    enable = true
+  config.json.template: |
+    {
+      "@type": "PostgreSql",
+      "host": "stalwart-postgres-rw.mail.svc.cluster.local",
+      "port": 5432,
+      "database": "stalwart",
+      "authUsername": "__PG_USER__",
+      "authSecret": { "@type": "Value", "secret": "__PG_PASSWORD__" },
+      "timeout": 15000,
+      "useTls": false,
+      "poolMaxConnections": ${stalwart_pg_pool_max:=10},
+      "poolRecyclingMethod": "fast"
+    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -106,10 +48,12 @@ spec:
       labels:
         app.kubernetes.io/name: stalwart
     spec:
-      containers:
-        - name: stalwart
-          image: docker.io/stalwartlabs/stalwart:${stalwart_image_tag:=v0.16.25}
-          args: ["--config", "/opt/stalwart/etc/config.toml"]
+      initContainers:
+        # Render config.json with the CNPG credentials. python3 (present in
+        # the mc image) does the substitution so a password containing shell
+        # or regex metacharacters cannot corrupt the JSON.
+        - name: render-config
+          image: ${mc_image:=harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z}
           env:
             - name: PG_USER
               valueFrom:
@@ -121,21 +65,35 @@ spec:
                 secretKeyRef:
                   name: stalwart-postgres-app
                   key: password
-            - name: S3_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-s3-credentials
-                  key: accessKey
-            - name: S3_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-s3-credentials
-                  key: secretKey
-            - name: FALLBACK_ADMIN_SECRET
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              python3 - <<'EOF'
+              import json, os
+              tpl = open('/template/config.json.template').read()
+              tpl = tpl.replace('"__PG_USER__"', json.dumps(os.environ['PG_USER']))
+              tpl = tpl.replace('"__PG_PASSWORD__"', json.dumps(os.environ['PG_PASSWORD']))
+              json.loads(tpl)  # fail loudly rather than boot-loop on bad JSON
+              open('/etc/stalwart/config.json', 'w').write(tpl)
+              EOF
+          volumeMounts:
+            - name: config-template
+              mountPath: /template
+            - name: config
+              mountPath: /etc/stalwart
+      containers:
+        - name: stalwart
+          image: docker.io/stalwartlabs/stalwart:${stalwart_image_tag:=v0.16.25}
+          args: ["--config", "/etc/stalwart/config.json"]
+          env:
+            # Fallback admin for the WebUI/CLI until real admins exist in the
+            # directory. NOT recovery mode - that is migration-only.
+            - name: STALWART_RECOVERY_ADMIN
               valueFrom:
                 secretKeyRef:
                   name: stalwart-admin
-                  key: password
+                  key: recoveryAdmin
           ports:
             - { name: smtp, containerPort: 25 }
             - { name: submission, containerPort: 587 }
@@ -146,7 +104,9 @@ spec:
             - { name: http, containerPort: 8080 }
           volumeMounts:
             - name: config
-              mountPath: /opt/stalwart/etc
+              mountPath: /etc/stalwart
+            - name: data
+              mountPath: /var/lib/stalwart
           resources:
             requests:
               cpu: ${stalwart_requests_cpu:=200m}
@@ -155,7 +115,7 @@ spec:
               memory: ${stalwart_limits_memory:=2Gi}
           startupProbe:
             httpGet:
-              path: /healthz/ready
+              path: /healthz/live
               port: http
             periodSeconds: 5
             failureThreshold: 60
@@ -170,6 +130,12 @@ spec:
               port: http
             periodSeconds: 20
       volumes:
-        - name: config
+        - name: config-template
           configMap:
             name: stalwart-config
+        - name: config
+          emptyDir: {}
+        # Scratch only: all persistent state lives in Postgres/S3, which is
+        # what keeps replicas interchangeable.
+        - name: data
+          emptyDir: {}
