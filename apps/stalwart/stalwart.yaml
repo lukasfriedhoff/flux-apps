@@ -49,11 +49,12 @@ spec:
         app.kubernetes.io/name: stalwart
     spec:
       initContainers:
-        # Render config.json with the CNPG credentials. python3 (present in
-        # the mc image) does the substitution so a password containing shell
-        # or regex metacharacters cannot corrupt the JSON.
+        # Render config.json with the CNPG credentials. python3 does the
+        # substitution so a password containing shell or regex
+        # metacharacters cannot corrupt the JSON (the mc image has no
+        # python; this pulls through the Harbor docker proxy).
         - name: render-config
-          image: ${mc_image:=harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z}
+          image: ${stalwart_render_image:=harbor.h4xx.io/proxy-docker/library/python:3-alpine}
           env:
             - name: PG_USER
               valueFrom:
@@ -66,17 +67,15 @@ spec:
                   name: stalwart-postgres-app
                   key: password
           command:
-            - /bin/sh
-            - -ceu
+            - python3
+            - -c
             - |
-              python3 - <<'EOF'
               import json, os
               tpl = open('/template/config.json.template').read()
               tpl = tpl.replace('"__PG_USER__"', json.dumps(os.environ['PG_USER']))
               tpl = tpl.replace('"__PG_PASSWORD__"', json.dumps(os.environ['PG_PASSWORD']))
               json.loads(tpl)  # fail loudly rather than boot-loop on bad JSON
               open('/etc/stalwart/config.json', 'w').write(tpl)
-              EOF
           volumeMounts:
             - name: config-template
               mountPath: /template
