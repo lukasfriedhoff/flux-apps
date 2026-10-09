@@ -1,0 +1,25 @@
+# Declarative server configuration, reconciled by `stalwart-cli apply`.
+#
+# v0.16 keeps every setting except the datastore pointer INSIDE the
+# database, so this NDJSON plan is the GitOps source of truth for them.
+# The apply Job below re-runs it; `upsert` is idempotent (matchOn finds the
+# existing object and patches it), so re-running is always safe.
+#
+# Secrets are __PLACEHOLDERS__ substituted from mounted Kubernetes secrets
+# at Job runtime - never committed.
+#
+# Gotchas learned the hard way:
+#  - Directory objects have NO `name` field; `description` is the match key.
+#  - The server caches directory config: the Job restarts the Deployment
+#    after a successful apply, otherwise lookups keep using the old config.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-apply-plan
+  namespace: mail
+data:
+  plan.ndjson.template: |
+    {"@type":"upsert","object":"Domain","matchOn":["name"],"value":{"dom-hackimpott":{"name":"${stalwart_primary_domain:=hackimpott.de}","description":"Event and community mail domain"}}}
+    {"@type":"upsert","object":"Domain","matchOn":["name"],"value":{"dom-h4xx":{"name":"${stalwart_secondary_domain:=h4xx.io}","description":"Homelab domain - matches the LLDAP mail attribute"}}}
+    {"@type":"upsert","object":"Directory","matchOn":["description"],"value":{"dir-lldap":{"@type":"Ldap","description":"lldap","url":"ldap://lldap.lldap.svc.cluster.local:3890","baseDn":"${lldap_base_dn:=dc=h4xx,dc=io}","bindDn":"${lldap_bind_dn:=uid=admin,ou=people,dc=h4xx,dc=io}","bindSecret":{"@type":"Value","secret":"__LLDAP_BIND_SECRET__"},"bindAuthentication":true,"filterLogin":"(&(objectClass=person)(|(uid=?)(mail=?)))","filterMailbox":"(&(objectClass=person)(mail=?))","attrEmail":{"mail":true},"attrDescription":{"cn":true},"attrMemberOf":{"memberOf":true},"groupClass":"groupOfUniqueNames","useTls":false}}}
+    {"@type":"update","object":"Authentication","value":{"directoryId":"#dir-lldap"}}

@@ -8,4 +8,6 @@ resources:
   - s3-bootstrap.yaml
   - stalwart.yaml
   - service.yaml
+  - apply-plan.yaml
+  - apply-job.yaml
   - ingress.yaml

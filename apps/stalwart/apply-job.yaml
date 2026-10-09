@@ -1,0 +1,127 @@
+# Reconciles the committed plan into the running server. Bump
+# ${stalwart_plan_revision} whenever plan.ndjson.template changes - a Job's
+# pod template is immutable, so a new name is what makes it re-run.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stalwart-apply-${stalwart_plan_revision:=1}
+  namespace: mail
+spec:
+  backoffLimit: 10
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: stalwart-apply
+      containers:
+        - name: apply
+          image: ${stalwart_render_image:=harbor.h4xx.io/proxy-docker/library/python:3-alpine}
+          env:
+            - name: STALWART_URL
+              value: http://stalwart.mail.svc.cluster.local:8080
+            - name: STALWART_USER
+              value: admin
+            - name: STALWART_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-admin
+                  key: password
+            - name: LLDAP_BIND_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-ldap-bind
+                  key: password
+            - name: CLI_VERSION
+              value: ${stalwart_cli_version:=v1.0.13}
+            - name: CLI_SHA256
+              value: ${stalwart_cli_sha256:=689644a491c298b4916714a93a2a249ee2ea70f2f2c054991658c3e8f0f27c13}
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              python3 - <<'PY'
+              import hashlib, io, json, os, tarfile, urllib.request
+              url = ("https://github.com/stalwartlabs/cli/releases/download/"
+                     f"{os.environ['CLI_VERSION']}/stalwart-cli-x86_64-unknown-linux-musl.tar.xz")
+              blob = urllib.request.urlopen(url, timeout=180).read()
+              digest = hashlib.sha256(blob).hexdigest()
+              if digest != os.environ['CLI_SHA256']:
+                  raise SystemExit(f"CLI checksum mismatch: {digest}")
+              tarfile.open(fileobj=io.BytesIO(blob)).extractall('/tmp/cli')
+              for root, _, files in os.walk('/tmp/cli'):
+                  for f in files:
+                      if f == 'stalwart-cli':
+                          os.chmod(os.path.join(root, f), 0o755)
+              plan = open('/plan/plan.ndjson.template').read()
+              plan = plan.replace('"__LLDAP_BIND_SECRET__"',
+                                  json.dumps(os.environ['LLDAP_BIND_SECRET']))
+              for line in plan.splitlines():
+                  if line.strip():
+                      json.loads(line)  # fail before touching the server
+              open('/tmp/plan.ndjson', 'w').write(plan)
+              PY
+
+              CLI=$(find /tmp/cli -name stalwart-cli -type f | head -1)
+              "$CLI" apply --file /tmp/plan.ndjson
+
+              # The server caches directory config; without this the new
+              # settings are stored but not used until the next restart.
+              python3 - <<'PY'
+              import urllib.request, json, os
+              req = urllib.request.Request(
+                  "https://kubernetes.default.svc/apis/apps/v1/namespaces/mail/deployments/stalwart",
+                  method="PATCH",
+                  data=json.dumps({"spec":{"template":{"metadata":{"annotations":{
+                      "stalwart.h4xx.io/plan-applied": os.environ["CLI_VERSION"] + "-" + os.environ.get("HOSTNAME","")
+                  }}}}}).encode(),
+                  headers={"Content-Type": "application/strategic-merge-patch+json",
+                           "Authorization": "Bearer " + open("/var/run/secrets/kubernetes.io/serviceaccount/token").read()})
+              import ssl
+              ctx = ssl.create_default_context(cafile="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+              urllib.request.urlopen(req, context=ctx, timeout=30)
+              print("triggered stalwart rollout to pick up the new config")
+              PY
+          volumeMounts:
+            - name: plan
+              mountPath: /plan
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: plan
+          configMap:
+            name: stalwart-apply-plan
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stalwart-apply
+  namespace: mail
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: stalwart-apply
+  namespace: mail
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["stalwart"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stalwart-apply
+  namespace: mail
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: stalwart-apply
+subjects:
+  - kind: ServiceAccount
+    name: stalwart-apply
+    namespace: mail
