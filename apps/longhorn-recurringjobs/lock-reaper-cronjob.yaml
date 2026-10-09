@@ -14,6 +14,17 @@
 #
 # A live backup holds its lock for minutes, so anything older than a few hours
 # is garbage by definition. This reaps them hourly.
+#
+# 2026-10-09: the 6h threshold turned out to be unreachable in practice and
+# backups stayed broken for four days behind it. Each FAILED attempt writes
+# its own lock before discovering it cannot acquire one, and attempts repeat
+# far more often than every 6h - so a volume always had a lock younger than
+# the threshold and the reaper reported "removed 0" while nextcloud-data-hdd
+# went 97h without a backup. Measured that day: the orphaned locks were never
+# touched again after creation (no refresh in a 45s window, holder long gone),
+# which is what makes a short threshold safe - an interrupted backup's lock is
+# garbage within minutes, and a running backup that genuinely takes hours is
+# protected by the InProgress check below, not by age.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -32,6 +43,41 @@ spec:
       template:
         spec:
           restartPolicy: Never
+          serviceAccountName: longhorn-lock-reaper
+          volumes:
+            - name: state
+              emptyDir: {}
+          initContainers:
+            # Writes the list of volumes that currently have a backup or
+            # restore running. The reaper never touches those, which is what
+            # makes the short age threshold safe (the mc image has no
+            # python/jq/kubectl, hence the separate container).
+            - name: busy-volumes
+              image: ${longhorn_lock_reaper_api_image:=harbor.h4xx.io/proxy-docker/library/python:3-alpine}
+              command:
+                - python3
+                - -c
+                - |
+                  import json, ssl, urllib.request
+                  base = "https://kubernetes.default.svc/apis/longhorn.io/v1beta2/namespaces/${longhorn_namespace}"
+                  tok = open("/var/run/secrets/kubernetes.io/serviceaccount/token").read()
+                  ctx = ssl.create_default_context(
+                      cafile="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+                  def get(kind):
+                      req = urllib.request.Request(f"{base}/{kind}",
+                                                   headers={"Authorization": "Bearer " + tok})
+                      return json.load(urllib.request.urlopen(req, context=ctx, timeout=30))["items"]
+                  busy = {b["status"].get("volumeName") for b in get("backups")
+                          if b.get("status", {}).get("state") in ("InProgress", "Started", "Pending")}
+                  busy |= {v["metadata"]["name"] for v in get("volumes")
+                           if v.get("status", {}).get("restoreRequired")}
+                  busy.discard(None)
+                  with open("/state/busy-volumes.txt", "w") as f:
+                      f.write("\n".join(sorted(busy)))
+                  print(f"[lock-reaper] {len(busy)} volume(s) busy, will be skipped")
+              volumeMounts:
+                - name: state
+                  mountPath: /state
           containers:
             - name: reaper
               # Our own mc build - MinIO withdrew public distribution in 2025.
@@ -42,25 +88,32 @@ spec:
                 - -ceu
                 - |
                   mc alias set bt "$AWS_ENDPOINTS" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" >/dev/null
-                  AGE="${LOCK_MAX_AGE:-6h}"
-                  echo "[lock-reaper] removing *.lck older than $AGE"
-                  n=0
-                  # --older-than keeps this safe: a lock held by a running
-                  # backup is minutes old and is never matched.
+                  AGE="${LOCK_MAX_AGE:-30m}"
+                  echo "[lock-reaper] removing *.lck older than $AGE (skipping busy volumes)"
+                  n=0 skipped=0
                   for f in $(mc find "bt/${BACKUP_BUCKET}/backupstore/volumes" \
                                --name '*.lck' --older-than "$AGE" 2>/dev/null); do
+                    # Path: .../backupstore/volumes/<xx>/<yy>/<pvc>/locks/<lock>.lck
+                    vol=$(echo "$f" | sed -n 's#.*/volumes/[^/]*/[^/]*/\([^/]*\)/locks/.*#\1#p')
+                    if [ -n "$vol" ] && grep -qxF "$vol" /state/busy-volumes.txt 2>/dev/null; then
+                      echo "[lock-reaper] skipping $vol (backup/restore running)"
+                      skipped=$((skipped+1)); continue
+                    fi
                     if mc rm --recursive --force "$f" >/dev/null 2>&1; then
                       echo "[lock-reaper] removed $f"; n=$((n+1))
                     else
                       echo "[lock-reaper] FAILED to remove $f" >&2
                     fi
                   done
-                  echo "[lock-reaper] removed $n stale lock(s)"
+                  echo "[lock-reaper] removed $n stale lock(s), skipped $skipped busy"
               env:
                 - name: BACKUP_BUCKET
                   value: ${longhorn_backup_bucket:=homelab-longhorn-backups}
                 - name: LOCK_MAX_AGE
-                  value: ${quote}${longhorn_lock_max_age:=6h}${quote}
+                  value: ${quote}${longhorn_lock_max_age:=30m}${quote}
+              volumeMounts:
+                - name: state
+                  mountPath: /state
               envFrom:
                 - secretRef:
                     name: ${longhorn_backup_credential_secret:=longhorn-backup-target}
@@ -77,3 +130,33 @@ spec:
                 runAsUser: 65534
                 capabilities:
                   drop: ["ALL"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: longhorn-lock-reaper
+  namespace: ${longhorn_namespace}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: longhorn-lock-reaper
+  namespace: ${longhorn_namespace}
+rules:
+  - apiGroups: ["longhorn.io"]
+    resources: ["backups", "volumes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: longhorn-lock-reaper
+  namespace: ${longhorn_namespace}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: longhorn-lock-reaper
+subjects:
+  - kind: ServiceAccount
+    name: longhorn-lock-reaper
+    namespace: ${longhorn_namespace}
