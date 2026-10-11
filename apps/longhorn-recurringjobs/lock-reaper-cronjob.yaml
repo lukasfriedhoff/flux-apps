@@ -88,10 +88,16 @@ spec:
                 - -ceu
                 - |
                   mc alias set bt "$AWS_ENDPOINTS" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" >/dev/null
-                  AGE="${LOCK_MAX_AGE:-30m}"
+                  # Note the doubled dollar. Flux envsubst runs over this
+                  # manifest and replaces any unescaped brace-form variable it
+                  # does not know with an EMPTY string. That silently broke this
+                  # job: the find ran against "bt//backupstore/volumes" with no
+                  # bucket, matched nothing, and exited 0 in six seconds while 11
+                  # stale locks sat untouched.
+                  AGE="$${LOCK_MAX_AGE:-30m}"
                   echo "[lock-reaper] removing *.lck older than $AGE (skipping busy volumes)"
                   n=0 skipped=0
-                  for f in $(mc find "bt/${BACKUP_BUCKET}/backupstore/volumes" \
+                  for f in $(mc find "bt/$${BACKUP_BUCKET}/backupstore/volumes" \
                                --name '*.lck' --older-than "$AGE" 2>/dev/null); do
                     # Path: .../backupstore/volumes/<xx>/<yy>/<pvc>/locks/<lock>.lck
                     vol=$(echo "$f" | sed -n 's#.*/volumes/[^/]*/[^/]*/\([^/]*\)/locks/.*#\1#p')
