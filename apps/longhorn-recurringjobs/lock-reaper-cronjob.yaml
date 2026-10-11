@@ -75,6 +75,20 @@ spec:
                   with open("/state/busy-volumes.txt", "w") as f:
                       f.write("\n".join(sorted(busy)))
                   print(f"[lock-reaper] {len(busy)} volume(s) busy, will be skipped")
+
+                  # Emit the exact backupstore prefix for every volume so the
+                  # reaper can list ~120 narrow paths instead of recursing the
+                  # whole store. A full `mc find` over 1.29M objects ran for
+                  # EIGHT HOURS without finishing, which is useless for an
+                  # hourly job. Longhorn shards by the first four hex chars of
+                  # sha512(volume name), split 2/2.
+                  import hashlib
+                  names = sorted({v["metadata"]["name"] for v in get("volumes")})
+                  with open("/state/volume-paths.txt", "w") as f:
+                      for n in names:
+                          h = hashlib.sha512(n.encode()).hexdigest()[:4]
+                          f.write(f"{n} {h[:2]}/{h[2:]}\n")
+                  print(f"[lock-reaper] {len(names)} volume prefix(es) to check")
               volumeMounts:
                 - name: state
                   mountPath: /state
@@ -96,22 +110,25 @@ spec:
                   # stale locks sat untouched.
                   AGE="$${LOCK_MAX_AGE:-30m}"
                   echo "[lock-reaper] removing *.lck older than $AGE (skipping busy volumes)"
-                  n=0 skipped=0
-                  for f in $(mc find "bt/$${BACKUP_BUCKET}/backupstore/volumes" \
-                               --name '*.lck' --older-than "$AGE" 2>/dev/null); do
-                    # Path: .../backupstore/volumes/<xx>/<yy>/<pvc>/locks/<lock>.lck
-                    vol=$(echo "$f" | sed -n 's#.*/volumes/[^/]*/[^/]*/\([^/]*\)/locks/.*#\1#p')
-                    if [ -n "$vol" ] && grep -qxF "$vol" /state/busy-volumes.txt 2>/dev/null; then
-                      echo "[lock-reaper] skipping $vol (backup/restore running)"
+                  n=0 skipped=0 checked=0
+                  while read -r vol prefix; do
+                    [ -n "$vol" ] || continue
+                    if grep -qxF "$vol" /state/busy-volumes.txt 2>/dev/null; then
                       skipped=$((skipped+1)); continue
                     fi
-                    if mc rm --recursive --force "$f" >/dev/null 2>&1; then
-                      echo "[lock-reaper] removed $f"; n=$((n+1))
-                    else
-                      echo "[lock-reaper] FAILED to remove $f" >&2
-                    fi
-                  done
-                  echo "[lock-reaper] removed $n stale lock(s), skipped $skipped busy"
+                    checked=$((checked+1))
+                    # Scoped to one volume's locks/ dir, so each call is a tiny
+                    # listing rather than a walk of the entire backupstore.
+                    for f in $(mc find "bt/$${BACKUP_BUCKET}/backupstore/volumes/$prefix/$vol/locks" \
+                                 --name '*.lck' --older-than "$AGE" 2>/dev/null); do
+                      if mc rm --recursive --force "$f" >/dev/null 2>&1; then
+                        echo "[lock-reaper] removed $f"; n=$((n+1))
+                      else
+                        echo "[lock-reaper] FAILED to remove $f" >&2
+                      fi
+                    done
+                  done < /state/volume-paths.txt
+                  echo "[lock-reaper] checked $checked volume(s), removed $n stale lock(s), skipped $skipped busy"
               env:
                 - name: BACKUP_BUCKET
                   value: ${longhorn_backup_bucket:=homelab-longhorn-backups}
