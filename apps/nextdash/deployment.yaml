@@ -1,0 +1,58 @@
+# NextDash: a keyboard-driven, self-hosted bookmark/start page. A single Go
+# binary with a folder of plain JSON files - no database, no accounts. It has
+# NO auth of its own, so it sits behind Authelia at the ingress. State (your
+# bookmarks) lives on the PVC and is edited through the UI; the JSON is
+# portable and git-committable if you ever want it declarative.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextdash
+  namespace: nextdash
+  labels:
+    app.kubernetes.io/name: nextdash
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate        # single-writer JSON on an RWO volume
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextdash
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextdash
+    spec:
+      containers:
+        - name: nextdash
+          image: ghcr.io/jordibrouwer/nextdash:${nextdash_image_tag:=v1.19.2}
+          env:
+            - name: NEXTDASH_DATA_DIR
+              value: /data
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nextdash-data

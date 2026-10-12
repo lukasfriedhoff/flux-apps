@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextdash-data
+  namespace: nextdash
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${nextdash_storage_class_name:=longhorn-ssd-rwo-1r}
+  resources:
+    requests:
+      storage: ${nextdash_data_size:=1Gi}

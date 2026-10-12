@@ -1,0 +1,58 @@
+# Homepage (gethomepage): a declarative, YAML-configured launcher/dashboard.
+# Stateless - config comes from the ConfigMap, so no PVC. HOMEPAGE_ALLOWED_HOSTS
+# is REQUIRED (host-header guard) or it 400s behind the ingress. Logs go to
+# stdout so the read-only config mount is never written to. No auth of its own
+# -> behind Authelia at the ingress.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: homepage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: homepage
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: homepage
+    spec:
+      containers:
+        - name: homepage
+          image: ghcr.io/gethomepage/homepage:${homepage_image_tag:=v1.4.5}
+          env:
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: ${homepage_host:=homepage}${public_host_suffix}.${delegating_domain}
+            - name: LOG_TARGETS
+              value: stdout
+          ports:
+            - name: http
+              containerPort: 3000
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      volumes:
+        - name: config
+          configMap:
+            name: homepage-config

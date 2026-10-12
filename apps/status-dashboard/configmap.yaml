@@ -325,6 +325,18 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] < 500"
+      - name: NextDash
+        group: Apps
+        url: https://${nextdash_host:=nextdash}${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
+      - name: Homepage
+        group: Apps
+        url: https://${homepage_host:=homepage}${public_host_suffix}.${delegating_domain}/
+        interval: 1m
+        conditions:
+          - "[STATUS] < 500"
       - name: pretix
         group: Events
         url: https://${pretix_url_host:=tickets.hackimpott.de}/healthcheck/

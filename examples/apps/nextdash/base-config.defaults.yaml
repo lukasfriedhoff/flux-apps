@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  nextdash_suspend: "true"
+  nextdash_host: "nextdash"
+  nextdash_image_tag: "v1.19.2"
+  nextdash_data_size: "1Gi"
+  nextdash_storage_class_name: "longhorn-ssd-rwo-1r"

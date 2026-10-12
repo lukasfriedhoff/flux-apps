@@ -1,0 +1,87 @@
+# Homepage config lives ENTIRELY here - declarative, in git, no UI-edited state.
+# This is the trial's whole point vs NextDash. Seeded with the real h4xx.io
+# services; refine freely. No widgets that need API keys, so no secrets here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+  namespace: homepage
+data:
+  settings.yaml: |
+    title: h4xx homelab
+    theme: dark
+    color: slate
+    headerStyle: clean
+    layout:
+      Core: { style: row, columns: 4 }
+      Media: { style: row, columns: 4 }
+      Infra: { style: row, columns: 4 }
+      Games: { style: row, columns: 3 }
+    hideVersion: true
+  services.yaml: |
+    - Core:
+        - Nextcloud:
+            href: https://nextcloud.${homepage_domain:=h4xx.io}
+            description: Files, calendar, contacts
+            icon: nextcloud.png
+        - Matrix (Element):
+            href: https://chat.${homepage_domain:=h4xx.io}
+            description: Chat
+            icon: element.png
+        - Immich:
+            href: https://photos.${homepage_domain:=h4xx.io}
+            description: Photos
+            icon: immich.png
+        - Authelia:
+            href: https://auth.${homepage_domain:=h4xx.io}
+            description: Single sign-on
+            icon: authelia.png
+    - Media:
+        - Jellyfin:
+            href: https://jellyfin.${homepage_domain:=h4xx.io}
+            description: Movies & shows
+            icon: jellyfin.png
+    - Infra:
+        - Forgejo:
+            href: https://git.${homepage_domain:=h4xx.io}
+            description: Git forge + CI
+            icon: forgejo.png
+        - Harbor:
+            href: https://harbor.${homepage_domain:=h4xx.io}
+            description: Container registry
+            icon: harbor.png
+        - Grafana:
+            href: https://grafana.${homepage_domain:=h4xx.io}
+            description: Dashboards
+            icon: grafana.png
+        - Status:
+            href: https://status.${homepage_domain:=h4xx.io}
+            description: Uptime
+            icon: gatus.png
+        - LLDAP:
+            href: https://lldap.${homepage_domain:=h4xx.io}
+            description: Directory
+            icon: mdi-account-group
+    - Games:
+        - Icarus:
+            href: https://icarus.${homepage_domain:=h4xx.io}
+            description: Icarus server ops
+            icon: mdi-gamepad-variant
+        - Valheim:
+            href: https://valheim.${homepage_domain:=h4xx.io}
+            description: Valheim server ops
+            icon: mdi-gamepad-variant
+  bookmarks.yaml: |
+    - Quick:
+        - Reddit: [{ abbr: RD, href: https://reddit.com }]
+        - YouTube: [{ abbr: YT, href: https://youtube.com }]
+        - GitHub: [{ abbr: GH, href: https://github.com }]
+  widgets.yaml: |
+    - search:
+        provider: duckduckgo
+        target: _blank
+    - resources:
+        cpu: true
+        memory: true
+  docker.yaml: ""
+  kubernetes.yaml: ""
