@@ -94,16 +94,34 @@ while IFS= read -r var; do
 done <<<"$declared_var_hosts"
 declared="$(printf '%s\n' "$declared" | sort -u | sed '/^$/d')"
 
+# The monitored side is extracted in the SAME two forms as the declared side
+# above, and the symmetry is the point. An earlier version matched only
+# `${var_host}` with no inline default, while the declared side accepted
+# `${var_host:=default}`. Every dashboard entry written in the default form was
+# therefore invisible here, so pretix, pretalx and Mailpit were reported as
+# unmonitored while Gatus had been probing them all along - a false failure that
+# kept this suite red from 2026-09-24 to 2026-10-12. If you touch either regex,
+# change both.
+#
+# Form 1: a literal prefix immediately before the suffix placeholder.
 monitored="$(yq -r '.data."config.yaml"' "$config_file" \
-  | grep -oE 'https://([a-z0-9-]+\$\{public_host_suffix\}|\$\{[a-z0-9_]+_host\})' \
-  | sed -E 's|https://||' \
-  | while IFS= read -r h; do
-      case "$h" in
-        '${'*) resolve_host_var "$(printf '%s' "$h" | sed -E 's/^\$\{//; s/\}$//')"; printf '\n' ;;
-        *) printf '%s\n' "$h" | sed -E 's/\$\{public_host_suffix\}//' ;;
-      esac
-    done \
-  | sort -u | sed '/^$/d')"
+  | grep -oE '[a-z0-9][a-z0-9-]*\$\{public_host_suffix\}' \
+  | sed -E 's/\$\{public_host_suffix\}//')"
+
+# Form 2: a host variable, with or without an inline default. This also covers
+# `${mailpit_host:=mail}${public_host_suffix}`, where the prefix itself is a
+# variable and form 1 cannot match (the character before the placeholder is a
+# brace, not a hostname character).
+monitored_vars="$(yq -r '.data."config.yaml"' "$config_file" \
+  | grep -oE '\$\{[a-z0-9_]+_host(:=[^}]*)?\}' \
+  | sed -E 's/^\$\{//; s/(:=[^}]*)?\}$//' | sort -u)"
+
+while IFS= read -r var; do
+  [ -n "$var" ] || continue
+  prefix="$(resolve_host_var "$var")"
+  [ -n "$prefix" ] && monitored="${monitored}"$'\n'"${prefix}"
+done <<<"$monitored_vars"
+monitored="$(printf '%s\n' "$monitored" | sort -u | sed '/^$/d')"
 
 [ -n "$monitored" ] || fail "status dashboard lists no endpoints"
 

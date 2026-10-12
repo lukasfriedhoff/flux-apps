@@ -337,6 +337,29 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] == 200"
+      - name: pretalx (alias)
+        group: Events
+        # A redirect-only alias Ingress pointing at the canonical
+        # pretalx_url_host. It is a separate Ingress object from the canonical
+        # host and so can break on its own. Traefik answers an unmatched route
+        # with 404, which a loose "< 500" would happily accept - so assert the
+        # redirect itself, with following disabled so we see the 301 and not
+        # the canonical host's 200.
+        url: https://${pretalx_primary_host:=pretalx}${public_host_suffix}.${delegating_domain}/
+        interval: 5m
+        client:
+          follow-redirects: false
+        conditions:
+          - "[STATUS] == 301"
+      - name: pretix (alias)
+        group: Events
+        # Same shape as the pretalx alias above.
+        url: https://${pretix_primary_host:=pretix}${public_host_suffix}.${delegating_domain}/
+        interval: 5m
+        client:
+          follow-redirects: false
+        conditions:
+          - "[STATUS] == 301"
       - name: Mailpit
         group: Events
         # Behind Authelia: an auth challenge (401/302) still proves the pod

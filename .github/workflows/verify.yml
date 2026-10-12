@@ -15,17 +15,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The suite needs all three: yq for the manifest assertions, kustomize
-      # to render apps, and flux to run envsubst over the ${...} variables.
+      # The suite needs all three: yq for the manifest assertions, kustomize to
+      # render apps, and flux to run envsubst over the variable placeholders.
+      #
+      # All three are pinned direct downloads on purpose. kustomize's
+      # hack/install_kustomize.sh resolves the latest release through the GitHub
+      # API, and Forgejo Actions injects its own GITHUB_TOKEN into every step --
+      # so the script forwarded a Forgejo token to api.github.com, got back
+      # "Bad credentials" and exited 1. That single line kept this workflow red
+      # from 2026-09-24 to 2026-10-12, and because the failure surfaced as
+      # "Authentication failed: Invalid GITHUB_TOKEN" directly after the
+      # checkout step, it read like a broken Actions token rather than a
+      # third-party installer. fluxcd.io/install.sh has the same shape (an
+      # unauthenticated API lookup, rate-limited from our shared VPN egress).
+      # Pinned release tarballs avoid the API, and the versions are visible
+      # here for Renovate to bump.
       - name: Install yq, kustomize and flux
+        env:
+          YQ_VERSION: 4.44.3
+          KUSTOMIZE_VERSION: 5.8.3
+          FLUX_VERSION: 2.9.6
         run: |
           set -euo pipefail
           curl -fsSL -o /usr/local/bin/yq \
-            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
-          chmod +x /usr/local/bin/yq
-          curl -fsSL https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh | bash
-          install -m 0755 kustomize /usr/local/bin/kustomize
-          curl -fsSL https://fluxcd.io/install.sh | bash
+            "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64"
+          curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin kustomize
+          curl -fsSL "https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin flux
+          chmod +x /usr/local/bin/yq /usr/local/bin/kustomize /usr/local/bin/flux
           yq --version && kustomize version && flux --version
 
       - name: Run static verification suite
