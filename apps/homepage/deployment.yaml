@@ -44,12 +44,18 @@ spec:
             httpGet:
               path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: ${homepage_host:=homepage}${public_host_suffix}.${delegating_domain}
             initialDelaySeconds: 10
             periodSeconds: 15
           livenessProbe:
             httpGet:
               path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: ${homepage_host:=homepage}${public_host_suffix}.${delegating_domain}
             initialDelaySeconds: 20
             periodSeconds: 20
       volumes:
