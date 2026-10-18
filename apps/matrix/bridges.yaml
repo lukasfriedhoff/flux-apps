@@ -92,12 +92,12 @@ metadata:
   name: telegram
   namespace: matrix
 spec:
-  # Scaled to 0 pending the bridgev2 migration: the :latest image already ran
-  # the Python->bridgev2 DB migration (telegramdb is now bridgev2, data intact
-  # — 179 portals / 200k msgs), but the init-seeded config is still legacy
-  # Python format, so the bridge aborts. Re-enable after rewriting the config
-  # secret to bridgev2 + pinning matrix_telegram_image_tag to a bridgev2 tag.
-  replicas: 0
+  # bridgev2 migration complete: telegramdb is a bridgev2 DB (owner
+  # megabridge/mautrix-telegram, schema v30, 179 portals / 200k msgs intact)
+  # and matrix-telegram-config now holds a bridgev2 (megabridge) config with
+  # the original appservice id/tokens preserved. Pinned to a bridgev2 tag via
+  # matrix_telegram_image_tag.
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -124,12 +124,8 @@ spec:
             - |
               cp /seed/config.yaml /data/config.yaml
               cp /seed/registration.yaml /data/registration.yaml
-              # Normalize legacy permission values for current mautrix-telegram releases.
-              sed -i "s/relaybot/relay/g" /data/config.yaml
-              sed -E -i "s/^([[:space:]]*[^#].*:[[:space:]]*)full$/\\1admin/" /data/config.yaml
-              # Migrate legacy CNPG service name used before custom services were removed.
-              sed -E -i "s/@telegramdb([:/])/@telegramdb-rw\\1/g" /data/config.yaml
-              chown 1337:1337 /data/config.yaml /data/registration.yaml || true
+              chown 1337:1337 /data/config.yaml /data/registration.yaml
+              chmod 0600 /data/config.yaml /data/registration.yaml
           volumeMounts:
             - name: telegram-data
               mountPath: /data
