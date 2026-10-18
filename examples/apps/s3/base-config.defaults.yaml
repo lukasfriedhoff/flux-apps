@@ -23,3 +23,8 @@ data:
   # withdrew public distribution of mc in 2025 (quay/dockerhub 401,
   # dl.min.io 410). See containers/mc/Dockerfile.
   mc_image: "harbor.h4xx.io/library/mc:RELEASE.2025-08-13T08-35-41Z"
+  # MinIO server. Same 2025 withdrawal hit the server image: quay.io/minio/minio
+  # and docker.io/minio/minio now return 401 for anonymous pulls repo-wide
+  # (every tag, not just :latest), so Harbor's proxy-quay cache cannot fetch it
+  # either. A known-good release is mirrored into Harbor's library project.
+  minio_image: "harbor.h4xx.io/library/minio:RELEASE.2025-09-07T16-13-09Z"

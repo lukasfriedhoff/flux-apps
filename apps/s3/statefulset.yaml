@@ -16,7 +16,11 @@ spec:
     spec:
       containers:
         - name: minio
-          image: quay.io/minio/minio:latest
+          # MinIO withdrew public distribution of the server image in 2025
+          # (quay.io/minio/minio and docker.io/minio/minio now 401 for
+          # anonymous pulls, repo-wide), mirroring the mc client withdrawal.
+          # Pin a known-good release hosted in Harbor instead of floating :latest.
+          image: ${minio_image:=harbor.h4xx.io/library/minio:RELEASE.2025-09-07T16-13-09Z}
           args:
             - server
             - /data
