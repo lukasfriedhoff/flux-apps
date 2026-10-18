@@ -18,23 +18,6 @@ spec:
     initdb:
       database: nextcloud
       owner: nextcloud
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${nextcloud_postgres_backup_bucket}/${cluster_environment}/${nextcloud_postgres_backup_generation:=}nextcloud-postgres/"
-      endpointURL: "${nextcloud_postgres_backup_endpoint_url:=}"
-      serverName: ${nextcloud_postgres_backup_server_name:=nextcloud-postgres}
-      s3Credentials:
-        accessKeyId:
-          name: ${nextcloud_postgres_backup_credential_secret_name}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${nextcloud_postgres_backup_credential_secret_name}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "30d"
   resources:
     requests:
       cpu: 100m

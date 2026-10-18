@@ -15,23 +15,6 @@ spec:
     initdb:
       database: pretix
       owner: pretix
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${pretix_postgres_backup_bucket:=pretix-postgres-backup}/${cluster_environment}/${pretix_postgres_backup_generation:=}pretix-postgres/"
-      endpointURL: "${pretix_postgres_backup_endpoint_url:=}"
-      serverName: ${pretix_postgres_backup_server_name:=pretix-postgres}
-      s3Credentials:
-        accessKeyId:
-          name: ${pretix_postgres_backup_credential_secret_name:=pretix-postgres-backup-credentials}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${pretix_postgres_backup_credential_secret_name:=pretix-postgres-backup-credentials}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "${pretix_postgres_backup_retention:=30d}"
   storage:
     storageClass: ${pretix_postgres_storage_class_name:=longhorn-nvme-rwo-2r}
     size: ${pretix_postgres_size:=8Gi}

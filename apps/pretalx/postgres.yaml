@@ -15,23 +15,6 @@ spec:
     initdb:
       database: pretalx
       owner: pretalx
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://${pretalx_postgres_backup_bucket:=pretalx-postgres-backup}/${cluster_environment}/${pretalx_postgres_backup_generation:=}pretalx-postgres/"
-      endpointURL: "${pretalx_postgres_backup_endpoint_url:=}"
-      serverName: ${pretalx_postgres_backup_server_name:=pretalx-postgres}
-      s3Credentials:
-        accessKeyId:
-          name: ${pretalx_postgres_backup_credential_secret_name:=pretalx-postgres-backup-credentials}
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: ${pretalx_postgres_backup_credential_secret_name:=pretalx-postgres-backup-credentials}
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "${pretalx_postgres_backup_retention:=30d}"
   storage:
     storageClass: ${pretalx_postgres_storage_class_name:=longhorn-nvme-rwo-2r}
     size: ${pretalx_postgres_size:=8Gi}
