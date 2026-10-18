@@ -1,0 +1,65 @@
+# Aggregate S3 + admin endpoint across all three Garage pods. This is the
+# endpoint consumers point at: ${garage_s3_endpoint} = garage.<ns>.svc:3900.
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage
+  namespace: ${garage_namespace}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3903"
+    prometheus.io/path: "/metrics"
+spec:
+  selector:
+    app.kubernetes.io/name: garage
+  ports:
+    - name: s3
+      port: 3900
+      targetPort: s3
+    - name: admin
+      port: 3903
+      targetPort: admin
+---
+# Per-node stable DNS used as each node's rpc_public_addr, so the RPC mesh
+# survives pod restarts (pod IPs change; the Service ClusterIP does not).
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage-${garage_node1_name}
+  namespace: ${garage_namespace}
+spec:
+  selector:
+    app.kubernetes.io/name: garage
+    garage-node: ${garage_node1_name}
+  ports:
+    - name: rpc
+      port: 3901
+      targetPort: rpc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage-${garage_node2_name}
+  namespace: ${garage_namespace}
+spec:
+  selector:
+    app.kubernetes.io/name: garage
+    garage-node: ${garage_node2_name}
+  ports:
+    - name: rpc
+      port: 3901
+      targetPort: rpc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage-${garage_node3_name}
+  namespace: ${garage_namespace}
+spec:
+  selector:
+    app.kubernetes.io/name: garage
+    garage-node: ${garage_node3_name}
+  ports:
+    - name: rpc
+      port: 3901
+      targetPort: rpc

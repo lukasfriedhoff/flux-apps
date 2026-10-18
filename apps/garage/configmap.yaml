@@ -1,0 +1,34 @@
+# Shared Garage daemon config. Identical on every node: the only per-node
+# value is rpc_public_addr, which the init container appends at pod start
+# from the RPC_PUBLIC_ADDR env var. Secrets (rpc_secret, admin_token,
+# metrics_token) are NOT in this file - they come from the garage-secrets
+# Secret via the GARAGE_RPC_SECRET / GARAGE_ADMIN_TOKEN / GARAGE_METRICS_TOKEN
+# environment variables, so the config can stay a plain ConfigMap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: garage-config
+  namespace: ${garage_namespace}
+data:
+  garage.toml: |
+    metadata_dir = "/var/lib/garage/meta"
+    data_dir = "/var/lib/garage/data"
+    db_engine = "lmdb"
+
+    # Garage does its own quorum replication (one full copy per node); this is
+    # why the data dirs are node-local disk, NOT Longhorn (no double-replication,
+    # no storage-layer SPOF). rf=3 over 3 nodes => survives one node down (2/3).
+    replication_factor = ${garage_replication_factor:=3}
+
+    rpc_bind_addr = "[::]:3901"
+    # rpc_public_addr appended per-pod by the init container
+    # rpc_secret supplied via GARAGE_RPC_SECRET
+
+    [s3_api]
+    # Must match the region the S3 clients sign with (SigV4 region check).
+    s3_region = "${garage_s3_region:=us-east-1}"
+    api_bind_addr = "[::]:3900"
+
+    [admin]
+    api_bind_addr = "[::]:3903"
+    # admin_token / metrics_token supplied via GARAGE_ADMIN_TOKEN / GARAGE_METRICS_TOKEN

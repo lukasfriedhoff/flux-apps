@@ -1,0 +1,247 @@
+# Three node-pinned Garage daemons (one per node). We use three Deployments
+# rather than a StatefulSet because the data lives on node-local hostPath and
+# the paths differ per node (srv8's root is tiny, so it uses a big disk). Each
+# Deployment is pinned with nodeSelector so its hostPath + Garage node identity
+# (node_key in metadata_dir) stay bound to one node across restarts.
+#
+# NOT Longhorn: Garage replicates itself (rf=3, quorum 2/3). Longhorn would add
+# double-replication and a storage-layer SPOF under an app that is HA by design.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: garage-${garage_node1_name}
+  namespace: ${garage_namespace}
+  labels:
+    app.kubernetes.io/name: garage
+    garage-node: ${garage_node1_name}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: garage
+      garage-node: ${garage_node1_name}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: garage
+        garage-node: ${garage_node1_name}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${garage_node1_name}
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+      initContainers:
+        - name: render-config
+          image: ${garage_init_image:=harbor.h4xx.io/proxy-docker/library/busybox:1.37.0}
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              cp /config/garage.toml /etc/garage/garage.toml
+              printf '\nrpc_public_addr = "%s"\n' "$${RPC_PUBLIC_ADDR}" >> /etc/garage/garage.toml
+          env:
+            - name: RPC_PUBLIC_ADDR
+              value: garage-${garage_node1_name}.${garage_namespace}.svc.cluster.local:3901
+          volumeMounts:
+            - { name: config, mountPath: /config }
+            - { name: rendered, mountPath: /etc/garage }
+      containers:
+        - name: garage
+          image: ${garage_image:=harbor.h4xx.io/proxy-docker/dxflrs/garage:v2.3.0}
+          command: ["/garage"]
+          args: ["-c", "/etc/garage/garage.toml", "server"]
+          envFrom:
+            - secretRef:
+                name: ${garage_secrets_name:=garage-secrets}
+          ports:
+            - { name: s3, containerPort: 3900 }
+            - { name: rpc, containerPort: 3901 }
+            - { name: admin, containerPort: 3903 }
+          volumeMounts:
+            - { name: rendered, mountPath: /etc/garage }
+            - { name: data, mountPath: /var/lib/garage }
+          readinessProbe:
+            tcpSocket: { port: s3 }
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: rpc }
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${garage_requests_cpu:=100m}
+              memory: ${garage_requests_memory:=256Mi}
+            limits:
+              memory: ${garage_limits_memory:=1536Mi}
+      volumes:
+        - name: config
+          configMap:
+            name: garage-config
+        - name: rendered
+          emptyDir: {}
+        - name: data
+          hostPath:
+            path: ${garage_node1_path:=/var/lib/garage}
+            type: DirectoryOrCreate
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: garage-${garage_node2_name}
+  namespace: ${garage_namespace}
+  labels:
+    app.kubernetes.io/name: garage
+    garage-node: ${garage_node2_name}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: garage
+      garage-node: ${garage_node2_name}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: garage
+        garage-node: ${garage_node2_name}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${garage_node2_name}
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+      initContainers:
+        - name: render-config
+          image: ${garage_init_image:=harbor.h4xx.io/proxy-docker/library/busybox:1.37.0}
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              cp /config/garage.toml /etc/garage/garage.toml
+              printf '\nrpc_public_addr = "%s"\n' "$${RPC_PUBLIC_ADDR}" >> /etc/garage/garage.toml
+          env:
+            - name: RPC_PUBLIC_ADDR
+              value: garage-${garage_node2_name}.${garage_namespace}.svc.cluster.local:3901
+          volumeMounts:
+            - { name: config, mountPath: /config }
+            - { name: rendered, mountPath: /etc/garage }
+      containers:
+        - name: garage
+          image: ${garage_image:=harbor.h4xx.io/proxy-docker/dxflrs/garage:v2.3.0}
+          command: ["/garage"]
+          args: ["-c", "/etc/garage/garage.toml", "server"]
+          envFrom:
+            - secretRef:
+                name: ${garage_secrets_name:=garage-secrets}
+          ports:
+            - { name: s3, containerPort: 3900 }
+            - { name: rpc, containerPort: 3901 }
+            - { name: admin, containerPort: 3903 }
+          volumeMounts:
+            - { name: rendered, mountPath: /etc/garage }
+            - { name: data, mountPath: /var/lib/garage }
+          readinessProbe:
+            tcpSocket: { port: s3 }
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: rpc }
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${garage_requests_cpu:=100m}
+              memory: ${garage_requests_memory:=256Mi}
+            limits:
+              memory: ${garage_limits_memory:=1536Mi}
+      volumes:
+        - name: config
+          configMap:
+            name: garage-config
+        - name: rendered
+          emptyDir: {}
+        - name: data
+          hostPath:
+            path: ${garage_node2_path:=/var/lib/garage}
+            type: DirectoryOrCreate
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: garage-${garage_node3_name}
+  namespace: ${garage_namespace}
+  labels:
+    app.kubernetes.io/name: garage
+    garage-node: ${garage_node3_name}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: garage
+      garage-node: ${garage_node3_name}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: garage
+        garage-node: ${garage_node3_name}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${garage_node3_name}
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+      initContainers:
+        - name: render-config
+          image: ${garage_init_image:=harbor.h4xx.io/proxy-docker/library/busybox:1.37.0}
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              cp /config/garage.toml /etc/garage/garage.toml
+              printf '\nrpc_public_addr = "%s"\n' "$${RPC_PUBLIC_ADDR}" >> /etc/garage/garage.toml
+          env:
+            - name: RPC_PUBLIC_ADDR
+              value: garage-${garage_node3_name}.${garage_namespace}.svc.cluster.local:3901
+          volumeMounts:
+            - { name: config, mountPath: /config }
+            - { name: rendered, mountPath: /etc/garage }
+      containers:
+        - name: garage
+          image: ${garage_image:=harbor.h4xx.io/proxy-docker/dxflrs/garage:v2.3.0}
+          command: ["/garage"]
+          args: ["-c", "/etc/garage/garage.toml", "server"]
+          envFrom:
+            - secretRef:
+                name: ${garage_secrets_name:=garage-secrets}
+          ports:
+            - { name: s3, containerPort: 3900 }
+            - { name: rpc, containerPort: 3901 }
+            - { name: admin, containerPort: 3903 }
+          volumeMounts:
+            - { name: rendered, mountPath: /etc/garage }
+            - { name: data, mountPath: /var/lib/garage }
+          readinessProbe:
+            tcpSocket: { port: s3 }
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: rpc }
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${garage_requests_cpu:=100m}
+              memory: ${garage_requests_memory:=256Mi}
+            limits:
+              memory: ${garage_limits_memory:=1536Mi}
+      volumes:
+        - name: config
+          configMap:
+            name: garage-config
+        - name: rendered
+          emptyDir: {}
+        - name: data
+          hostPath:
+            path: ${garage_node3_path:=/var/lib/garage}
+            type: DirectoryOrCreate
