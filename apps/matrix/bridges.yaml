@@ -92,7 +92,12 @@ metadata:
   name: telegram
   namespace: matrix
 spec:
-  replicas: 1
+  # Scaled to 0 pending the bridgev2 migration: the :latest image already ran
+  # the Python->bridgev2 DB migration (telegramdb is now bridgev2, data intact
+  # — 179 portals / 200k msgs), but the init-seeded config is still legacy
+  # Python format, so the bridge aborts. Re-enable after rewriting the config
+  # secret to bridgev2 + pinning matrix_telegram_image_tag to a bridgev2 tag.
+  replicas: 0
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -133,14 +138,7 @@ spec:
               readOnly: true
       containers:
         - name: telegram
-          # Pinned to the last Python (pre-bridgev2) release. The Go/megabridge
-          # rewrite (v26.04+, shipped to :latest) refuses to start on this legacy
-          # config ("Legacy bridge config detected, but hacky network config
-          # migrator is not set") because current Go binaries no longer register
-          # the one-shot HackyMigrateLegacyNetworkConfig migrator. v0.15.3 keeps
-          # the existing portals/puppets DB + config working with zero migration.
-          # Migrating to bridgev2 is a deliberate, one-way step to do separately.
-          image: dock.mau.dev/mautrix/telegram:v0.15.3
+          image: dock.mau.dev/mautrix/telegram:${matrix_telegram_image_tag}
           resources:
             requests:
               cpu: ${matrix_bridge_requests_cpu}
