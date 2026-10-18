@@ -1,7 +1,7 @@
 # The music library Jellyfin serves, mounted into Nextcloud so every user has
 # a Music folder at their root.
 #
-# Deliberately the SAME NFS export the media stack uses (10.1.120.10:/data/cmc/pub,
+# Deliberately the SAME NFS export the media stack uses (10.3.120.10:/data/cmc/pub,
 # subPath h4xx/music) rather than a copy on Longhorn: one filesystem means a
 # track added here is served by Jellyfin without any sync step, and there is no
 # second copy to drift or to back up. That is the opposite choice from
@@ -29,7 +29,7 @@ spec:
     - nfsvers=4.1
     - noatime
   nfs:
-    server: ${media_nfs_server:=10.1.120.10}
+    server: ${media_nfs_server:=10.3.120.10}
     path: ${media_nfs_music_path:=/data/cmc/pub/h4xx/music}
   claimRef:
     namespace: ${nextcloud_namespace:=nextcloud}

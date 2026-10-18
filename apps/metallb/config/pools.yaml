@@ -1,4 +1,4 @@
-# Service VIPs live on VLAN20 (SERVER, 10.1.20.0/24): all four k3s nodes are
+# Service VIPs live on VLAN20 (SERVER, 10.3.20.0/24): all four k3s nodes are
 # attached there, and the range sits below the vlan20 DHCP pool (.100+), so
 # no reservation on the router is needed. VLAN30 stays management-only.
 apiVersion: metallb.io/v1beta1
@@ -8,7 +8,7 @@ metadata:
   namespace: ${metallb_namespace:=metallb-system}
 spec:
   addresses:
-    - ${metallb_pool_range:=10.1.20.40-10.1.20.49}
+    - ${metallb_pool_range:=10.3.20.40-10.3.20.49}
 ---
 # The apiserver VIP gets its own pool + an announcement pinned to the
 # control-plane nodes: speaker election across all nodes proved flappy on
@@ -20,7 +20,7 @@ metadata:
   namespace: ${metallb_namespace:=metallb-system}
 spec:
   addresses:
-    - ${metallb_apiserver_pool:=10.1.20.50-10.1.20.59}
+    - ${metallb_apiserver_pool:=10.3.20.50-10.3.20.59}
   serviceAllocation:
     namespaces:
       - kube-system
@@ -46,9 +46,9 @@ spec:
   ipAddressPools:
     - services
 ---
-# IoT VLAN VIPs (10.1.12.0/24): only srv9 carries brvlan12, so announcements
+# IoT VLAN VIPs (10.3.12.0/24): only srv9 carries brvlan12, so announcements
 # are pinned to that interface. autoAssign off - the pool holds the legacy
-# Home Assistant VM address (10.1.12.13), claimed only by explicit annotation
+# Home Assistant VM address (10.3.12.13), claimed only by explicit annotation
 # so IoT devices and companion apps keep their configured endpoint.
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
@@ -58,7 +58,7 @@ metadata:
 spec:
   autoAssign: false
   addresses:
-    - ${metallb_iot_pool:=10.1.12.13/32}
+    - ${metallb_iot_pool:=10.3.12.13/32}
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement

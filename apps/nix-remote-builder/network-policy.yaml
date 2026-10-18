@@ -12,7 +12,7 @@ spec:
   ingress:
     - from:
         - ipBlock:
-            cidr: ${nix_remote_builder_allowed_cidr_1:=10.1.0.0/16}
+            cidr: ${nix_remote_builder_allowed_cidr_1:=10.3.0.0/16}
         - ipBlock:
             cidr: ${nix_remote_builder_allowed_cidr_2:=10.42.0.0/16}
         - ipBlock:

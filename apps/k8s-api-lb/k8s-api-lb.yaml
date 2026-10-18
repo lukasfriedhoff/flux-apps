@@ -11,7 +11,7 @@ metadata:
   name: k8s-api
   namespace: ${k8s_api_lb_namespace:=kube-system}
   annotations:
-    metallb.io/loadBalancerIPs: ${k8s_api_vip:=10.1.20.43}
+    metallb.io/loadBalancerIPs: ${k8s_api_vip:=10.3.20.43}
 spec:
   type: LoadBalancer
   allocateLoadBalancerNodePorts: false
@@ -40,17 +40,17 @@ endpoints:
   # conditions must be explicit: controller-managed slices always set them,
   # and MetalLB refuses to announce services whose endpoints lack ready=true.
   - addresses:
-      - "${k8s_api_member1:=10.1.30.12}"
+      - "${k8s_api_member1:=10.3.30.12}"
     nodeName: srv1
     conditions:
       ready: true
   - addresses:
-      - "${k8s_api_member2:=10.1.30.27}"
+      - "${k8s_api_member2:=10.3.30.27}"
     nodeName: srv8
     conditions:
       ready: true
   - addresses:
-      - "${k8s_api_member3:=10.1.30.31}"
+      - "${k8s_api_member3:=10.3.30.31}"
     nodeName: srv9
     conditions:
       ready: true

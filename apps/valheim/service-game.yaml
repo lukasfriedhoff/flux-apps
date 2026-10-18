@@ -12,7 +12,7 @@ metadata:
   labels:
     app.kubernetes.io/name: valheim
   annotations:
-    metallb.io/loadBalancerIPs: ${valheim_vip:=10.1.20.43}
+    metallb.io/loadBalancerIPs: ${valheim_vip:=10.3.20.43}
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local

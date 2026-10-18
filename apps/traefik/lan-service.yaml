@@ -7,7 +7,7 @@ metadata:
   name: traefik-lan
   namespace: ${traefik_namespace:=traefik}
   annotations:
-    metallb.io/loadBalancerIPs: ${traefik_lan_vip:=10.1.20.40}
+    metallb.io/loadBalancerIPs: ${traefik_lan_vip:=10.3.20.40}
 spec:
   type: LoadBalancer
   allocateLoadBalancerNodePorts: false
