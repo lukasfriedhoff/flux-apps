@@ -326,6 +326,10 @@ spec:
               mountPath: /whatsappdata/registration.yaml
               subPath: registration.yaml
               readOnly: true
+            - name: discord-config
+              mountPath: /discorddata/registration.yaml
+              subPath: registration.yaml
+              readOnly: true
       volumes:
         - name: synapse-data
           persistentVolumeClaim:
@@ -352,3 +356,6 @@ spec:
         - name: whatsapp-config
           secret:
             secretName: matrix-whatsapp-config
+        - name: discord-config
+          secret:
+            secretName: matrix-discord-config

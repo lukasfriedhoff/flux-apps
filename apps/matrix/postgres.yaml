@@ -151,6 +151,44 @@ spec:
       memory: ${matrix_postgres_limits_memory}
 ---
 apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: discorddb
+  namespace: matrix
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+  instances: ${matrix_discorddb_postgres_instances:=1}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: ${matrix_discord_postgres_source_dbname:=mautrixdiscord}
+      owner: ${matrix_discord_postgres_source_user:=mautrixdiscord}
+      secret:
+        name: discorddb-app
+  managed:
+    roles:
+      - name: ${matrix_discord_postgres_source_user:=mautrixdiscord}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: discorddb-app
+  storage:
+    storageClass: ${matrix_postgres_storage_class_name}
+    size: ${matrix_discord_postgres_size:=${matrix_postgres_size}}
+  resources:
+    requests:
+      cpu: ${matrix_postgres_requests_cpu}
+      memory: ${matrix_postgres_requests_memory}
+    limits:
+      cpu: ${matrix_postgres_limits_cpu}
+      memory: ${matrix_postgres_limits_memory}
+---
+apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
   name: synapsedb
@@ -197,3 +235,15 @@ spec:
   immediate: false
   cluster:
     name: signaldbprivate
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: discorddb
+  namespace: matrix
+spec:
+  schedule: "${matrix_postgres_backup_cron:=0 0 2 * * *}"
+  backupOwnerReference: self
+  immediate: false
+  cluster:
+    name: discorddb

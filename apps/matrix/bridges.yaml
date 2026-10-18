@@ -218,3 +218,69 @@ spec:
         - name: signal-config
           secret:
             secretName: matrix-signal-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discord
+  namespace: matrix
+spec:
+  selector:
+    app.kubernetes.io/name: discord
+  ports:
+    - name: http
+      port: 29334
+      targetPort: 29334
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discord
+  namespace: matrix
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 100%
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: discord
+  template:
+    metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
+      labels:
+        app.kubernetes.io/name: discord
+    spec:
+      securityContext:
+        fsGroup: 1337
+      containers:
+        - name: discord
+          image: dock.mau.dev/mautrix/discord:${matrix_discord_image_tag}
+          resources:
+            requests:
+              cpu: ${matrix_bridge_requests_cpu}
+              memory: ${matrix_bridge_requests_memory}
+            limits:
+              cpu: ${matrix_bridge_limits_cpu}
+              memory: ${matrix_bridge_limits_memory}
+          volumeMounts:
+            - name: discord-data
+              mountPath: /data
+            - name: discord-config
+              mountPath: /data/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: discord-config
+              mountPath: /data/registration.yaml
+              subPath: registration.yaml
+              readOnly: true
+      volumes:
+        - name: discord-data
+          persistentVolumeClaim:
+            claimName: matrix-discord-data
+        - name: discord-config
+          secret:
+            secretName: matrix-discord-config
