@@ -51,7 +51,10 @@ spec:
         backend: s3
         s3:
           bucket: ${monitoring_tempo_bucket}
-          endpoint: ${object_storage_endpoint}
+          # Cut over to Garage (3-node, rf=3). Endpoint-only flip: the same
+          # access key is imported into Garage, buckets/sizes verified equal.
+          # Roll back by restoring ${object_storage_endpoint} (MinIO still runs).
+          endpoint: ${garage_s3_endpoint}
           region: ${object_storage_region}
           insecure: ${object_storage_insecure}
           forcepathstyle: ${object_storage_force_path_style}
