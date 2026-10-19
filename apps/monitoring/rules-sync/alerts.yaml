@@ -1309,6 +1309,42 @@ groups:
             Free space on the Nextcloud data volume is running out. Uploads and
             previews fail once it hits zero, and a full volume is far more
             painful to recover than to prevent.
+      - alert: NextcloudExternalStorageCheckFailing
+        expr: |
+          max_over_time(
+            kube_job_status_failed{namespace="nextcloud", job_name=~"nextcloud-external-storage-check-.*"}[2h]
+          ) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: A Nextcloud external storage mount is not working.
+          description: >-
+            The hourly nextcloud-external-storage-check job failed, which means
+            `occ files_external:verify` reported a mount as not OK - the SMB
+            scanner shares are the usual ones. The mount is unreachable for
+            users even though Nextcloud itself is healthy, so nothing else
+            alerts on it. Read the job log for the failing mount id and
+            message: kubectl -n nextcloud logs job/<name>. The 2026-10-19
+            outage was a missing smb.h4xx.io static DNS record on the MikroTik
+            after the Hiesfelder re-IP, so check name resolution from inside
+            the cluster first - those records are hand-maintained and are not
+            managed by external-dns.
+      - alert: NextcloudExternalStorageCheckNotRunning
+        expr: |
+          absent_over_time(
+            kube_job_status_start_time{namespace="nextcloud", job_name=~"nextcloud-external-storage-check-.*"}[6h]
+          )
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: The Nextcloud external storage check has stopped running.
+          description: >-
+            No nextcloud-external-storage-check job has started in 6 hours, so
+            the mounts are no longer being watched at all. A silent watchdog is
+            worse than none - it reads as "all clear". Check the CronJob is
+            present and not suspended.
       - alert: NextcloudNoActiveUsers
         expr: |
           nextcloud_active_users_daily_total == 0

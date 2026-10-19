@@ -1,0 +1,112 @@
+# Watches the Nextcloud external storage mounts (the SMB scanner shares).
+#
+# Why this exists: on 2026-10-19 both SMB mounts broke and NOTHING noticed.
+# The smb.h4xx.io static DNS record on the MikroTik was never recreated after
+# the Hiesfelder re-IP, so the mounts failed name resolution while the SMB
+# server itself was perfectly healthy. Nextcloud has five alert rules and none
+# of them look at external storage, so it surfaced only when Lukas opened the
+# share by hand and saw "server replied: Not Found".
+#
+# `occ files_external:verify` is the only thing that actually tests a mount
+# end-to-end (DNS + TCP + SMB auth + share exists), and it is not exposed as a
+# metric. So this job runs it and exits non-zero on failure; the paired alert
+# NextcloudExternalStorageCheckFailing watches THIS job, not a gauge.
+#
+# Mount IDs are discovered from files_external:list rather than hardcoded, so
+# adding a share in the UI is covered automatically without editing this file.
+#
+# Same exec pattern as nextcloud-cron, including its "require 1/1 READY"
+# guard - exec'ing a still-warming replica is what makes the sibling
+# upgrade-check and office-check jobs fail intermittently.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-external-storage-check
+  namespace: ${nextcloud_namespace}
+spec:
+  schedule: "${nextcloud_external_storage_check_cron:=23 * * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  # Keep a couple of failures around: the alert points here for the reason.
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: nextcloud-upgrade-check
+          containers:
+            - name: check
+              image: ${nextcloud_kubectl_image:=alpine/k8s:1.37.0}
+              command:
+                - /bin/sh
+                - -ceu
+                - |
+                  pod="$(
+                    kubectl -n ${nextcloud_namespace} get pods \
+                      -l app.kubernetes.io/instance=nextcloud,app.kubernetes.io/component=app \
+                      --no-headers \
+                      | awk '$2 == "1/1" && $3 == "Running" { print $1; exit }'
+                  )"
+                  if [ -z "$pod" ]; then
+                    echo "No ready Nextcloud app pod found." >&2
+                    exit 1
+                  fi
+
+                  # Mount IDs come from the live config, so new shares are
+                  # covered without touching this manifest. Only external
+                  # (non-local) mounts are worth probing; local ones cannot
+                  # fail on DNS or auth.
+                  ids="$(
+                    kubectl -n ${nextcloud_namespace} exec "$pod" -c nextcloud -- \
+                      php occ files_external:list --output=json \
+                      | sed -n 's/.*"mount_id":[[:space:]]*\([0-9]\+\).*/\1/p'
+                  )"
+                  if [ -z "$ids" ]; then
+                    echo "Could not read the external storage list." >&2
+                    exit 1
+                  fi
+
+                  failed=0
+                  for id in $ids; do
+                    out="$(
+                      kubectl -n ${nextcloud_namespace} exec "$pod" -c nextcloud -- \
+                        php occ files_external:verify "$id" 2>&1 || true
+                    )"
+                    status="$(echo "$out" | sed -n 's/^[[:space:]]*- status:[[:space:]]*//p' | head -1)"
+                    if [ "$status" = "ok" ]; then
+                      echo "mount $id: ok"
+                    else
+                      # status is empty when the mount is local/unverifiable;
+                      # only a real error counts as a failure.
+                      if [ -z "$status" ]; then
+                        echo "mount $id: not verifiable (local storage), skipped"
+                      else
+                        echo "mount $id: $status" >&2
+                        echo "$out" | sed -n 's/^[[:space:]]*- message:/  message:/p' >&2
+                        failed=$((failed + 1))
+                      fi
+                    fi
+                  done
+
+                  if [ "$failed" -gt 0 ]; then
+                    echo "$failed external storage mount(s) are not OK." >&2
+                    exit 1
+                  fi
+                  echo "all external storage mounts OK"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                runAsNonRoot: true
+                runAsUser: 65534
+                capabilities:
+                  drop: ["ALL"]
