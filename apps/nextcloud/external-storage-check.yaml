@@ -57,13 +57,16 @@ spec:
                   fi
 
                   # Mount IDs come from the live config, so new shares are
-                  # covered without touching this manifest. Only external
-                  # (non-local) mounts are worth probing; local ones cannot
-                  # fail on DNS or auth.
+                  # covered without touching this manifest.
+                  # grep -o, NOT sed: files_external:list emits the whole JSON
+                  # array on ONE line, so a greedy sed expression matches only
+                  # the LAST mount_id and the check silently probes a single
+                  # mount while reporting success - which is precisely the
+                  # blind-watchdog failure this job exists to prevent.
                   ids="$(
                     kubectl -n nextcloud exec "$pod" -c nextcloud -- \
                       php occ files_external:list --output=json \
-                      | sed -n 's/.*"mount_id":[[:space:]]*\([0-9]\+\).*/\1/p'
+                      | grep -o '"mount_id":[0-9]*' | grep -o '[0-9]*'
                   )"
                   if [ -z "$ids" ]; then
                     echo "Could not read the external storage list." >&2
