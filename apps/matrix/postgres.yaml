@@ -255,6 +255,23 @@ spec:
     limits:
       cpu: ${matrix_postgres_limits_cpu}
       memory: ${matrix_postgres_limits_memory}
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${matrix_postgres_backup_bucket}/${cluster_environment}/${matrix_discorddb_backup_generation:=}discorddb/"
+      endpointURL: "${matrix_postgres_backup_endpoint_url:=}"
+      serverName: ${matrix_discorddb_backup_server_name:=discorddb}
+      s3Credentials:
+        accessKeyId:
+          name: ${matrix_postgres_backup_credential_secret_name}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${matrix_postgres_backup_credential_secret_name}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "30d"
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
