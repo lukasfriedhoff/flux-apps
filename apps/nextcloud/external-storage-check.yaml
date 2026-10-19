@@ -63,9 +63,17 @@ spec:
                   # the LAST mount_id and the check silently probes a single
                   # mount while reporting success - which is precisely the
                   # blind-watchdog failure this job exists to prevent.
+                  # Local storages are filtered out: their paths contain the
+                  # per-user $user placeholder that Nextcloud expands at
+                  # runtime, so files_external:verify always reports
+                  # 'Local storage path does not exist "/shared-photos/$user/"'
+                  # for them. Probing those would make the alert cry wolf
+                  # forever, and only remote mounts can fail on DNS or auth.
                   ids="$(
                     kubectl -n nextcloud exec "$pod" -c nextcloud -- \
                       php occ files_external:list --output=json \
+                      | sed 's/},{/}\n{/g' \
+                      | grep -v 'Lib..Storage..Local' \
                       | grep -o '"mount_id":[0-9]*' | grep -o '[0-9]*'
                   )"
                   if [ -z "$ids" ]; then
