@@ -63,17 +63,15 @@ spec:
                   # the LAST mount_id and the check silently probes a single
                   # mount while reporting success - which is precisely the
                   # blind-watchdog failure this job exists to prevent.
-                  # Local storages are filtered out: their paths contain the
-                  # per-user $user placeholder that Nextcloud expands at
-                  # runtime, so files_external:verify always reports
-                  # 'Local storage path does not exist "/shared-photos/$user/"'
-                  # for them. Probing those would make the alert cry wolf
-                  # forever, and only remote mounts can fail on DNS or auth.
+                  # Local storages are NOT filtered from the list - filtering
+                  # the JSON in shell is a trap: the array is one line and
+                  # splitting on '},{' cuts the nested configuration/options
+                  # objects, which silently dropped the two SMB mounts. Every
+                  # mount is probed instead and local ones are recognised by
+                  # their verify MESSAGE below.
                   ids="$(
                     kubectl -n nextcloud exec "$pod" -c nextcloud -- \
                       php occ files_external:list --output=json \
-                      | sed 's/},{/}\n{/g' \
-                      | grep -v 'Lib..Storage..Local' \
                       | grep -o '"mount_id":[0-9]*' | grep -o '[0-9]*'
                   )"
                   if [ -z "$ids" ]; then
@@ -93,8 +91,19 @@ spec:
                     else
                       # status is empty when the mount is local/unverifiable;
                       # only a real error counts as a failure.
+                      msg="$(echo "$out" | sed -n 's/^[[:space:]]*- message:[[:space:]]*//p' | head -1)"
+                      # Local storages use the per-user $user placeholder, which
+                      # Nextcloud expands at runtime, so verify always calls the
+                      # literal path missing. Not a fault - skip it, or the
+                      # alert cries wolf forever.
+                      case "$msg" in
+                        *"Local storage path does not exist"*)
+                          echo "mount $id: local storage, skipped"
+                          continue
+                          ;;
+                      esac
                       if [ -z "$status" ]; then
-                        echo "mount $id: not verifiable (local storage), skipped"
+                        echo "mount $id: not verifiable, skipped"
                       else
                         echo "mount $id: $status" >&2
                         echo "$out" | sed -n 's/^[[:space:]]*- message:/  message:/p' >&2
