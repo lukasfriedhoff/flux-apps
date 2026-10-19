@@ -15,6 +15,23 @@ spec:
     initdb:
       database: authelia
       owner: authelia
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${authelia_postgres_backup_bucket:=authelia-postgres-backup}/${cluster_environment}/${authelia_postgres_backup_generation:=}authelia-postgres/"
+      endpointURL: "${authelia_postgres_backup_endpoint_url:=}"
+      serverName: ${authelia_postgres_backup_server_name:=authelia-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${authelia_postgres_backup_credential_secret_name:=authelia-postgres-backup-credentials}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${authelia_postgres_backup_credential_secret_name:=authelia-postgres-backup-credentials}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${authelia_postgres_backup_retention:=30d}"
   storage:
     storageClass: ${authelia_postgres_storage_class_name:=${default_sts_storage_class_name}}
     size: ${authelia_postgres_size:=2Gi}

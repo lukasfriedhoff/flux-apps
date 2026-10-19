@@ -16,6 +16,23 @@ spec:
     initdb:
       database: ${hydra_postgres_db_name}
       owner: ${hydra_postgres_user}
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${hydra_postgres_backup_bucket:=hydra-postgres-backup}/${cluster_environment}/${hydra_postgres_backup_generation:=}hydra-postgres/"
+      endpointURL: "${hydra_postgres_backup_endpoint_url:=}"
+      serverName: ${hydra_postgres_backup_server_name:=hydra-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${hydra_postgres_backup_credential_secret_name:=hydra-postgres-backup-credentials}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${hydra_postgres_backup_credential_secret_name:=hydra-postgres-backup-credentials}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${hydra_postgres_backup_retention:=30d}"
   storage:
     storageClass: ${hydra_postgres_storage_class_name}
     size: ${hydra_postgres_size}
