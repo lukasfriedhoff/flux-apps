@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: exporter
-          image: xperimental/nextcloud-exporter:0.9.1
+          image: xperimental/nextcloud-exporter:0.9.2
           ports:
             - name: metrics
               containerPort: 9205
