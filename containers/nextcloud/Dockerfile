@@ -6,11 +6,17 @@
 # with StorageNotAvailable). Baking it in removes the runtime apt dependency
 # entirely.
 #
-# Renovate bumps the FROM tag; the build workflow derives the pushed image
-# tag from it (harbor.h4xx.io/library/nextcloud:<same tag>). Merge order on
-# upstream bumps: this Dockerfile PR FIRST (builds the new tag), then the
-# helm values PR in apps/nextcloud that points at it.
-FROM docker.io/library/nextcloud:34.0.4-apache
+# Upgrade pipeline (each step is automated; humans only merge PRs):
+#   1. Renovate bumps the FROM tag below (its PR runs verify-nextcloud-apps,
+#      which checks every app pinned in apps/nextcloud/helm-release.yaml
+#      against the appstore compat matrix for the NEW Nextcloud version).
+#   2. Merging that PR triggers build-nextcloud-image: it builds and pushes
+#      harbor.h4xx.io/library/nextcloud:<same tag>, then auto-opens a PR
+#      bumping the image tag in apps/nextcloud/helm-release.yaml.
+#   3. Merging the auto-PR rolls it out via flux; the seed-custom-apps init
+#      container and verify-custom-apps re-validate every app pin in-cluster.
+# Never bump the helm values tag before the Harbor tag exists (step 2).
+FROM docker.io/library/nextcloud:34.0.5-apache
 
 # DL3008: the base tag is the pin; smbclient point versions rotate out of
 # the debian archive and would break rebuilds.
