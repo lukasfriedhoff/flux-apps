@@ -14,8 +14,16 @@ on:
 jobs:
   renovate:
     runs-on: ubuntu-latest
+    # Run ONLY on GitHub Actions. This repo is also mirrored to Forgejo
+    # (git.h4xx.io), whose in-cluster runner picks up every workflow — but it
+    # resolves bare `uses:` against data.forgejo.org, which has no
+    # renovatebot/github-action, so it failed this job every night with
+    # "repository not found". GitHub Actions is where Renovate actually runs
+    # (it writes PRs back to Forgejo via RENOVATE_FORGEJO_TOKEN regardless of
+    # where it executes). Gating on server_url makes the Forgejo runner skip.
+    if: ${{ github.server_url == 'https://github.com' }}
     steps:
-      - uses: renovatebot/github-action@v46.3.1
+      - uses: renovatebot/github-action@v46.3.9
         with:
           token: ${{ secrets.RENOVATE_FORGEJO_TOKEN }}
         env:
