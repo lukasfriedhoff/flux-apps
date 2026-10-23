@@ -934,8 +934,40 @@ spec:
             else
               echo "Shared Music external storage already configured."
             fi
-            # Read-only by default: every user shares this one folder, so a
-            # writable mount lets any single account delete the whole library.
+            # Self-heal duplicate mounts: a cold start with several replicas can
+            # race here (each creates the mount before seeing the others), which
+            # left four identical /Music mounts once. Keep the lowest id and
+            # delete the rest so the config converges to one.
+            all_music_mounts="$(timeout 30 php /var/www/html/occ files_external:list \
+              --output=json 2>/dev/null \
+              | php -r '
+                $mounts = json_decode(file_get_contents("php://stdin"), true);
+                if (!is_array($mounts)) {
+                  exit;
+                }
+                $want = getenv("WANT_MOUNT_POINT");
+                $ids = [];
+                foreach ($mounts as $m) {
+                  if (($m["mount_point"] ?? "") === $want) {
+                    $ids[] = (int)($m["mount_id"] ?? 0);
+                  }
+                }
+                sort($ids);
+                echo implode(" ", $ids);
+              ')"
+            existing_mount=""
+            for mid in $${all_music_mounts}; do
+              if [ -z "$${existing_mount}" ]; then
+                existing_mount="$${mid}"
+              else
+                echo "Removing duplicate Shared Music mount $${mid} (keeping $${existing_mount})."
+                occ_safe files_external:delete "$${mid}" -y || true
+              fi
+            done
+            # Writability is controlled by nextcloud_external_music_readonly:
+            # the homelab library is communal read-write, so any user may add
+            # tracks (and, yes, could delete them). enable_sharing lets users
+            # share album folders with each other.
             if [ -n "$${existing_mount}" ]; then
               occ_safe files_external:option "$${existing_mount}" \
                 readonly "$${NEXTCLOUD_SHARED_MUSIC_READONLY}" || true
