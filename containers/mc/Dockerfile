@@ -11,10 +11,15 @@ FROM nixos/nix:2.31.2 AS build
 
 # nixpkgs pin. Bump this (and MC_VERSION below) to upgrade.
 ARG NIXPKGS_REF=nixos-unstable
-RUN nix \
+# NIXPKGS_ALLOW_INSECURE + --impure: nixpkgs marked minio-client insecure
+# after MinIO abandoned public distribution (broke this build 2026-10-22).
+# We knowingly keep building the CLIENT — it only talks to our own MinIO
+# for bucket bootstrap and goes away with the Garage migration
+# (see flux-cluster base/kustomizations/infra/s3.yaml for the plan).
+RUN NIXPKGS_ALLOW_INSECURE=1 nix \
       --extra-experimental-features 'nix-command flakes' \
       --option filter-syscalls false \
-      build "github:NixOS/nixpkgs/${NIXPKGS_REF}#minio-client" --out-link /tmp/mc
+      build --impure "github:NixOS/nixpkgs/${NIXPKGS_REF}#minio-client" --out-link /tmp/mc
 
 # Copy the runtime closure: the binary is dynamically linked against glibc in
 # the nix store, so the bare executable is useless on its own.

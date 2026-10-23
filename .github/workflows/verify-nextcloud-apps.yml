@@ -1,0 +1,47 @@
+name: verify-nextcloud-apps
+
+# Gate for the Nextcloud upgrade pipeline (see containers/nextcloud/Dockerfile
+# for the full flow): any change to the image version or the app pins must
+# prove that every pinned app has an appstore release compatible with the
+# Nextcloud version the image is built from. This is the check that was
+# missing when NC35-only app majors (external v10, impersonate v6,
+# richdocuments v12) were offered against NC34.
+on:
+  pull_request:
+    paths:
+      - containers/nextcloud/**
+      - apps/nextcloud/**
+      - scripts/nextcloud/**
+      - .github/workflows/verify-nextcloud-apps.yml
+  push:
+    branches: [main]
+    paths:
+      - containers/nextcloud/**
+      - apps/nextcloud/**
+      - scripts/nextcloud/**
+      - .github/workflows/verify-nextcloud-apps.yml
+  workflow_dispatch:
+
+jobs:
+  app-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned direct download, same rationale as verify.yml: installer
+      # scripts that probe api.github.com break under Forgejo's injected
+      # token and the shared VPN egress rate limit.
+      - name: Install jq
+        env:
+          JQ_VERSION: "1.8.1"
+        run: |
+          set -euo pipefail
+          if ! command -v jq >/dev/null; then
+            curl -fsSL -o /usr/local/bin/jq \
+              "https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux-amd64"
+            chmod +x /usr/local/bin/jq
+          fi
+          jq --version
+
+      - name: Check pinned apps against the target Nextcloud version
+        run: ./scripts/nextcloud/check-app-compat.sh

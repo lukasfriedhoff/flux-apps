@@ -37,3 +37,40 @@ jobs:
           docker push "$IMG:$TAG"
           docker push "$IMG:$TAG-sha-$SHORT"
           echo "pushed $IMG:$TAG (and :$TAG-sha-$SHORT)"
+
+      - name: open the helm values bump PR
+        env:
+          # A PAT, not the Actions token: branches pushed with the Actions
+          # token do not trigger workflows, and the bump PR must run
+          # verify-static + verify-nextcloud-apps before anyone merges it.
+          TOKEN: ${{ secrets.RENOVATE_FORGEJO_TOKEN }}
+        # Closes the loop documented in containers/nextcloud/Dockerfile: once
+        # the Harbor tag exists, the helm values bump is safe to propose.
+        # Idempotent: no-op when values already match; force-push + 409-tolerant
+        # PR creation when a previous bump branch is still open.
+        run: |
+          set -euo pipefail
+          TAG=$(awk -F: '/^FROM/ {print $2; exit}' containers/nextcloud/Dockerfile)
+          CUR=$(awk '$1 == "tag:" {print $2; exit}' apps/nextcloud/helm-release.yaml)
+          if [ "$TAG" = "$CUR" ]; then
+            echo "helm values already reference $TAG - nothing to do"
+            exit 0
+          fi
+          test "$(grep -cE '^ *tag:' apps/nextcloud/helm-release.yaml)" = 1
+          sed -i -E "s|^( *tag: ).*|\1${TAG}|" apps/nextcloud/helm-release.yaml
+          BRANCH="nextcloud-image/${TAG}"
+          git config user.name "forgejo-actions"
+          git config user.email "actions@h4xx.io"
+          git switch -c "$BRANCH"
+          git commit -am "chore(nextcloud): roll out image ${TAG}"
+          git push -f "https://token:${TOKEN}@${GITHUB_SERVER_URL#https://}/${GITHUB_REPOSITORY}.git" "$BRANCH"
+          BODY="Auto-opened by build-nextcloud-image: harbor.h4xx.io/library/nextcloud:${TAG} is pushed. Merge once verify-static and verify-nextcloud-apps are green; flux rolls it out and verify-custom-apps re-checks the app pins in-cluster."
+          CODE=$(curl -s -o /tmp/pr.json -w '%{http_code}' -X POST \
+            -H "Authorization: token ${TOKEN}" -H "Content-Type: application/json" \
+            -d "{\"title\":\"chore(nextcloud): roll out image ${TAG}\",\"head\":\"${BRANCH}\",\"base\":\"main\",\"body\":\"${BODY}\"}" \
+            "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/pulls")
+          case "$CODE" in
+            201) echo "opened PR: $(grep -o '"html_url":"[^"]*"' /tmp/pr.json | head -1)" ;;
+            409) echo "PR for ${BRANCH} already exists - branch updated" ;;
+            *)   echo "PR creation failed with HTTP ${CODE}"; cat /tmp/pr.json; exit 1 ;;
+          esac
