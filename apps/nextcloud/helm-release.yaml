@@ -1296,10 +1296,10 @@ spec:
                 0.25.14
               fetch_app \
                 cospend \
-                https://github.com/julien-nc/cospend-nc/releases/download/v4.1.3/cospend-4.1.3.tar.gz \
-                6a749c542a3d6eb06694d535a0f6d774912a337f28ca5b4e9ad551cca47a9ade \
+                https://github.com/julien-nc/cospend-nc/releases/download/v4.3.0/cospend-4.3.0.tar.gz \
+                0861ac786e057125ad91a4e5fa381315e5ece807bab6b320b39dcbad9eab6ffd \
                 cospend/appinfo/info.xml \
-                4.1.3
+                4.3.0
               fetch_app \
                 deck \
                 https://github.com/nextcloud-releases/deck/releases/download/v1.18.5/deck-v1.18.5.tar.gz \
