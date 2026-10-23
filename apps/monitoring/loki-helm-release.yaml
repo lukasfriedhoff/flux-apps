@@ -48,7 +48,9 @@ spec:
           ruler: ${monitoring_loki_bucket}
           admin: ${monitoring_loki_bucket}
         s3:
-          endpoint: ${object_storage_endpoint}
+          # Migrated MinIO -> Garage 2026-10-23 (data rclone-synced, 303k objects).
+          # Mimir + Tempo already use Garage; this was the last MinIO consumer.
+          endpoint: ${garage_s3_endpoint}
           region: ${object_storage_region}
           s3ForcePathStyle: ${object_storage_force_path_style}
           insecure: ${object_storage_insecure}
