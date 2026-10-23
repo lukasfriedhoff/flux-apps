@@ -7,7 +7,7 @@
 #
 # Not replaceable by rclone or the aws CLI: two of the jobs use `mc admin user`
 # and `mc admin policy`, which are MinIO's admin API, not S3.
-FROM nixos/nix:2.31.2 AS build
+FROM nixos/nix:2.35.3 AS build
 
 # nixpkgs pin. Bump this (and MC_VERSION below) to upgrade.
 ARG NIXPKGS_REF=nixos-unstable
