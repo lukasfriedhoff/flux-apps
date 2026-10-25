@@ -49,6 +49,29 @@ spec:
             # Rescan periodically: USB enclosures come and go, and a disk that
             # appears after start would otherwise never be reported.
             - --smartctl.rescan=10m
+            # Skip Longhorn's own iSCSI block devices. This is not cosmetic -
+            # it is what makes srv9 collectable at all.
+            #
+            # Every attached Longhorn volume shows up as a /dev/sdX with model
+            # "IET VIRTUAL-DISK", and the exporter runs one smartctl per device
+            # serially. srv9 discovered 94 devices (8 real disks behind the PERC
+            # plus ~86 iSCSI) and took over 80 SECONDS to answer /metrics,
+            # against the chart's 10s scrapeTimeout - so srv9, the node holding
+            # ~48 TB of bulk storage, produced no SMART data whatsoever while
+            # srv1 and srv8 looked fine.
+            #
+            # The regex keeps sda-sdf and everything non-sd. srv1's six real
+            # disks are sda-sdf, srv8's three are sda-sdc, and srv9's real disks
+            # are not sd* at all - they enumerate as bus_0_megaraid_N through the
+            # H730P. Physical disks claim their letters at boot before any iSCSI
+            # session attaches, so the low letters are stable.
+            #
+            # A handful of iSCSI devices in the sda-sdf range still slip through
+            # on srv8/srv9. That is deliberate: a tighter regex would drop srv1's
+            # genuine sdd/sde/sdf, and losing real disks to reduce noise is the
+            # wrong trade. Identify the leftovers by model_name="IET VIRTUAL-DISK"
+            # on the smartctl_device metric.
+            - --smartctl.device-exclude=^sd([g-z]|[a-z]{2,})$
           ports:
             - name: metrics
               containerPort: 9633
