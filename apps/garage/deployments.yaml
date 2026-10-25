@@ -24,6 +24,13 @@ spec:
       garage-node: ${garage_node1_name}
   template:
     metadata:
+      # Scraped by Alloy's annotationAutodiscovery (POD annotations - that is
+      # what the k8s-monitoring chart watches). There are no ServiceMonitor or
+      # PodMonitor CRDs in this cluster, so annotations are the only mechanism.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3903"
+        prometheus.io/path: /metrics
       labels:
         app.kubernetes.io/name: garage
         garage-node: ${garage_node1_name}
@@ -53,9 +60,25 @@ spec:
           image: ${garage_image:=harbor.h4xx.io/proxy-docker/dxflrs/garage:v2.3.0}
           command: ["/garage"]
           args: ["-c", "/etc/garage/garage.toml", "server"]
-          envFrom:
-            - secretRef:
-                name: ${garage_secrets_name:=garage-secrets}
+          # Explicit env instead of envFrom on the whole secret, specifically so
+          # GARAGE_METRICS_TOKEN is NOT injected. Garage only protects /metrics
+          # when metrics_token is set (or metrics_require_token = true), and
+          # Alloy's annotation autodiscovery cannot send an Authorization
+          # header - so with the token set, Garage was simply unmonitored.
+          # admin_token is independent and still guards every admin function on
+          # the same port; only /metrics becomes open, matching every other
+          # exporter in this cluster.
+          env:
+            - name: GARAGE_RPC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ${garage_secrets_name:=garage-secrets}
+                  key: GARAGE_RPC_SECRET
+            - name: GARAGE_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ${garage_secrets_name:=garage-secrets}
+                  key: GARAGE_ADMIN_TOKEN
           ports:
             - { name: s3, containerPort: 3900 }
             - { name: rpc, containerPort: 3901 }
@@ -104,6 +127,13 @@ spec:
       garage-node: ${garage_node2_name}
   template:
     metadata:
+      # Scraped by Alloy's annotationAutodiscovery (POD annotations - that is
+      # what the k8s-monitoring chart watches). There are no ServiceMonitor or
+      # PodMonitor CRDs in this cluster, so annotations are the only mechanism.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3903"
+        prometheus.io/path: /metrics
       labels:
         app.kubernetes.io/name: garage
         garage-node: ${garage_node2_name}
@@ -133,9 +163,25 @@ spec:
           image: ${garage_image:=harbor.h4xx.io/proxy-docker/dxflrs/garage:v2.3.0}
           command: ["/garage"]
           args: ["-c", "/etc/garage/garage.toml", "server"]
-          envFrom:
-            - secretRef:
-                name: ${garage_secrets_name:=garage-secrets}
+          # Explicit env instead of envFrom on the whole secret, specifically so
+          # GARAGE_METRICS_TOKEN is NOT injected. Garage only protects /metrics
+          # when metrics_token is set (or metrics_require_token = true), and
+          # Alloy's annotation autodiscovery cannot send an Authorization
+          # header - so with the token set, Garage was simply unmonitored.
+          # admin_token is independent and still guards every admin function on
+          # the same port; only /metrics becomes open, matching every other
+          # exporter in this cluster.
+          env:
+            - name: GARAGE_RPC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ${garage_secrets_name:=garage-secrets}
+                  key: GARAGE_RPC_SECRET
+            - name: GARAGE_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ${garage_secrets_name:=garage-secrets}
+                  key: GARAGE_ADMIN_TOKEN
           ports:
             - { name: s3, containerPort: 3900 }
             - { name: rpc, containerPort: 3901 }
@@ -184,6 +230,13 @@ spec:
       garage-node: ${garage_node3_name}
   template:
     metadata:
+      # Scraped by Alloy's annotationAutodiscovery (POD annotations - that is
+      # what the k8s-monitoring chart watches). There are no ServiceMonitor or
+      # PodMonitor CRDs in this cluster, so annotations are the only mechanism.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3903"
+        prometheus.io/path: /metrics
       labels:
         app.kubernetes.io/name: garage
         garage-node: ${garage_node3_name}
@@ -213,9 +266,25 @@ spec:
           image: ${garage_image:=harbor.h4xx.io/proxy-docker/dxflrs/garage:v2.3.0}
           command: ["/garage"]
           args: ["-c", "/etc/garage/garage.toml", "server"]
-          envFrom:
-            - secretRef:
-                name: ${garage_secrets_name:=garage-secrets}
+          # Explicit env instead of envFrom on the whole secret, specifically so
+          # GARAGE_METRICS_TOKEN is NOT injected. Garage only protects /metrics
+          # when metrics_token is set (or metrics_require_token = true), and
+          # Alloy's annotation autodiscovery cannot send an Authorization
+          # header - so with the token set, Garage was simply unmonitored.
+          # admin_token is independent and still guards every admin function on
+          # the same port; only /metrics becomes open, matching every other
+          # exporter in this cluster.
+          env:
+            - name: GARAGE_RPC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ${garage_secrets_name:=garage-secrets}
+                  key: GARAGE_RPC_SECRET
+            - name: GARAGE_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ${garage_secrets_name:=garage-secrets}
+                  key: GARAGE_ADMIN_TOKEN
           ports:
             - { name: s3, containerPort: 3900 }
             - { name: rpc, containerPort: 3901 }
