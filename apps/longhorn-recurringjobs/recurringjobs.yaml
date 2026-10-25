@@ -88,8 +88,27 @@ spec:
   # are already marked for deletion, which would have done nothing here because
   # nothing was marking them. 'snapshot-delete' trims to retain and then purges.
   task: snapshot-delete
+  # BOTH groups, and that is the whole point (fixed 2026-10-25).
+  #
+  # Excluding a cache from BACKUP was done by setting
+  # `recurring-job-group.longhorn.io/default=disabled`, because `default` is the
+  # group backup-daily selects. But this cleanup job also selected only
+  # `default`, so opting a volume out of backup silently opted it out of
+  # snapshot retention as well - the one job it still needed.
+  #
+  # nix-cache/attic-storage is what that cost. Nothing pruned it, and because it
+  # was degraded every replica-rebuild attempt left another system snapshot
+  # behind, so it climbed to the 250 cap. A volume at the cap cannot create a
+  # snapshot, a rebuild needs one, so the rebuild failed and tried again - a
+  # deadlock it could not leave on its own. It sat degraded on a single replica
+  # from 2026-10-18 until this was found.
+  #
+  # `no-backup` carries the cache volumes that must still be pruned. Keep the
+  # two lists in sync: a volume excluded from `default` needs `no-backup`
+  # enabled, or it gets no retention at all.
   groups:
     - default
+    - no-backup
   retain: ${longhorn_recurring_snapshot_retain:=10}
   concurrency: ${longhorn_recurring_snapshot_concurrency:=2}
   labels:
