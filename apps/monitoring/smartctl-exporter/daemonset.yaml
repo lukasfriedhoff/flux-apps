@@ -59,6 +59,16 @@ spec:
           # srv1 and srv8 looked perfectly healthy. One unsupported device
           # silently blinds a whole node. v0.14.0 serves 200 with all eight of
           # srv9's disks visible through the H730P.
+          #
+          # Re-tested on 2026-10-26 when Renovate proposed v0.15.0 again: still
+          # 500 with zero metrics on srv9. v0.15.0's release notes do claim a
+          # "Fix some 5xx errors from metrics endpoint", and it additionally
+          # discovers the PERC's megaraid passthrough devices
+          # (bus_0_megaraid_0..9) that v0.14.0 never saw - but excluding those
+          # so it scans the exact same six sd* devices as v0.14.0 still returns
+          # 500. The regression is in collecting srv9's disks, not in the new
+          # discovery, so no amount of --smartctl.device-exclude fixes it.
+          # renovate.json pins this to !/^0\.15\./ so a future 0.16 is still offered.
           image: quay.io/prometheuscommunity/smartctl-exporter:v0.14.0
           args:
             - --web.listen-address=:9633
