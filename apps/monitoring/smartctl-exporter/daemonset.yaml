@@ -1,0 +1,79 @@
+# SMART disk health exporter.
+#
+# Added 2026-10-25: there was no disk health telemetry anywhere in the homelab.
+# smartctl was not even installed on srv1/srv8/srv9, so nothing tracked
+# reallocated sectors, SSD wear or pending failures - on ~48 TB of HDD where
+# several volumes are effectively single-replica.
+#
+# Runs as a DaemonSet rather than via NixOS smartd because the metrics then
+# reach Mimir through the same Alloy annotation autodiscovery every other
+# exporter uses, and because it needs no deploy to the host fleet.
+#
+# Privileges: the exporter runs `smartctl --scan`, which reads /dev, so the
+# HOST /dev has to be mounted AT /dev - mounting it elsewhere just leaves
+# smartctl scanning the container's own empty /dev. It also issues SG_IO
+# ioctls, which need the device opened writable, so the mount cannot be
+# read-only and capability-dropping is not sufficient. privileged:true is what
+# the upstream chart uses and what actually works here.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: smartctl-exporter
+  namespace: ${k8s_monitoring_namespace:=monitoring}
+  labels:
+    app.kubernetes.io/name: smartctl-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: smartctl-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: smartctl-exporter
+      # POD annotations, not service annotations - the k8s-monitoring chart's
+      # annotationAutodiscovery watches pods.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9633"
+        prometheus.io/path: /metrics
+    spec:
+      # Disk health matters most on the storage nodes, but every node has disks
+      # worth watching, so tolerate everything rather than pinning.
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: smartctl-exporter
+          image: quay.io/prometheuscommunity/smartctl-exporter:v0.15.0
+          args:
+            - --web.listen-address=:9633
+            # Rescan periodically: USB enclosures come and go, and a disk that
+            # appears after start would otherwise never be reported.
+            - --smartctl.rescan=10m
+          ports:
+            - name: metrics
+              containerPort: 9633
+              protocol: TCP
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: dev
+              mountPath: /dev
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 20
+            periodSeconds: 30
+      volumes:
+        - name: dev
+          hostPath:
+            path: /dev
+            type: Directory

@@ -11,3 +11,4 @@ resources:
   - ingress-ingest.yaml
   - rules-sync
   - dashboards
+  - smartctl-exporter
