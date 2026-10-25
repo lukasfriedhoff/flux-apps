@@ -31,4 +31,8 @@ data:
 
     [admin]
     api_bind_addr = "[::]:3903"
-    # admin_token / metrics_token supplied via GARAGE_ADMIN_TOKEN / GARAGE_METRICS_TOKEN
+    # admin_token supplied via GARAGE_ADMIN_TOKEN (guards the admin functions).
+    # metrics_token is deliberately NOT set: Garage leaves /metrics open unless
+    # it is, and Alloy's annotation autodiscovery cannot send an Authorization
+    # header, so a token here means Garage goes unmonitored. The pods carry the
+    # scrape annotations; see deployments.yaml.

@@ -5,10 +5,6 @@ kind: Service
 metadata:
   name: garage
   namespace: ${garage_namespace}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "3903"
-    prometheus.io/path: "/metrics"
 spec:
   selector:
     app.kubernetes.io/name: garage
