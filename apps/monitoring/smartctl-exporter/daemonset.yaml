@@ -43,7 +43,23 @@ spec:
         - operator: Exists
       containers:
         - name: smartctl-exporter
-          image: quay.io/prometheuscommunity/smartctl-exporter:v0.15.0
+          # PINNED to v0.14.0 deliberately - do NOT let Renovate move this to
+          # v0.15.0 without re-testing srv9.
+          #
+          # v0.15.0 collects SCSI-only metrics
+          # (smartctl_scsi_percentage_used_endurance_indicator,
+          # smartctl_verify_errors_corrected_by_*,
+          # smartctl_verify_total_uncorrected_errors) using descriptors it never
+          # registers. The Prometheus client treats that as a collection error
+          # and fails the ENTIRE response, so /metrics returns 500 with zero
+          # metrics - not just the offending series.
+          #
+          # srv9's four Samsung SAS SSDs trigger it, which meant the node
+          # carrying ~48 TB of bulk storage reported no SMART data at all while
+          # srv1 and srv8 looked perfectly healthy. One unsupported device
+          # silently blinds a whole node. v0.14.0 serves 200 with all eight of
+          # srv9's disks visible through the H730P.
+          image: quay.io/prometheuscommunity/smartctl-exporter:v0.14.0
           args:
             - --web.listen-address=:9633
             # Rescan periodically: USB enclosures come and go, and a disk that
