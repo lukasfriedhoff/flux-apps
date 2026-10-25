@@ -31,7 +31,7 @@ RUN mkdir -p /output/nix/store \
  && cp -aL /tmp/mc/bin/mc /output/bin/mc
 
 # alpine, not scratch: the bootstrap Jobs all run `/bin/sh -ceu` scripts.
-FROM alpine:3.22
+FROM alpine:3.24
 
 # hadolint ignore=DL3018  # alpine patch releases rename the pin; unpinned is deliberate
 RUN apk add --no-cache ca-certificates

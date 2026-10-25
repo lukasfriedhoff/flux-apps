@@ -6,7 +6,7 @@ metadata:
 data:
   harbor_suspend: "true"
   harbor_namespace: "harbor"
-  harbor_chart_version: "1.19.2"
+  harbor_chart_version: "1.19.4"
   harbor_admin_secret_name: "harbor-admin"
   harbor_trivy_enabled: "true"
   harbor_registry_storage_class_name: "longhorn-ssd-rwo-1r"

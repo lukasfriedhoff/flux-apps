@@ -15,7 +15,7 @@ spec:
   chart:
     spec:
       chart: harbor
-      version: ${harbor_chart_version:=1.19.2}
+      version: ${harbor_chart_version:=1.19.4}
       sourceRef:
         kind: HelmRepository
         name: harbor
