@@ -8,5 +8,6 @@ configMapGenerator:
     files:
       - rules.yaml
       - alerts.yaml
+      - smart-alerts.yaml
 resources:
   - cronjob.yaml

@@ -198,6 +198,16 @@ configMapGenerator:
         grafana_folder: Storage
     files:
       - longhorn/longhorn.json
+  # Physical disk health. Longhorn reports whether a REPLICA is healthy; this
+  # reports whether the DRIVE under it is dying, which nothing tracked before
+  # 2026-10-25. Disk-to-Longhorn mapping is in the nix repo,
+  # docs/hardware/cluster-disk-inventory.md.
+  - name: grafana-dashboard-smart
+    options:
+      annotations:
+        grafana_folder: Storage
+    files:
+      - smart/smart.json
   - name: grafana-dashboard-nix-cache
     options:
       annotations:

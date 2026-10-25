@@ -29,6 +29,7 @@ spec:
                 - --id=${monitoring_tenant_id:=anonymous}
                 - /rules/rules.yaml
                 - /rules/alerts.yaml
+                - /rules/smart-alerts.yaml
               volumeMounts:
                 - name: mimir-rules
                   mountPath: /rules
