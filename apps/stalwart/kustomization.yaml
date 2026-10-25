@@ -5,7 +5,6 @@ resources:
   - scheduled-backup.yaml
   - backup-bucket-bootstrap.yaml
   - valkey.yaml
-  - s3-bootstrap.yaml
   - stalwart.yaml
   - service.yaml
   - apply-plan.yaml
