@@ -1,0 +1,125 @@
+# Garage object storage alerts (added 2026-10-25).
+#
+# Separate file for the same reason as smart-alerts.yaml: alerts.yaml and
+# rules.yaml are generated from the kubernetes-mixin by mixin/generate.sh and
+# would lose anything added to them.
+#
+# Garage's metric names are mostly UNPREFIXED - cluster_healthy, table_size,
+# api_s3_request_counter - so every expression is scoped with job="garage" to
+# avoid colliding with anything else that might export a metric by those names.
+#
+# Garage is now the ONLY in-cluster object store (MinIO scaled to 0 on
+# 2026-10-25), so Loki, Mimir and Tempo all depend on it.
+groups:
+  - name: garage-object-storage
+    rules:
+      # The distinction between these first two matters. cluster_healthy drops
+      # when ANY storage node is disconnected; cluster_available only drops when
+      # quorum is lost. With rf=3 over 3 nodes, losing one node means
+      # healthy=0 but available=1 - degraded, still serving. Losing two means
+      # writes fail.
+      - alert: GarageClusterDegraded
+        expr: min(cluster_healthy{job="garage"}) == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Garage has a disconnected storage node
+          description: >-
+            At least one Garage storage node is disconnected. With rf=3 over 3
+            nodes the cluster still serves reads and writes on quorum (2/3), so
+            this is degraded rather than down - but a second node failure would
+            make the object store unavailable, and Loki, Mimir and Tempo all
+            depend on it.
+
+      - alert: GarageClusterUnavailable
+        expr: min(cluster_available{job="garage"}) == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Garage cannot serve requests - quorum lost
+          description: >-
+            Garage has lost quorum and cannot serve all requests. Loki, Mimir and
+            Tempo lose their object store, so metrics, logs and traces stop being
+            durable. MinIO is scaled to 0 but its data-s3-0 PVC is retained as a
+            rollback path.
+
+      - alert: GaragePartitionsWithoutQuorum
+        expr: (max(cluster_partitions{job="garage"}) - max(cluster_partitions_quorum{job="garage"})) > 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Some Garage partitions cannot reach quorum
+          description: >-
+            {{ $value }} partitions have no quorum, so part of the keyspace is
+            unwritable even though the cluster may otherwise look up. This is
+            more precise than cluster_available and worth trusting over it.
+
+      # Capacity is per-node and the three filesystems differ a lot in size, so
+      # alert on percentage rather than bytes.
+      - alert: GarageNodeDiskSpaceLow
+        expr: (100 * garage_local_disk_avail{job="garage",volume="data"} / garage_local_disk_total{job="garage",volume="data"}) < 15
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Garage node below 15% free space
+          description: >-
+            {{ $labels.pod }} has {{ $value | printf "%.1f" }}% free on its data
+            volume. Garage stops accepting writes for its share of the keyspace
+            when a node fills, which degrades the whole cluster rather than just
+            that node.
+
+      - alert: GarageNodeDiskSpaceCritical
+        expr: (100 * garage_local_disk_avail{job="garage",volume="data"} / garage_local_disk_total{job="garage",volume="data"}) < 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Garage node almost out of space
+          description: >-
+            {{ $labels.pod }} has only {{ $value | printf "%.1f" }}% free.
+
+      # Resync queue depth is the early warning for under-replication: blocks
+      # are queued for re-replication and a node is not keeping up.
+      - alert: GarageResyncQueueGrowing
+        expr: min_over_time(block_resync_queue_length{job="garage"}[1h]) > 1000
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: Garage resync queue is not draining
+          description: >-
+            {{ $labels.pod }} has kept more than 1000 blocks queued for resync
+            for an hour (currently {{ $value }}). min_over_time is deliberate -
+            a transient spike after a restart is normal and must not alert; a
+            floor that stays high means the node cannot keep up and data is
+            drifting towards under-replication.
+
+      - alert: GarageResyncErrors
+        expr: block_resync_errored_blocks{job="garage"} > 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Garage blocks are failing to resync
+          description: >-
+            {{ $labels.pod }} reports {{ $value }} blocks whose last resync
+            attempt failed. Unlike queue length, any sustained non-zero value
+            here needs investigating - those blocks may be under-replicated.
+
+      - alert: GarageNoMetrics
+        expr: absent(cluster_healthy{job="garage"})
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: No Garage metrics are arriving
+          description: >-
+            cluster_healthy has no series for job="garage". Garage ran
+            unmonitored from 2026-10-23 to 2026-10-25 because the pods had no
+            scrape annotations and /metrics was token-protected, and nothing
+            said so - missing metrics look exactly like healthy ones. Check the
+            pod annotations and that metrics_token is still unset.

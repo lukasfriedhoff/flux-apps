@@ -30,6 +30,7 @@ spec:
                 - /rules/rules.yaml
                 - /rules/alerts.yaml
                 - /rules/smart-alerts.yaml
+                - /rules/garage-alerts.yaml
               volumeMounts:
                 - name: mimir-rules
                   mountPath: /rules

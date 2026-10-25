@@ -208,6 +208,14 @@ configMapGenerator:
         grafana_folder: Storage
     files:
       - smart/smart.json
+  # Garage replaced MinIO as the only in-cluster object store on 2026-10-23 and
+  # had no monitoring at all until 2026-10-25. Loki, Mimir and Tempo depend on it.
+  - name: grafana-dashboard-garage
+    options:
+      annotations:
+        grafana_folder: Storage
+    files:
+      - garage/garage.json
   - name: grafana-dashboard-nix-cache
     options:
       annotations:

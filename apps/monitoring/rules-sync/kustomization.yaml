@@ -9,5 +9,6 @@ configMapGenerator:
       - rules.yaml
       - alerts.yaml
       - smart-alerts.yaml
+      - garage-alerts.yaml
 resources:
   - cronjob.yaml
