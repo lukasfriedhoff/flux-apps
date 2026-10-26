@@ -23,7 +23,7 @@ jobs:
     # where it executes). Gating on server_url makes the Forgejo runner skip.
     if: ${{ github.server_url == 'https://github.com' }}
     steps:
-      - uses: renovatebot/github-action@v46.3.9
+      - uses: renovatebot/github-action@v46.3.10
         with:
           token: ${{ secrets.RENOVATE_FORGEJO_TOKEN }}
         env:
