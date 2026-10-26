@@ -1316,10 +1316,10 @@ spec:
               # stays false, so these survive major upgrades like the rest.
               fetch_app \
                 calendar_news \
-                https://github.com/mziech/nextcloud-calendar-news/releases/download/v1.1.19/calendar_news.tar.gz \
-                46740e11682a11af7c42aa4c4df3b3a17d03e90a9c0a01bcf4b499356a276e85 \
+                https://github.com/mziech/nextcloud-calendar-news/releases/download/v1.1.20/calendar_news.tar.gz \
+                ab1fdc85a16c7ad6bfb9297f9d97dc9bee442116b7927de9a7f8fd7cfb154228 \
                 calendar_news/appinfo/info.xml \
-                1.1.19
+                1.1.20
               fetch_app \
                 carnet \
                 https://github.com/CarnetApp/CarnetNextcloud/releases/download/v0.25.14/carnet-nc-v0.25.14.tar.gz \
