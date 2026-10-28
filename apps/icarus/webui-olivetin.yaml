@@ -45,21 +45,58 @@ data:
         timeout: 1800
       - title: Check Steam listing
         icon: ping
-        # Runs in the OliveTin container itself (it ships curl + jq): the
-        # ServiceAccount deliberately cannot create pods, so a `kubectl run`
+        # Runs in the OliveTin container itself (it ships curl + jq + getent):
+        # the ServiceAccount deliberately cannot create pods, so a `kubectl run`
         # wrapper here only ever returns exit code 1.
         shell: |
-          # Steam keys a NAT'd server by the IP its heartbeat EGRESSES from.
-          # After the Hiesfelder relocation that is the site uplink, NOT the
-          # inbound DNAT host ICARUS_PUBLIC_HOST (217.253.112.180 via the kiosk
-          # tunnel) — Steam has never seen that address. Query our real egress
-          # IP instead. (Players still join fine via Steam networking.)
-          IP=$(curl -sf --max-time 10 https://api.ipify.org)
-          [ -n "$IP" ] || { echo "cannot determine egress IPv4"; exit 1; }
-          curl -sf "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v0001?addr=$IP" \
-            | jq -e ".response.servers[] | select(.gameport == ${icarus_game_port:=17777})" \
-            || { echo "NOT listed on Steam (gameport ${icarus_game_port:=17777})"; exit 1; }
-          echo "OK: listed on Steam"
+          # Steam keys a NAT'd server by the source IP of its own Steam CM
+          # session, so the ONLY address worth asking about is the one clients
+          # are told to connect to. Hiesfelder is behind CGNAT and the CM
+          # session is policy-routed over the s2s tunnel so that Valve sees the
+          # kiosk IP; if that routing breaks, the registration silently moves to
+          # the CGNAT address and the server drops out of the browser while
+          # still answering direct/favourite connects. Asking about the
+          # advertised host is what catches that.
+          #
+          # This version replaced one that asked api.ipify.org for "our" egress
+          # IP and then matched on gameport alone. Both halves were wrong: the
+          # ipify request is ordinary TCP 443 and so does NOT take the Steam
+          # path, and a gameport-only match on a SHARED CGNAT address is
+          # satisfied by any stranger's Icarus server on the default port. It
+          # reported OK for weeks while the server was not listed.
+          # No `set -u`, and no braced shell parameter expansion anywhere
+          # below. Flux substitutes every braced dollar-reference it finds in
+          # this manifest and turns an undefined one into the empty string, so
+          # a defensive dollar-brace-ICARUS_PUBLIC_HOST-colon-dash form would be
+          # rewritten to "" before the shell ever saw it. Bare $VAR is left
+          # alone. (The braced form is not even safe to spell out in a comment:
+          # Flux scans comments too, and an unresolvable reference there fails
+          # the entire Kustomization.) The env var is declared optional, so an
+          # unset one has to stay a soft, explained failure.
+          [ -n "$ICARUS_PUBLIC_HOST" ] || { echo "ICARUS_PUBLIC_HOST is unset (key public_host in the icarus credentials secret)"; exit 1; }
+          IP=$(getent ahostsv4 "$ICARUS_PUBLIC_HOST" | awk 'NR==1{print $1}')
+          [ -n "$IP" ] || { echo "cannot resolve $ICARUS_PUBLIC_HOST to an IPv4"; exit 1; }
+          echo "advertised endpoint: $ICARUS_PUBLIC_HOST -> $IP:${icarus_query_port:=27015}"
+          BODY=$(curl -sf --max-time 15 "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v0001?addr=$IP") \
+            || { echo "Steam Web API unreachable"; exit 1; }
+          # appid AND gameport, not gameport alone - this address may be shared.
+          HIT=$(printf '%s' "$BODY" | jq -c '[.response.servers[]? | select(.appid == 1149460 and .gameport == ${icarus_game_port:=17777})] | .[0] // empty')
+          if [ -z "$HIT" ]; then
+            echo "NOT registered with Steam at $IP (appid 1149460, gameport ${icarus_game_port:=17777})"
+            echo "servers Steam does know at that address:"
+            printf '%s' "$BODY" | jq -c '.response.servers[]? // empty' || true
+            echo
+            echo "If the server is up and reachable by direct connect, the Steam CM"
+            echo "session is egressing from some other address - check the Steam"
+            echo "egress policy routing on the site router."
+            exit 1
+          fi
+          echo "OK: registered with Steam at $IP"
+          printf '%s' "$HIT" | jq -r '"  addr=\(.addr) steamid=\(.steamid) gamedir=\(.gamedir) secure=\(.secure)"'
+          # Deliberately NOT claimed: that it is visible in the Internet tab.
+          # Registration is necessary but not sufficient - Valve still has to
+          # validate the advertised address, and client-side filters apply. A
+          # pass here means "Steam has it at the right IP", nothing more.
         timeout: 120
       - title: Restore snapshot (STOPS the server)
         icon: warning

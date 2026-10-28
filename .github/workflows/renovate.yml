@@ -1,4 +1,5 @@
-# Dependency update PRs for flux-apps and flux-cluster - against FORGEJO
+# Dependency update PRs for flux-apps, flux-cluster and flux-app-media -
+# against FORGEJO
 # (git.h4xx.io), the primary git host. GitHub is a force-synced push mirror:
 # PRs/merges made on GitHub get clobbered by the next mirror sync, so
 # Renovate MUST write to Forgejo. The workflow still RUNS on GitHub Actions.
@@ -27,7 +28,9 @@ jobs:
         with:
           token: ${{ secrets.RENOVATE_FORGEJO_TOKEN }}
         env:
-          RENOVATE_REPOSITORIES: "lukasf/flux-apps,lukasf/flux-cluster"
+          # flux-app-media has no workflow of its own (it is a private split-out
+          # of the media stack); it is covered from here, like flux-cluster.
+          RENOVATE_REPOSITORIES: "lukasf/flux-apps,lukasf/flux-cluster,lukasf/flux-app-media"
           RENOVATE_PLATFORM: forgejo
           RENOVATE_ENDPOINT: https://git.h4xx.io/api/v1
           RENOVATE_GIT_AUTHOR: "Renovate Bot <renovate@h4xx.io>"
