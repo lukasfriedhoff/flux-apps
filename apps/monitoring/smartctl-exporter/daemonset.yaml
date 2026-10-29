@@ -115,12 +115,20 @@ spec:
           volumeMounts:
             - name: dev
               mountPath: /dev
+          # /metrics runs smartctl against every non-excluded device serially,
+          # so a scrape takes 0.4-2.4s on srv1/srv8 and up to ~14s on srv9
+          # (measured 2026-10-29). The default 1s probe timeout failed
+          # thousands of times per pod and restart-looped srv8's pod (196x).
+          # 30s timeout leaves 2x headroom over the slowest node; 60s period
+          # keeps the probe from adding a second full SMART sweep per scrape.
           livenessProbe:
             httpGet:
               path: /metrics
               port: metrics
             initialDelaySeconds: 20
-            periodSeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 3
       volumes:
         - name: dev
           hostPath:
