@@ -117,6 +117,7 @@ spec:
                 - name: Host
                   value: ${pretix_url_host:=tickets.hackimpott.de}
             periodSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 60
           readinessProbe:
             httpGet:
@@ -126,6 +127,9 @@ spec:
                 - name: Host
                   value: ${pretix_url_host:=tickets.hackimpott.de}
             periodSeconds: 15
+            # /healthcheck/ touches DB + redis; under load it exceeds the 1s
+            # default and the pod flapped out of the Service (14x in 30 min).
+            timeoutSeconds: 5
           livenessProbe:
             tcpSocket:
               port: http
