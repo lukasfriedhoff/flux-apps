@@ -52,8 +52,8 @@ spec:
                 external/appinfo/info.xml
               verify_app \
                 contacts \
-                https://github.com/nextcloud-releases/contacts/releases/download/v8.9.0/contacts-v8.9.0.tar.gz \
-                06f5da48d70884cef60faaf8bb36a8b2ec22a7bcdb0aecf4970a693614562854 \
+                https://github.com/nextcloud-releases/contacts/releases/download/v8.9.3/contacts-v8.9.3.tar.gz \
+                2844792ca52f25057ea0ee30b326cc3a63771ab7d82b1e52c39b2e344906ac8c \
                 contacts/appinfo/info.xml
               verify_app \
                 calendar \
