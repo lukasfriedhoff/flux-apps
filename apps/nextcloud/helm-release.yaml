@@ -1116,7 +1116,6 @@ spec:
           enable_custom_app_if_present maps /var/www/html/custom_apps/maps/vendor/autoload.php || true
           enable_custom_app_if_present passwords /var/www/html/custom_apps/passwords/appinfo/info.xml || true
           enable_custom_app_if_present calendar_news /var/www/html/custom_apps/calendar_news/appinfo/info.xml || true
-          enable_custom_app_if_present carnet /var/www/html/custom_apps/carnet/appinfo/info.xml || true
           enable_custom_app_if_present cospend /var/www/html/custom_apps/cospend/appinfo/info.xml || true
           enable_custom_app_if_present deck /var/www/html/custom_apps/deck/appinfo/info.xml || true
           enable_custom_app_if_present gpoddersync /var/www/html/custom_apps/gpoddersync/appinfo/info.xml || true
@@ -1254,22 +1253,22 @@ spec:
                 5.12.6
               fetch_app \
                 richdocuments \
-                https://github.com/nextcloud-releases/richdocuments/releases/download/v11.1.2/richdocuments-v11.1.2.tar.gz \
-                96766a94cf417a716e47ed89c6ff2411c54954caa916afcdddc4d9668dffb557 \
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v12.0.1/richdocuments-v12.0.1.tar.gz \
+                0639ab0e3413142a76334af20ca88cba0a351a11c9c07effa0f1eb7f05941f2c \
                 richdocuments/appinfo/info.xml \
-                11.1.2
+                12.0.1
               fetch_app \
                 oidc_login \
-                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.4/oidc_login.tar.gz \
-                10d5610fd5b12fab763bb3c59fc1195011a5d6fcbf310991bc0c9fb504541fc7 \
+                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.4.0/oidc_login.tar.gz \
+                d84e3616e865259c142af6cf40b6f0092228ad78bed843f85c6575f45942884b \
                 oidc_login/appinfo/info.xml \
-                3.3.4
+                3.4.0
               fetch_app \
                 external \
-                https://github.com/nextcloud-releases/external/releases/download/v9.0.1/external-v9.0.1.tar.gz \
-                b18a55b6a0e12d4a1ced0d74b6e5ef6927f322c8b9b3409dae4ea68717e422d9 \
+                https://github.com/nextcloud-releases/external/releases/download/v10.0.0/external-v10.0.0.tar.gz \
+                908f5eb6db55d4f336674f5b5a64ee6d470cb29d39232dde1b488dbdeb997627 \
                 external/appinfo/info.xml \
-                9.0.1
+                10.0.0
               # Contacts and Calendar are only the web UIs; CalDAV/CardDAV data
               # lives in the bundled dav app either way. They were installed
               # from the appstore before 'appstoreenabled' was turned off, so
@@ -1321,12 +1320,6 @@ spec:
                 calendar_news/appinfo/info.xml \
                 1.1.20
               fetch_app \
-                carnet \
-                https://github.com/CarnetApp/CarnetNextcloud/releases/download/v0.25.14/carnet-nc-v0.25.14.tar.gz \
-                46adf29d21eb3b3836a20042bb8867b90b74b04f73e5e8cd260ed0d20513a61e \
-                carnet/appinfo/info.xml \
-                0.25.14
-              fetch_app \
                 cospend \
                 https://github.com/julien-nc/cospend-nc/releases/download/v4.3.0/cospend-4.3.0.tar.gz \
                 0861ac786e057125ad91a4e5fa381315e5ece807bab6b320b39dcbad9eab6ffd \
@@ -1334,10 +1327,10 @@ spec:
                 4.3.0
               fetch_app \
                 deck \
-                https://github.com/nextcloud-releases/deck/releases/download/v1.18.5/deck-v1.18.5.tar.gz \
-                dafec6635ff3af50fb6f73330064ef6153910be2fa434d2edbf8043263122253 \
+                https://github.com/nextcloud-releases/deck/releases/download/v1.19.1/deck-v1.19.1.tar.gz \
+                382e11139ee399444bdfa17f018aa9109376928f9bd36090ead8ea340b4d3f0e \
                 deck/appinfo/info.xml \
-                1.18.5
+                1.19.1
               fetch_app \
                 gpoddersync \
                 https://github.com/thrillfall/nextcloud-gpodder/releases/download/3.18.0/gpoddersync.tar.gz \
@@ -1346,22 +1339,22 @@ spec:
                 3.18.0
               fetch_app \
                 groupfolders \
-                https://github.com/nextcloud-releases/groupfolders/releases/download/v22.0.6/groupfolders-v22.0.6.tar.gz \
-                bfff357b12bbd24257d8d127cf30e83a72256e7659f1cc3e32bd09fe647d2f9b \
+                https://github.com/nextcloud-releases/groupfolders/releases/download/v23.0.1/groupfolders-v23.0.1.tar.gz \
+                3949e6a45947188090c170c6983aae11a1d66134ec317ffe7b7609062f3aecf3 \
                 groupfolders/appinfo/info.xml \
-                22.0.6
+                23.0.1
               fetch_app \
                 impersonate \
-                https://github.com/nextcloud-releases/impersonate/releases/download/v5.0.0/impersonate-v5.0.0.tar.gz \
-                e9b85d6489434af2d05f1618839bcfd9859dbc6b7be580148592f511a448ed66 \
+                https://github.com/nextcloud-releases/impersonate/releases/download/v6.0.0/impersonate-v6.0.0.tar.gz \
+                03fe448867e07bf4e6e3dd95f3550f8a07b5c89683a2baf1382b1cd5cf0a17bd \
                 impersonate/appinfo/info.xml \
-                5.0.0
+                6.0.0
               fetch_app \
                 news \
-                https://github.com/nextcloud/news/releases/download/28.7.0/news.tar.gz \
-                aaeadd2c018aa2d8e5844309d5c754ae8ba47067f06f87a0f82afe5af257dff8 \
+                https://github.com/nextcloud/news/releases/download/29.0.0/news.tar.gz \
+                e51d400e5712b5dc65d3499ab2752e89f03c50f7cfca25cede0e81db92c4b89a \
                 news/appinfo/info.xml \
-                28.7.0
+                29.0.0
               fetch_app \
                 nextpod \
                 https://github.com/pbek/nextcloud-nextpod/releases/download/v0.7.13/nextpod-0.7.13.tar.gz \

@@ -48,18 +48,6 @@
       "groupName": "container images"
     },
     {
-      "description": "NC35-only majors - unblock when the server moves to 35",
-      "matchPackageNames": [
-        "nextcloud-releases/external",
-        "nextcloud-releases/impersonate",
-        "nextcloud-releases/richdocuments"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "enabled": false
-    },
-    {
       "description": "smartctl-exporter v0.15.0 returns HTTP 500 with zero metrics on srv9 (SAS disks behind the PERC H730P) - it fails the whole /metrics response, blinding the node. Re-verified 2026-10-26 that it is not fixable via --smartctl.device-exclude. Block the 0.15.x line only, so a fixed 0.16 is still proposed. See apps/monitoring/smartctl-exporter/daemonset.yaml.",
       "matchPackageNames": [
         "quay.io/prometheuscommunity/smartctl-exporter"

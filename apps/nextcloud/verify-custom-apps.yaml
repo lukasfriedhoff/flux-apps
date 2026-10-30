@@ -37,18 +37,18 @@ spec:
                 mail/vendor/autoload.php
               verify_app \
                 richdocuments \
-                https://github.com/nextcloud-releases/richdocuments/releases/download/v11.1.2/richdocuments-v11.1.2.tar.gz \
-                96766a94cf417a716e47ed89c6ff2411c54954caa916afcdddc4d9668dffb557 \
+                https://github.com/nextcloud-releases/richdocuments/releases/download/v12.0.1/richdocuments-v12.0.1.tar.gz \
+                0639ab0e3413142a76334af20ca88cba0a351a11c9c07effa0f1eb7f05941f2c \
                 richdocuments/appinfo/info.xml
               verify_app \
                 oidc_login \
-                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.3.4/oidc_login.tar.gz \
-                10d5610fd5b12fab763bb3c59fc1195011a5d6fcbf310991bc0c9fb504541fc7 \
+                https://github.com/pulsejet/nextcloud-oidc-login/releases/download/v3.4.0/oidc_login.tar.gz \
+                d84e3616e865259c142af6cf40b6f0092228ad78bed843f85c6575f45942884b \
                 oidc_login/appinfo/info.xml
               verify_app \
                 external \
-                https://github.com/nextcloud-releases/external/releases/download/v9.0.1/external-v9.0.1.tar.gz \
-                b18a55b6a0e12d4a1ced0d74b6e5ef6927f322c8b9b3409dae4ea68717e422d9 \
+                https://github.com/nextcloud-releases/external/releases/download/v10.0.0/external-v10.0.0.tar.gz \
+                908f5eb6db55d4f336674f5b5a64ee6d470cb29d39232dde1b488dbdeb997627 \
                 external/appinfo/info.xml
               verify_app \
                 contacts \
