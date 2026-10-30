@@ -16,7 +16,7 @@
 #   3. Merging the auto-PR rolls it out via flux; the seed-custom-apps init
 #      container and verify-custom-apps re-validate every app pin in-cluster.
 # Never bump the helm values tag before the Harbor tag exists (step 2).
-FROM docker.io/library/nextcloud:34.0.5-apache
+FROM docker.io/library/nextcloud:35.0.2-apache
 
 # DL3008: the base tag is the pin; smbclient point versions rotate out of
 # the debian archive and would break rebuilds.
