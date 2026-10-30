@@ -28,7 +28,7 @@ spec:
     image:
       registry: ${nextcloud_image_registry:=harbor.h4xx.io}
       repository: ${nextcloud_image_repository:=library/nextcloud}
-      tag: 34.0.5-apache
+      tag: 35.0.2-apache
     replicaCount: ${nextcloud_hpa_min_pods}
     hpa:
       enabled: ${nextcloud_hpa_enabled}
