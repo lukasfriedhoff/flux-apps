@@ -1231,6 +1231,16 @@ spec:
                     echo "Custom app '$name' already present at $current_version; skipping download."
                     return 0
                   fi
+                  # Never downgrade. During a rolling update the deployment
+                  # controller can briefly scale the OLD ReplicaSet back up; that
+                  # pod runs the previous pins and would overwrite the apps the new
+                  # pods just seeded (2026-10-30: NC35 upgrade then disabled seven
+                  # apps as incompatible). A deliberate pin downgrade sets
+                  # NEXTCLOUD_SEED_ALLOW_DOWNGRADE=1 on the seed container.
+                  if [ "${NEXTCLOUD_SEED_ALLOW_DOWNGRADE:-0}" != "1" ] && python3 -c 'import sys; key = lambda v: [(0, int(x)) if x.isdigit() else (1, x) for x in v.split(".")]; sys.exit(0 if key(sys.argv[1]) > key(sys.argv[2]) else 1)' "$current_version" "$desired_version"; then
+                    echo "Custom app '$name' is $current_version, newer than the pinned $desired_version; refusing to downgrade (stale ReplicaSet seeding during a rollout?)."
+                    return 0
+                  fi
                   echo "Custom app '$name' is $current_version, expected $desired_version; replacing."
                 fi
                 stage="$tmp_root/$name"
