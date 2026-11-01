@@ -21,7 +21,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: mimirtool
-              image: grafana/mimirtool:3.2.3
+              image: grafana/mimirtool:3.2.4
               args:
                 - rules
                 - load
