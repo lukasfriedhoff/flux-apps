@@ -1,0 +1,485 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/name: kryomat-collector
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-collector
+  namespace: cryo
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 600
+      backoffLimit: 0
+      template:
+        metadata:
+          annotations:
+            prometheus.io/path: /metrics
+            prometheus.io/port: '9090'
+            prometheus.io/scrape: 'true'
+          labels:
+            app.kubernetes.io/component: collector
+            app.kubernetes.io/name: kryomat-collector
+            app.kubernetes.io/part-of: kryomat
+        spec:
+          automountServiceAccountToken: false
+          containers:
+            - args:
+                - /usr/local/bin/kryomat-collector
+              env:
+                - name: GOMEMLIMIT
+                  value: 160MiB
+              envFrom:
+                - configMapRef:
+                    name: kryomat-common
+                - configMapRef:
+                    name: kryomat-tuning
+                - secretRef:
+                    name: kryomat-tracker-read
+              image: harbor.h4xx.io/library/kryomat:sha-404fb20
+              imagePullPolicy: IfNotPresent
+              name: collector
+              ports:
+                - containerPort: 8080
+                  name: health
+                - containerPort: 9090
+                  name: metrics
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 192Mi
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+              volumeMounts:
+                - mountPath: /tmp
+                  name: tmp
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          terminationGracePeriodSeconds: 45
+          volumes:
+            - emptyDir:
+                medium: Memory
+                sizeLimit: 32Mi
+              name: tmp
+      ttlSecondsAfterFinished: 3600
+  schedule: '*/5 * * * *'
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  suspend: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: router
+    app.kubernetes.io/name: kryomat-router
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-router
+  namespace: cryo
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kryomat-router
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: '9090'
+        prometheus.io/scrape: 'true'
+      labels:
+        app.kubernetes.io/component: router
+        app.kubernetes.io/name: kryomat-router
+        app.kubernetes.io/part-of: kryomat
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - args:
+            - /usr/local/bin/kryomat-router
+          env:
+            - name: GOMEMLIMIT
+              value: 160MiB
+          envFrom:
+            - configMapRef:
+                name: kryomat-common
+            - configMapRef:
+                name: kryomat-tuning
+          image: harbor.h4xx.io/library/kryomat:sha-404fb20
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 20
+            timeoutSeconds: 5
+          name: router
+          ports:
+            - containerPort: 8080
+              name: health
+            - containerPort: 9090
+              name: metrics
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 500m
+              memory: 192Mi
+            requests:
+              cpu: 25m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 45
+      volumes:
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+          name: tmp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: executor
+    app.kubernetes.io/name: kryomat-executor
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-executor
+  namespace: cryo
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kryomat-executor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: '9090'
+        prometheus.io/scrape: 'true'
+      labels:
+        app.kubernetes.io/component: executor
+        app.kubernetes.io/name: kryomat-executor
+        app.kubernetes.io/part-of: kryomat
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - args:
+            - /usr/local/bin/kryomat-executor
+          env:
+            - name: GOMEMLIMIT
+              value: 220MiB
+          envFrom:
+            - configMapRef:
+                name: kryomat-common
+            - configMapRef:
+                name: kryomat-tuning
+            - secretRef:
+                name: kryomat-tracker-read
+            - secretRef:
+                name: kryomat-tracker-passkey
+            - secretRef:
+                name: kryomat-qbittorrent
+          image: harbor.h4xx.io/library/kryomat:sha-404fb20
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 20
+            timeoutSeconds: 5
+          name: executor
+          ports:
+            - containerPort: 8080
+              name: health
+            - containerPort: 9090
+              name: metrics
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 25m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 45
+      volumes:
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+          name: tmp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: janitor
+    app.kubernetes.io/name: kryomat-janitor
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-janitor
+  namespace: cryo
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kryomat-janitor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: '9090'
+        prometheus.io/scrape: 'true'
+      labels:
+        app.kubernetes.io/component: janitor
+        app.kubernetes.io/name: kryomat-janitor
+        app.kubernetes.io/part-of: kryomat
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - args:
+            - /usr/local/bin/kryomat-janitor
+          env:
+            - name: KRYOMAT_DRY_RUN
+              value: 'true'
+            - name: GOMEMLIMIT
+              value: 220MiB
+          envFrom:
+            - configMapRef:
+                name: kryomat-common
+            - configMapRef:
+                name: kryomat-tuning
+            - secretRef:
+                name: kryomat-qbittorrent
+          image: harbor.h4xx.io/library/kryomat:sha-404fb20
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 20
+            timeoutSeconds: 5
+          name: janitor
+          ports:
+            - containerPort: 8080
+              name: health
+            - containerPort: 9090
+              name: metrics
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 25m
+              memory: 96Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 45
+      volumes:
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+          name: tmp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: notifier
+    app.kubernetes.io/name: kryomat-notifier
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-notifier
+  namespace: cryo
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kryomat-notifier
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: '9090'
+        prometheus.io/scrape: 'true'
+      labels:
+        app.kubernetes.io/component: notifier
+        app.kubernetes.io/name: kryomat-notifier
+        app.kubernetes.io/part-of: kryomat
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - args:
+            - /usr/local/bin/kryomat-notifier
+          env:
+            - name: GOMEMLIMIT
+              value: 100MiB
+          envFrom:
+            - configMapRef:
+                name: kryomat-common
+            - configMapRef:
+                name: kryomat-tuning
+            - secretRef:
+                name: kryomat-notifier
+          image: harbor.h4xx.io/library/kryomat:sha-404fb20
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 20
+            timeoutSeconds: 5
+          name: notifier
+          ports:
+            - containerPort: 8080
+              name: health
+            - containerPort: 9090
+              name: metrics
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 48Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 45
+      volumes:
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+          name: tmp

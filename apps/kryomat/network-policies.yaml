@@ -1,0 +1,212 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-allow-datastore-egress
+  namespace: cryo
+spec:
+  egress:
+    - ports:
+        - port: 9092
+          protocol: TCP
+        - port: 8081
+          protocol: TCP
+        - port: 9644
+          protocol: TCP
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: kryomat-redpanda
+    - ports:
+        - port: 9042
+          protocol: TCP
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: kryomat-scylla
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: kryomat
+  policyTypes:
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-allow-datastore-ingress
+  namespace: cryo
+spec:
+  ingress:
+    - from:
+        - podSelector: {}
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - kryomat-redpanda
+          - kryomat-scylla
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-allow-dns
+  namespace: cryo
+spec:
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+  podSelector: {}
+  policyTypes:
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-allow-internet-egress
+  namespace: cryo
+spec:
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - kryomat-collector
+          - kryomat-executor
+          - kryomat-notifier
+  policyTypes:
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-allow-kubelet-probes
+  namespace: cryo
+spec:
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.1.30.0/24
+      ports:
+        - port: 8080
+          protocol: TCP
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-allow-media-egress
+  namespace: cryo
+spec:
+  egress:
+    - ports:
+        - port: 8080
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: media
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: qbittorrent
+    - ports:
+        - port: 7878
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: media
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: radarr
+    - ports:
+        - port: 8989
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: media
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sonarr
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - kryomat-executor
+          - kryomat-janitor
+  policyTypes:
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-allow-metrics-from-monitoring
+  namespace: cryo
+spec:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 9090
+          protocol: TCP
+        - port: 9644
+          protocol: TCP
+        - port: 9180
+          protocol: TCP
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-allow-uploader-from-ingress
+  namespace: cryo
+spec:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - port: 8081
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: kryomat-uploader
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryo-default-deny
+  namespace: cryo
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

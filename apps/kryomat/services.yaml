@@ -1,0 +1,76 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: kryomat-router
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-router
+  namespace: cryo
+spec:
+  ports:
+    - name: health
+      port: 8080
+      targetPort: health
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: kryomat-router
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: kryomat-executor
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-executor
+  namespace: cryo
+spec:
+  ports:
+    - name: health
+      port: 8080
+      targetPort: health
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: kryomat-executor
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: kryomat-janitor
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-janitor
+  namespace: cryo
+spec:
+  ports:
+    - name: health
+      port: 8080
+      targetPort: health
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: kryomat-janitor
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: kryomat-notifier
+    app.kubernetes.io/part-of: kryomat
+  name: kryomat-notifier
+  namespace: cryo
+spec:
+  ports:
+    - name: health
+      port: 8080
+      targetPort: health
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: kryomat-notifier

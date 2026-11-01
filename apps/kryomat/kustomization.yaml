@@ -1,0 +1,63 @@
+# kryomat as it actually runs on homelab-prod (namespace cryo) — the path the
+# flux-cluster Kustomization `kryomat-app` reconciles. Lives here (not in the
+# kryomat repo) because Flux reads its sources from the Codeberg mirrors and
+# kryomat has none; moved from kryomat/deploy/flux on 2026-11-01. The kryomat
+# repo keeps code + images; deploying a new image = bump the sha tag HERE.
+#
+#   flux Kustomization  spec.path: ./apps/kryomat  (source flux-apps; no postBuild)
+#   local render        kubectl kustomize apps/kryomat
+#   preview adoption    kubectl --context homelab-prod diff -k apps/kryomat
+#
+# Why a third directory next to deploy/base and deploy/helm:
+#
+#   * The cluster was bootstrapped in September by hand-rendering deploy/base +
+#     the redpanda/scylla components (hand-quoted to dodge the Flux
+#     substitution type-coercion defect) and `kubectl apply`-ing the result,
+#     then patching it live (Scylla args/fsGroup, collector suspend, metrics
+#     NetworkPolicy, pipeline scaled to 0). These files are that live state,
+#     exported object-for-object, so adopting them under Flux changes nothing
+#     except what is deliberately new (see below).
+#   * They are FULLY RENDERED: there is not one variable placeholder in this
+#     directory, and the Flux Kustomization deliberately has no postBuild. That
+#     sidesteps both substitution traps (dropped quotes on bools/numbers/cron
+#     schedules, and a placeholder in a comment killing the whole apply). Keep
+#     it that way: never write a dollar-brace sequence anywhere under here.
+#
+# Deliberately new relative to the live objects:
+#   * kryomat-scylla startupProbe.timeoutSeconds: 10 (6ca990a) — Scylla rolls
+#     once on first reconcile.
+#
+# Deliberate operating state (change it HERE, never with kubectl scale/patch —
+# Flux would revert it within the hour):
+#   * router / executor / janitor / notifier: replicas 0 (Phase 0 credentials
+#     incomplete; notifier parked until the collector produces events)
+#   * collector CronJob: suspend: true
+#
+# Deliberately NOT here:
+#   * Namespace `cryo` — owned by flux-cluster base/namespaces.
+#   * Secrets (kryomat-tracker-read, -tracker-passkey, -qbittorrent, -notifier,
+#     the uploader TLS cert) — credentials never live in this repo. Flux prunes
+#     only objects carrying its own labels, so the existing hand-made Secrets
+#     are untouched by this Kustomization.
+#   * The StatefulSets' volumeClaimTemplate PVCs — created by the StatefulSet
+#     controller, never owned (or pruned) by Flux.
+#
+# storage.yaml (the static NFS PV + its claim) is annotated
+# kustomize.toolkit.fluxcd.io/prune: disabled, so removing it from this list
+# can never delete the media claim.
+#
+# deploy/helm is the intended successor (one app-template HelmRelease). When it
+# is cut over, replace this path in flux-cluster in ONE commit — two
+# Kustomizations owning `kryomat-router` is a reconcile fight.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - configmaps.yaml
+  - datastores.yaml
+  - services.yaml
+  - workloads.yaml
+  - network-policies.yaml
+  - network-policy-media.yaml
+  - storage.yaml
+  - uploader.yaml

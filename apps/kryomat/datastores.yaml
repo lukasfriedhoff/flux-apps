@@ -1,0 +1,248 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: datastore
+    app.kubernetes.io/name: kryomat-redpanda
+  name: kryomat-redpanda
+  namespace: cryo
+spec:
+  clusterIP: None
+  ports:
+    - name: kafka
+      port: 9092
+      targetPort: kafka
+    - name: schemaregistry
+      port: 8081
+      targetPort: schemareg
+    - name: admin
+      port: 9644
+      targetPort: admin
+    - name: rpc
+      port: 33145
+      targetPort: rpc
+  selector:
+    app.kubernetes.io/name: kryomat-redpanda
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: datastore
+    app.kubernetes.io/name: kryomat-redpanda
+  name: kryomat-redpanda
+  namespace: cryo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kryomat-redpanda
+  serviceName: kryomat-redpanda
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /public_metrics
+        prometheus.io/port: '9644'
+        prometheus.io/scrape: 'true'
+      labels:
+        app.kubernetes.io/component: datastore
+        app.kubernetes.io/name: kryomat-redpanda
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - args:
+            - --smp=1
+            - --memory=1G
+            - --reserve-memory=0M
+            - --overprovisioned
+            - --mode=dev-container
+            - --default-log-level=info
+            - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+            - --advertise-kafka-addr=PLAINTEXT://kryomat-redpanda-0.kryomat-redpanda.cryo.svc.cluster.local:9092
+            - --rpc-addr=0.0.0.0:33145
+            - --advertise-rpc-addr=kryomat-redpanda-0.kryomat-redpanda.cryo.svc.cluster.local:33145
+            - --schema-registry-addr=0.0.0.0:8081
+            - --set
+            - redpanda.auto_create_topics_enabled=false
+          command:
+            - /usr/bin/rpk
+            - redpanda
+            - start
+          image: harbor.h4xx.io/proxy-docker/redpandadata/redpanda:v25.3.17
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 4
+            periodSeconds: 30
+            tcpSocket:
+              port: kafka
+            timeoutSeconds: 10
+          name: redpanda
+          ports:
+            - containerPort: 9092
+              name: kafka
+            - containerPort: 8081
+              name: schemareg
+            - containerPort: 9644
+              name: admin
+            - containerPort: 33145
+              name: rpc
+          readinessProbe:
+            httpGet:
+              path: /v1/status/ready
+              port: admin
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 2
+              memory: 1536Mi
+            requests:
+              cpu: 250m
+              memory: 1280Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            failureThreshold: 60
+            httpGet:
+              path: /v1/status/ready
+              port: admin
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /var/lib/redpanda/data
+              name: datadir
+      securityContext:
+        fsGroup: 101
+        runAsGroup: 101
+        runAsUser: 101
+      terminationGracePeriodSeconds: 60
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: longhorn-ssd-rwo-1r
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: datastore
+    app.kubernetes.io/name: kryomat-scylla
+  name: kryomat-scylla
+  namespace: cryo
+spec:
+  clusterIP: None
+  ports:
+    - name: cql
+      port: 9042
+      targetPort: cql
+    - name: rest
+      port: 10000
+      targetPort: rest
+    - name: metrics
+      port: 9180
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: kryomat-scylla
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: datastore
+    app.kubernetes.io/name: kryomat-scylla
+  name: kryomat-scylla
+  namespace: cryo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kryomat-scylla
+  serviceName: kryomat-scylla
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: '9180'
+        prometheus.io/scrape: 'true'
+      labels:
+        app.kubernetes.io/component: datastore
+        app.kubernetes.io/name: kryomat-scylla
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - args:
+            - --smp
+            - '1'
+            - --memory
+            - 400M
+            - --overprovisioned
+            - '1'
+            - --developer-mode
+            - '1'
+            - --api-address
+            - 0.0.0.0
+          image: harbor.h4xx.io/proxy-docker/scylladb/scylla:2026.2.7
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 4
+            periodSeconds: 30
+            tcpSocket:
+              port: cql
+            timeoutSeconds: 10
+          name: scylla
+          ports:
+            - containerPort: 9042
+              name: cql
+            - containerPort: 10000
+              name: rest
+            - containerPort: 9180
+              name: metrics
+          readinessProbe:
+            periodSeconds: 10
+            tcpSocket:
+              port: cql
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 2
+              memory: 1536Mi
+            requests:
+              cpu: 250m
+              memory: 1280Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - cqlsh -e "SELECT release_version FROM system.local" >/dev/null 2>&1
+            failureThreshold: 36
+            periodSeconds: 10
+            timeoutSeconds: 10
+          volumeMounts:
+            - mountPath: /var/lib/scylla
+              name: data
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: longhorn-ssd-rwo-1r

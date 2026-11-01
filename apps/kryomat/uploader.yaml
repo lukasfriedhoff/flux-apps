@@ -1,0 +1,179 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: bjw-s
+  namespace: cryo
+spec:
+  interval: 1h0m0s
+  url: https://bjw-s-labs.github.io/helm-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kryomat-uploader
+  namespace: cryo
+spec:
+  chart:
+    spec:
+      chart: app-template
+      interval: 10m0s
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: cryo
+      version: 4.6.2
+  install:
+    remediation:
+      retries: 3
+  interval: 10m0s
+  timeout: 5m0s
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      main:
+        containers:
+          main:
+            args:
+              - /usr/local/bin/kryomat-uploader
+            env:
+              GOMEMLIMIT: 100MiB
+              KRYOMAT_ENVIRONMENT: prod
+              KRYOMAT_HEALTH_ADDR: :8080
+              KRYOMAT_LOG_FORMAT: json
+              KRYOMAT_LOG_LEVEL: info
+              KRYOMAT_METRICS_ADDR: :9090
+              KRYOMAT_METRICS_PATH: /metrics
+              KRYOMAT_SHUTDOWN_TIMEOUT: 30s
+              KRYOMAT_UPLOADER_ADDR: :8081
+              KRYOMAT_UPLOADER_COUNT_CACHE_ENTRIES: 256
+              KRYOMAT_UPLOADER_INGEST_DIR: /media/downloads/cryo-inbox
+              KRYOMAT_UPLOADER_MAX_ARCHIVE_BYTES: 256MiB
+              KRYOMAT_UPLOADER_MAX_COMPRESSION_RATIO: 200
+              KRYOMAT_UPLOADER_MAX_CONCURRENT_UPLOADS: 2
+              KRYOMAT_UPLOADER_MAX_MEMBERS: 5000
+              KRYOMAT_UPLOADER_MAX_MEMBER_BYTES: 4MiB
+              KRYOMAT_UPLOADER_MAX_UPLOAD_BYTES: 64MiB
+              KRYOMAT_UPLOADER_PUBLISH_MODE: 640
+              KRYOMAT_UPLOADER_RECENT_LIMIT: 20
+              KRYOMAT_UPLOADER_SWEEP_INTERVAL: 15m
+              KRYOMAT_UPLOADER_UPLOAD_TIMEOUT: 10m
+            image:
+              pullPolicy: IfNotPresent
+              repository: harbor.h4xx.io/library/kryomat
+              tag: sha-bc26191
+            ports:
+              - containerPort: 8081
+                name: http
+              - containerPort: 8080
+                name: health
+              - containerPort: 9090
+                name: metrics
+            probes:
+              liveness:
+                custom: true
+                enabled: true
+                spec:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /healthz
+                    port: health
+                  periodSeconds: 20
+                  timeoutSeconds: 5
+              readiness:
+                custom: true
+                enabled: true
+                spec:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /readyz
+                    port: health
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+              startup:
+                custom: true
+                enabled: true
+                spec:
+                  failureThreshold: 10
+                  httpGet:
+                    path: /readyz
+                    port: health
+                  periodSeconds: 3
+            resources:
+              limits:
+                cpu: 200m
+                memory: 128Mi
+              requests:
+                cpu: 10m
+                memory: 32Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+        pod:
+          annotations:
+            prometheus.io/path: /metrics
+            prometheus.io/port: '9090'
+            prometheus.io/scrape: 'true'
+          labels:
+            app.kubernetes.io/part-of: kryomat
+          securityContext:
+            fsGroup: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          terminationGracePeriodSeconds: 45
+        replicas: 1
+        strategy: Recreate
+    defaultPodOptions:
+      automountServiceAccountToken: false
+    ingress:
+      main:
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-prod
+          external-dns.kubernetes.io/target: 03ed4283-aa2e-4781-8236-fd69a38e130a.cfargotunnel.com
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
+          traefik.ingress.kubernetes.io/router.tls: 'true'
+        className: traefik
+        enabled: true
+        hosts:
+          - host: cryo.h4xx.io
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+              - cryo.h4xx.io
+            secretName: kryomat-uploader-tls
+    persistence:
+      media:
+        enabled: true
+        existingClaim: arr-media-nfs
+        globalMounts:
+          - path: /media/downloads/cryo-inbox
+            subPath: h4xx/downloads/cryo-inbox
+      tmp:
+        globalMounts:
+          - path: /tmp
+        medium: Memory
+        sizeLimit: 16Mi
+        type: emptyDir
+    service:
+      main:
+        controller: main
+        ports:
+          health:
+            port: 8080
+          http:
+            port: 8081
+            primary: true
+          metrics:
+            port: 9090
