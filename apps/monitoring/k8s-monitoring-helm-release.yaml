@@ -17,7 +17,7 @@ spec:
   chart:
     spec:
       chart: k8s-monitoring
-      version: ${k8s_monitoring_chart_version:=3.4.0}
+      version: ${k8s_monitoring_chart_version:=4.5.5}
       sourceRef:
         kind: HelmRepository
         name: grafana
@@ -29,6 +29,11 @@ spec:
   postRenderers:
     - kustomize:
         patches:
+          # The four Alloy collectors (alloy-metrics/-logs/-receiver/-singleton)
+          # are NOT patched here: the Alloy operator creates them from Alloy CRs,
+          # so postRenderer patches never matched them (chart 3.x ran them with
+          # resources: {}). Their resources live in the k8s-monitoring-values
+          # ConfigMap in flux-cluster (collectors.<name>.alloy.resources).
           - target:
               kind: ConfigMap
               name: k8s-monitoring-kube-state-metrics-customresourcestate-config
@@ -60,98 +65,6 @@ spec:
                   limits:
                     cpu: "300m"
                     memory: "256Mi"
-          - target:
-              kind: StatefulSet
-              name: k8s-monitoring-alloy-metrics
-              namespace: ${k8s_monitoring_namespace:=monitoring}
-            patch: |-
-              - op: add
-                path: /spec/template/spec/containers/0/resources
-                value:
-                  requests:
-                    cpu: "150m"
-                    memory: "256Mi"
-                  limits:
-                    cpu: "1000m"
-                    memory: "1024Mi"
-              - op: add
-                path: /spec/template/spec/containers/1/resources
-                value:
-                  requests:
-                    cpu: "25m"
-                    memory: "64Mi"
-                  limits:
-                    cpu: "100m"
-                    memory: "128Mi"
-          - target:
-              kind: DaemonSet
-              name: k8s-monitoring-alloy-logs
-              namespace: ${k8s_monitoring_namespace:=monitoring}
-            patch: |-
-              - op: add
-                path: /spec/template/spec/containers/0/resources
-                value:
-                  requests:
-                    cpu: "50m"
-                    memory: "96Mi"
-                  limits:
-                    cpu: "400m"
-                    memory: "384Mi"
-              - op: add
-                path: /spec/template/spec/containers/1/resources
-                value:
-                  requests:
-                    cpu: "25m"
-                    memory: "64Mi"
-                  limits:
-                    cpu: "100m"
-                    memory: "128Mi"
-          - target:
-              kind: DaemonSet
-              name: k8s-monitoring-alloy-receiver
-              namespace: ${k8s_monitoring_namespace:=monitoring}
-            patch: |-
-              - op: add
-                path: /spec/template/spec/containers/0/resources
-                value:
-                  requests:
-                    cpu: "50m"
-                    memory: "96Mi"
-                  limits:
-                    cpu: "400m"
-                    memory: "384Mi"
-              - op: add
-                path: /spec/template/spec/containers/1/resources
-                value:
-                  requests:
-                    cpu: "25m"
-                    memory: "64Mi"
-                  limits:
-                    cpu: "100m"
-                    memory: "128Mi"
-          - target:
-              kind: Deployment
-              name: k8s-monitoring-alloy-singleton
-              namespace: ${k8s_monitoring_namespace:=monitoring}
-            patch: |-
-              - op: add
-                path: /spec/template/spec/containers/0/resources
-                value:
-                  requests:
-                    cpu: "50m"
-                    memory: "96Mi"
-                  limits:
-                    cpu: "400m"
-                    memory: "384Mi"
-              - op: add
-                path: /spec/template/spec/containers/1/resources
-                value:
-                  requests:
-                    cpu: "25m"
-                    memory: "64Mi"
-                  limits:
-                    cpu: "100m"
-                    memory: "128Mi"
           - target:
               kind: Deployment
               name: k8s-monitoring-alloy-operator
