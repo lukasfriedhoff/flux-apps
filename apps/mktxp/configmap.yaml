@@ -10,6 +10,29 @@ metadata:
   labels:
     app.kubernetes.io/name: mktxp
 data:
+  # mktxp echoes the whole librouteros /login command, password included,
+  # whenever a router login fails (wrong password, user not yet created). This
+  # wrapper runs the exporter and scrubs that from stdout before it becomes a
+  # pod log line in Loki.
+  entrypoint.py: |
+    import re
+    import signal
+    import subprocess
+    import sys
+
+    SECRET = re.compile(rb"(password=)\S+")
+    proc = subprocess.Popen(
+        ["mktxp", "--cfg-dir", "/mktxp_config", "export"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, lambda signum, _frame: proc.send_signal(signum))
+    out = sys.stdout.buffer
+    for line in iter(proc.stdout.readline, b""):
+        out.write(SECRET.sub(rb"\1<redacted>", line))
+        out.flush()
+    sys.exit(proc.wait())
   _mktxp.conf: |
     ## Copyright (c) 2020 Arseniy Kuznetsov
     ##

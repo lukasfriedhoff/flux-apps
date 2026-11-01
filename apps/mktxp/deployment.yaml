@@ -35,8 +35,9 @@ spec:
       containers:
         - name: mktxp
           image: ghcr.io/akpw/mktxp:${mktxp_image_tag:=2.1.0}
-          command: ["mktxp"]
-          args: ["--cfg-dir", "/mktxp_config", "export"]
+          # entrypoint.py (ConfigMap mktxp-config) execs mktxp and redacts router
+          # passwords from its output; see the comment there.
+          command: ["python3", "-I", "/opt/mktxp/entrypoint.py"]
           ports:
             - name: metrics
               containerPort: ${mktxp_port:=49090}
@@ -69,6 +70,9 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            - name: entrypoint
+              mountPath: /opt/mktxp
+              readOnly: true
       volumes:
         # One directory with both files: credentials from the Secret, exporter
         # settings from the ConfigMap in this app.
@@ -88,6 +92,12 @@ spec:
                       path: _mktxp.conf
         - name: tmp
           emptyDir: {}
+        - name: entrypoint
+          configMap:
+            name: mktxp-config
+            items:
+              - key: entrypoint.py
+                path: entrypoint.py
 ---
 apiVersion: v1
 kind: Service
