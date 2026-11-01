@@ -7,7 +7,7 @@ data:
   immich_suspend: "true"
   immich_postgres_instances: "1"
   immich_secret_name: "immich-secrets"
-  immich_image_tag: "release"
+  immich_image_tag: "v3.3.5"
   immich_timezone: "Europe/Berlin"
   immich_oidc: "none"
   immich_oidc_client_id: "immich"
