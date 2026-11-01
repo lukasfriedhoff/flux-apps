@@ -21,6 +21,7 @@ spec:
   # leaves the new pod ContainerCreating until the old one releases it.
   strategy:
     type: Recreate
+    rollingUpdate: null
   replicas: ${immich_photos_ml_replicas}
   selector:
     matchLabels:

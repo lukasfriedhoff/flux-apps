@@ -204,7 +204,8 @@ data:
         log "Admin bootstrap user created."
         ;;
       400|409)
-        if printf '%s' "$signup_msg" | grep -qi "already has an admin"; then
+        # 3.1 said "already has an admin"; 3.3 says "Admin setup is not available".
+        if printf '%s' "$signup_msg" | grep -qi -e "already has an admin" -e "Admin setup is not available"; then
           log "Admin already exists; continuing."
         else
           log "Admin signup returned $signup_code: $signup_msg"
