@@ -9573,7 +9573,7 @@
           "uid": "mimir"
         },
         "definition": "label_values(mktxp_system_identity_info, routerboard_name)",
-        "includeAll": false,
+        "includeAll": true,
         "label": "Routerboard",
         "name": "node",
         "options": [],
@@ -9585,7 +9585,9 @@
         "regex": "",
         "regexApplyTo": "value",
         "sort": 1,
-        "type": "query"
+        "type": "query",
+        "multi": true,
+        "allValue": ".*"
       },
       {
         "allowCustomValue": true,
