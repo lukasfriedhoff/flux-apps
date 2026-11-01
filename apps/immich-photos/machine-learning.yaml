@@ -19,9 +19,14 @@ metadata:
 spec:
   # The model cache is a ReadWriteOnce Longhorn volume: a rolling update
   # leaves the new pod ContainerCreating until the old one releases it.
+  # Equivalent of Recreate for one replica: kill the old pod first, then start
+  # the new one (a Recreate switch is rejected by server-side apply while the live
+  # object still carries a rollingUpdate block, and kustomize drops nulls).
   strategy:
-    type: Recreate
-    rollingUpdate: null
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   replicas: ${immich_photos_ml_replicas}
   selector:
     matchLabels:
