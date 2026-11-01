@@ -22,12 +22,18 @@ spec:
     spec:
       containers:
         - name: homepage
-          image: ghcr.io/gethomepage/homepage:${homepage_image_tag:=v1.4.5}
+          image: ghcr.io/gethomepage/homepage:${homepage_image_tag:=v2.7.0}
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
               value: ${homepage_host:=homepage}${public_host_suffix}.${delegating_domain}
             - name: LOG_TARGETS
               value: stdout
+            # v2 added built-in auth; it is opt-in and stays OFF on purpose:
+            # Authelia forwardauth at the ingress is the only gate, as before.
+            # Enabling it would need HOMEPAGE_AUTH_SECRET + HOMEPAGE_EXTERNAL_URL
+            # + a password or OIDC client (https://gethomepage.dev/installation/).
+            - name: HOMEPAGE_AUTH_ENABLED
+              value: "false"
           ports:
             - name: http
               containerPort: 3000

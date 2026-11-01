@@ -16,7 +16,7 @@ data:
           kubectl -n ${icarus_namespace} create job --from=cronjob/icarus-backup icarus-backup-manual-$(date +%s)
         timeout: 30
       - title: List snapshots
-        icon: search
+        icon: "&#128269;"
         shell: restic snapshots --compact
         timeout: 120
       - title: Restart server
@@ -99,7 +99,7 @@ data:
           # pass here means "Steam has it at the right IP", nothing more.
         timeout: 120
       - title: Restore snapshot (STOPS the server)
-        icon: warning
+        icon: "&#9888;&#65039;"
         timeout: 900
         arguments:
           - name: snapshot
@@ -111,8 +111,10 @@ data:
           kubectl -n ${icarus_namespace} wait --for=delete pod -l app.kubernetes.io/name=icarus --timeout=180s || true
           restic restore {{ snapshot }} --target /restore-data --delete
           kubectl -n ${icarus_namespace} scale deployment/icarus --replicas=${icarus_replicas:=1}
-    # Landing page. The `display` carries raw HTML, which is how this OliveTin
-    # release does links (additionalNavigationLinks only exists in newer ones).
+    # Landing page. The `display` carries raw HTML; OliveTin 3k still renders a
+    # display title as HTML (docs.olivetin.app/dashboards/faq-display-hyperlinks).
+    # Icons are HTML entities: 2k and 3k only map a few names (box, ping,
+    # restart), anything else such as "search" or "warning" is printed as text.
     dashboards:
       - title: Icarus
         contents:
@@ -134,6 +136,10 @@ kind: Deployment
 metadata:
   name: icarus-olivetin
   namespace: ${icarus_namespace}
+  annotations:
+    # OliveTin reads its config once at startup; let reloader restart it when
+    # the ConfigMap changes (same as valheim-olivetin).
+    reloader.stakater.com/auto: "true"
   labels:
     app.kubernetes.io/name: icarus-olivetin
 spec:
@@ -166,7 +172,7 @@ spec:
               mountPath: /tools
       containers:
         - name: olivetin
-          image: ${icarus_olivetin_image:=ghcr.io/olivetin/olivetin:2024.05.27}
+          image: ${icarus_olivetin_image:=ghcr.io/olivetin/olivetin:3000.21.0}
           ports:
             - containerPort: 1337
           env:

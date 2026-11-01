@@ -17,7 +17,7 @@ data:
     logLevel: INFO
     actions:
       - title: Server status (who is online)
-        icon: search
+        icon: "&#128269;"
         # Runs in the OliveTin container itself: it already has curl + jq, and
         # the ServiceAccount is deliberately NOT allowed to create pods, so a
         # `kubectl run` wrapper here just fails with exit code 1.
@@ -31,7 +31,7 @@ data:
           kubectl -n ${valheim_namespace} create job --from=cronjob/valheim-backup valheim-backup-manual-$(date +%s)
         timeout: 30
       - title: List snapshots
-        icon: search
+        icon: "&#128269;"
         shell: restic snapshots --compact
         timeout: 120
       - title: Restart server (also runs a Steam update check)
@@ -53,7 +53,7 @@ data:
           echo "OK: listed on Steam"
         timeout: 120
       - title: Restore snapshot (STOPS the server)
-        icon: warning
+        icon: "&#9888;&#65039;"
         timeout: 900
         arguments:
           - name: snapshot
@@ -65,8 +65,10 @@ data:
           kubectl -n ${valheim_namespace} wait --for=delete pod -l app.kubernetes.io/name=valheim --timeout=180s || true
           restic restore {{ snapshot }} --target /restore-data --delete
           kubectl -n ${valheim_namespace} scale deployment/valheim --replicas=${valheim_replicas:=1}
-    # Landing page. The `display` carries raw HTML, which is how this OliveTin
-    # release does links (additionalNavigationLinks only exists in newer ones).
+    # Landing page. The `display` carries raw HTML; OliveTin 3k still renders a
+    # display title as HTML (docs.olivetin.app/dashboards/faq-display-hyperlinks).
+    # Icons are HTML entities: 2k and 3k only map a few names (box, ping,
+    # restart), anything else such as "search" or "warning" is printed as text.
     dashboards:
       - title: Valheim
         contents:
@@ -79,7 +81,7 @@ data:
               <a href="https://valheim-files${public_host_suffix}.${delegating_domain}" target="_blank">
               Open the file browser</a> &mdash; worlds, mods, admin list, in-container backups
               &nbsp;|&nbsp;
-              <strong>New here? Read the <em>Manual</em> tab above.</strong>
+              <strong>New here? Open the <em>Manual</em> from the menu (&#9776;, top left).</strong>
           - title: Server status (who is online)
           - title: Check Steam listing
           - title: Backup now
@@ -254,7 +256,7 @@ spec:
               mountPath: /tools
       containers:
         - name: olivetin
-          image: ${valheim_olivetin_image:=ghcr.io/olivetin/olivetin:2024.05.27}
+          image: ${valheim_olivetin_image:=ghcr.io/olivetin/olivetin:3000.21.0}
           ports:
             - containerPort: 1337
           env:

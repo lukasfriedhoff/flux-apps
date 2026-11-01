@@ -7,4 +7,4 @@ data:
   homepage_suspend: "true"
   homepage_host: "homepage"
   homepage_domain: "h4xx.io"
-  homepage_image_tag: "v1.4.5"
+  homepage_image_tag: "v2.7.0"
