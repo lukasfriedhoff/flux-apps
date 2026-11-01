@@ -1,0 +1,10 @@
+# All ${...} keys apps/mktxp consumes, with sane defaults.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+data:
+  mktxp_suspend: "true"
+  mktxp_namespace: "monitoring"
+  mktxp_image: "ghcr.io/akpw/mktxp:2.1.0"
+  mktxp_port: "49090"

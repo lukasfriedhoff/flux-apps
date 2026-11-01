@@ -1,0 +1,105 @@
+# mktxp (akpw/mktxp): Prometheus exporter for MikroTik RouterOS, scraping the
+# three site routers (Hiesfelder L009, kiosk RB5009, rue110 L009) over
+# API-SSL. The router inventory + credentials live in the SOPS Secret
+# mktxp-credentials (key mktxp.conf) from flux-cluster overlays/<cluster>/secrets.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mktxp
+  namespace: ${mktxp_namespace:=monitoring}
+  labels:
+    app.kubernetes.io/name: mktxp
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mktxp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mktxp
+      annotations:
+        # Alloy discovers scrape targets from POD annotations (annotationAutodiscovery).
+        prometheus.io/scrape: "true"
+        prometheus.io/port: ${quote}${mktxp_port:=49090}${quote}
+        prometheus.io/path: /metrics
+    spec:
+      securityContext:
+        # The image runs as its own `mktxp` user, UID 1000.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: mktxp
+          image: ${mktxp_image:=ghcr.io/akpw/mktxp:2.1.0}
+          command: ["mktxp"]
+          args: ["--cfg-dir", "/mktxp_config", "export"]
+          ports:
+            - name: metrics
+              containerPort: ${mktxp_port:=49090}
+          # TCP probes on purpose: an HTTP GET on /metrics would trigger a full
+          # scrape of all routers on every probe.
+          readinessProbe:
+            tcpSocket:
+              port: ${mktxp_port:=49090}
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          livenessProbe:
+            tcpSocket:
+              port: ${mktxp_port:=49090}
+            periodSeconds: 30
+            failureThreshold: 4
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: config
+              mountPath: /mktxp_config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        # One directory with both files: credentials from the Secret, exporter
+        # settings from the ConfigMap in this app.
+        - name: config
+          projected:
+            defaultMode: 0440
+            sources:
+              - secret:
+                  name: mktxp-credentials
+                  items:
+                    - key: mktxp.conf
+                      path: mktxp.conf
+              - configMap:
+                  name: mktxp-config
+                  items:
+                    - key: _mktxp.conf
+                      path: _mktxp.conf
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mktxp
+  namespace: ${mktxp_namespace:=monitoring}
+  labels:
+    app.kubernetes.io/name: mktxp
+spec:
+  selector:
+    app.kubernetes.io/name: mktxp
+  ports:
+    - name: metrics
+      port: 80
+      targetPort: ${mktxp_port:=49090}

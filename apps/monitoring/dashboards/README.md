@@ -8,6 +8,7 @@ This directory provides GitOps-managed dashboards loaded by Grafana's sidecar.
 - CoreDNS dashboard generated from `povilasv/coredns-mixin`.
 - Flux dashboards from `fluxcd/flux2-monitoring-example`.
 - Traefik dashboard from `traefik/traefik` (contrib Grafana dashboard).
+- MikroTik dashboard from grafana.com 13679 (`Mikrotik MKTXP Exporter`, akpw/mktxp), datasource retargeted at `mimir`, uid `mktxp-mikrotik`.
 - Authelia dashboard from `authelia/authelia` (examples).
 - Cert-manager dashboard from Grafana.com (dashboard ID 11001).
 - CloudNativePG dashboard from `cloudnative-pg/grafana-dashboards`.

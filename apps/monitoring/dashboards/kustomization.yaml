@@ -222,3 +222,13 @@ configMapGenerator:
         grafana_folder: Nix
     files:
       - nix-cache/nix-build-pipeline.json
+  # The three site routers (kiosk RB5009, rue110 L009, Hiesfelder L009) had no
+  # monitoring at all until 2026-11-01: WAN/PPPoE state, per-interface traffic,
+  # WireGuard peers, DHCP, firewall counters and CPU come from the mktxp
+  # exporter (apps/mktxp). Upstream dashboard 13679, retargeted at mimir.
+  - name: grafana-dashboard-mikrotik
+    options:
+      annotations:
+        grafana_folder: Networking
+    files:
+      - mikrotik/mikrotik.json
