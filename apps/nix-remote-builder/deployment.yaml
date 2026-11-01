@@ -26,11 +26,60 @@ spec:
             - -ec
             - |
               set -euo pipefail
-              if [ ! -e /nix-persist/store ]; then
-                mkdir -p /nix-persist
-                cp -a /nix/. /nix-persist/.
+              export PATH="/nix/var/nix/profiles/default/bin:$${PATH}"
+              # The PVC is mounted at /seed/nix so that /seed is a valid chroot-store root
+              # (local?root=/seed -> /seed/nix/store, /seed/nix/var/nix/db).
+              dst=/seed/nix
+              marker="$${dst}/var/nix/seeded-from-image"
+              image_profile="$(readlink /nix/var/nix/profiles/default-1-link)"
+              image_sh="$(readlink /bin/sh)"
+              want="$(nix --version) $${image_profile}"
+              have="$(cat "$${marker}" 2>/dev/null || echo none)"
+
+              if [ ! -e "$${dst}/store" ]; then
+                echo "seed: empty volume, copying the image's /nix"
+                cp -a /nix/. "$${dst}/."
+              elif [ "$${have}" != "$${want}" ]; then
+                # A new image: its /bin/sh, nix and profile live in store paths the
+                # volume has never seen. Add (and register) them; never delete anything,
+                # existing paths, profiles and gcroots stay as they are.
+                echo "seed: volume has '$${have}', image is '$${want}'; importing the image's store paths"
+                nix --extra-experimental-features nix-command copy --all --no-check-sigs --to "local?root=/seed"
+                mkdir -p "$${dst}/var/nix/gcroots/docker"
+                for root in /nix/var/nix/gcroots/docker/*; do
+                  [ -L "$${root}" ] || continue
+                  ln -sfn "$(readlink "$${root}")" "$${dst}/var/nix/gcroots/docker/$${root##*/}"
+                done
+                # Point the default profile at the image's profile as a NEW generation.
+                # Links on the volume are absolute /nix/... paths, so resolve by hand.
+                profiles="$${dst}/var/nix/profiles"
+                current="$(readlink "$${profiles}/default" 2>/dev/null || true)"
+                if [ "$(readlink "$${profiles}/$${current##*/}" 2>/dev/null || true)" != "$${image_profile}" ]; then
+                  last=0
+                  for link in "$${profiles}"/default-*-link; do
+                    [ -L "$${link}" ] || continue
+                    gen="$${link##*/default-}"; gen="$${gen%-link}"
+                    [ "$${gen}" -gt "$${last}" ] && last="$${gen}"
+                  done
+                  next=$((last + 1))
+                  ln -s "$${image_profile}" "$${profiles}/default-$${next}-link"
+                  ln -sfn "/nix/var/nix/profiles/default-$${next}-link" "$${profiles}/.default.new"
+                  mv -T "$${profiles}/.default.new" "$${profiles}/default"
+                  echo "seed: default profile -> generation $${next} ($${image_profile})"
+                fi
               fi
-              mkdir -p /nix-persist/store /nix-persist/var/nix
+
+              mkdir -p "$${dst}/store" "$${dst}/var/nix"
+              # Refuse to start the main container on a store that cannot run the image.
+              for path in "$${image_profile}" "$${image_sh}"; do
+                rel="$${path#/nix/}"
+                if [ ! -e "$${dst}/$${rel}" ]; then
+                  echo "seed: $${path} missing from the volume, refusing to continue" >&2
+                  exit 1
+                fi
+              done
+              printf '%s\n' "$${want}" > "$${marker}"
+              echo "seed: volume matches $${want}"
           resources:
             requests:
               cpu: 50m
@@ -42,7 +91,7 @@ spec:
               ephemeral-storage: 1Gi
           volumeMounts:
             - name: nix-store
-              mountPath: /nix-persist
+              mountPath: /seed/nix
       containers:
         - name: builder
           image: nixos/nix:${nix_remote_builder_image_tag}
