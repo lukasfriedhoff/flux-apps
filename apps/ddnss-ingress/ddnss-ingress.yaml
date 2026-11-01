@@ -47,7 +47,7 @@ spec:
             limits:
               memory: 128Mi
         - name: haproxy
-          image: haproxy:${ddnss_ingress_haproxy_tag:=3.0-alpine}
+          image: haproxy:${ddnss_ingress_haproxy_tag:=3.4-alpine}
           volumeMounts:
             - name: haproxy-conf
               mountPath: /usr/local/etc/haproxy

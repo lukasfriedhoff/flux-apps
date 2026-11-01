@@ -16,7 +16,7 @@ data:
   ddnss_ingress_wireguard_tag: "1.0.20210914"
   # haproxy tag. TCP mode with SNI passthrough so TLS still terminates at
   # Traefik and cert-manager keeps working unchanged.
-  ddnss_ingress_haproxy_tag: "3.0-alpine"
+  ddnss_ingress_haproxy_tag: "3.4-alpine"
   # Suspended by default: only clusters that actually own the ddnss.org
   # tunnel (homelab) should run this.
   ddnss_ingress_suspend: "true"
