@@ -29,7 +29,7 @@ spec:
         fsGroup: 1000
       initContainers:
         - name: register
-          image: ${forgejo_runner_image:=code.forgejo.org/forgejo/runner:6.3.1}
+          image: ${forgejo_runner_image:=code.forgejo.org/forgejo/runner:13.2.1}
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
@@ -58,12 +58,15 @@ spec:
               mountPath: /data
       containers:
         - name: runner
-          image: ${forgejo_runner_image:=code.forgejo.org/forgejo/runner:6.3.1}
+          image: ${forgejo_runner_image:=code.forgejo.org/forgejo/runner:13.2.1}
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
           workingDir: /data
-          command: ["forgejo-runner", "--config", "/etc/runner/config.yml", "daemon"]
+          # args, not command: runner >= 13 ships ENTRYPOINT dumb-init (zombie
+          # reaping for job helpers); `command` would bypass it. Older images
+          # have no ENTRYPOINT, so this also works for them.
+          args: ["forgejo-runner", "--config", "/etc/runner/config.yml", "daemon"]
           env:
             # Socket, not TCP: the config's `docker_host: automount` can only
             # bind a unix socket into job containers, and /run is shared with
@@ -84,7 +87,7 @@ spec:
             limits:
               memory: 512Mi
         - name: dind
-          image: ${forgejo_runner_dind_image:=docker.io/library/docker:27.5.1-dind}
+          image: ${forgejo_runner_dind_image:=docker.io/library/docker:29.9.2-dind}
           securityContext:
             privileged: true
           # Unix socket only (no TCP listener at all) in the shared /run.
