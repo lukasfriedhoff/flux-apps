@@ -92,16 +92,20 @@ spec:
                     path: /readyz
                     port: health
                   periodSeconds: 30
-                  timeoutSeconds: 5
+                  timeoutSeconds: 10
               startup:
                 custom: true
                 enabled: true
                 spec:
-                  failureThreshold: 10
+                  # /readyz stats the NFS ingest dir (kiosk NAS over the s2s tunnel);
+                  # with the 1 s default timeout and a 30 s budget the 2026-11-01
+                  # restart never passed startup. Give it 2 min and 5 s per probe.
+                  failureThreshold: 40
                   httpGet:
                     path: /readyz
                     port: health
                   periodSeconds: 3
+                  timeoutSeconds: 5
             resources:
               limits:
                 cpu: 200m
