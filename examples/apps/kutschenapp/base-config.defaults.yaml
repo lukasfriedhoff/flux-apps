@@ -10,7 +10,7 @@ data:
   kutschenapp_namespace: "kutschenapp"
   kutschenapp_frontend_image: "harbor.h4xx.io/library/kutschenapp-frontend:m1"
   kutschenapp_api_image: "harbor.h4xx.io/library/kutschenapp-api:m1"
-  kutschenapp_mariadb_tag: "11.4"
+  kutschenapp_mariadb_tag: "11.8"
   # SOPS secret with the MariaDB root/app credentials.
   kutschenapp_db_secret_name: "kutschenapp-db"
   kutschenapp_db_size: "5Gi"

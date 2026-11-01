@@ -20,13 +20,19 @@ spec:
     spec:
       containers:
         - name: mariadb
-          image: mariadb:${kutschenapp_mariadb_tag:=11.4}
+          image: mariadb:${kutschenapp_mariadb_tag:=11.8}
           env:
             - name: MARIADB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: ${kutschenapp_db_secret_name:=kutschenapp-db}
                   key: root-password
+            # Run mariadb-upgrade automatically when the data directory was
+            # written by an older series (e.g. 11.4 -> 11.8). The entrypoint
+            # backs up the system tables to /var/lib/mysql first. No-op when
+            # the versions already match.
+            - name: MARIADB_AUTO_UPGRADE
+              value: "1"
             - name: MARIADB_DATABASE
               value: kutschenapp
             - name: MARIADB_USER
