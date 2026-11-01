@@ -212,6 +212,14 @@ spec:
               value: "true"
             - name: GITEA__security__INSTALL_LOCK
               value: "true"
+            # Forgejo 16 dropped `REVERSE_PROXY_TRUSTED_PROXIES = *` from the
+            # container app.ini template. Pin it here so the X-Forwarded-For
+            # handling no longer depends on whatever the PVC's app.ini was
+            # first rendered with; only traefik (pod network) talks to us.
+            - name: GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES
+              value: "${forgejo_reverse_proxy_trusted_proxies:=10.42.0.0/16,127.0.0.0/8,::1/128}"
+            - name: GITEA__security__REVERSE_PROXY_LIMIT
+              value: "1"
           readinessProbe:
             httpGet:
               path: /api/healthz
