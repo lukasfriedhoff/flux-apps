@@ -1,0 +1,13 @@
+# Variables the kryomat Kustomization consumes (flux-cluster base-config).
+# The manifests under apps/kryomat are fully rendered and take no substitution;
+# only the Kustomization itself is parameterised.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Flux Kustomization kryomat-app: suspended unless a cluster enables it.
+  kryomat_suspend: "true"
+  # Path inside flux-apps that holds the rendered kryomat manifests.
+  kryomat_path: "./apps/kryomat"
