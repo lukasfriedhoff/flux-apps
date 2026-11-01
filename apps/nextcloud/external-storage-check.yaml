@@ -15,7 +15,7 @@
 # Mount IDs are discovered from files_external:list rather than hardcoded, so
 # adding a share in the UI is covered automatically without editing this file.
 #
-# Same exec pattern as nextcloud-cron, including its "require 1/1 READY"
+# Same exec pattern as upgrade-check, including its "require 1/1 READY"
 # guard - exec'ing a still-warming replica is what makes the sibling
 # upgrade-check and office-check jobs fail intermittently.
 apiVersion: batch/v1
