@@ -19,6 +19,9 @@ data:
   nextcloud_hpa_cpu_threshold: "60"
   nextcloud_hpa_max_pods: "3"
   nextcloud_hpa_min_pods: "1"
+  # HPA behavior (scale-up / scale-down stabilization windows, seconds).
+  nextcloud_hpa_scale_up_window_seconds: "120"
+  nextcloud_hpa_scale_down_window_seconds: "1800"
   # PodDisruptionBudget for the app pods; 0 disables (never block drains on
   # single-replica clusters), set to 1 where multiple replicas run.
   nextcloud_pdb_min_available: "0"

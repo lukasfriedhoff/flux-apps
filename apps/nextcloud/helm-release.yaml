@@ -12,6 +12,54 @@ spec:
   # volumeMount path entries that break patch-based upgrades.
   upgrade:
     force: true
+  # The chart only renders an autoscaling/v1 HPA (no behavior field), so
+  # convert it to autoscaling/v2 here to add scaling behavior. Without it the
+  # HPA flapped 3 <-> 6..9 replicas ~60 times a day (211 scale-ups and 240
+  # scale-downs in 4 days up to 2026-11-01): each new replica needs ~5 min
+  # of CPU-heavy startup, which itself pushes the average over target, and
+  # the default 5 min scale-down window then removed pods that had barely
+  # finished starting. Scale up at most 2 pods per 5 min after a sustained
+  # 2 min signal; scale down at most 1 pod per 10 min after the load has
+  # stayed low for the whole window. A no-op when the HPA is disabled (the
+  # patch target then matches nothing).
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: HorizontalPodAutoscaler
+              name: nextcloud
+            patch: |
+              - op: replace
+                path: /apiVersion
+                value: autoscaling/v2
+              - op: remove
+                path: /spec/targetCPUUtilizationPercentage
+              - op: add
+                path: /spec/metrics
+                value:
+                  - type: Resource
+                    resource:
+                      name: cpu
+                      target:
+                        type: Utilization
+                        averageUtilization: ${nextcloud_hpa_cpu_threshold}
+              - op: add
+                path: /spec/behavior
+                value:
+                  scaleUp:
+                    stabilizationWindowSeconds: ${nextcloud_hpa_scale_up_window_seconds:=120}
+                    selectPolicy: Max
+                    policies:
+                      - type: Pods
+                        value: 2
+                        periodSeconds: 300
+                  scaleDown:
+                    stabilizationWindowSeconds: ${nextcloud_hpa_scale_down_window_seconds:=1800}
+                    selectPolicy: Max
+                    policies:
+                      - type: Pods
+                        value: 1
+                        periodSeconds: 600
   chart:
     spec:
       chart: nextcloud
@@ -35,6 +83,67 @@ spec:
       cputhreshold: ${nextcloud_hpa_cpu_threshold}
       minPods: ${nextcloud_hpa_min_pods}
       maxPods: ${nextcloud_hpa_max_pods}
+    # Background jobs (cron.php) run in their OWN pod via the chart's
+    # cronjob type, not by `kubectl exec` into an app replica. The exec
+    # design died whenever the HPA scaled in: the replica holding the exec
+    # session got SIGKILLed and the Job ended with exit 137 ("Session
+    # terminated, killing shell"); 17 of 21 failed runs between 2026-10-04
+    # and 2026-10-29 landed within 40s of an HPA scale-down.
+    # The chart CronJob reuses the app's image, env, volumeMounts (including
+    # the 20 nextcloud-config subPath files and extraVolumeMounts), volumes
+    # and podSecurityContext, so the config surface cannot drift from the
+    # Deployment. The app initContainers are not needed: they only prepare
+    # the shared RWX volumes, which the running replicas already did.
+    # Job pods are never touched by the HPA, and they do not count toward
+    # the app CPU average, so a long pass no longer drives scale-outs.
+    cronjob:
+      enabled: true
+      type: cronjob
+      cronjob:
+        schedule: "*/5 * * * *"
+        # The chart hard-codes concurrencyPolicy Forbid: a long pass delays
+        # the next one instead of stacking.
+        successfulJobsHistoryLimit: 1
+        failedJobsHistoryLimit: 3
+        # One retry absorbs node-level one-offs (drain, containerd mount
+        # error); a deterministic failure (PHP fatal) still fails the Job
+        # and fires KubeJobFailed. Still no activeDeadlineSeconds: killing
+        # cron.php mid-job leaves reserved_at set on claimed rows for ~6h.
+        backoffLimit: 1
+        annotations:
+          # Migration guard for the switch from the kustomize-managed
+          # CronJob of the same name (cron-cronjob.yaml, removed in the same
+          # commit). helm-controller takes ownership of the existing object;
+          # if that happens before kustomize-controller prunes it, this
+          # annotation stops the prune from deleting the now Helm-owned
+          # CronJob. Harmless afterwards.
+          kustomize.toolkit.fluxcd.io/prune: disabled
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            # php memory_limit below is 2G; leave headroom for the process.
+            memory: 2560Mi
+        # cron.php must run as the owner of config.php (www-data, 33);
+        # root would also reproduce the uid 33/82 ownership trap on the RWX
+        # data dir. The pod-level supplementalGroups still apply.
+        securityContext:
+          runAsUser: 33
+          runAsGroup: 33
+          runAsNonRoot: true
+        # -d memory_limit here, NOT in the global php config: the Maps app's
+        # ExifGeoData::get_exif_data_array does a plain file_get_contents()
+        # on each media file to read EXIF, which blows the 512M default on
+        # large photos and kills the whole pass with "Allowed memory size of
+        # 536870912 bytes exhausted ... ExifGeoData.php on line 91". Raising
+        # it globally would apply to every php-fpm worker too.
+        command:
+          - php
+          - -d
+          - memory_limit=2G
+          - -f
+          - /var/www/html/cron.php
     # Soft anti-affinity: spread app replicas across nodes when possible,
     # without blocking scheduling on single-node clusters.
     affinity:
