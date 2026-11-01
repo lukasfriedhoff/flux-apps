@@ -34,7 +34,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: mktxp
-          image: ${mktxp_image:=ghcr.io/akpw/mktxp:2.1.0}
+          image: ghcr.io/akpw/mktxp:${mktxp_image_tag:=2.1.0}
           command: ["mktxp"]
           args: ["--cfg-dir", "/mktxp_config", "export"]
           ports:

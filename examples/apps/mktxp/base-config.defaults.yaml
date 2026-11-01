@@ -6,5 +6,5 @@ metadata:
 data:
   mktxp_suspend: "true"
   mktxp_namespace: "monitoring"
-  mktxp_image: "ghcr.io/akpw/mktxp:2.1.0"
+  mktxp_image_tag: "2.1.0"
   mktxp_port: "49090"
