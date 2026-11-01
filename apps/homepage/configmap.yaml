@@ -85,3 +85,10 @@ data:
         memory: true
   docker.yaml: ""
   kubernetes.yaml: ""
+  # Every skeleton file must exist: homepage copies a missing one into
+  # /app/config on first use, which fails on this read-only ConfigMap mount
+  # (EROFS) and EXITS the process - the resources widget triggers it via
+  # proxmox.yaml on the first page load (seen with v1.13.2 and v2.7.0).
+  proxmox.yaml: ""
+  custom.css: ""
+  custom.js: ""
