@@ -69,7 +69,7 @@ spec:
             - /usr/bin/rpk
             - redpanda
             - start
-          image: harbor.h4xx.io/proxy-docker/redpandadata/redpanda:v25.3.17
+          image: harbor.h4xx.io/proxy-docker/redpandadata/redpanda:v25.3.18
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 4
@@ -190,7 +190,7 @@ spec:
             - '1'
             - --api-address
             - 0.0.0.0
-          image: harbor.h4xx.io/proxy-docker/scylladb/scylla:2026.2.7
+          image: harbor.h4xx.io/proxy-docker/scylladb/scylla:2026.3.4
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 4
