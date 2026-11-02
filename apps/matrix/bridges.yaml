@@ -17,9 +17,7 @@ metadata:
   name: whatsapp
   namespace: matrix
 spec:
-  # 2026-11-01: parked at 0 while the v26.10 LID migration pre-flight runs (detach
-  # of the 147 renamed-server DM rooms the bridge cannot re-ID); set back to 1 after.
-  replicas: 0
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
