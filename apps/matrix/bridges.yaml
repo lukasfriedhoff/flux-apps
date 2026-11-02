@@ -17,8 +17,7 @@ metadata:
   name: whatsapp
   namespace: matrix
 spec:
-  # 2026-11-02: parked at 0 for the v26.10 LID-migration pre-flight; back to 1 right after.
-  replicas: 0
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
