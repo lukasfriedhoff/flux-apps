@@ -4424,7 +4424,8 @@
         "regexApplyTo": "value",
         "sort": 1,
         "type": "query",
-        "multi": true
+        "multi": true,
+        "allValue": ".*"
       },
       {
         "allowCustomValue": true,
