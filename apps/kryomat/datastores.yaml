@@ -69,7 +69,7 @@ spec:
             - /usr/bin/rpk
             - redpanda
             - start
-          image: harbor.h4xx.io/proxy-docker/redpandadata/redpanda:v25.3.18
+          image: harbor.h4xx.io/proxy-docker/redpandadata/redpanda:v26.2.6
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 4
