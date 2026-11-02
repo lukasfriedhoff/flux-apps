@@ -68,8 +68,9 @@
         "y": 0
       },
       "id": 130,
-      "title": "System",
-      "type": "row"
+      "title": "System · $node",
+      "type": "row",
+      "repeat": "node"
     },
     {
       "datasource": {
@@ -1753,8 +1754,9 @@
         "y": 15
       },
       "id": 131,
-      "title": "DHCP",
-      "type": "row"
+      "title": "DHCP · $node",
+      "type": "row",
+      "repeat": "node"
     },
     {
       "datasource": {
@@ -2261,8 +2263,9 @@
         "y": 38
       },
       "id": 132,
-      "title": "Network",
-      "type": "row"
+      "title": "Network · $node",
+      "type": "row",
+      "repeat": "node"
     },
     {
       "datasource": {
@@ -3378,7 +3381,7 @@
     {
       "id": 141,
       "type": "row",
-      "title": "WireGuard",
+      "title": "WireGuard · $node",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -3386,7 +3389,8 @@
         "w": 24,
         "x": 0,
         "y": 77
-      }
+      },
+      "repeat": "node"
     },
     {
       "id": 142,
@@ -3574,8 +3578,9 @@
         "y": 87
       },
       "id": 133,
-      "title": "Firewall",
-      "type": "row"
+      "title": "Firewall · $node",
+      "type": "row",
+      "repeat": "node"
     },
     {
       "datasource": {
@@ -4131,8 +4136,9 @@
         "y": 202
       },
       "id": 140,
-      "title": "MKTXP Metrics",
-      "type": "row"
+      "title": "MKTXP Metrics · $node",
+      "type": "row",
+      "repeat": "node"
     },
     {
       "datasource": {
@@ -4392,7 +4398,14 @@
     "list": [
       {
         "allowCustomValue": true,
-        "current": {},
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": {
           "type": "prometheus",
           "uid": "mimir"
@@ -4411,8 +4424,7 @@
         "regexApplyTo": "value",
         "sort": 1,
         "type": "query",
-        "multi": true,
-        "allValue": ".*"
+        "multi": true
       },
       {
         "allowCustomValue": true,
