@@ -1494,10 +1494,10 @@ spec:
                 0.18.1
               fetch_app \
                 drawio \
-                https://github.com/arnowelzel/drawio-nextcloud/releases/download/v4.3.9/drawio-v4.3.9.tar.gz \
-                3ac34d75ad538d067c4d119d464281b424c1958a2c7ef114de1d1d52fea8981c \
+                https://github.com/arnowelzel/drawio-nextcloud/releases/download/v4.3.11/drawio-v4.3.11.tar.gz \
+                459618aa1dc2e7f19677540cfbe868f4415b024669bcf018cf81752f969d9709 \
                 drawio/appinfo/info.xml \
-                4.3.9
+                4.3.11
               fetch_app \
                 notes \
                 https://github.com/nextcloud-releases/notes/releases/download/v6.1.0/notes-v6.1.0.tar.gz \
