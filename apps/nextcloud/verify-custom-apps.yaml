@@ -57,7 +57,7 @@ spec:
                 contacts/appinfo/info.xml
               verify_app \
                 calendar \
-                https://github.com/nextcloud-releases/calendar/releases/download/v6.6.4/calendar-v6.6.4.tar.gz \
+                https://github.com/nextcloud-releases/calendar/releases/download/v6.6.5/calendar-v6.6.4.tar.gz \
                 0557b6b5852a467cf3f746e59d56478d227f78bf7a66357b30dfc10cae4c7e3c \
                 calendar/appinfo/info.xml
               verify_app \
