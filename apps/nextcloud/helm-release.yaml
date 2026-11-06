@@ -1446,10 +1446,10 @@ spec:
                 4.3.0
               fetch_app \
                 deck \
-                https://github.com/nextcloud-releases/deck/releases/download/v1.19.1/deck-v1.19.1.tar.gz \
-                382e11139ee399444bdfa17f018aa9109376928f9bd36090ead8ea340b4d3f0e \
+                https://github.com/nextcloud-releases/deck/releases/download/v1.19.2/deck-v1.19.2.tar.gz \
+                45a5e81d60970b6f5b95e30d87c273a5e9929ae371bc7d6cfc599e7ef3d7b33f \
                 deck/appinfo/info.xml \
-                1.19.1
+                1.19.2
               fetch_app \
                 gpoddersync \
                 https://github.com/thrillfall/nextcloud-gpodder/releases/download/3.18.0/gpoddersync.tar.gz \
