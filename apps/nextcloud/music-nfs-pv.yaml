@@ -28,6 +28,7 @@ spec:
   mountOptions:
     - nfsvers=4.1
     - noatime
+    - nconnect=8 # one shared transport per NAS otherwise; see flux-app-media media-nfs-pv.yaml
   nfs:
     server: ${media_nfs_server:=10.1.120.10}
     path: ${media_nfs_music_path:=/data/cmc/pub/h4xx/music}
