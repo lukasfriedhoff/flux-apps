@@ -30,7 +30,7 @@ jobs:
         env:
           # flux-app-media has no workflow of its own (it is a private split-out
           # of the media stack); it is covered from here, like flux-cluster.
-          RENOVATE_REPOSITORIES: "lukasf/flux-apps,lukasf/flux-cluster,lukasf/flux-app-media"
+          RENOVATE_REPOSITORIES: "lukasf/flux-apps,lukasf/flux-cluster,lukasf/flux-app-media,lukasf/mautrix-images"
           RENOVATE_PLATFORM: forgejo
           RENOVATE_ENDPOINT: https://git.h4xx.io/api/v1
           RENOVATE_GIT_AUTHOR: "Renovate Bot <renovate@h4xx.io>"

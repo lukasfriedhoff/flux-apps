@@ -18,6 +18,13 @@ data:
   matrix_whatsapp_image_tag: "latest"
   matrix_telegram_image_tag: "latest"
   matrix_signal_image_tag: "latest"
+  matrix_discord_image_tag: "latest"
+  # Image repositories (without tag). Defaults are upstream; the homelab points
+  # them at the self-built copies in harbor.h4xx.io/mautrix (lukasf/mautrix-images).
+  matrix_whatsapp_image: "dock.mau.dev/mautrix/whatsapp"
+  matrix_telegram_image: "dock.mau.dev/mautrix/telegram"
+  matrix_signal_image: "dock.mau.dev/mautrix/signal"
+  matrix_discord_image: "dock.mau.dev/mautrix/discord"
 
   matrix_synapse_replicas: "1"
   matrix_synapse_requests_cpu: "250m"
