@@ -942,10 +942,14 @@ groups:
       # (longhorn-backup-freshness, longhorn-backup-target-bootstrap) are far
       # inside it, so a stuck hourly job takes a day to alert — acceptable,
       # since each has its own failure alert.
+      # Longhorn's backup-daily is excluded like in BackupJobFailed: one pass
+      # over 136 volumes takes 5-24h over the tunnel and a single failed
+      # volume makes the Job re-run from scratch, so "no success in 26h" says
+      # nothing about the backups; longhorn-backup-freshness does.
       - alert: BackupCronJobNoRecentSuccess
         expr: |
           (
-            time() - kube_cronjob_status_last_successful_time{job="integrations/kubernetes/kube-state-metrics", cronjob=~".*(backup|snapshot).*"}
+            time() - kube_cronjob_status_last_successful_time{job="integrations/kubernetes/kube-state-metrics", cronjob=~".*(backup|snapshot).*", cronjob!="backup-daily"}
           ) > 26 * 60 * 60
         for: 30m
         labels:
