@@ -898,7 +898,9 @@ spec:
               return 0
             fi
             export WANT_MOUNT_ID="$mount_id"
-            current="$(timeout 30 php /var/www/html/occ files_external:list --output=json 2>/dev/null \
+            # 60 s: with three replicas seeding at once occ is slow, and an
+            # empty answer here only re-adds groups (harmless) but hides drift.
+            current="$(timeout 60 php /var/www/html/occ files_external:list --output=json 2>/dev/null \
               | php -r '
                 $mounts = json_decode(file_get_contents("php://stdin"), true);
                 if (!is_array($mounts)) {
@@ -1014,6 +1016,15 @@ spec:
                 done < "$users_file"
             }
             lock_dir=/var/www/html/config/.shared-photos-storage.lock
+            # The lock sits on the shared config volume and outlives a pod
+            # killed mid-section (drain, OOM): every later seed then waited
+            # 2 min here and silently skipped the whole section (2026-11-11,
+            # which is why the group scoping never ran). Nothing holds it for
+            # 30 min legitimately.
+            if [ -d "$lock_dir" ] && [ -n "$(find "$lock_dir" -maxdepth 0 -mmin +30 2>/dev/null)" ]; then
+              echo "Removing stale Shared Photos lock $lock_dir."
+              rmdir "$lock_dir" || true
+            fi
             lock_acquired=false
             for _ in $(seq 1 60); do
               if mkdir "$lock_dir" 2>/dev/null; then
@@ -1244,6 +1255,11 @@ spec:
                 done < "$users_file"
             }
             lock_dir=/var/www/html/config/.shared-memes-storage.lock
+            # Same stale-lock guard as the Photos section above.
+            if [ -d "$lock_dir" ] && [ -n "$(find "$lock_dir" -maxdepth 0 -mmin +30 2>/dev/null)" ]; then
+              echo "Removing stale Shared Memes lock $lock_dir."
+              rmdir "$lock_dir" || true
+            fi
             lock_acquired=false
             for _ in $(seq 1 60); do
               if mkdir "$lock_dir" 2>/dev/null; then
