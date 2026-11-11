@@ -4,7 +4,13 @@ metadata:
   name: immich-postgres
   namespace: immich
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+  # Pinned by digest: the floating tag moved while the instances sat on
+  # different nodes' image caches (srv9 pulled a build with pgvector 0.8.6,
+  # srv1/srv8 still had 0.8.5). The 2026-11-11 srv9 drain failed the primary
+  # over to an older build and immich refused to start ("database has
+  # pgvector 0.8.6 activated, instance only has 0.8.5"). Renovate bumps the
+  # digest; CNPG then rolls every instance to the same build.
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie@sha256:4b384608950050622a7ee9cd5057b45c67a96ada3859fc9b7d839f54c11b9425
   instances: ${immich_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
