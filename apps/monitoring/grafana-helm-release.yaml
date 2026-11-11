@@ -105,8 +105,9 @@ spec:
         requests:
           cpu: 50m
           memory: 96Mi
+        # No CPU limit: the dashboard sidecar averages 7m but throttled 43 % of
+        # periods on its reload bursts.
         limits:
-          cpu: 200m
           memory: 256Mi
       dashboards:
         enabled: true

@@ -901,9 +901,14 @@ groups:
           summary: CNPG WAL archiving appears stalled.
           description: CNPG pod {{ $labels.namespace }}/{{ $labels.pod }} has not archived a WAL file for more than 1 hour.
           runbook_url: https://cloudnative-pg.io/documentation/current/backup/
+      # Longhorn's own backup-daily Job is excluded: one S3 upload dropped by the
+      # Hiesfelder->kiosk tunnel makes its pod exit non-zero and restart, while
+      # the batch itself finishes (2026-11-10/11: "Failed" Job, every volume
+      # backed up). The outcome is checked by longhorn-backup-freshness, whose
+      # own Job failures still match here.
       - alert: BackupJobFailed
         expr: |
-          kube_job_failed{job="integrations/kubernetes/kube-state-metrics", job_name=~".*(backup|snapshot).*"} > 0
+          kube_job_failed{job="integrations/kubernetes/kube-state-metrics", job_name=~".*(backup|snapshot).*", job_name!~"backup-daily-[0-9]+"} > 0
         for: 15m
         labels:
           severity: critical

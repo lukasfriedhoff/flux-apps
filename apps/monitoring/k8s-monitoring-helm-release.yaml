@@ -76,8 +76,10 @@ spec:
                   requests:
                     cpu: "50m"
                     memory: "96Mi"
+                  # Memory-only limits here and on node-exporter: both throttled
+                  # 50-80 % of CFS periods at a p95 far below the old cpu limit
+                  # (reconcile/scrape bursts), which only slows them down.
                   limits:
-                    cpu: "300m"
                     memory: "256Mi"
           - target:
               kind: DaemonSet
@@ -91,5 +93,4 @@ spec:
                     cpu: "25m"
                     memory: "64Mi"
                   limits:
-                    cpu: "200m"
                     memory: "192Mi"

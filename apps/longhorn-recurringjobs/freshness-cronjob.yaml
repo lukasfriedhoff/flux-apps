@@ -110,17 +110,20 @@ spec:
                             ($last[.] // "") == ""
                             or (now - ($last[.] | fromdateiso8601)) > $max
                           ))) as $stale
-                      | "\($stale | length) \($enabled | length)"')
+                      | "\($stale | length) \($enabled | length) \($stale | join(" "))"')
 
                   set -- $RESULT
                   STALE=$1
                   TOTAL=$2
+                  shift 2
+                  STALE_NAMES="$*"
 
                   echo "enabled volumes: $TOTAL"
                   echo "with no backup newer than 36h: $STALE"
 
                   if [ "$STALE" -gt 0 ]; then
                     echo "FAIL: Longhorn volume backups are stale." >&2
+                    echo "stale volumes: $STALE_NAMES" >&2
                     echo "A no-op backup-daily run still exits 0 - check" >&2
                     echo "'.spec.groups' on the backup-daily RecurringJob" >&2
                     echo "and /mnt/backup free space on storage01." >&2

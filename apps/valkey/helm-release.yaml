@@ -52,8 +52,9 @@ spec:
           requests:
             cpu: 25m
             memory: 64Mi
+          # No CPU limit: the exporter averages 3-4m yet throttled 25-30 % of
+          # periods per scrape burst.
           limits:
-            cpu: 200m
             memory: 192Mi
         extraExporterSecrets:
           - name: ${valkey_auth_secret_name}

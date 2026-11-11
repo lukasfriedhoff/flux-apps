@@ -109,8 +109,11 @@ spec:
             requests:
               cpu: 10m
               memory: 32Mi
+            # No CPU limit: each scrape is a burst of serial smartctl calls that
+            # saturated the 100m CFS quota (88-95 % throttled periods) while the
+            # average sat at 16-30m - throttling is what made srv9's /metrics
+            # take up to 14 s.
             limits:
-              cpu: 100m
               memory: 128Mi
           volumeMounts:
             - name: dev

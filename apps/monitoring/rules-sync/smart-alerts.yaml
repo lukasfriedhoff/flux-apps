@@ -29,9 +29,10 @@ groups:
             and some volumes are effectively single-replica.
 
       # Reallocated sectors are the earliest honest warning on spinning rust.
-      # Any non-zero value is worth knowing; growth is what actually matters.
+      # A handful is normal on consumer SSDs (srv1 sdf sat at 3 for days, 2026-11),
+      # so warn from 10; growth is what actually matters and has its own alert.
       - alert: SmartReallocatedSectors
-        expr: smartctl_device_attribute{attribute_name="Reallocated_Sector_Ct",attribute_value_type="raw"} > 0
+        expr: smartctl_device_attribute{attribute_name="Reallocated_Sector_Ct",attribute_value_type="raw"} >= 10
         for: 30m
         labels:
           severity: warning
@@ -138,8 +139,14 @@ groups:
       # all. A non-zero exit here means "no health data", which is a monitoring
       # gap rather than a failing disk - but it must not be silent, because an
       # unreadable drive is also an unmonitored one.
+      # smartctl's exit code is a bitmask: bits 0-2 (1/2/4) = parse error, device
+      # open failed, SMART command failed = "cannot read". Bit 3 (8) = DISK
+      # FAILING is SmartDeviceHealthFailed's job, and bits 4-7 (16/32/64/128)
+      # only say an attribute was once below threshold or the error/self-test
+      # log has entries - six storage01 disks sat at 32/64 for ever, which is
+      # history, not a read failure. Hence the modulo.
       - alert: SmartctlCannotReadDevice
-        expr: smartctl_device_smartctl_exit_status != 0
+        expr: (smartctl_device_smartctl_exit_status % 8) > 0
         for: 1h
         labels:
           severity: warning
