@@ -36,6 +36,11 @@ data:
   nextcloud_external_memes_enabled: "disabled"
   nextcloud_external_memes_url: "https://meme.h4xx.io"
   nextcloud_external_memes_label: "Memes"
+  # Comma-separated Nextcloud group names that may see each shared mount
+  # (groups come from the OIDC `groups` claim). Empty = every user.
+  nextcloud_external_photos_groups: ""
+  nextcloud_external_memes_groups: ""
+  nextcloud_shared_music_groups: ""
   # By default Memes use a subdirectory on the same shared media PVC as Photos.
   nextcloud_memes_claim_name: "nextcloud-photos-shared"
   nextcloud_memes_size: "50Gi"

@@ -249,6 +249,15 @@ spec:
           value: ${quote}${nextcloud_shared_music_label:=Music}${quote}
         - name: NEXTCLOUD_SHARED_MUSIC_READONLY
           value: ${quote}${nextcloud_external_music_readonly:=true}${quote}
+        # Comma-separated Nextcloud group names the shared mounts are limited
+        # to (empty = every user, the pre-2026-11 behaviour). Groups arrive via
+        # oidc_login from Authelia's `groups` claim, i.e. LLDAP membership.
+        - name: NEXTCLOUD_EXTERNAL_PHOTOS_GROUPS
+          value: ${quote}${nextcloud_external_photos_groups:=}${quote}
+        - name: NEXTCLOUD_EXTERNAL_MEMES_GROUPS
+          value: ${quote}${nextcloud_external_memes_groups:=}${quote}
+        - name: NEXTCLOUD_SHARED_MUSIC_GROUPS
+          value: ${quote}${nextcloud_shared_music_groups:=}${quote}
         - name: OIDC_LOGIN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
@@ -859,6 +868,77 @@ spec:
             occ_safe config:app:set external sites --value="$merged_sites"
             occ_safe config:app:set external max_site --value="$max_site"
           }
+          # mount id of the external storage mounted at $1 (e.g. /Photos), or "".
+          mount_id_for_point() {
+            export WANT_MOUNT_POINT="$1"
+            timeout 30 php /var/www/html/occ files_external:list --output=json 2>/dev/null \
+              | php -r '
+                $mounts = json_decode(file_get_contents("php://stdin"), true);
+                if (!is_array($mounts)) {
+                  exit;
+                }
+                $want = getenv("WANT_MOUNT_POINT");
+                foreach ($mounts as $m) {
+                  if (($m["mount_point"] ?? "") === $want) {
+                    echo ($m["mount_id"] ?? "");
+                    break;
+                  }
+                }
+              '
+          }
+          # Converge the applicable groups of mount $1 to the comma-separated
+          # list $2 (empty = no restriction). Groups are created up front so a
+          # mount is scoped before its first member logs in; oidc_login fills
+          # them from the Authelia groups claim at every login. Safe to run from
+          # every replica: add/remove only what differs.
+          apply_mount_groups() {
+            mount_id="$1"
+            wanted="$(printf '%s' "$2" | tr ',' ' ')"
+            if [ -z "$mount_id" ]; then
+              return 0
+            fi
+            export WANT_MOUNT_ID="$mount_id"
+            current="$(timeout 30 php /var/www/html/occ files_external:list --output=json 2>/dev/null \
+              | php -r '
+                $mounts = json_decode(file_get_contents("php://stdin"), true);
+                if (!is_array($mounts)) {
+                  exit;
+                }
+                $want = (int)getenv("WANT_MOUNT_ID");
+                foreach ($mounts as $m) {
+                  if ((int)($m["mount_id"] ?? 0) === $want) {
+                    echo implode(" ", $m["applicable_groups"] ?? []);
+                    break;
+                  }
+                }
+              ')"
+            if [ -z "$wanted" ]; then
+              if [ -n "$current" ]; then
+                echo "Mount $mount_id: lifting group restriction ($current)."
+                occ_safe files_external:applicable "$mount_id" --remove-all
+              fi
+              return 0
+            fi
+            for g in $wanted; do
+              timeout 30 php /var/www/html/occ group:add "$g" >/dev/null 2>&1 || true
+              case " $current " in
+                *" $g "*) ;;
+                *)
+                  echo "Mount $mount_id: restricting to group $g."
+                  occ_safe files_external:applicable "$mount_id" --add-group "$g"
+                  ;;
+              esac
+            done
+            for g in $current; do
+              case " $wanted " in
+                *" $g "*) ;;
+                *)
+                  echo "Mount $mount_id: removing group $g."
+                  occ_safe files_external:applicable "$mount_id" --remove-group "$g"
+                  ;;
+              esac
+            done
+          }
           configure_shared_photos_storage() {
             if ! enable_custom_app_if_present files_external \
               /var/www/html/apps/files_external/appinfo/info.xml; then
@@ -971,6 +1051,7 @@ spec:
               else
                 echo "Shared Photos external storage already configured."
               fi
+              apply_mount_groups "$mount_id" "$${NEXTCLOUD_EXTERNAL_PHOTOS_GROUPS:-}"
               scan_shared_photos_user_dirs
               rmdir "$lock_dir"
               return 0
@@ -979,6 +1060,7 @@ spec:
             if occ_safe files_external:create \
               "Photos" local null::null \
               -c datadir="$desired_datadir"; then
+              apply_mount_groups "$(mount_id_for_point /Photos)" "$${NEXTCLOUD_EXTERNAL_PHOTOS_GROUPS:-}"
               scan_shared_photos_user_dirs
               rmdir "$lock_dir"
               return 0
@@ -1082,6 +1164,9 @@ spec:
                 readonly "$${NEXTCLOUD_SHARED_MUSIC_READONLY}" || true
               occ_safe files_external:option "$${existing_mount}" \
                 enable_sharing true || true
+              # Non-members get their personal Music folder back: the mount
+              # shadows it for whoever it applies to.
+              apply_mount_groups "$${existing_mount}" "$${NEXTCLOUD_SHARED_MUSIC_GROUPS:-}"
             fi
           }
           configure_shared_memes_storage() {
@@ -1196,6 +1281,7 @@ spec:
               else
                 echo "Shared Memes external storage already configured."
               fi
+              apply_mount_groups "$mount_id" "$${NEXTCLOUD_EXTERNAL_MEMES_GROUPS:-}"
               scan_shared_memes_user_dirs
               rmdir "$lock_dir"
               return 0
@@ -1204,6 +1290,7 @@ spec:
             if occ_safe files_external:create \
               "Memes" local null::null \
               -c datadir="$desired_datadir"; then
+              apply_mount_groups "$(mount_id_for_point /Memes)" "$${NEXTCLOUD_EXTERNAL_MEMES_GROUPS:-}"
               scan_shared_memes_user_dirs
               rmdir "$lock_dir"
               return 0
