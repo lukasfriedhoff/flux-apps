@@ -1603,10 +1603,10 @@ spec:
                 4.3.9
               fetch_app \
                 notes \
-                https://github.com/nextcloud-releases/notes/releases/download/v6.1.0/notes-v6.1.0.tar.gz \
-                03c493f45cb17a5005a0dce91c4e59b294ef91d4520c3ef44a21d5e61e419526 \
+                https://github.com/nextcloud-releases/notes/releases/download/v6.1.1/notes-v6.1.1.tar.gz \
+                bba4f375e57f31c3cfdda6a6bb4a2d1dd2aeedea5bd1024c3f651232c8975f7c \
                 notes/appinfo/info.xml \
-                6.1.0
+                6.1.1
               fetch_app \
                 integration_paperless \
                 https://github.com/nextcloud-releases/integration_paperless/releases/download/v1.0.14/integration_paperless-v1.0.14.tar.gz \
