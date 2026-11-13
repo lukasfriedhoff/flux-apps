@@ -190,7 +190,7 @@ spec:
             - '1'
             - --api-address
             - 0.0.0.0
-          image: harbor.h4xx.io/proxy-docker/scylladb/scylla:2026.3.4
+          image: harbor.h4xx.io/proxy-docker/scylladb/scylla:2026.3.5
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 4
