@@ -15,7 +15,7 @@ spec:
   chart:
     spec:
       chart: valkey
-      version: 0.12.1
+      version: 1.0.0
       sourceRef:
         kind: HelmRepository
         name: valkey
@@ -33,16 +33,24 @@ spec:
         default:
           permissions: "~* &* +@all"
           passwordKey: redis-password
-    valkeyConfig: |
+    extraConfig: |
       # Nextcloud should keep serving even when background snapshotting is temporarily unhealthy.
       stop-writes-on-bgsave-error no
+    persistence:
+      enabled: true
+      size: ${valkey_persistence_size}
+      storageClass: ${valkey_storage_class_name}
     replica:
       enabled: ${valkey_replica_enabled:=true}
-      replicas: ${valkey_replica_count}
+      # Chart 1.0 counts the primary in replica.replicas (0.x counted only
+      # the read replicas, via valkey_replica_count=2). Keep 3 pods total.
+      replicas: ${valkey_pod_count:=3}
       minReplicasToWrite: ${valkey_min_replicas_to_write}
-      persistence:
-        size: ${valkey_persistence_size}
-        storageClass: ${valkey_storage_class_name}
+    extraVolumes:
+      - name: ${valkey_auth_secret_name}-exporter
+        secret:
+          secretName: ${valkey_auth_secret_name}
+          defaultMode: 288
     metrics:
       enabled: true
       exporter:
@@ -56,8 +64,6 @@ spec:
           # periods per scrape burst.
           limits:
             memory: 192Mi
-        extraExporterSecrets:
-          - name: ${valkey_auth_secret_name}
         extraVolumeMounts:
           - name: ${valkey_auth_secret_name}-exporter
             mountPath: /etc/valkey-auth
