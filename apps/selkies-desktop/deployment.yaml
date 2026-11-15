@@ -18,12 +18,18 @@ spec:
       labels:
         app.kubernetes.io/name: selkies-desktop
     spec:
-      # Capability selection, not hostname pinning: h4xx.io/gpu.* labels are
-      # derived from each node's facter report in the nix repo. The image
-      # picks the matching VA-API driver (radeonsi/iHD) from the render node
-      # at startup and falls back to CPU striped encoding without a GPU.
+      # Capability selection, not hostname pinning: h4xx.io/* labels are
+      # derived from each node's facter report in the nix repo.
+      #
+      # SOFTWARE MODE (since 2026-11-15): the desktop renders with Pixman /
+      # llvmpipe and encodes with x264 on CPU, so it wants a performance-
+      # class node and stays off the GPU node (srv8 is memory-tight and its
+      # iGPU encoder has wedged before). To go back to GPU encode, select
+      # `h4xx.io/gpu.vaapi: "true"` here and make the `dri` volume the
+      # hostPath /dev/dri (DirectoryOrCreate) again; the image picks the
+      # matching VA-API driver (radeonsi/iHD) from the render node itself.
       nodeSelector:
-        h4xx.io/gpu.vaapi: "true"
+        h4xx.io/power.class: performance
       # The desktop needs no API access, and the token mount pre-creates
       # /var/run as a real directory — which shadows NixOS' /var/run -> /run
       # symlink and crash-loops nsncd (and hides /var/run/dbus).
@@ -64,10 +70,9 @@ spec:
             limits:
               cpu: ${selkies_limits_cpu}
               memory: ${selkies_limits_memory}
-          # Privileged solely for GPU encode: the device cgroup denies
-          # hostPath character devices to unprivileged containers, so
-          # /dev/dri stays invisible without it. Drop this (and the dri
-          # mount) to run CPU-only, or replace with a device plugin later.
+          # Privileged: the NixOS systemd boot inside the pod needs it, and
+          # in GPU mode it is also what lets the device cgroup expose the
+          # hostPath /dev/dri character devices.
           securityContext:
             privileged: true
           volumeMounts:
@@ -98,12 +103,13 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: ${selkies_shm_size}
-        # DirectoryOrCreate: on a GPU-less node this mounts an empty dir and
-        # pixelflux falls back to software encoding instead of failing.
+        # Software mode: an empty /dev/dri hides every render node, so
+        # pixelflux composites with Pixman ("Renderer: software (Pixman), no
+        # render node") and encodes with x264, and Mesa falls back to
+        # llvmpipe for the desktop's own GL. GPU mode mounts the node's
+        # /dev/dri here instead (hostPath, DirectoryOrCreate).
         - name: dri
-          hostPath:
-            path: /dev/dri
-            type: DirectoryOrCreate
+          emptyDir: {}
         - name: run
           emptyDir:
             medium: Memory
