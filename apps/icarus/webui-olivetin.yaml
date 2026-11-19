@@ -165,7 +165,7 @@ spec:
             - name: tools
               mountPath: /tools
         - name: stage-restic
-          image: restic/restic:0.19.1
+          image: restic/restic:0.20.0
           command: ["cp", "/usr/bin/restic", "/tools/restic"]
           volumeMounts:
             - name: tools
