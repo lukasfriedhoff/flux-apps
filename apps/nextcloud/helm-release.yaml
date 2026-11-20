@@ -1579,10 +1579,10 @@ spec:
                 29.0.0
               fetch_app \
                 nextpod \
-                https://github.com/pbek/nextcloud-nextpod/releases/download/v0.7.13/nextpod-0.7.13.tar.gz \
-                ce10ff26f949962ac3fd38012112088c8339669f14df528a5939ef626f888704 \
+                https://github.com/pbek/nextcloud-nextpod/releases/download/v0.7.14/nextpod-0.7.14.tar.gz \
+                e3221292c27a1371a1ab104e0cc5addedf35bcfb447d027a32c5eaaa523981e1 \
                 nextpod/appinfo/info.xml \
-                0.7.13
+                0.7.14
               fetch_app \
                 previewgenerator \
                 https://github.com/nextcloud-releases/previewgenerator/releases/download/v5.15.0/previewgenerator-v5.15.0.tar.gz \
