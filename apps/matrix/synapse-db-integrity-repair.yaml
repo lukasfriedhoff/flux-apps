@@ -10,7 +10,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: repair
-          image: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+          image: ghcr.io/cloudnative-pg/postgresql:19-system-trixie
           imagePullPolicy: IfNotPresent
           env:
             - name: PGHOST
