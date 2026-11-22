@@ -92,6 +92,16 @@ spec:
     podDisruptionBudget:
       enabled: true
       minAvailable: 1
+    # Replace in place instead of surging: with required anti-affinity the
+    # surge pod needs a node without a Traefik pod, and when that node is
+    # full the rollout stalls forever (2026-11-17, v3.7.19 Pending on a
+    # memory-full srv8, every app Kustomization blocked behind traefik-app).
+    # One replica keeps serving while the other is swapped.
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
     resources:
       requests:
         cpu: 100m
