@@ -1561,10 +1561,10 @@ spec:
                 3.18.0
               fetch_app \
                 groupfolders \
-                https://github.com/nextcloud-releases/groupfolders/releases/download/v23.0.1/groupfolders-v23.0.1.tar.gz \
-                3949e6a45947188090c170c6983aae11a1d66134ec317ffe7b7609062f3aecf3 \
+                https://github.com/nextcloud-releases/groupfolders/releases/download/v23.0.2/groupfolders-v23.0.2.tar.gz \
+                6a5d42927963fb500843328aea9c4df2656f7104e3e70ee8aabb2653e4834872 \
                 groupfolders/appinfo/info.xml \
-                23.0.1
+                23.0.2
               fetch_app \
                 impersonate \
                 https://github.com/nextcloud-releases/impersonate/releases/download/v6.0.0/impersonate-v6.0.0.tar.gz \
