@@ -1469,10 +1469,10 @@ spec:
               }
               fetch_app \
                 mail \
-                https://github.com/nextcloud-releases/mail/releases/download/v5.12.6/mail-v5.12.6.tar.gz \
-                76ef8687b60852927e64f0661036ea045f5b27cd5fc6ecb3eb652c71b681bc9c \
+                https://github.com/nextcloud-releases/mail/releases/download/v5.13.4/mail-v5.13.4.tar.gz \
+                2859a9020e06dd9d515cb7c55f76c7ac183ffdb5761c8ccff6ffb646bbbc925f \
                 mail/vendor/autoload.php \
-                5.12.6
+                5.13.4
               fetch_app \
                 richdocuments \
                 https://github.com/nextcloud-releases/richdocuments/releases/download/v12.0.2/richdocuments-v12.0.2.tar.gz \
