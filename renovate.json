@@ -53,6 +53,21 @@
         "quay.io/prometheuscommunity/smartctl-exporter"
       ],
       "allowedVersions": "!/^v?0\\.15\\./"
+    },
+    {
+      "description": "One-shot Postgres repair Jobs: the psql client must match the CNPG server major (18), and a Job pod template is immutable, so a bump fails the Flux apply. Move these together with a server major upgrade, never on their own.",
+      "matchFileNames": [
+        "apps/immich-photos/db-schema-repair-job.yaml",
+        "apps/matrix/synapse-db-integrity-repair.yaml"
+      ],
+      "matchPackageNames": [
+        "postgres",
+        "ghcr.io/cloudnative-pg/postgresql"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }
