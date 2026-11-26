@@ -25,6 +25,16 @@ spec:
   postRenderers:
     - kustomize:
         patches:
+          # Each pod runs ~10 min of seed hooks before status.php answers, so a
+          # 3-pod rolling update outlasts the default 600s progress deadline and
+          # Helm marks the release failed mid-rollout (2026-11-26).
+          - target:
+              kind: Deployment
+              name: nextcloud
+            patch: |
+              - op: add
+                path: /spec/progressDeadlineSeconds
+                value: 2400
           - target:
               kind: HorizontalPodAutoscaler
               name: nextcloud
