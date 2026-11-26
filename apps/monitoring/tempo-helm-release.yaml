@@ -129,6 +129,9 @@ spec:
           cpu: 300m
           memory: 256Mi
     memcached:
+      # Chart >=3.2x sizes the cache via -m (default 1024 MB); keep it
+      # under the 256Mi limit or memcached gets OOMKilled once it fills.
+      allocatedMemory: 192
       resources:
         requests:
           cpu: 25m
