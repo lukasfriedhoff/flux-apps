@@ -18,6 +18,12 @@ spec:
       labels:
         app.kubernetes.io/name: android-emulator
     spec:
+      securityContext:
+        # The image runs as androidusr (uid 1300, gid 1301) even though the
+        # container is privileged; a fresh Longhorn volume is root-owned, so
+        # hand it to that group or the first AVD write fails.
+        fsGroup: 1301
+        fsGroupChangePolicy: OnRootMismatch
       nodeSelector:
         # KVM is on every node; this one has the headroom (16c/94Gi) and the
         # node adb server the phone-broker fronts. The volume is RWO anyway.
@@ -67,10 +73,15 @@ spec:
           volumeMounts:
             - name: kvm
               mountPath: /dev/kvm
-            # Upstream: "To persist data, mount a volume at /home/androidusr" —
-            # the AVD, installed apps and logins live here.
+            # Upstream says "mount a volume at /home/androidusr", which works
+            # under Docker because a named volume is seeded from the image on
+            # first use. A Kubernetes PVC is not: mounted there it hides the
+            # image's entrypoint (…/docker-android/mixins/scripts/run.sh → exit
+            # 127, CrashLoopBackOff). The AVD, installed apps and logins live in
+            # ~/.android, so persist exactly that and keep the scripts from the
+            # image — which also means an image bump never runs stale scripts.
             - name: data
-              mountPath: /home/androidusr
+              mountPath: /home/androidusr/.android
       volumes:
         - name: kvm
           hostPath:
