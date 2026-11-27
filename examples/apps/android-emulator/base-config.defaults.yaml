@@ -19,6 +19,11 @@ data:
   android_emulator_device: "Pixel 8"
   android_emulator_host: "android"
   android_emulator_node: "srv1"
+  # Any small image with coreutils `install`; only copies the adb identity.
+  android_emulator_initcontainer_image: "alpine:3.23"
+  # Secret (ns android) with keys adbkey + adbkey.pub: the device identity shared
+  # with the node adb server / phone-broker. Lives in the cluster repo (sops).
+  android_emulator_adbkey_secret: "android-emulator-adbkey"
   android_emulator_requests_cpu: "2000m"
   android_emulator_requests_memory: "6Gi"
   android_emulator_limits_cpu: "6000m"

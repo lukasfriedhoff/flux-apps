@@ -28,6 +28,31 @@ spec:
         # KVM is on every node; this one has the headroom (16c/94Gi) and the
         # node adb server the phone-broker fronts. The volume is RWO anyway.
         kubernetes.io/hostname: ${android_emulator_node}
+      initContainers:
+        # The emulator seeds the public half of ~/.android/adbkey into the
+        # guest's trusted adb keys when it creates the AVD (ro.adb.secure=1 on
+        # this image). The container otherwise regenerates that key on every
+        # start while the AVD persists, so after one restart even its own adb
+        # is `unauthorized`. Provisioning the key from a Secret gives the
+        # device ONE stable identity — the same key srv1's adb server and the
+        # phone-broker present — so automation never needs the on-screen
+        # authorisation popup. ~/.android must stay writable (adb.5037, the
+        # console token live there), hence the copy into an emptyDir.
+        - name: adb-identity
+          image: ${android_emulator_initcontainer_image}
+          command:
+            - sh
+            - -ec
+            - |
+              install -m 0600 -o 1300 -g 1301 /adbkey/adbkey /dot-android/adbkey
+              install -m 0644 -o 1300 -g 1301 /adbkey/adbkey.pub /dot-android/adbkey.pub
+              chown 1300:1301 /dot-android
+          volumeMounts:
+            - name: adbkey
+              mountPath: /adbkey
+              readOnly: true
+            - name: dot-android
+              mountPath: /dot-android
       containers:
         - name: emulator
           # Google Play Store image of the official Android Emulator, run under
@@ -85,6 +110,8 @@ spec:
             # an image bump never runs stale scripts.
             - name: data
               mountPath: /home/androidusr/emulator
+            - name: dot-android
+              mountPath: /home/androidusr/.android
       volumes:
         - name: kvm
           hostPath:
@@ -93,3 +120,13 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: android-emulator-data
+        - name: dot-android
+          emptyDir: {}
+        - name: adbkey
+          secret:
+            secretName: ${android_emulator_adbkey_secret}
+            items:
+              - key: adbkey
+                path: adbkey
+              - key: adbkey.pub
+                path: adbkey.pub
