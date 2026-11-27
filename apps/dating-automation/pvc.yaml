@@ -1,0 +1,20 @@
+# One small volume for what a run leaves behind: captured profile screenshots
+# (/app/profiles, the audit input for the later media migration) and the
+# YOLO-tiny model cache (~35 MB, downloaded on first use). RWO is enough: the
+# CronJob is concurrencyPolicy Forbid, so one pod at a time.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dating-automation-data
+  namespace: ${dating_automation_namespace:=dating}
+  labels:
+    app.kubernetes.io/name: dating-automation
+    app.kubernetes.io/part-of: android-platform
+  annotations:
+    longhorn.h4xx.io/replica-count: "2"
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ${dating_automation_storage_class_name:=longhorn-ssd-rwo-2r}
+  resources:
+    requests:
+      storage: ${dating_automation_profiles_size:=10Gi}

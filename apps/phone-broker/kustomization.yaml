@@ -1,0 +1,20 @@
+# phone-broker — the device lease and single automation gateway for one
+# Android device (git.h4xx.io/lukasf/phone-broker).
+#
+# This directory holds the EMULATOR instance: the broker that fronts the
+# Android Emulator pod in apps/android-emulator over adb-TCP. The USB-phone
+# instance (hostPath adb socket on srv1) is a second Deployment to add here
+# once the OnePlus 6 is racked; the two never share a device, so they never
+# share a lease.
+#
+# No Namespace: `android` is owned by flux-cluster base/namespaces. No
+# `namespace:` transformer; every manifest names its namespace itself.
+# The placeholders are resolved by the flux-cluster Kustomization
+# `phone-broker-app` (postBuild.substituteFrom base-config);
+# examples/apps/phone-broker/base-config.defaults.yaml lists every key.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - emulator.yaml
+  - network-policy.yaml

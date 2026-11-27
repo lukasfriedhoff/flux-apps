@@ -1,0 +1,121 @@
+# phone-broker-emulator network fence (flannel + kube-router: L3/L4 only).
+#
+# Default-deny both ways for the broker pod, then exactly the real flows:
+#
+#   ingress  <- pods in the `android` namespace (webscreen, kegel tooling)
+#   ingress  <- pods in the jobs namespace (dating-automation CronJobs)
+#   ingress  <- monitoring, for /metrics (Alloy scrapes from a pod)
+#   ingress  <- the node CIDR, for kubelet probes (no pod identity)
+#   egress   -> the emulator pod on 5555 (adb-TCP). The rule selects the POD,
+#               not the Service VIP: post-DNAT a VIP-only rule never matches.
+#   egress   -> kube-dns, to resolve the emulator Service name.
+#
+# Unlike the USB variant, egress is not empty: this broker owns a TCP adb
+# session to another pod.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-emulator-default-deny
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-emulator
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-emulator-allow-clients
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-emulator
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${phone_broker_namespace:=android}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${phone_broker_jobs_namespace:=dating}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-emulator-allow-metrics-from-monitoring
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-emulator
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${monitoring_namespace:=monitoring}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-emulator-allow-kubelet-probes
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-emulator
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: ${phone_broker_node_cidr:=10.3.30.0/24}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-emulator-allow-device-egress
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-emulator
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: android-emulator
+      ports:
+        - protocol: TCP
+          port: 5555
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

@@ -1,0 +1,46 @@
+# Every ${...} key the apps/phone-broker manifests consume, with the value the
+# manifests default to. Copy the ones you change into flux-cluster
+# base/base-config.yaml or an overlay's cluster-patch.yaml.
+#
+# Keys WITHOUT an inline default (you must set them):
+#   phone_broker_image   harbor.h4xx.io/library/phone-broker:sha-<short> — no
+#                        default on purpose: a `:latest` fallback means a 03:00
+#                        pod restart can run an adb client nobody reviewed.
+#
+# android_emulator_adbkey_secret and monitoring_namespace already exist in
+# flux-cluster's base-config and are inherited, not shadowed.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Flux Kustomization phone-broker-app: suspended unless a cluster enables it.
+  phone_broker_suspend: "true"
+  phone_broker_namespace: "android"
+  # REQUIRED.
+  phone_broker_image: ""
+
+  # --- emulator instance -----------------------------------------------------
+  # The emulator's adbd (Service in apps/android-emulator). Also the serial.
+  phone_broker_emulator_adb_connect: "android-emulator.android.svc.cluster.local:5555"
+  phone_broker_emulator_k8s_lease_name: "phone-emulator"
+
+  # --- broker ---------------------------------------------------------------
+  phone_broker_lease_ttl: "60s"
+  phone_broker_presence_poll: "30s"
+  phone_broker_log_level: "info"
+  phone_broker_gomemlimit: "100MiB"
+
+  # --- resources ------------------------------------------------------------
+  # The in-pod adb server and screenshot buffers sit on top of the Go binary.
+  phone_broker_requests_cpu: "25m"
+  phone_broker_requests_memory: "64Mi"
+  phone_broker_limits_cpu: "500m"
+  phone_broker_limits_memory: "192Mi"
+
+  # --- network fence --------------------------------------------------------
+  # Namespace whose pods may call the API besides the broker's own.
+  phone_broker_jobs_namespace: "dating"
+  # Kubelet probes reach the pod from the node, not from a pod.
+  phone_broker_node_cidr: "10.3.30.0/24"

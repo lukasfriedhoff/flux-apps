@@ -1,0 +1,40 @@
+# Every ${...} key the apps/dating-automation manifests consume, with the value
+# the manifests default to. Keys WITHOUT an inline default (you must set them):
+#   dating_automation_image   harbor.h4xx.io/library/dating-automation:sha-<short>
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Flux Kustomization dating-automation-app: suspended unless a cluster enables it.
+  dating_automation_suspend: "true"
+  dating_automation_namespace: "dating"
+  # REQUIRED.
+  dating_automation_image: ""
+
+  # --- the run ----------------------------------------------------------------
+  # The CronJob object itself; keep true until the account is logged in on the
+  # device and one supervised manual run has passed.
+  dating_automation_cronjob_suspend: "true"
+  dating_automation_schedule: "15 9,13,19 * * *"
+  dating_automation_app: "bumble"
+  dating_automation_mode: "auto-vision"
+  dating_automation_cards: "15"
+  dating_automation_analysis_workers: "2"
+
+  # --- device access -------------------------------------------------------------
+  dating_automation_broker_url: "http://phone-broker-emulator.android.svc.cluster.local:8080"
+  dating_automation_adb_connect: "android-emulator.android.svc.cluster.local:5555"
+  # Secret in the dating namespace carrying the device's trusted adb key
+  # (keys adbkey, adbkey.pub) — a copy of android-emulator-adbkey.
+  dating_automation_adbkey_secret: "dating-adbkey"
+
+  # --- storage / resources -----------------------------------------------------
+  dating_automation_storage_class_name: "longhorn-ssd-rwo-2r"
+  dating_automation_profiles_size: "10Gi"
+  # OCR + YOLO-tiny on 1080x2400 screenshots with two analysis workers.
+  dating_automation_requests_cpu: "500m"
+  dating_automation_requests_memory: "1Gi"
+  dating_automation_limits_cpu: "3000m"
+  dating_automation_limits_memory: "3Gi"

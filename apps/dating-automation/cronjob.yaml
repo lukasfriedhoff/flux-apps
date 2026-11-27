@@ -1,0 +1,116 @@
+# The scheduled swipe run.
+#
+#   * Forbid + backoffLimit 0 + restartPolicy Never: a swipe run is not
+#     idempotent and must never overlap itself or be retried blindly. A run
+#     that the broker refuses (someone is on the device) exits 0 as "skipped".
+#   * The lease is the mutual exclusion: PHONE_BROKER_URL makes the CLI acquire
+#     a `job` lease before the first adb call, renew it, stop between cards if
+#     a human appears, and release it in a finally block.
+#   * The job brings its own adb client and connects over TCP to the emulator
+#     (ADB_CONNECT); it authenticates with the device's one trusted key from
+#     the Secret copy in this namespace (ADB_VENDOR_KEYS).
+#   * Suspended by default; the first runs are started by hand from this
+#     template (kubectl create job --from=cronjob/...) while someone watches
+#     the noVNC screen.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dating-automation-swipe
+  namespace: ${dating_automation_namespace:=dating}
+  labels:
+    app.kubernetes.io/name: dating-automation
+    app.kubernetes.io/component: swipe
+    app.kubernetes.io/part-of: android-platform
+spec:
+  schedule: ${dating_automation_schedule:=15 9,13,19 * * *}
+  timeZone: Europe/Berlin
+  suspend: ${dating_automation_cronjob_suspend:=true}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dating-automation
+        app.kubernetes.io/component: swipe
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 2700
+      ttlSecondsAfterFinished: 172800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: dating-automation
+            app.kubernetes.io/component: swipe
+            app.kubernetes.io/part-of: android-platform
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: swipe
+              image: ${dating_automation_image}
+              imagePullPolicy: IfNotPresent
+              args:
+                - --app=${dating_automation_app:=bumble}
+                - --mode=${dating_automation_mode:=auto-vision}
+                - --cards=${dating_automation_cards:=15}
+                - --analysis-workers=${dating_automation_analysis_workers:=2}
+                - --debug
+              env:
+                - name: PHONE_BROKER_URL
+                  value: ${dating_automation_broker_url:=http://phone-broker-emulator.android.svc.cluster.local:8080}
+                - name: ADB_CONNECT
+                  value: ${dating_automation_adb_connect:=android-emulator.android.svc.cluster.local:5555}
+                - name: ADB_VENDOR_KEYS
+                  value: /adbkey/adbkey
+                - name: HOME
+                  value: /home/dating
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              resources:
+                requests:
+                  cpu: ${dating_automation_requests_cpu:=500m}
+                  memory: ${dating_automation_requests_memory:=1Gi}
+                limits:
+                  cpu: ${dating_automation_limits_cpu:=3000m}
+                  memory: ${dating_automation_limits_memory:=3Gi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: adbkey
+                  mountPath: /adbkey
+                  readOnly: true
+                - name: home
+                  mountPath: /home/dating
+                - name: data
+                  mountPath: /home/dating/.cache/dating-automation
+                  subPath: models
+                - name: data
+                  mountPath: /app/profiles
+                  subPath: profiles
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: adbkey
+              secret:
+                secretName: ${dating_automation_adbkey_secret:=dating-adbkey}
+                defaultMode: 0440
+            - name: data
+              persistentVolumeClaim:
+                claimName: dating-automation-data
+            - name: home
+              emptyDir:
+                sizeLimit: 256Mi
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
