@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Ships suspended: redroid runs privileged, so it should only start once an
+  # operator has reviewed the placement.
+  redroid_suspend: "true"
+  # Pinned by digest. Floating Android tags would silently change the device
+  # build under a logged-in app; tag kept alongside for readability.
+  #
+  # Android 12, not a newer release: 16.0.0 reaches init and then dies at
+  # apexd-bootstrap ("failed to start due to a fatal error") even with binderfs
+  # and a writable cgroup. 12 is the release upstream's own quick-start uses and
+  # it boots to sys.boot_completed=1 unmodified. Verified 2026-11-27 on srv1.
+  #
+  # Note the ABI is x86_64 only: an app shipping arm64-only native libraries
+  # needs NDK translation, which these images do not carry.
+  redroid_image: "redroid/redroid:12.0.0_64only-latest@sha256:a6c464bbedcf1dcb67dbf91f329fbb19bee5b50631f0ca6bda6ed7c41b0e64e2"
+  # Any small image with util-linux mount; only used to create the binderfs mount.
+  redroid_initcontainer_image: "alpine:3.23"
+  # 1080x2340 @ 420dpi mirrors the OnePlus 8 Pro this automation was written
+  # against, so UI-tree geometry ported from the phone needs no retuning.
+  redroid_width: "1080"
+  redroid_height: "2340"
+  redroid_dpi: "420"
+  redroid_fps: "30"
+  redroid_gpu_mode: "guest"
+  redroid_preferred_node: "srv1"
+  redroid_requests_cpu: "500m"
+  redroid_requests_memory: "2Gi"
+  redroid_limits_cpu: "4000m"
+  redroid_limits_memory: "6Gi"
+  redroid_data_storage_class_name: "longhorn-ssd-rwo-2r"
+  redroid_data_size: "32Gi"

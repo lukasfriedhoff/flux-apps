@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redroid
+  namespace: android
+  labels:
+    app.kubernetes.io/name: redroid
+spec:
+  # Deliberately ClusterIP: adb on 5555 is an unauthenticated root shell on the
+  # Android instance. Upstream warns against exposing it; reach it through
+  # ws-scrcpy or an in-cluster client, never a LoadBalancer or ingress.
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: redroid
+  ports:
+    - name: adb
+      port: 5555
+      targetPort: adb
+      protocol: TCP
