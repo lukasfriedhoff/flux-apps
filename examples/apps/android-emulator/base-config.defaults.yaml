@@ -6,12 +6,17 @@ metadata:
 data:
   # Ships suspended: privileged workload holding a logged-in account.
   android_emulator_suspend: "true"
-  # budtmo/docker-android, Android 13 with Google Play Store (newest free Play
-  # image; 14–17 are in the paid "pro" repo). Pinned by digest.
-  android_emulator_image: "budtmo/docker-android:emulator_playstore_13.0_v3.9.1-p2@sha256:64f08a13cd53b84ab4490cc8f29fa4571517e95a6e72e1c48af9179e75da530e"
-  # Device profile from the image's skin set; the automation's UI-tree geometry
-  # is proportional, so an exact 1080x2340 match is not required.
-  android_emulator_device: "Samsung Galaxy S10"
+  # budtmo/docker-android, Android 11 (API 30) with Google Play Store: the x86_64
+  # Play image that carries ARM translation. The Android 13 Play image has no
+  # native bridge at all, and arm-only apps (Bumble ships arm64-v8a/armeabi-v7a
+  # only) cannot install there. 14–17 Play images exist only in the paid "pro"
+  # repo. Pinned by digest.
+  android_emulator_image: "budtmo/docker-android:emulator_playstore_11.0_v3.9.1-p2@sha256:93531721c87fbc39c90ebde7da13ca27656df004ecbec4fa42bc386f382025d8"
+  # Device profile from the image's skin set (Nexus 4/5/7/One/S, Galaxy S6–S10,
+  # Pixel C, Pixel 8, Pixel 9). Pixel 8 = 1080x2400 @ 420, the closest to the
+  # 1080x2340 @ 420 geometry the automation was tuned on; its UI-tree parsing is
+  # proportional anyway.
+  android_emulator_device: "Pixel 8"
   android_emulator_host: "android"
   android_emulator_node: "srv1"
   android_emulator_requests_cpu: "2000m"
