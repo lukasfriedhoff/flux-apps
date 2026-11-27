@@ -54,6 +54,35 @@ spec:
             fsGroup: 1000
             seccompProfile:
               type: RuntimeDefault
+          # kube-router populates the broker's NetworkPolicy ipsets from pod
+          # events; a pod that connects in its first seconds can still be
+          # dropped (observed 2026-11-28: a fresh pod got 000s for ~20 s while
+          # a settled one got 200 at once). Wait for the broker before the run
+          # so a lease request never fails on that lag.
+          initContainers:
+            - name: wait-broker
+              image: ${dating_automation_image}
+              imagePullPolicy: IfNotPresent
+              command:
+                - sh
+                - -c
+                - |
+                  for i in $(seq 1 90); do
+                    curl -sf -m 3 -o /dev/null "$PHONE_BROKER_URL/healthz" && exit 0
+                    sleep 2
+                  done
+                  echo "phone-broker not reachable after 180 s" >&2
+                  exit 1
+              env:
+                - name: PHONE_BROKER_URL
+                  value: ${dating_automation_broker_url:=http://phone-broker-emulator.android.svc.cluster.local:8080}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests: { cpu: 10m, memory: 32Mi }
+                limits: { cpu: 100m, memory: 64Mi }
           containers:
             - name: swipe
               image: ${dating_automation_image}
