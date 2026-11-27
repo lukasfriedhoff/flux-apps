@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+  namespace: flux-system
+data:
+  # Ships suspended: privileged workload holding a logged-in account.
+  android_emulator_suspend: "true"
+  # budtmo/docker-android, Android 13 with Google Play Store (newest free Play
+  # image; 14–17 are in the paid "pro" repo). Pinned by digest.
+  android_emulator_image: "budtmo/docker-android:emulator_playstore_13.0_v3.9.1-p2@sha256:64f08a13cd53b84ab4490cc8f29fa4571517e95a6e72e1c48af9179e75da530e"
+  # Device profile from the image's skin set; the automation's UI-tree geometry
+  # is proportional, so an exact 1080x2340 match is not required.
+  android_emulator_device: "Samsung Galaxy S10"
+  android_emulator_host: "android"
+  android_emulator_node: "srv1"
+  android_emulator_requests_cpu: "2000m"
+  android_emulator_requests_memory: "6Gi"
+  android_emulator_limits_cpu: "6000m"
+  android_emulator_limits_memory: "10Gi"
+  android_emulator_storage_class_name: "longhorn-ssd-rwo-2r"
+  android_emulator_data_size: "32Gi"

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: android-emulator-data
+  namespace: android
+  annotations:
+    # longhorn-replica-policy resets every volume's replica count from its
+    # StorageClass on a 5 minute timer, so a replica bump only sticks if it is
+    # declared here. Keep it a literal quoted string: a ${var} loses its quotes
+    # during kustomize build and substitutes back as an int, which the API
+    # server rejects with "expected string, got 2".
+    longhorn.h4xx.io/replica-count: "2"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ${android_emulator_storage_class_name}
+  resources:
+    requests:
+      storage: ${android_emulator_data_size}

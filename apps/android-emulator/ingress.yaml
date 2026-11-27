@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: android-emulator
+  namespace: android
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # noVNC is a WebSocket UI: it survives the Cloudflare tunnel (unlike WebRTC),
+    # so this works from the LineageOS phone's browser away from home too.
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${android_emulator_host:=android}${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: android-emulator
+                port:
+                  name: novnc
+  tls:
+    - secretName: android-emulator-tls
+      hosts:
+        - ${android_emulator_host:=android}${public_host_suffix}.${delegating_domain}
