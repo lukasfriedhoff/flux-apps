@@ -19,40 +19,6 @@ spec:
       labels:
         app.kubernetes.io/name: redroid
     spec:
-      initContainers:
-        # Android's servicemanager/hwservicemanager/keystore2/surfaceflinger all
-        # exit status 6 and init shuts down unless the binder device nodes exist.
-        # This kernel compiles binder in (CONFIG_ANDROID_BINDER_IPC/BINDERFS) but
-        # nothing mounts a binderfs instance, and the nodes only materialise when
-        # one is mounted. A privileged container can mount its own instance, so
-        # this needs no change on the nodes; Bidirectional propagation is what
-        # carries the mount over to the redroid container, which cannot make it
-        # itself (its entrypoint is /init, with no usable pre-init shell).
-        #
-        # KNOWN COST: Bidirectional propagation pushes the mount into the host
-        # mount namespace under the pod's emptyDir, and kubelet does not unmount
-        # it when the pod goes away. Every pod lifecycle therefore leaves one
-        # stale `type binder` mount on the node (visible in `mount | grep
-        # binder`), which has to be cleaned by hand or by a reboot. If this pod
-        # starts restarting often, replace this initContainer with a declarative
-        # host mount in the nix k3s-node config:
-        #     systemd.mounts = [{ what = "binder"; where = "/dev/binderfs";
-        #                         type = "binder"; }];
-        # and switch the volume below to a hostPath. That is one mount per node
-        # instead of one per pod lifecycle, at the cost of a shared binder
-        # instance and a fleet-wide deploy.
-        - name: mount-binderfs
-          image: ${redroid_initcontainer_image}
-          command:
-            - sh
-            - -c
-            - mount -t binder none /dev/binderfs && ls -l /dev/binderfs/
-          securityContext:
-            privileged: true
-          volumeMounts:
-            - name: binderfs
-              mountPath: /dev/binderfs
-              mountPropagation: Bidirectional
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -110,24 +76,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
-            - name: binderfs
-              mountPath: /dev/binderfs
-              mountPropagation: HostToContainer
-            # Kubernetes mounts /sys/fs/cgroup read-only even for privileged
-            # pods, unlike `docker run --privileged`. Android init's
-            # createProcessGroup() then fails with ENOENT and ueventd dies, so
-            # the host hierarchy has to come in writable. This is the privileged
-            # surface that reaches the node: keep this workload on one node and
-            # treat it as trusted-but-contained.
-            - name: cgroup
-              mountPath: /sys/fs/cgroup
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: redroid-data
-        - name: binderfs
-          emptyDir: {}
-        - name: cgroup
-          hostPath:
-            path: /sys/fs/cgroup
-            type: Directory

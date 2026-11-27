@@ -18,8 +18,6 @@ data:
   # Note the ABI is x86_64 only: an app shipping arm64-only native libraries
   # needs NDK translation, which these images do not carry.
   redroid_image: "redroid/redroid:12.0.0_64only-latest@sha256:a6c464bbedcf1dcb67dbf91f329fbb19bee5b50631f0ca6bda6ed7c41b0e64e2"
-  # Any small image with util-linux mount; only used to create the binderfs mount.
-  redroid_initcontainer_image: "alpine:3.23"
   # 1080x2340 @ 420dpi mirrors the OnePlus 8 Pro this automation was written
   # against, so UI-tree geometry ported from the phone needs no retuning.
   redroid_width: "1080"
