@@ -22,6 +22,7 @@ metadata:
   name: status-dashboard-postgres
   namespace: ${status_dashboard_namespace}
 spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:19.0-system-trixie@sha256:04aba475dfd2ee7ad4a8ad22e77a3b5597cba7f48437ba014e9730e87d00ae4b
   instances: ${status_dashboard_postgres_instances:=3}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
