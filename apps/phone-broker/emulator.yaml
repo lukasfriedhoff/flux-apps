@@ -59,10 +59,11 @@ spec:
           image: ${phone_broker_image}
           imagePullPolicy: IfNotPresent
           env:
-            # Own adb server on loopback; the client auto-starts it and the
-            # broker starts it explicitly so a failure shows up in the log.
+            # Own adb server on loopback. The spec must say "localhost": adb only
+            # auto-starts a server for localhost or Unix-socket specs and answers
+            # "cannot start server on remote host" for 127.0.0.1 (socket_spec.cpp).
             - name: PHONE_BROKER_ADB_SOCKET
-              value: tcp:127.0.0.1:5037
+              value: tcp:localhost:5037
             - name: PHONE_BROKER_ADB_OWN_SERVER
               value: "true"
             # The emulator's adbd. Reconnected whenever the device is not `device`.
