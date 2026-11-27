@@ -5,7 +5,7 @@
 #
 #   * The device is adb-over-TCP (the emulator Service on 5555), so there is no
 #     node adb socket to share. The broker runs ITS OWN adb server inside the
-#     pod (--adb-socket tcp:127.0.0.1:5037, own-server mode) and `adb connect`s
+#     pod (--adb-socket tcp:localhost:5037, own-server mode) and `adb connect`s
 #     the Service address at start and whenever the device is not `device`.
 #   * It authenticates with the key the emulator's AVD was created with: the
 #     same Secret the emulator's initContainer seeds (android-emulator-adbkey,
