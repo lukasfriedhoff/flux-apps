@@ -10,7 +10,7 @@ spec:
   # over to an older build and immich refused to start ("database has
   # pgvector 0.8.6 activated, instance only has 0.8.5"). Renovate bumps the
   # digest; CNPG then rolls every instance to the same build.
-  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie@sha256:4b384608950050622a7ee9cd5057b45c67a96ada3859fc9b7d839f54c11b9425
+  imageName: ghcr.io/cloudnative-pg/postgresql:19.0-system-trixie@sha256:04aba475dfd2ee7ad4a8ad22e77a3b5597cba7f48437ba014e9730e87d00ae4b
   instances: ${immich_photos_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
