@@ -19,3 +19,8 @@ data:
       # and `docker compose` inside workflows just work.
       docker_host: automount
       force_pull: false
+      # Named volumes a workflow may mount. The nix repo's CI keeps its /nix
+      # store in `ci-nix-store-<nix version>` (on the dind PVC) so runs stop
+      # re-downloading every flake input from scratch.
+      valid_volumes:
+        - ci-nix-store-*
