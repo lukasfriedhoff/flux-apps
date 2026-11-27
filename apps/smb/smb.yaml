@@ -43,9 +43,9 @@ spec:
             - name: GROUP_scan
               value: "1289"
             - name: SAMBA_VOLUME_CONFIG_public
-              value: "[Scan]; path=/shares/scan; valid users = printer, nextcloud; guest ok = no; read only = no; browseable = yes; force group = scan"
+              value: "[Scan]; path=/shares/scan; valid users = printer, nextcloud; guest ok = no; read only = no; browseable = yes; force group = scan; create mask = 0664; force create mode = 0660; directory mask = 2775; force directory mode = 2770"
             - name: SAMBA_VOLUME_CONFIG_kiosk
-              value: "[kiosk_scan]; path=/shares/kiosk_scan; valid users = printer, nextcloud; guest ok = no; read only = no; browseable = yes; force group = scan"
+              value: "[kiosk_scan]; path=/shares/kiosk_scan; valid users = printer, nextcloud; guest ok = no; read only = no; browseable = yes; force group = scan; create mask = 0664; force create mode = 0660; directory mask = 2775; force directory mode = 2770"
           ports:
             - containerPort: 445
               protocol: TCP
