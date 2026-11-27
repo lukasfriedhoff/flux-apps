@@ -4,7 +4,7 @@ metadata:
   name: synapsedb
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:19.0-system-trixie@sha256:04aba475dfd2ee7ad4a8ad22e77a3b5597cba7f48437ba014e9730e87d00ae4b
   instances: ${matrix_synapse_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
@@ -59,7 +59,7 @@ metadata:
   name: whatsappdb
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:19.0-system-trixie@sha256:04aba475dfd2ee7ad4a8ad22e77a3b5597cba7f48437ba014e9730e87d00ae4b
   instances: ${matrix_whatsappdb_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
@@ -114,7 +114,7 @@ metadata:
   name: telegramdb
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:19.0-system-trixie@sha256:04aba475dfd2ee7ad4a8ad22e77a3b5597cba7f48437ba014e9730e87d00ae4b
   instances: ${matrix_telegramdb_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
@@ -169,7 +169,7 @@ metadata:
   name: signaldbprivate
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:19.0-system-trixie@sha256:04aba475dfd2ee7ad4a8ad22e77a3b5597cba7f48437ba014e9730e87d00ae4b
   instances: ${matrix_signaldb_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:

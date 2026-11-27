@@ -4,7 +4,7 @@ metadata:
   name: matrix-mas-postgres
   namespace: matrix
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:18-system-trixie
+  imageName: ghcr.io/cloudnative-pg/postgresql:19.0-system-trixie@sha256:04aba475dfd2ee7ad4a8ad22e77a3b5597cba7f48437ba014e9730e87d00ae4b
   instances: ${matrix_mas_postgres_instances:=1}
   primaryUpdateStrategy: unsupervised
   inheritedMetadata:
