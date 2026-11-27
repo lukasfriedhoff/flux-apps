@@ -77,11 +77,14 @@ spec:
             # under Docker because a named volume is seeded from the image on
             # first use. A Kubernetes PVC is not: mounted there it hides the
             # image's entrypoint (…/docker-android/mixins/scripts/run.sh → exit
-            # 127, CrashLoopBackOff). The AVD, installed apps and logins live in
-            # ~/.android, so persist exactly that and keep the scripts from the
-            # image — which also means an image bump never runs stale scripts.
+            # 127, CrashLoopBackOff). The emulator writes its AVD — userdata
+            # with installed apps and logins, hardware-qemu.ini — to
+            # ~/emulator (verified on the running pod; ~/.android only holds
+            # the adb keys), so persist exactly that directory, created at
+            # runtime, and keep the scripts from the image — which also means
+            # an image bump never runs stale scripts.
             - name: data
-              mountPath: /home/androidusr/.android
+              mountPath: /home/androidusr/emulator
       volumes:
         - name: kvm
           hostPath:
