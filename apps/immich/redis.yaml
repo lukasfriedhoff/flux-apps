@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: valkey
-          image: valkey/valkey:9.2.0-alpine
+          image: valkey/valkey:9.2.1-alpine
           command:
             - /bin/sh
             - -ec
