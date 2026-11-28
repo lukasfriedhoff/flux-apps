@@ -1,0 +1,19 @@
+# Appended to the AVD's config.ini by the image when it creates the AVD
+# (EMULATOR_CONFIG_PATH). Upstream decides "AVD already exists" by grepping
+# config.ini for `hw.device.name = <EMULATOR_DEVICE>` verbatim, but avdmanager
+# writes the device id (`pixel_8`), so with any Pixel profile the check never
+# matches: every container start re-runs `avdmanager create -f` with
+# `-wipe-data` and the device loses accounts, apps and adb trust (observed
+# 2026-11-28: a node move erased a Google login). Writing the expected line
+# once makes the check pass on every later start. The duplicate key is
+# harmless: the emulator keeps the last value and only uses it as metadata.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: android-emulator-config
+  namespace: android
+  labels:
+    app.kubernetes.io/name: android-emulator
+data:
+  config-override.ini: |
+    hw.device.name = ${android_emulator_device}

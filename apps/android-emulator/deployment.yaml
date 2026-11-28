@@ -48,7 +48,22 @@ spec:
             - |
               install -m 0600 -o 1300 -g 1301 /adbkey/adbkey /dot-android/adbkey
               install -m 0644 -o 1300 -g 1301 /adbkey/adbkey.pub /dot-android/adbkey.pub
-              chown 1300:1301 /dot-android
+              # The AVD registration lives in ~/.android/avd/<name>.ini and is
+              # lost with this emptyDir. Once the AVD exists (see
+              # configmap.yaml), upstream no longer runs avdmanager, so the
+              # emulator would not find @<name> without it. avdmanager -f
+              # overwrites this file on a genuinely fresh volume.
+              name="$(printf '%s' "$EMULATOR_DEVICE" | tr 'A-Z ' 'a-z_')_$EMULATOR_ANDROID_VERSION"
+              mkdir -p /dot-android/avd
+              printf 'avd.ini.encoding=UTF-8\npath=/home/androidusr/emulator\ntarget=android-%s\n' "$EMULATOR_API_LEVEL" > "/dot-android/avd/$name.ini"
+              chown -R 1300:1301 /dot-android
+          env:
+            - name: EMULATOR_DEVICE
+              value: ${android_emulator_device}
+            - name: EMULATOR_ANDROID_VERSION
+              value: "${android_emulator_android_version:=11.0}"
+            - name: EMULATOR_API_LEVEL
+              value: "${android_emulator_api_level:=30}"
           volumeMounts:
             - name: adbkey
               mountPath: /adbkey
@@ -72,6 +87,9 @@ spec:
             # invalidates the quick-boot snapshot: one cold boot, data kept.
             - name: EMULATOR_ADDITIONAL_ARGS
               value: "${android_emulator_additional_args:=-cores 4 -memory 4096}"
+            # See configmap.yaml: keeps upstream from wiping the AVD on restart.
+            - name: EMULATOR_CONFIG_PATH
+              value: /config/config-override.ini
           ports:
             - name: novnc
               containerPort: 6080
@@ -120,6 +138,9 @@ spec:
               mountPath: /home/androidusr/emulator
             - name: dot-android
               mountPath: /home/androidusr/.android
+            - name: config-override
+              mountPath: /config
+              readOnly: true
       volumes:
         - name: kvm
           hostPath:
@@ -130,6 +151,9 @@ spec:
             claimName: android-emulator-data
         - name: dot-android
           emptyDir: {}
+        - name: config-override
+          configMap:
+            name: android-emulator-config
         - name: adbkey
           secret:
             secretName: ${android_emulator_adbkey_secret}

@@ -17,6 +17,9 @@ data:
   # 1080x2340 @ 420 geometry the automation was tuned on; its UI-tree parsing is
   # proportional anyway.
   android_emulator_device: "Pixel 8"
+  # Must match the image tag; used to register the AVD (~/.android/avd/<name>.ini).
+  android_emulator_android_version: "11.0"
+  android_emulator_api_level: "30"
   android_emulator_host: "android"
   android_emulator_node: "srv1"
   # Any small image with coreutils `install`; only copies the adb identity.

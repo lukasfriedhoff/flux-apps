@@ -8,3 +8,4 @@ resources:
   - pvc.yaml
   - service-adb-lan.yaml
   - network-policy.yaml
+  - configmap.yaml
