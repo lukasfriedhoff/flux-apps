@@ -11,7 +11,9 @@ data:
   # native bridge at all, and arm-only apps (Bumble ships arm64-v8a/armeabi-v7a
   # only) cannot install there. 14–17 Play images exist only in the paid "pro"
   # repo. Pinned by digest.
-  android_emulator_image: "budtmo/docker-android:emulator_playstore_11.0_v3.9.1-p2@sha256:93531721c87fbc39c90ebde7da13ca27656df004ecbec4fa42bc386f382025d8"
+  # Our derivative with KasmVNC instead of noVNC (phone-broker repo,
+  # images/android-emulator), built FROM that budtmo digest.
+  android_emulator_image: "harbor.h4xx.io/library/android-emulator:sha-9b5d618b@sha256:a87f70b88264a8144115af9cb5e13424cccf261c56b1078aa0b44afc988b5e39"
   # Device profile from the image's skin set (Nexus 4/5/7/One/S, Galaxy S6–S10,
   # Pixel C, Pixel 8, Pixel 9). Pixel 8 = 1080x2400 @ 420, the closest to the
   # 1080x2340 @ 420 geometry the automation was tuned on; its UI-tree parsing is
@@ -30,7 +32,11 @@ data:
   # Guest sizing. The AVD ships with 3 vCPUs / 2 GB, which leaves an Android 11
   # Play image swapping; -cores/-memory override it at runtime. Container limits
   # must cover the guest RAM plus qemu and the software renderer (~2-3 GB).
-  android_emulator_additional_args: "-cores 4 -memory 4096"
+  # -skin WxH -fixed-scale: bezel-free 1:1 phone window (the AVD's pixel_8
+  # skin would otherwise open at 0.38 zoom). Geometry of the X screen below.
+  android_emulator_additional_args: "-cores 4 -memory 4096 -skin 1080x2400 -fixed-scale"
+  android_emulator_screen_width: "1240"
+  android_emulator_screen_height: "2540"
   android_emulator_requests_cpu: "2000m"
   android_emulator_requests_memory: "6Gi"
   android_emulator_limits_cpu: "6000m"

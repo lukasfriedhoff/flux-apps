@@ -77,6 +77,10 @@ spec:
         - name: emulator
           # Google Play Store image of the official Android Emulator, run under
           # KVM. redroid was dropped: no video encoder, no Play, x86-only.
+          # The image is our derivative of budtmo/docker-android that serves
+          # the screen with KasmVNC (Xkasmvnc as display :0, WebP/JPEG web
+          # client on 6080) instead of Xvfb + x11vnc + websockify + noVNC;
+          # built in phone-broker/images/android-emulator.
           image: ${android_emulator_image}
           imagePullPolicy: IfNotPresent
           env:
@@ -84,6 +88,18 @@ spec:
               value: ${android_emulator_device}
             - name: WEB_VNC
               value: "true"
+            # X screen behind KasmVNC. The emulator pins its window at
+            # (100,100); openbox adds a 20 px title bar and the emulator
+            # toolbar sits 54 px to the right, so 1240x2540 is the smallest
+            # screen that shows the 1080x2400 phone 1:1 with everything around
+            # it (needs -skin 1080x2400 -fixed-scale in the extra args). The
+            # Kasm client scales it into any browser. Numbers go through the
+            # quote helper: a bare 1240 comes back from kustomize build as an
+            # int and the API server rejects it for an env value.
+            - name: SCREEN_WIDTH
+              value: ${quote}${android_emulator_screen_width:=1240}${quote}
+            - name: SCREEN_HEIGHT
+              value: ${quote}${android_emulator_screen_height:=2540}${quote}
             # Extra emulator flags. -cores/-memory override the AVD's 3 vCPU /
             # 2 GB defaults at runtime without touching config.ini (2 GB left
             # the Play image 600 MB deep in swap). A changed RAM size only
@@ -94,6 +110,8 @@ spec:
             - name: EMULATOR_CONFIG_PATH
               value: /config/config-override.ini
           ports:
+            # Port name kept from the noVNC days; Service and Ingress refer
+            # to it. KasmVNC serves its client and the WebSocket on it.
             - name: novnc
               containerPort: 6080
               protocol: TCP
