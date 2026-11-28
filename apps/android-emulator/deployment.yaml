@@ -53,17 +53,20 @@ spec:
               # configmap.yaml), upstream no longer runs avdmanager, so the
               # emulator would not find @<name> without it. avdmanager -f
               # overwrites this file on a genuinely fresh volume.
-              name="$(printf '%s' "$EMULATOR_DEVICE" | tr 'A-Z ' 'a-z_')_$EMULATOR_ANDROID_VERSION"
+              name="$(printf '%s' "$EMULATOR_DEVICE" | tr 'A-Z ' 'a-z_')$EMULATOR_AVD_SUFFIX"
               mkdir -p /dot-android/avd
-              printf 'avd.ini.encoding=UTF-8\npath=/home/androidusr/emulator\ntarget=android-%s\n' "$EMULATOR_API_LEVEL" > "/dot-android/avd/$name.ini"
+              printf 'avd.ini.encoding=UTF-8\npath=/home/androidusr/emulator\ntarget=%s\n' "$EMULATOR_AVD_TARGET" > "/dot-android/avd/$name.ini"
               chown -R 1300:1301 /dot-android
           env:
             - name: EMULATOR_DEVICE
               value: ${android_emulator_device}
-            - name: EMULATOR_ANDROID_VERSION
-              value: "${android_emulator_android_version:=11.0}"
-            - name: EMULATOR_API_LEVEL
-              value: "${android_emulator_api_level:=30}"
+            # Prefixed on purpose: a bare 11.0 / 30 loses its quotes in
+            # kustomize build and comes back as a number, which the API
+            # server rejects for an env value.
+            - name: EMULATOR_AVD_SUFFIX
+              value: _${android_emulator_android_version:=11.0}
+            - name: EMULATOR_AVD_TARGET
+              value: android-${android_emulator_api_level:=30}
           volumeMounts:
             - name: adbkey
               mountPath: /adbkey
