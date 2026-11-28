@@ -57,6 +57,12 @@ spec:
               mkdir -p /dot-android/avd
               printf 'avd.ini.encoding=UTF-8\npath=/home/androidusr/emulator\ntarget=%s\n' "$EMULATOR_AVD_TARGET" > "/dot-android/avd/$name.ini"
               chown -R 1300:1301 /dot-android
+              # Stale emulator locks from a killed pod: the lock records the
+              # owner's PID, a fresh container reuses low PIDs, so the "owner
+              # still alive" check can pass by accident and the emulator
+              # refuses to start ("Running multiple emulators with the same
+              # AVD"). Nothing else can hold this RWO volume while this runs.
+              find /avd -maxdepth 1 -name '*.lock' -exec rm -rf {} +
           env:
             - name: EMULATOR_DEVICE
               value: ${android_emulator_device}
@@ -73,6 +79,8 @@ spec:
               readOnly: true
             - name: dot-android
               mountPath: /dot-android
+            - name: data
+              mountPath: /avd
       containers:
         - name: emulator
           # Google Play Store image of the official Android Emulator, run under
