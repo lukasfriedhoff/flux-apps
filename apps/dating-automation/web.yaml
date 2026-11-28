@@ -25,7 +25,9 @@ spec:
         app.kubernetes.io/component: web
         app.kubernetes.io/part-of: android-platform
     spec:
-      automountServiceAccountToken: false
+      # The Control tab creates Jobs and reads their logs (web-rbac.yaml).
+      serviceAccountName: dating-automation-web
+      automountServiceAccountToken: true
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -70,6 +72,37 @@ spec:
               value: /tmp
             - name: PYTHONUNBUFFERED
               value: "1"
+            # --- run launcher (Control tab): one Job per requested run ---------
+            - name: DATING_RUNNER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DATING_RUNNER_IMAGE
+              value: ${dating_automation_image}
+            # Devices the UI offers. lease=job: the Job's CLI takes its own
+            # broker lease (emulator). lease=human: the dashboard holds a human
+            # lease for the Job's lifetime and the CLI runs without display
+            # management (the daily phone: unlocked by hand, screen on).
+            - name: DATING_RUNNER_DEVICES
+              value: >-
+                {"emulator": {"label": "Android Emulator (cluster)",
+                "broker_url": "${dating_automation_broker_url:=http://phone-broker-emulator.android.svc.cluster.local:8080}",
+                "adb_connect": "${dating_automation_adb_connect:=android-emulator.android.svc.cluster.local:5555}",
+                "lease": "job", "display_management": true},
+                "oneplus8": {"label": "OnePlus 8 Pro (WireGuard)",
+                "broker_url": "${dating_automation_oneplus8_broker_url:=http://phone-broker-oneplus8.android.svc.cluster.local:8080}",
+                "adb_connect": "${phone_broker_oneplus8_adb_connect}",
+                "lease": "human", "display_management": false}}
+            - name: DATING_RUNNER_ADBKEY_SECRET
+              value: ${dating_automation_adbkey_secret:=dating-adbkey}
+            - name: DATING_RUNNER_DATA_PVC
+              value: dating-automation-data
+            - name: DATING_RUNNER_POSTGRES_SECRET
+              value: ${dating_automation_postgres_secret:=dating-postgres-app}
+            - name: DATING_RUNNER_S3_SECRET
+              value: ${dating_automation_s3_secret:=dating-s3}
+            - name: DATING_RUNNER_MAX_SECONDS
+              value: "${dating_automation_run_max_seconds:=10800}"
           ports:
             - name: http
               containerPort: 8088

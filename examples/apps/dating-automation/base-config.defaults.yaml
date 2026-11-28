@@ -74,3 +74,6 @@ data:
   dating_automation_web_requests_memory: "128Mi"
   dating_automation_web_limits_cpu: "500m"
   dating_automation_web_limits_memory: "512Mi"
+  # Control tab: broker for runs on the daily phone, and the Job deadline.
+  dating_automation_oneplus8_broker_url: "http://phone-broker-oneplus8.android.svc.cluster.local:8080"
+  dating_automation_run_max_seconds: "10800"

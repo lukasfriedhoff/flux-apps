@@ -1,0 +1,40 @@
+# The dashboard's Control tab launches device runs as Jobs in this namespace
+# and reads their logs; nothing more. Cluster scope is never needed.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dating-automation-web
+  namespace: ${dating_automation_namespace:=dating}
+  labels:
+    app.kubernetes.io/name: dating-automation
+    app.kubernetes.io/component: web
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dating-automation-web-runner
+  namespace: ${dating_automation_namespace:=dating}
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dating-automation-web-runner
+  namespace: ${dating_automation_namespace:=dating}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dating-automation-web-runner
+subjects:
+  - kind: ServiceAccount
+    name: dating-automation-web
+    namespace: ${dating_automation_namespace:=dating}

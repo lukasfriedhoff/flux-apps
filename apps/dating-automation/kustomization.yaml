@@ -20,3 +20,4 @@ resources:
   - postgres.yaml
   - backup-bucket-bootstrap.yaml
   - web.yaml
+  - web-rbac.yaml
