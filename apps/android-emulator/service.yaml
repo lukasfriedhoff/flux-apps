@@ -6,9 +6,10 @@ metadata:
   labels:
     app.kubernetes.io/name: android-emulator
 spec:
-  # ClusterIP only. adb on 5555 is an unauthenticated root shell on the
-  # device; noVNC is reached through the Ingress behind Authelia, adb only
-  # from inside the cluster (phone-broker / automation).
+  # Cluster-internal endpoints: noVNC is reached through the Ingress behind
+  # Authelia, adb by the phone-broker and the automation jobs. Interactive
+  # scrcpy clients use the LAN VIP in service-adb-lan.yaml instead; the
+  # NetworkPolicy decides who gets to port 5555 at all.
   type: ClusterIP
   selector:
     app.kubernetes.io/name: android-emulator

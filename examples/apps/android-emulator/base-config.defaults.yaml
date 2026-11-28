@@ -24,9 +24,19 @@ data:
   # Secret (ns android) with keys adbkey + adbkey.pub: the device identity shared
   # with the node adb server / phone-broker. Lives in the cluster repo (sops).
   android_emulator_adbkey_secret: "android-emulator-adbkey"
+  # Guest sizing. The AVD ships with 3 vCPUs / 2 GB, which leaves an Android 11
+  # Play image swapping; -cores/-memory override it at runtime. Container limits
+  # must cover the guest RAM plus qemu and the software renderer (~2-3 GB).
+  android_emulator_additional_args: "-cores 4 -memory 4096"
   android_emulator_requests_cpu: "2000m"
   android_emulator_requests_memory: "6Gi"
   android_emulator_limits_cpu: "6000m"
   android_emulator_limits_memory: "10Gi"
+  # adb for interactive scrcpy clients: MetalLB VIP (services pool) reachable
+  # only from this CIDR (WireGuard clients); adbd key auth applies on top.
+  android_emulator_adb_vip: "10.3.20.44"
+  android_emulator_adb_client_cidr: "10.1.90.0/24"
+  # Node subnet the kubelet probes arrive from.
+  android_emulator_node_cidr: "10.3.30.0/24"
   android_emulator_storage_class_name: "longhorn-ssd-rwo-2r"
   android_emulator_data_size: "32Gi"

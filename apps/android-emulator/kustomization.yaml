@@ -6,3 +6,5 @@ resources:
   - service.yaml
   - ingress.yaml
   - pvc.yaml
+  - service-adb-lan.yaml
+  - network-policy.yaml

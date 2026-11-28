@@ -1,0 +1,46 @@
+# Who may talk to the emulator pod. Egress stays open: the device needs Play
+# Store, GMS and the apps' own backends.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: android-emulator
+  namespace: android
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: android-emulator
+  policyTypes:
+    - Ingress
+  ingress:
+    # noVNC only through Traefik, which has Authelia in front.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${traefik_namespace:=traefik}
+      ports:
+        - port: 6080
+          protocol: TCP
+    # kubelet probes come from the node: readiness on noVNC, liveness on adb.
+    - from:
+        - ipBlock:
+            cidr: ${android_emulator_node_cidr:=10.3.30.0/24}
+      ports:
+        - port: 6080
+          protocol: TCP
+        - port: 5555
+          protocol: TCP
+    # adb: the phone-broker (same namespace), the automation jobs, and the
+    # interactive scrcpy clients coming in via the LAN VIP from the WireGuard
+    # client subnet. adbd still demands a trusted RSA key on top of this.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: android
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${phone_broker_jobs_namespace:=dating}
+        - ipBlock:
+            cidr: ${android_emulator_adb_client_cidr:=10.1.90.0/24}
+      ports:
+        - port: 5555
+          protocol: TCP

@@ -1,0 +1,30 @@
+# adb for interactive clients (scrcpy on the PC, a scrcpy client on the phone)
+# over the WireGuard client subnet: a MetalLB VIP so the address stays stable
+# whichever node runs the emulator. Port 5555 is the device's adbd, which
+# authenticates clients by RSA key (ro.adb.secure=1 on this image), unlike
+# an adb *server* port, which has no authentication at all. The NetworkPolicy
+# restricts who may even reach it.
+#
+# externalTrafficPolicy Local: the VIP is announced from the node holding the
+# pod and the client's real source IP reaches the pod, which is what lets the
+# NetworkPolicy's ipBlock match.
+apiVersion: v1
+kind: Service
+metadata:
+  name: android-emulator-adb-lan
+  namespace: android
+  labels:
+    app.kubernetes.io/name: android-emulator
+  annotations:
+    metallb.io/loadBalancerIPs: ${android_emulator_adb_vip:=10.3.20.44}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  allocateLoadBalancerNodePorts: false
+  selector:
+    app.kubernetes.io/name: android-emulator
+  ports:
+    - name: adb
+      protocol: TCP
+      port: 5555
+      targetPort: adb
