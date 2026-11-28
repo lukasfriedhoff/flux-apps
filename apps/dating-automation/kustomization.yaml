@@ -1,9 +1,10 @@
 # dating-automation on the cluster (git.h4xx.io/lukasf/dating-automation).
 #
-# Phase 3 skeleton: one CronJob that runs the Bumble pet-filter swipe mode on
-# the Android Emulator (apps/android-emulator) behind the phone-broker lease
-# (apps/phone-broker). Postgres (CNPG), object storage (Garage) and the web UI
-# follow once the device side has run supervised.
+# One CronJob runs the Bumble pet-filter swipe mode on the Android Emulator
+# (apps/android-emulator) behind the phone-broker lease (apps/phone-broker)
+# and persists records to the CNPG cluster here (postgres.yaml) and media to
+# the Garage bucket dating-media. Manual runs on the workstation against the
+# real phone write to the same store through MetalLB VIPs. The web UI follows.
 #
 # No Namespace: `dating` is owned by flux-cluster base/namespaces. No
 # `namespace:` transformer; every manifest names its namespace itself. The
@@ -15,3 +16,5 @@ kind: Kustomization
 resources:
   - pvc.yaml
   - cronjob.yaml
+  - postgres.yaml
+  - backup-bucket-bootstrap.yaml

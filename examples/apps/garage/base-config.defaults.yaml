@@ -29,3 +29,7 @@ data:
   # Consumed by the S3 consumers (Loki/Mimir/Tempo/Stalwart) at cutover: flip a
   # consumer's endpoint from ${object_storage_endpoint} (MinIO) to this.
   garage_s3_endpoint: "garage.object-storage.svc.cluster.local:3900"
+  # S3 door for the WireGuard client subnet (manual dating-automation runs on
+  # the workstation): MetalLB VIP from the services pool, source-range limited.
+  garage_s3_lan_vip: "10.3.20.45"
+  garage_s3_lan_client_cidr: "10.1.90.0/24"

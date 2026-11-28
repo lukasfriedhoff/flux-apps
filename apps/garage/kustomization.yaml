@@ -4,4 +4,5 @@ namespace: ${garage_namespace}
 resources:
   - configmap.yaml
   - services.yaml
+  - service-s3-lan.yaml
   - deployments.yaml

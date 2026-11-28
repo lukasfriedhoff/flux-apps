@@ -1,0 +1,97 @@
+# Records store for dating-automation runs started with --persist: app_runs,
+# profiles, media_blobs, observations, decisions, matches (schema owned by the
+# app, db.py). Media bytes go to Garage, not here. One instance: the dataset
+# is small and the writers are the CronJob and manual runs from the
+# workstation. Backups go to the storage01 MinIO like every other cluster.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: dating-postgres
+  namespace: ${dating_automation_namespace:=dating}
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:19.0-system-trixie@sha256:04aba475dfd2ee7ad4a8ad22e77a3b5597cba7f48437ba014e9730e87d00ae4b
+  instances: ${dating_postgres_instances:=1}
+  primaryUpdateStrategy: unsupervised
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+  bootstrap:
+    initdb:
+      database: dating
+      owner: dating
+      # The app user's password comes from a sops Secret so the workstation
+      # and the cluster share one source. A user-supplied secret carries no
+      # `uri` key: clients compose DATABASE_URL and pass PGPASSWORD.
+      secret:
+        name: ${dating_automation_postgres_secret:=dating-postgres-app}
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS pgcrypto;
+  managed:
+    roles:
+      # Keeps the role's password in step with the Secret after a rotation.
+      - name: dating
+        ensure: present
+        login: true
+        passwordSecret:
+          name: ${dating_automation_postgres_secret:=dating-postgres-app}
+    services:
+      additional:
+        # Door for manual runs on the workstation against the real phone:
+        # a MetalLB VIP reachable from the WireGuard client subnet only.
+        # Local traffic policy keeps the client's source IP, which is what
+        # loadBalancerSourceRanges filters on. The operator fills selector
+        # and port from the rw service.
+        - selectorType: rw
+          updateStrategy: patch
+          serviceTemplate:
+            metadata:
+              name: dating-postgres-rw-lan
+              annotations:
+                metallb.io/loadBalancerIPs: ${dating_postgres_lan_vip:=10.3.20.46}
+            spec:
+              type: LoadBalancer
+              externalTrafficPolicy: Local
+              allocateLoadBalancerNodePorts: false
+              loadBalancerSourceRanges:
+                - ${dating_postgres_lan_client_cidr:=10.1.90.0/24}
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://${dating_postgres_backup_bucket:=dating-postgres-backup}/${cluster_environment}/${dating_postgres_backup_generation:=}dating-postgres/"
+      endpointURL: "${dating_postgres_backup_endpoint_url:=}"
+      serverName: ${dating_postgres_backup_server_name:=dating-postgres}
+      s3Credentials:
+        accessKeyId:
+          name: ${dating_postgres_backup_credential_secret_name:=dating-postgres-backup-credentials}
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: ${dating_postgres_backup_credential_secret_name:=dating-postgres-backup-credentials}
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "${dating_postgres_backup_retention:=30d}"
+  storage:
+    storageClass: ${dating_postgres_storage_class_name:=longhorn-ssd-rwo-2r}
+    size: ${dating_postgres_size:=5Gi}
+  resources:
+    requests:
+      cpu: ${dating_postgres_requests_cpu:=100m}
+      memory: ${dating_postgres_requests_memory:=256Mi}
+    limits:
+      cpu: ${dating_postgres_limits_cpu:=1000m}
+      memory: ${dating_postgres_limits_memory:=1Gi}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: dating-postgres
+  namespace: ${dating_automation_namespace:=dating}
+spec:
+  schedule: "${dating_postgres_backup_cron:=0 0 2 * * *}"
+  backupOwnerReference: self
+  immediate: false
+  cluster:
+    name: dating-postgres

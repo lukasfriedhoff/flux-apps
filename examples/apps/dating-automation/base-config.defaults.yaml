@@ -38,3 +38,30 @@ data:
   dating_automation_requests_memory: "1Gi"
   dating_automation_limits_cpu: "3000m"
   dating_automation_limits_memory: "3Gi"
+
+  # --- persistence (--persist): CNPG records + Garage media -------------------
+  # Secret (basic-auth: username/password) used by CNPG initdb and the jobs.
+  dating_automation_postgres_secret: "dating-postgres-app"
+  # Secret with AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY for the Garage key.
+  dating_automation_s3_secret: "dating-s3"
+  dating_automation_s3_endpoint_url: "http://garage.object-storage.svc.cluster.local:3900"
+  dating_automation_s3_bucket: "dating-media"
+  dating_automation_s3_prefix: "prod"
+  dating_postgres_instances: "1"
+  dating_postgres_storage_class_name: "longhorn-ssd-rwo-2r"
+  dating_postgres_size: "5Gi"
+  # rw service exposed as a MetalLB VIP for the WireGuard client subnet.
+  dating_postgres_lan_vip: "10.3.20.46"
+  dating_postgres_lan_client_cidr: "10.1.90.0/24"
+  dating_postgres_backup_bucket: "dating-postgres-backup"
+  # REQUIRED per cluster (the storage01 MinIO on homelab).
+  dating_postgres_backup_endpoint_url: ""
+  dating_postgres_backup_generation: ""
+  dating_postgres_backup_server_name: "dating-postgres"
+  dating_postgres_backup_credential_secret_name: "dating-postgres-backup-credentials"
+  dating_postgres_backup_retention: "30d"
+  dating_postgres_backup_cron: "0 0 2 * * *"
+  dating_postgres_requests_cpu: "100m"
+  dating_postgres_requests_memory: "256Mi"
+  dating_postgres_limits_cpu: "1000m"
+  dating_postgres_limits_memory: "1Gi"

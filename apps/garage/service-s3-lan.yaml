@@ -1,0 +1,27 @@
+# S3 door for clients on the WireGuard client subnet (manual dating-automation
+# runs on the workstation upload media here): a MetalLB VIP that stays put
+# whichever node answers. Garage runs one pod per node, so Local traffic
+# policy always finds a local endpoint and keeps the client's source IP,
+# which is what loadBalancerSourceRanges filters on. In-cluster consumers
+# keep using the ClusterIP Service in services.yaml; nothing changes for them.
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage-s3-lan
+  namespace: ${garage_namespace}
+  labels:
+    app.kubernetes.io/name: garage
+  annotations:
+    metallb.io/loadBalancerIPs: ${garage_s3_lan_vip:=10.3.20.45}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  allocateLoadBalancerNodePorts: false
+  loadBalancerSourceRanges:
+    - ${garage_s3_lan_client_cidr:=10.1.90.0/24}
+  selector:
+    app.kubernetes.io/name: garage
+  ports:
+    - name: s3
+      port: 3900
+      targetPort: s3

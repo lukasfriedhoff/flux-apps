@@ -93,6 +93,11 @@ spec:
                 - --cards=${dating_automation_cards:=15}
                 - --analysis-workers=${dating_automation_analysis_workers:=2}
                 - --debug
+                # Records to Postgres, media to Garage (persistence section
+                # in the env below). The decision dir is pinned onto the PVC;
+                # the app's built-in default points at a workstation path.
+                - --persist
+                - --decision-dir=/app/profiles/${dating_automation_app:=bumble}-debug/decisions
               env:
                 - name: PHONE_BROKER_URL
                   value: ${dating_automation_broker_url:=http://phone-broker-emulator.android.svc.cluster.local:8080}
@@ -104,6 +109,34 @@ spec:
                   value: /home/dating
                 - name: PYTHONUNBUFFERED
                   value: "1"
+                # Persistence. The CNPG app secret carries no uri key, so the
+                # URL has no password and PGPASSWORD supplies it (libpq env).
+                - name: DATABASE_URL
+                  value: postgresql://dating@dating-postgres-rw.${dating_automation_namespace:=dating}.svc.cluster.local:5432/dating
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${dating_automation_postgres_secret:=dating-postgres-app}
+                      key: password
+                - name: S3_ENDPOINT_URL
+                  value: ${dating_automation_s3_endpoint_url:=http://garage.object-storage.svc.cluster.local:3900}
+                - name: S3_BUCKET
+                  value: ${dating_automation_s3_bucket:=dating-media}
+                - name: S3_PREFIX
+                  value: ${dating_automation_s3_prefix:=prod}
+                # Garage checks the SigV4 region; it must equal its s3_region.
+                - name: AWS_REGION
+                  value: ${garage_s3_region:=us-east-1}
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${dating_automation_s3_secret:=dating-s3}
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${dating_automation_s3_secret:=dating-s3}
+                      key: AWS_SECRET_ACCESS_KEY
               resources:
                 requests:
                   cpu: ${dating_automation_requests_cpu:=500m}
