@@ -65,3 +65,12 @@ data:
   dating_postgres_requests_memory: "256Mi"
   dating_postgres_limits_cpu: "1000m"
   dating_postgres_limits_memory: "1Gi"
+
+  # --- dashboard (web.yaml): dating-automation-web behind Authelia -------------
+  # Hostname label; public_host_suffix + delegating_domain are appended.
+  dating_automation_web_host: "dating"
+  dating_automation_web_replicas: "1"
+  dating_automation_web_requests_cpu: "50m"
+  dating_automation_web_requests_memory: "128Mi"
+  dating_automation_web_limits_cpu: "500m"
+  dating_automation_web_limits_memory: "512Mi"

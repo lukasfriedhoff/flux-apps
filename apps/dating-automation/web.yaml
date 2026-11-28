@@ -1,0 +1,155 @@
+# The dashboard: dating-automation-web from the same image (profiles, matches,
+# conversations, runs; media streamed from Garage through the server). The
+# app has no authentication of its own, so the Ingress sits behind Authelia
+# like the emulator's noVNC; plain HTTP, so it works through the Cloudflare
+# tunnel from the phone's browser too.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dating-automation-web
+  namespace: ${dating_automation_namespace:=dating}
+  labels:
+    app.kubernetes.io/name: dating-automation
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: android-platform
+spec:
+  replicas: ${dating_automation_web_replicas:=1}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dating-automation
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dating-automation
+        app.kubernetes.io/component: web
+        app.kubernetes.io/part-of: android-platform
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: ${dating_automation_image}
+          imagePullPolicy: IfNotPresent
+          # The image's entrypoint is the CLI; this is the second console script.
+          command: ["dating-automation-web"]
+          args: ["--host", "0.0.0.0", "--port", "8088"]
+          env:
+            - name: DATABASE_URL
+              value: postgresql://dating@dating-postgres-rw.${dating_automation_namespace:=dating}.svc.cluster.local:5432/dating
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${dating_automation_postgres_secret:=dating-postgres-app}
+                  key: password
+            - name: S3_ENDPOINT_URL
+              value: ${dating_automation_s3_endpoint_url:=http://garage.object-storage.svc.cluster.local:3900}
+            - name: S3_BUCKET
+              value: ${dating_automation_s3_bucket:=dating-media}
+            - name: S3_PREFIX
+              value: ${dating_automation_s3_prefix:=prod}
+            - name: AWS_REGION
+              value: ${garage_s3_region:=us-east-1}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ${dating_automation_s3_secret:=dating-s3}
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${dating_automation_s3_secret:=dating-s3}
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: HOME
+              value: /tmp
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 8088
+              protocol: TCP
+          # / is the static page (server alive); /api/summary needs the database.
+          livenessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /api/summary, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: ${dating_automation_web_requests_cpu:=50m}
+              memory: ${dating_automation_web_requests_memory:=128Mi}
+            limits:
+              cpu: ${dating_automation_web_limits_cpu:=500m}
+              memory: ${dating_automation_web_limits_memory:=512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dating-automation-web
+  namespace: ${dating_automation_namespace:=dating}
+  labels:
+    app.kubernetes.io/name: dating-automation
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: dating-automation
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 8088
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dating-automation-web
+  namespace: ${dating_automation_namespace:=dating}
+  annotations:
+    cert-manager.io/cluster-issuer: ${default_cluster_issuer}
+    external-dns.kubernetes.io/target: ${cloudflare_tunnel_hostname}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # No auth in the app: Authelia in front is what makes this publishable.
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authelia-forwardauth-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${dating_automation_web_host:=dating}${public_host_suffix}.${delegating_domain}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dating-automation-web
+                port:
+                  name: http
+  tls:
+    - secretName: dating-automation-web-tls
+      hosts:
+        - ${dating_automation_web_host:=dating}${public_host_suffix}.${delegating_domain}

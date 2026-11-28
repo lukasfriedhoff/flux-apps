@@ -4,7 +4,8 @@
 # (apps/android-emulator) behind the phone-broker lease (apps/phone-broker)
 # and persists records to the CNPG cluster here (postgres.yaml) and media to
 # the Garage bucket dating-media. Manual runs on the workstation against the
-# real phone write to the same store through MetalLB VIPs. The web UI follows.
+# real phone write to the same store through MetalLB VIPs. web.yaml is the
+# dashboard over that store, behind Authelia.
 #
 # No Namespace: `dating` is owned by flux-cluster base/namespaces. No
 # `namespace:` transformer; every manifest names its namespace itself. The
@@ -18,3 +19,4 @@ resources:
   - cronjob.yaml
   - postgres.yaml
   - backup-bucket-bootstrap.yaml
+  - web.yaml
