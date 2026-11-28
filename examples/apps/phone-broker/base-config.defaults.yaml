@@ -26,6 +26,16 @@ data:
   phone_broker_emulator_adb_connect: "android-emulator.android.svc.cluster.local:5555"
   phone_broker_emulator_k8s_lease_name: "phone-emulator"
 
+  # --- oneplus8 instance -------------------------------------------------------
+  # REQUIRED: the phone's adbd (adb tcpip 5555 at its WireGuard address) and
+  # the same address as a /32 for the egress NetworkPolicy.
+  phone_broker_oneplus8_adb_connect: ""
+  phone_broker_oneplus8_device_cidr: ""
+  phone_broker_oneplus8_k8s_lease_name: "phone-oneplus8"
+  # API VIP (MetalLB services pool) + who may reach it (WireGuard clients).
+  phone_broker_oneplus8_api_vip: "10.3.20.47"
+  phone_broker_oneplus8_client_cidr: "10.1.90.0/24"
+
   # --- broker ---------------------------------------------------------------
   phone_broker_lease_ttl: "60s"
   phone_broker_presence_poll: "30s"

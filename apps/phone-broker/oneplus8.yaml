@@ -1,0 +1,191 @@
+# phone-broker-oneplus8 — lease, presence and action gateway for the OnePlus
+# 8 Pro, the daily phone with the live Bumble account.
+#
+# Same shape as emulator.yaml (own adb server in the pod, adb-over-TCP, the
+# one shared automation key), with three differences:
+#
+#   * The device is reached at a FIXED plain-TCP adb port on the phone's
+#     WireGuard address (`adb tcpip 5555`, armed over USB from the workstation
+#     by scripts/run-phone.sh in the dating-automation repo). A phone reboot
+#     drops that port until the next arming; the broker then logs failed
+#     connects and reports the device absent, which is the intended signal.
+#     The address has no inline default on purpose: a wrong default would
+#     silently connect somewhere else.
+#   * Readiness is /healthz (broker alive). A daily phone is locked most of
+#     the time, so /readyz would keep the pod NotReady and stall the Flux
+#     dependency chain. Device state is still enforced per request by the
+#     lease API: a job lease on a locked device gets 503, on a phone in use
+#     423. Manual runs take a `human` lease, which always wins.
+#   * The API also has a LAN door (second Service below, MetalLB VIP limited
+#     to the WireGuard client subnet) so a manual run on the workstation can
+#     take that human lease before it touches the phone.
+#
+# The phone shows "Allow USB debugging?" for this key's fingerprint once;
+# tick "Always allow". The same key is what the dating-automation jobs use.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phone-broker-oneplus8
+  namespace: ${phone_broker_namespace:=android}
+  labels:
+    app.kubernetes.io/name: phone-broker-oneplus8
+    app.kubernetes.io/component: broker
+    app.kubernetes.io/part-of: android-platform
+    h4xx.io/device: oneplus8
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-oneplus8
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: phone-broker-oneplus8
+        app.kubernetes.io/component: broker
+        app.kubernetes.io/part-of: android-platform
+        h4xx.io/device: oneplus8
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: /metrics
+    spec:
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: broker
+          image: ${phone_broker_image}
+          imagePullPolicy: IfNotPresent
+          env:
+            # Own adb server on loopback; the spec must say "localhost" (adb
+            # refuses to start a server for 127.0.0.1).
+            - name: PHONE_BROKER_ADB_SOCKET
+              value: tcp:localhost:5037
+            - name: PHONE_BROKER_ADB_OWN_SERVER
+              value: "true"
+            # The phone's adbd at its WireGuard address. Reconnected whenever
+            # the device is not `device`.
+            - name: PHONE_BROKER_ADB_CONNECT
+              value: ${phone_broker_oneplus8_adb_connect}
+            # Empty = the connect address.
+            - name: PHONE_BROKER_SERIAL
+              value: ""
+            - name: PHONE_BROKER_LISTEN
+              value: ":8080"
+            - name: PHONE_BROKER_LEASE_TTL
+              value: ${phone_broker_lease_ttl:=60s}
+            - name: PHONE_BROKER_PRESENCE_POLL
+              value: ${phone_broker_presence_poll:=30s}
+            - name: PHONE_BROKER_K8S_LEASE_NAME
+              value: ${phone_broker_oneplus8_k8s_lease_name:=phone-oneplus8}
+            - name: PHONE_BROKER_LOG_LEVEL
+              value: ${phone_broker_log_level:=info}
+            # The shared automation key (same Secret the emulator trusts).
+            - name: ADB_VENDOR_KEYS
+              value: /adbkey/adbkey
+            - name: HOME
+              value: /tmp
+            - name: GOMEMLIMIT
+              value: ${phone_broker_gomemlimit:=100MiB}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 3
+          # Broker alive, not device state (see the header).
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 2
+          resources:
+            requests:
+              cpu: ${phone_broker_requests_cpu:=25m}
+              memory: ${phone_broker_requests_memory:=64Mi}
+            limits:
+              cpu: ${phone_broker_limits_cpu:=500m}
+              memory: ${phone_broker_limits_memory:=192Mi}
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: adbkey
+              mountPath: /adbkey
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: adbkey
+          secret:
+            secretName: ${android_emulator_adbkey_secret:=android-emulator-adbkey}
+            defaultMode: 0440
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+---
+# http://phone-broker-oneplus8.android.svc.cluster.local:8080 — the address
+# in-cluster automation talks to. Never an Ingress.
+apiVersion: v1
+kind: Service
+metadata:
+  name: phone-broker-oneplus8
+  namespace: ${phone_broker_namespace:=android}
+  labels:
+    app.kubernetes.io/name: phone-broker-oneplus8
+    app.kubernetes.io/part-of: android-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: phone-broker-oneplus8
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+---
+# LAN door for the workstation's manual runs (human lease): MetalLB VIP,
+# Local traffic policy (keeps the source IP the NetworkPolicy ipBlock and the
+# source ranges filter on), reachable from the WireGuard client subnet only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: phone-broker-oneplus8-lan
+  namespace: ${phone_broker_namespace:=android}
+  labels:
+    app.kubernetes.io/name: phone-broker-oneplus8
+    app.kubernetes.io/part-of: android-platform
+  annotations:
+    metallb.io/loadBalancerIPs: ${phone_broker_oneplus8_api_vip:=10.3.20.47}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  allocateLoadBalancerNodePorts: false
+  loadBalancerSourceRanges:
+    - ${phone_broker_oneplus8_client_cidr:=10.1.90.0/24}
+  selector:
+    app.kubernetes.io/name: phone-broker-oneplus8
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

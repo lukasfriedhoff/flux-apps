@@ -102,10 +102,12 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 10
             failureThreshold: 3
-          # /readyz = device connected, booted, authorised, unlocked. A fresh
-          # emulator boot sits on its lock screen: NotReady until /wake runs.
+          # Readiness = the broker is alive, NOT device state: a sleeping or
+          # rebooting emulator would keep the pod NotReady and stall the Flux
+          # dependency chain behind phone-broker-app. The lease API enforces
+          # device state per request (/readyz for callers, 503 on a job lease).
           readinessProbe:
-            httpGet: { path: /readyz, port: http }
+            httpGet: { path: /healthz, port: http }
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 2

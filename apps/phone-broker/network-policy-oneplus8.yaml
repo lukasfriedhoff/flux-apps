@@ -1,0 +1,114 @@
+# phone-broker-oneplus8 network fence. Same five policies as the emulator
+# instance (network-policy.yaml), two flows differ:
+#
+#   ingress  <- additionally the WireGuard client subnet on 8080, arriving via
+#               the LAN VIP with its source IP intact (Local traffic policy).
+#   egress   -> the phone's WireGuard address on 5555 instead of a pod.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-oneplus8-default-deny
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-oneplus8
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-oneplus8-allow-clients
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-oneplus8
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${phone_broker_namespace:=android}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${phone_broker_jobs_namespace:=dating}
+        - ipBlock:
+            cidr: ${phone_broker_oneplus8_client_cidr:=10.1.90.0/24}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-oneplus8-allow-metrics-from-monitoring
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-oneplus8
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${monitoring_namespace:=monitoring}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-oneplus8-allow-kubelet-probes
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-oneplus8
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: ${phone_broker_node_cidr:=10.3.30.0/24}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: phone-broker-oneplus8-allow-device-egress
+  namespace: ${phone_broker_namespace:=android}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: phone-broker-oneplus8
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: ${phone_broker_oneplus8_device_cidr}
+      ports:
+        - protocol: TCP
+          port: 5555
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
