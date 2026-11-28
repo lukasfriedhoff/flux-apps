@@ -34,7 +34,9 @@ data:
   # must cover the guest RAM plus qemu and the software renderer (~2-3 GB).
   # -skin WxH -fixed-scale: bezel-free 1:1 phone window (the AVD's pixel_8
   # skin would otherwise open at 0.38 zoom). Geometry of the X screen below.
-  android_emulator_additional_args: "-cores 4 -memory 4096 -skin 1080x2400 -fixed-scale"
+  # -no-snapshot: cold boot from disk; a killed pod must not roll back to a
+  # stale quick-boot snapshot (it reverts the disk too).
+  android_emulator_additional_args: "-cores 4 -memory 4096 -skin 1080x2400 -fixed-scale -no-snapshot"
   android_emulator_screen_width: "1240"
   android_emulator_screen_height: "2540"
   android_emulator_requests_cpu: "2000m"

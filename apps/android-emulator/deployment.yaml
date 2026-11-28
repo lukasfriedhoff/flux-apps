@@ -18,6 +18,8 @@ spec:
       labels:
         app.kubernetes.io/name: android-emulator
     spec:
+      # preStop below powers the guest off cleanly; give it time.
+      terminationGracePeriodSeconds: 90
       securityContext:
         # The image runs as androidusr (uid 1300, gid 1301) even though the
         # container is privileged; a fresh Longhorn volume is root-owned, so
@@ -131,6 +133,18 @@ spec:
             # cgroup only admits it for a privileged container; the pod runs
             # on one node, behind a ClusterIP, with no hostPath but the device.
             privileged: true
+          lifecycle:
+            preStop:
+              # Quick-boot snapshots are off (-no-snapshot in the extra args):
+              # a killed pod would otherwise load the last saved snapshot and
+              # roll the disk back to it, losing every login made since. With
+              # cold boots the disk is the truth, so shut Android down like a
+              # phone instead of pulling the plug.
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - adb -s emulator-5554 reboot -p >/dev/null 2>&1; sleep 10
           readinessProbe:
             httpGet:
               path: /
