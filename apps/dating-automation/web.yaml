@@ -101,8 +101,10 @@ spec:
               value: ${dating_automation_postgres_secret:=dating-postgres-app}
             - name: DATING_RUNNER_S3_SECRET
               value: ${dating_automation_s3_secret:=dating-s3}
+            # Literal on purpose: a substituted bare number loses its quotes in
+            # kustomize build and the API server rejects a non-string env value.
             - name: DATING_RUNNER_MAX_SECONDS
-              value: "${dating_automation_run_max_seconds:=10800}"
+              value: "10800"
           ports:
             - name: http
               containerPort: 8088
